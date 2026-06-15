@@ -78,6 +78,23 @@ Page → page hook → Zustand store → adapter → mock (localStorage) | api (
 - Use semantic HTML (`nav`, `main`, `header`, `button`, `a`). Meaningful `alt` on images.
 - Maintain WCAG AA contrast in **both** themes.
 
+## Established UI patterns (reuse these)
+
+- **Page headers carry controls, not just titles.** A bare title that repeats the nav is redundant. Use the slim `.pagehead` band to host the page's primary controls: a greeting (Dashboard), a tab bar + search + filter + action (My Reviews), or tabs (Settings). Keep titles only where they add information.
+- **Tabs:** use the `Tabs` molecule (`.qtabs`/`.qtab`) for in-page partitions (queue tabs, settings sections).
+- **Stats:** the `StatBar` organism — informational only, never a filter; big number left, tinted icon badge right, `InfoTip` on the label.
+- **Tooltips / menus / modals render in a portal** (fixed position) so ancestor `overflow:hidden` can't clip them. `Tooltip`/`InfoTip` (top or right), `ActionMenu` (⋯ overflow for secondary/tertiary actions).
+- **Global overlays live in the shell, driven by a store.** The command palette is mounted in `AppHeader`; the Order stepper (`OrderModal`) is mounted once in `AppShell` and opened via `useOrderStore` from anywhere (button or palette). Don't mount per-page modals that need to open globally.
+- **Command palette** (`⌘K`/`Ctrl+K`): search reviews + go-to pages + actions, keyboard-navigable. Add new destinations/actions there as routes grow.
+- **Full-page multi-step flows** use the `StepperModal` organism (left stepper rail + footer Back/Continue/Submit). Order a review is the first; reuse for other wizards.
+- **Single sources:** the signed-in user/org come from `lib/current-user.ts`; design values from `lib/tokens.ts` / CSS vars. Don't hardcode duplicates.
+- **Theme-aware assets** (logo) toggle via CSS on `[data-theme]`, not inline `display`.
+- **Review detail is ONE route `/reviews/[id]`.** Technical / Administrative are in-page **tabs** and Findings / Builder / Workbook are **sub-views** of the Technical tab — all driven by state via `ReviewContextBar`, never routes, never in breadcrumbs. `/reviews/[id]/triage` is the only review sub-route. Don't add routed sub-pages under a review.
+
+## Roadmap & status
+
+Current build state, the POC→new-pattern mapping, and what's stubbed / still on old design live in `../docs/plans/parachute-v2-build-plan.md`; per-page early specs (with POC screen refs, critiques, open questions) in `../docs/plans/parachute-v2-early-specs.md`. Read them before building a new page so you match the intended pattern and don't rebuild something already planned. The POC (`../docs/references/client-html-mock/parachute-mockups.html`) is a **reference to reinterpret, not clone** — analyze it, then design with our patterns.
+
 ## Before claiming work is done
 
 - Run `npx tsc --noEmit` **and** `npx eslint src --ext .ts,.tsx` — both must be clean.

@@ -45,6 +45,7 @@ import {
   SlidersHorizontal,
   ClipboardList,
   Building2,
+  CalendarDays,
   type LucideIcon,
 } from "lucide-react";
 
@@ -96,6 +97,7 @@ export const ICONS = {
   filter: SlidersHorizontal,
   reviews: ClipboardList,
   org: Building2,
+  calendar: CalendarDays,
 } satisfies Record<string, LucideIcon>;
 
 export type IconName = keyof typeof ICONS;

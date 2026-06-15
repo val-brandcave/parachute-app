@@ -1,12 +1,28 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Breadcrumbs } from "@/components/molecules";
-import { IconButton, Icon } from "@/components/atoms";
+import { IconButton } from "@/components/atoms";
 import { UserMenu } from "./UserMenu";
+import { SearchTrigger } from "./SearchTrigger";
+import { CommandPalette } from "./CommandPalette";
 import { usePrefsStore } from "@/store";
 
 export function AppHeader() {
   const { navCollapsed, toggleNav } = usePrefsStore();
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  // ⌘K / Ctrl+K opens the command palette anywhere in the app.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setSearchOpen((o) => !o);
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
 
   return (
     <header className="topbar">
@@ -18,13 +34,10 @@ export function AppHeader() {
       />
       <Breadcrumbs />
       <div style={{ flex: 1 }} />
-      <div className="tb-search">
-        <Icon name="search" size={16} />
-        <input placeholder="Search reviews, properties, loan #…" />
-      </div>
+      <SearchTrigger onOpen={() => setSearchOpen(true)} />
       <IconButton name="bell" aria-label="Notifications" />
-      <IconButton name="help" aria-label="Help" />
       <UserMenu />
+      <CommandPalette open={searchOpen} onClose={() => setSearchOpen(false)} />
     </header>
   );
 }

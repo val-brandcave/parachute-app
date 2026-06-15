@@ -1,10 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useParams } from "next/navigation";
 import { cn, SEV_META } from "@/lib/utils";
 import { useWorkspaceStore } from "@/store";
-import { useReview } from "@/store/useReview";
 import { FindingCard } from "@/components/review/FindingCard";
 import { WorkbookRail } from "@/components/review/WorkbookRail";
 import { PdfPane } from "@/components/review/PdfPane";
@@ -12,9 +10,18 @@ import type { Severity } from "@/types";
 
 type Sort = "severity" | "page";
 
-export default function TechnicalReviewPage() {
-  const { id } = useParams<{ id: string }>();
-  const review = useReview(id);
+/**
+ * Technical Review workspace (first-pass design — slated for focus-mode rebuild,
+ * see docs/plans/parachute-v2-early-specs.md). Rendered as the Technical tab of
+ * the review detail page, not a route.
+ */
+export function TechnicalWorkspace({
+  reviewId,
+  onOpenWorkbook,
+}: {
+  reviewId: string;
+  onOpenWorkbook?: () => void;
+}) {
   const { findings, states, isLoading, loadReview, acceptAllPasses, addReviewerFinding } =
     useWorkspaceStore();
 
@@ -30,8 +37,8 @@ export default function TechnicalReviewPage() {
   });
 
   useEffect(() => {
-    if (id) loadReview(id);
-  }, [id, loadReview]);
+    if (reviewId) loadReview(reviewId);
+  }, [reviewId, loadReview]);
 
   const sorted = useMemo(() => {
     let list = [...findings];
@@ -50,8 +57,7 @@ export default function TechnicalReviewPage() {
     return c;
   }, [findings]);
 
-  const decided = Object.values(states).filter((s) => s.disposition !== "pending")
-    .length;
+  const decided = Object.values(states).filter((s) => s.disposition !== "pending").length;
   const pct = findings.length ? Math.round((decided / findings.length) * 100) : 0;
 
   const saveNew = () => {
@@ -63,39 +69,33 @@ export default function TechnicalReviewPage() {
 
   if (isLoading && !findings.length) {
     return (
-      <div className="page" style={{ color: "#5a6672" }}>
+      <div className="pagebody" style={{ color: "var(--md-on-surface-v)" }}>
         Loading findings…
       </div>
     );
   }
 
   return (
-    <div className="page">
-      <div className="page-head">
-        <div>
-          <div className="crumb">Technical Review · {review?.bank}</div>
-          <h1>Findings</h1>
-        </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <button className="btn btn-outline btn-sm" onClick={() => setAdding((a) => !a)}>
-            <span className="material-icons">add</span>
-            Add finding
-          </button>
-          <button className="btn btn-outline btn-sm" onClick={acceptAllPasses}>
-            <span className="material-icons">done_all</span>
-            Accept all passes
-          </button>
-          <button
-            className={cn("btn btn-sm", pdfPage ? "btn-filled" : "btn-tonal")}
-            onClick={() => setPdfPage((p) => (p ? null : 47))}
-          >
-            <span className="material-icons">picture_as_pdf</span>
-            Source PDF
-          </button>
-        </div>
+    <div className="pagebody">
+      <div className="ws-toolbar" style={{ justifyContent: "flex-end" }}>
+        <div style={{ flex: 1 }} />
+        <button className="btn btn-outline btn-sm" onClick={() => setAdding((a) => !a)}>
+          <span className="material-icons">add</span>
+          Add finding
+        </button>
+        <button className="btn btn-outline btn-sm" onClick={acceptAllPasses}>
+          <span className="material-icons">done_all</span>
+          Accept all passes
+        </button>
+        <button
+          className={cn("btn btn-sm", pdfPage ? "btn-filled" : "btn-tonal")}
+          onClick={() => setPdfPage((p) => (p ? null : 47))}
+        >
+          <span className="material-icons">picture_as_pdf</span>
+          Source PDF
+        </button>
       </div>
 
-      {/* Coverage */}
       <div className="coverage">
         <div
           className="cov-ring"
@@ -110,8 +110,8 @@ export default function TechnicalReviewPage() {
             {findings.length} findings across {Object.keys(counts).length} categories
           </div>
           <div style={{ fontSize: 12, color: "var(--md-on-surface-v)", marginTop: 2 }}>
-            Accept, disagree, or reject each one. Reject sends batched corrections back to
-            the appraiser.
+            Accept, disagree, or reject each one. Reject sends batched corrections back to the
+            appraiser.
           </div>
           <div className="cov-cats">
             {(["crit", "fail", "flag", "pass"] as Severity[]).map((s) =>
@@ -131,9 +131,7 @@ export default function TechnicalReviewPage() {
             <label>Issue / question</label>
             <input
               value={newFinding.question}
-              onChange={(e) =>
-                setNewFinding({ ...newFinding, question: e.target.value })
-              }
+              onChange={(e) => setNewFinding({ ...newFinding, question: e.target.value })}
               placeholder="e.g. Comparable 3 lacks a condition adjustment"
             />
           </div>
@@ -141,9 +139,7 @@ export default function TechnicalReviewPage() {
             <label>Detail</label>
             <textarea
               value={newFinding.analysis}
-              onChange={(e) =>
-                setNewFinding({ ...newFinding, analysis: e.target.value })
-              }
+              onChange={(e) => setNewFinding({ ...newFinding, analysis: e.target.value })}
             />
           </div>
           <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
@@ -157,13 +153,9 @@ export default function TechnicalReviewPage() {
         </div>
       )}
 
-      {/* Toolbar */}
       <div className="ws-toolbar">
         <div className="segmented">
-          <button
-            className={cn(sort === "severity" && "on")}
-            onClick={() => setSort("severity")}
-          >
+          <button className={cn(sort === "severity" && "on")} onClick={() => setSort("severity")}>
             By severity
           </button>
           <button className={cn(sort === "page" && "on")} onClick={() => setSort("page")}>
@@ -175,18 +167,13 @@ export default function TechnicalReviewPage() {
             All
           </button>
           {(["crit", "fail", "flag", "pass"] as Severity[]).map((s) => (
-            <button
-              key={s}
-              className={cn(sevFilter === s && "on")}
-              onClick={() => setSevFilter(s)}
-            >
+            <button key={s} className={cn(sevFilter === s && "on")} onClick={() => setSevFilter(s)}>
               {SEV_META[s].label}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Workspace grid */}
       <div className={cn("ws", pdfPage !== null && "with-pdf")}>
         <div>
           {sorted.map((f, i) => (
@@ -201,7 +188,7 @@ export default function TechnicalReviewPage() {
           {sorted.length === 0 && (
             <div
               className="card"
-              style={{ padding: 32, textAlign: "center", color: "#5a6672" }}
+              style={{ padding: 32, textAlign: "center", color: "var(--md-on-surface-v)" }}
             >
               No findings match this filter.
             </div>
@@ -211,7 +198,11 @@ export default function TechnicalReviewPage() {
         {pdfPage ? (
           <PdfPane page={pdfPage} onClose={() => setPdfPage(null)} />
         ) : (
-          <WorkbookRail states={states} total={findings.length} reviewId={id} />
+          <WorkbookRail
+            states={states}
+            total={findings.length}
+            onCompile={onOpenWorkbook}
+          />
         )}
       </div>
     </div>

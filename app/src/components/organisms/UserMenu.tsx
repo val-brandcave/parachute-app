@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Avatar, Icon, type IconName } from "@/components/atoms";
 import { cn } from "@/lib/utils";
 import { usePrefsStore, type ThemePref } from "@/store";
+import { CURRENT_USER } from "@/lib/current-user";
 
 const THEME_OPTS: { value: ThemePref; icon: IconName; label: string }[] = [
   { value: "light", icon: "sun", label: "Light" },
@@ -14,8 +15,8 @@ const THEME_OPTS: { value: ThemePref; icon: IconName; label: string }[] = [
 ];
 
 export function UserMenu({
-  name = "Val Vinnakota",
-  email = "val@brandcave.co",
+  name = CURRENT_USER.name,
+  email = CURRENT_USER.email,
 }: {
   name?: string;
   email?: string;

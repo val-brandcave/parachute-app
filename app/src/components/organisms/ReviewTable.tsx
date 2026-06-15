@@ -28,7 +28,7 @@ export const STATUS_TONE: Record<ReviewStatus, Parameters<typeof Chip>[0]["tone"
 export function reviewHref(r: Review) {
   return r.status === "autorejected"
     ? `/reviews/${r.id}/triage`
-    : `/reviews/${r.id}/technical`;
+    : `/reviews/${r.id}`;
 }
 
 function RiskDot({ rating }: { rating: Review["riskRating"] }) {

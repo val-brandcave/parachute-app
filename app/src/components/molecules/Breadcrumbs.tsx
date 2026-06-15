@@ -16,11 +16,9 @@ const TOP_LABELS: Record<string, string> = {
   styleguide: "Style Guide",
 };
 
+// Technical / Administrative (and Builder/Workbook) are IN-PAGE TABS, not routes,
+// so they never appear as crumbs. Only true sub-routes do.
 const SUB_LABELS: Record<string, string> = {
-  technical: "Technical Review",
-  administrative: "Administrative Review",
-  builder: "Workbook Builder",
-  workbook: "Workbook",
   triage: "Intake Triage",
 };
 
@@ -36,7 +34,7 @@ export function Breadcrumbs() {
     crumbs.push({ label: "My Reviews", href: "/reviews" });
     crumbs.push({
       label: review?.propertyAddress ?? "Review",
-      href: `/reviews/${segs[1]}/technical`,
+      href: `/reviews/${segs[1]}`,
     });
     if (segs[2] && SUB_LABELS[segs[2]]) crumbs.push({ label: SUB_LABELS[segs[2]] });
   } else if (segs[0]) {

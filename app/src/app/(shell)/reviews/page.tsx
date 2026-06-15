@@ -1,16 +1,9 @@
 "use client";
 
-import { useReviewQueue, type QueueTab } from "./hooks/useReviewQueue";
-import { cn } from "@/lib/utils";
-import { PageHeader } from "@/components/templates/PageHeader";
+import { useReviewQueue } from "./hooks/useReviewQueue";
 import { ReviewTable, OrderButton } from "@/components/organisms";
+import { Tabs } from "@/components/molecules";
 import { Icon } from "@/components/atoms";
-
-const TABS: { value: QueueTab; label: string }[] = [
-  { value: "all", label: "All" },
-  { value: "mine", label: "Mine" },
-  { value: "flagged", label: "Flagged" },
-];
 
 export default function MyReviewsPage() {
   const {
@@ -28,7 +21,41 @@ export default function MyReviewsPage() {
 
   return (
     <>
-      <PageHeader title="My Reviews" actions={<OrderButton />} />
+      {/* Header band IS the table toolbar (no redundant title — nav says My Reviews) */}
+      <div className="pagehead">
+        <Tabs
+          value={tab}
+          onChange={setTab}
+          tabs={[
+            { value: "all", label: "All", count: counts.all },
+            { value: "mine", label: "Mine", count: counts.mine },
+            { value: "flagged", label: "Flagged", count: counts.flagged },
+          ]}
+        />
+        <div style={{ flex: 1 }} />
+        <div className="qsearch">
+          <Icon name="search" size={15} />
+          <input
+            placeholder="Search property, loan #, bank…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+        </div>
+        <select
+          className="qfilter"
+          value={status}
+          onChange={(e) => setStatus(e.target.value as typeof status)}
+          aria-label="Filter by status"
+        >
+          <option value="any">All statuses</option>
+          <option value="needs_action">Needs action</option>
+          <option value="running">Running</option>
+          <option value="returned">Returned</option>
+          <option value="completed">Completed</option>
+          <option value="autorejected">Auto-rejected</option>
+        </select>
+        <OrderButton />
+      </div>
 
       <div className="pagebody">
         <div
@@ -39,56 +66,6 @@ export default function MyReviewsPage() {
             overflow: "hidden",
           }}
         >
-          <div className="qtoolbar">
-            <div className="qtabs">
-              {TABS.map((t) => (
-                <button
-                  key={t.value}
-                  className={cn("qtab", tab === t.value && "on")}
-                  onClick={() => setTab(t.value)}
-                >
-                  {t.label}
-                  <span className="cnt">{counts[t.value]}</span>
-                </button>
-              ))}
-            </div>
-            <div style={{ flex: 1 }} />
-            <div className="qsearch">
-              <Icon name="search" size={15} />
-              <input
-                placeholder="Search property, loan #, bank…"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-              />
-            </div>
-            <div
-              className="ui-seg"
-              style={{ background: "transparent", border: "1px solid var(--md-outline-v)", padding: 0 }}
-            >
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value as typeof status)}
-                style={{
-                  border: "none",
-                  background: "transparent",
-                  font: "inherit",
-                  fontSize: 13.5,
-                  color: "var(--md-on-surface)",
-                  padding: "8px 12px",
-                  cursor: "pointer",
-                  outline: "none",
-                }}
-              >
-                <option value="any">All statuses</option>
-                <option value="needs_action">Needs action</option>
-                <option value="running">Running</option>
-                <option value="returned">Returned</option>
-                <option value="completed">Completed</option>
-                <option value="autorejected">Auto-rejected</option>
-              </select>
-            </div>
-          </div>
-
           {isLoading ? (
             <div style={{ padding: 44, textAlign: "center", color: "var(--md-on-surface-v)" }}>
               Loading reviews…

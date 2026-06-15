@@ -3,7 +3,8 @@
 import { motion } from "framer-motion";
 import { useDashboard } from "./hooks/useDashboard";
 import { PageHeader } from "@/components/templates/PageHeader";
-import { PeriodPicker, PERIOD_LABEL } from "@/components/molecules";
+import { PeriodPicker, PERIOD_LABEL, periodLabel } from "@/components/molecules";
+import { CURRENT_USER } from "@/lib/current-user";
 import {
   StatBar,
   type Stat,
@@ -13,8 +14,17 @@ import {
 } from "@/components/organisms";
 
 export default function DashboardPage() {
-  const { period, setPeriod, kpis, completed, actionNeeded, recent, trend } =
-    useDashboard();
+  const {
+    period,
+    setPeriod,
+    range,
+    setRange,
+    kpis,
+    completed,
+    actionNeeded,
+    recent,
+    trend,
+  } = useDashboard();
 
   const stats: Stat[] = [
     {
@@ -49,7 +59,12 @@ export default function DashboardPage() {
       label: "Completed",
       value: (
         <>
-          {completed} <small>{PERIOD_LABEL[period].toLowerCase()}</small>
+          {completed}{" "}
+          <small>
+            {period === "custom"
+              ? "in range"
+              : PERIOD_LABEL[period].toLowerCase()}
+          </small>
         </>
       ),
       icon: "check-all",
@@ -61,8 +76,15 @@ export default function DashboardPage() {
   return (
     <>
       <PageHeader
-        title="Dashboard"
-        actions={<PeriodPicker value={period} onChange={setPeriod} />}
+        title={`Welcome back, ${CURRENT_USER.firstName}`}
+        actions={
+          <PeriodPicker
+            value={period}
+            onChange={setPeriod}
+            range={range}
+            onRangeChange={setRange}
+          />
+        }
       />
 
       <div className="pagebody">
@@ -80,7 +102,7 @@ export default function DashboardPage() {
         </div>
 
         <div style={{ marginTop: "var(--d-gap)" }}>
-          <TrendChart data={trend} periodLabel={PERIOD_LABEL[period]} />
+          <TrendChart data={trend} periodLabel={periodLabel(period, range)} />
         </div>
       </div>
     </>

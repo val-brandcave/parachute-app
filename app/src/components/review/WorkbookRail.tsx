@@ -1,19 +1,19 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import type { FindingState } from "@/types";
 import { tally } from "@/store";
 
 export function WorkbookRail({
   states,
   total,
-  reviewId,
+  onCompile,
+  onReturn,
 }: {
   states: Record<string, FindingState>;
   total: number;
-  reviewId: string;
+  onCompile?: () => void;
+  onReturn?: () => void;
 }) {
-  const router = useRouter();
   const t = tally(states);
   const decided = total - t.pending;
   const pct = total ? Math.round((decided / total) * 100) : 0;
@@ -70,14 +70,11 @@ export function WorkbookRail({
         </div>
 
         <div className="wb-foot">
-          <button
-            className="btn btn-filled"
-            onClick={() => router.push(`/reviews/${reviewId}/workbook`)}
-          >
+          <button className="btn btn-filled" onClick={onCompile}>
             <span className="material-icons">description</span>
             Compile workbook
           </button>
-          <button className="btn btn-outline">
+          <button className="btn btn-outline" onClick={onReturn}>
             <span className="material-icons">undo</span>
             Return to appraiser
           </button>
