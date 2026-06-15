@@ -1362,16 +1362,28 @@ textarea {
 
 /* ---- atom: Avatar ---- */
 .ui-avatar {
-  width: 34px;
-  height: 34px;
   border-radius: 50%;
   display: grid;
   place-items: center;
   font-weight: 700;
-  font-size: 13px;
+  letter-spacing: 0.2px;
+  flex-shrink: 0;
+}
+.ui-avatar--accent {
   background: var(--md-accent);
   color: #fff;
-  flex-shrink: 0;
+}
+.ui-avatar--soft {
+  background: var(--md-accent-c);
+  color: var(--md-accent-d);
+}
+.ui-avatar--navy {
+  background: var(--grad-primary);
+  color: #fff;
+}
+.ui-avatar--muted {
+  background: var(--md-surface-2);
+  color: var(--md-on-surface-v);
 }
 
 /* ---- atom: Divider ---- */
@@ -1853,37 +1865,39 @@ textarea {
   background: var(--md-bg);
 }
 
-/* defined page-header region — full width, hairline below */
+/* defined page-header region — slim full-width bar, hairline below */
 .pagehead {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 20px;
+  gap: 16px;
   flex-wrap: wrap;
-  padding: var(--d-page-y) var(--d-page-x);
+  min-height: 58px;
+  padding: 11px var(--d-page-x);
   border-bottom: 1px solid var(--md-outline-v);
   background: var(--md-surface);
 }
 .pagehead .eyebrow {
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.5px;
   color: var(--md-accent-d);
   text-transform: uppercase;
+  margin-bottom: 2px;
 }
 .pagehead h1 {
   font-family: var(--font-display);
-  font-size: 25px;
+  font-size: 20px;
   font-weight: 700;
   color: var(--md-on-surface);
-  margin-top: 3px;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
 }
 .pagehead .sub {
   color: var(--md-on-surface-v);
-  margin-top: 4px;
+  margin-top: 2px;
   max-width: 620px;
-  font-size: 13.5px;
+  font-size: 13px;
 }
 /* page body — full width (no max-width), density padding */
 .pagebody {
@@ -2190,6 +2204,154 @@ textarea {
   flex: 1;
   overflow-y: auto;
   padding: 28px;
+}
+
+/* ---- full-page stepper modal (Order a review, etc.) ---- */
+.spm {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  background: var(--md-bg);
+  display: flex;
+  flex-direction: column;
+}
+.spm-head {
+  height: var(--hdr-h);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 22px;
+  background: var(--md-surface);
+  border-bottom: 1px solid var(--md-outline-v);
+}
+.spm-head .spm-title {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--md-on-surface);
+}
+.spm-head .spm-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--md-accent-d);
+}
+.spm-main {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 290px 1fr;
+  min-height: 0;
+}
+.spm-rail {
+  border-right: 1px solid var(--md-outline-v);
+  background: var(--md-surface);
+  padding: 26px 20px;
+  overflow-y: auto;
+}
+.spm-step {
+  display: flex;
+  gap: 14px;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: default;
+  position: relative;
+}
+.spm-step.clickable {
+  cursor: pointer;
+}
+.spm-step + .spm-step {
+  margin-top: 6px;
+}
+.spm-step-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+}
+.spm-num {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  font-weight: 700;
+  border: 2px solid var(--md-outline);
+  color: var(--md-on-surface-v);
+  background: var(--md-surface);
+  transition: all 0.18s;
+}
+.spm-step.active .spm-num {
+  border-color: var(--md-primary);
+  background: var(--grad-primary);
+  color: #fff;
+}
+.spm-step.done .spm-num {
+  border-color: var(--md-accent);
+  background: var(--md-accent);
+  color: #fff;
+}
+.spm-connector {
+  width: 2px;
+  flex: 1;
+  min-height: 22px;
+  background: var(--md-outline-v);
+  margin: 4px 0;
+}
+.spm-step.done .spm-connector {
+  background: var(--md-accent);
+}
+.spm-step-text {
+  padding-bottom: 18px;
+  padding-top: 4px;
+}
+.spm-step:last-child .spm-step-text {
+  padding-bottom: 0;
+}
+.spm-step-label {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--md-on-surface-v);
+}
+.spm-step.active .spm-step-label,
+.spm-step.done .spm-step-label {
+  color: var(--md-on-surface);
+}
+.spm-step-desc {
+  font-size: 12px;
+  color: var(--md-on-surface-v);
+  margin-top: 2px;
+}
+.spm-content {
+  overflow-y: auto;
+  padding: 32px 40px;
+}
+.spm-content-inner {
+  max-width: 640px;
+  margin: 0 auto;
+}
+.spm-foot {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 22px;
+  background: var(--md-surface);
+  border-top: 1px solid var(--md-outline-v);
+}
+.spm-foot-right {
+  display: flex;
+  gap: 10px;
+}
+.spm-progress {
+  font-size: 12.5px;
+  color: var(--md-on-surface-v);
 }
 
 /* ---- dashboard widgets ---- */
@@ -2600,9 +2762,18 @@ textarea {
 .qrow:hover {
   background: var(--md-surface-1);
 }
+.prop-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
 .qrow .addr {
   font-weight: 600;
   color: var(--md-on-surface);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .qrow .meta {
   font-size: 12px;

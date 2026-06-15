@@ -2,12 +2,23 @@ import { cn } from "@/lib/utils";
 
 export function Avatar({
   initials,
+  size = 34,
+  tone = "accent",
   className,
 }: {
   initials: string;
+  size?: number;
+  tone?: "accent" | "soft" | "navy" | "muted";
   className?: string;
 }) {
-  return <span className={cn("ui-avatar", className)}>{initials}</span>;
+  return (
+    <span
+      className={cn("ui-avatar", `ui-avatar--${tone}`, className)}
+      style={{ width: size, height: size, fontSize: Math.round(size * 0.38) }}
+    >
+      {initials}
+    </span>
+  );
 }
 
 export function Divider({
