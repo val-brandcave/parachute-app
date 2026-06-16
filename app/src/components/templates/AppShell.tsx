@@ -7,9 +7,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="shell">
       <Sidebar />
       <div className="maincol">
-        {/* Ambient teal streaks tracing the sidebar + header divider hairlines */}
-        <span className="edge-beam edge-beam--v" aria-hidden="true" />
-        <span className="edge-beam edge-beam--h" aria-hidden="true" />
         <AppHeader />
         <main className="content scroll">{children}</main>
       </div>
