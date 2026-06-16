@@ -14,7 +14,7 @@
 
 ## Where we are
 
-A Next.js + atomic prototype on the **Slate & Teal** design system with light/dark/system
+A Next.js + atomic prototype on the **Navy & Petrol** design system (revised Jun 2026 from "Slate & Teal"; Inter type, no monospace, Tabler icons) with light/dark/system
 theming, density preference, a mock data-adapter layer, and these patterns locked:
 full-height collapsible sidebar + bottom **Org card**; slim **page-header bands that carry
 controls** (greeting / tabs / search / filter / actions); **command palette** (`⌘K`);
@@ -27,8 +27,8 @@ controls** (greeting / tabs / search / filter / actions); **command palette** (`
 |---|---|---|
 | `/login` | Auth + SSO pass-through | ✅ built (navy gradient) |
 | `/launch` | YouConnect → Parachute interstitial | ✅ built |
-| `/dashboard` | Overview: greeting, period picker (presets + custom date range), stat bar, Action needed, Recent reviews, throughput trend | ✅ built (trend/throughput data is mock) |
-| `/reviews` | **My Reviews** queue — tabs + search + status filter + table (property avatars), Order button | ✅ built |
+| `/dashboard` | Overview: greeting, period picker, period-scoped stat bar (+ a live "Pipeline running" tile), Review volume chart, Action needed, Recent reviews | ✅ built (chart/metric data is mock) |
+| `/reviews` | **Reviews** queue (renamed from "My Reviews") — tabs + search + status filter + table, Order button | ✅ built |
 | `/reviews/[id]` | **Review detail** — Technical / Administrative are in-page **tabs** (not routes); Findings / Builder / Workbook are sub-views of the Technical tab | ◑ Technical workspace built (⚠️ old design, focus-mode rebuild pending); Administrative / Builder / Workbook are in-page stubs |
 | `/reviews/[id]/triage` | Intake triage (a distinct intake state — kept as a real route) | ⚠️ old design — functional, pre-redesign styling |
 | `/templates` | Templates hub | 🚧 stub |
@@ -64,7 +64,7 @@ How each POC screen translates under our current patterns (changes from the POC 
   - *Compliance:* checklist "Manage" button and bank-policy "Upload" are **placeholders** (no flow). Overlaps with Templates — *to discuss* where checklist management canonically lives.
   - *My profile:* static inputs.
   - *Preferences:* theme + density are **fully wired/live**.
-- **Dashboard:** throughput trend chart uses **mock** per-period data; "Completed" count is mocked by period.
+- **Dashboard:** the Review volume chart (bespoke SVG combo — volume bars + turnaround/on-time overlay) uses **mock** per-period data; metric cards are period-scoped from the same mock volume (the live "Pipeline running" tile is not).
 - **Header:** notifications bell is decorative (no panel yet).
 
 ## Temporary / old-design — needs rework

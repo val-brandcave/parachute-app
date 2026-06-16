@@ -16,8 +16,8 @@
   with Ed/Cody. Do not lift POC markup/structure as-is.
 - Each section below follows that shape; treat "Suggest" as a proposal, not a decision.
 
-Conventions assumed throughout: atomic components, Slate & Teal tokens, navy primary
-CTAs / teal accents, portal overlays, mock data-adapter (page → hook → store → adapter),
+Conventions assumed throughout: atomic components, Navy & Petrol tokens, navy primary
+CTAs / petrol accents, portal overlays, mock data-adapter (page → hook → store → adapter),
 light/dark, density. New domain entities get added to `src/types` + `src/data/seed`.
 
 ---

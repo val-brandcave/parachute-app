@@ -16,7 +16,7 @@ quality, clear patterns, and a clean hand-off — not premature backend concerns
 
 ## Stack
 
-- **Next.js (App Router) + TypeScript**, **Tailwind v4**, **Zustand**, **Framer Motion**, **lucide-react**.
+- **Next.js (App Router) + TypeScript**, **Tailwind v4**, **Zustand**, **Framer Motion**, **Tabler icons** (`@tabler/icons-react`).
 - Path alias `@/*` → `src/*`. Dev server: `npm run dev` (http://localhost:3000).
 
 ## Component architecture (atomic design)
@@ -36,16 +36,19 @@ Keep components small and single-purpose; extract shared patterns instead of dup
 
 - **All styling uses design tokens (CSS variables) defined in `src/app/globals.css`** and mirrored in `src/lib/tokens.ts`. **No arbitrary hex or pixel values** — use `--md-*` (color), `--d-*` (density spacing/scale), `--grad-*`, `--r` (radius).
 - Component styles are **`.ui-*` / semantic classes in `globals.css`** — NOT CSS modules, NOT per-component `*.styles.ts`. Reuse existing classes; add new ones in the relevant section of `globals.css`.
-- **Palette = "Slate & Teal":** navy `#10344C` primary, teal `#0FA39E` accent, cool slate neutrals.
-  - **Primary CTAs are NAVY** (`--grad-primary`). **Teal accent is for highlights, active states, links, focus, and AI cues only — never the default primary button.**
-- **Theme:** support **light + dark** via `:root[data-theme="dark"]`. Never hardcode a color that breaks in the other theme; use tokens. Theme-aware assets (e.g. logo) toggle via CSS on `[data-theme]`, **not** inline `display` overrides (inline styles beat CSS classes).
+- **Palette = "Navy & Petrol"** (revised Jun 2026 — supersedes the old "Slate & Teal"): primary navy `#10344C` (hover `#1B4F73`); accent **petrol `#2A6F7F`** (ink `#14505E`, tint `#DEEBEE`); **true-neutral greys** (no blue cast) — canvas `#F6F7F8`, surface `#FFF`, surface-1/hover `#F1F2F4`, surface-2 `#E9EBEE`, border `#E2E4E8`, hairline `#EDEEF1`. States: pass `#15834A`, flag `#C98A12`, fail `#D23F34`, critical `#7E1D1D`, info `#2D6CA6` (each with a tint).
+  - **Primary CTAs are NAVY** (`--grad-primary`, a solid). **Petrol is for accents, links, focus, and AI cues only — never the default primary button.** **Selected/active *surfaces* derive from navy** (`--md-selected` / `--md-on-selected`), not petrol (nav active pill, `ui-chip--accent`, `ui-avatar--soft`).
+  - **Full text scale:** primary `--md-on-surface` `#1A1D21`, secondary `--md-on-surface-v` `#565C64`, tertiary `--md-on-surface-t` `#868D96`, disabled `--md-on-surface-dis` `#AEB4BC`. Utilities: `.text-secondary` / `.text-tertiary` / `.text-disabled`.
+  - **Flat treatment:** solid fills — **no gradient buttons, glows, or decorative texture.** Keep ONE restrained AI cue (flat petrol).
+- **Type:** Schibsted Grotesk (display/headings) + **Inter** (body / UI / **numbers**). **NO monospace anywhere** — numbers/IDs use Inter with `font-variant-numeric: tabular-nums` (the `.mono` class is sans+tnum, despite its name), never a mono face. Don't load IBM Plex Mono or any mono via `next/font`.
+- **Theme:** support **light + dark** via `:root[data-theme="dark"]`. **Never hardcode a color that breaks in the other theme — use tokens.** Overflow popovers / menus / cards must use `var(--md-surface)` (not `#fff`), or they render white with light text in dark mode. Theme-aware assets (logo) toggle via CSS on `[data-theme]`, **not** inline `display` overrides (inline styles beat CSS classes).
 - **Density:** spacing/scale respond to `[data-density]` via `--d-*` vars; don't bypass with fixed paddings on layout-level elements.
-- **Inputs always have white backgrounds** (standing client rule); use the input tokens in both themes.
+- **Inputs always have white backgrounds in BOTH themes** (standing client rule). Because the field is always white, also pin **dark ink (`#1a1d21`) + `color-scheme: light`** on `.field`/`.ui-input` (plus a `:-webkit-autofill` override) so text, caret, and Chrome autofill stay readable on dark cards. **Field labels stack above the input** — not floating over the border (that style breaks on dark surfaces).
 - Layout is **full-width** (no body max-width); content must reflow when the nav collapses. **Desktop-first** for now — don't break at smaller widths, but full mobile/tablet polish is a later phase.
 
 ## Icons
 
-- Use **lucide-react via the `Icon` atom** (`name` from the curated map in `atoms/Icon.tsx`). Add new icons to that map. **No icon fonts, no ad-hoc inline SVG.**
+- Use **Tabler icons (`@tabler/icons-react`) via the `Icon` atom** (`name` from the curated map in `atoms/Icon.tsx`; default `strokeWidth` 1.75). Add new icons to that map. **No icon fonts (Material Icons removed), no ad-hoc inline SVG.** The one exception is **real brand marks** — `MicrosoftGlyph` / `YouConnectGlyph` in `atoms/BrandGlyph.tsx`, drawn with `currentColor` so they adapt to theme/button.
 
 ## Data layer (mock service layer)
 
@@ -80,9 +83,13 @@ Page → page hook → Zustand store → adapter → mock (localStorage) | api (
 
 ## Established UI patterns (reuse these)
 
-- **Page headers carry controls, not just titles.** A bare title that repeats the nav is redundant. Use the slim `.pagehead` band to host the page's primary controls: a greeting (Dashboard), a tab bar + search + filter + action (My Reviews), or tabs (Settings). Keep titles only where they add information.
+- **Nav = Dashboard · Reviews · Templates · Settings.** The queue page is **"Reviews"** (renamed from "My Reviews" — it holds others' reviews too). Nav icons must be visually distinct: Reviews = list-check, Templates = template (not two near-identical document marks).
+- **Page headers carry controls, not just titles.** A bare title that repeats the nav is redundant. Use the slim `.pagehead` band to host the page's primary controls: a greeting (Dashboard), a tab bar + search + filter + action (Reviews), or tabs (Settings). Keep titles only where they add information.
 - **Tabs:** use the `Tabs` molecule (`.qtabs`/`.qtab`) for in-page partitions (queue tabs, settings sections).
-- **Stats:** the `StatBar` organism — informational only, never a filter; big number left, tinted icon badge right, `InfoTip` on the label.
+- **Stats:** the `StatBar` organism — informational only, never a table filter; big number left, monochrome icon badge right (soft-grey tile + navy glyph; `alert` turns a tile red only when its value is non-zero), `InfoTip` on the label. Dashboard metric cards are **period-scoped by the period picker** EXCEPT genuinely point-in-time tiles (e.g. "Pipeline running"), which stay a live "now" count flagged with `live` (renders an inline pulsing "Live" marker next to the number). Card order follows the lifecycle: Intake triage → Pipeline running → Needs my action → Overdue → Completed.
+- **Charts are bespoke SVG** (e.g. the dashboard "Review volume" combo: volume bars + a configurable overlay line), built with our tokens + CSS motion — no chart library. Pattern: period badge by the title, gridlines, date-based x-labels (tick-gated so they don't crowd), rich themed hover tooltip, a footer metric strip with vs-previous-period deltas, and chart config (overlay = turnaround/on-time/both/none) + actions in the `⋯` `ActionMenu`.
+- **`ActionMenu`** (`⋯` overflow) supports plain actions, a section `header`, a `divider`, and checkable radio `selected` items (used for the chart overlay config). Use it for secondary/tertiary actions and small in-widget config.
+- **Auth (login):** SSO-first — SSO options on top (YouConnect primary, then Microsoft, then generic SSO), divider, then email/password. Calm canvas (no gradient slab), theme-aware logo, white inputs.
 - **Tooltips / menus / modals render in a portal** (fixed position) so ancestor `overflow:hidden` can't clip them. `Tooltip`/`InfoTip` (top or right), `ActionMenu` (⋯ overflow for secondary/tertiary actions).
 - **Global overlays live in the shell, driven by a store.** The command palette is mounted in `AppHeader`; the Order stepper (`OrderModal`) is mounted once in `AppShell` and opened via `useOrderStore` from anywhere (button or palette). Don't mount per-page modals that need to open globally.
 - **Command palette** (`⌘K`/`Ctrl+K`): search reviews + go-to pages + actions, keyboard-navigable. Add new destinations/actions there as routes grow.
