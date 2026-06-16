@@ -17,7 +17,7 @@ The prototype builds ONE app and simulates the YouConnect entry via the launch/i
 /login                              Auth + SSO pass-through
 /launch                             Interstitial ("Transferring you to Parachute…") — YC handoff sim
 /                                   → redirect to /dashboard
-/dashboard                          My Reviews — queue + KPIs (DEFAULT)
+/dashboard                          Dashboard — overview + period-scoped KPIs (DEFAULT)
 /order                              Order a Review (From YouConnect inbox | Standalone upload → run pipeline)
 
 /reviews/[id]                       → redirect to /reviews/[id]/technical
