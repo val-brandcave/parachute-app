@@ -230,18 +230,10 @@ export function TrendChart({
 
   const gridLines = [0.25, 0.5, 0.75];
 
-  const exportCsv = () => {
-    const rows = [
-      ["Period", "Completed", "Avg turnaround (min)", "On-time (%)"],
-      ...points.map((d) => [d.label, d.v, d.t, d.onTime]),
-    ];
-    const csv = rows.map((r) => r.join(",")).join("\n");
-    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "review-volume.csv";
-    a.click();
-    URL.revokeObjectURL(url);
+  // Export as PDF — uses the browser's print pipeline (Save as PDF), so no PDF
+  // dependency is needed. A production build would render a chart-scoped PDF.
+  const exportPdf = () => {
+    window.print();
   };
 
   const overlayOpts: { v: Overlay; label: string }[] = [
@@ -259,7 +251,7 @@ export function TrendChart({
     })),
     { divider: true },
     { label: "View all reviews", icon: "reviews" as const, onClick: () => router.push("/reviews") },
-    { label: "Export CSV", icon: "download" as const, onClick: exportCsv },
+    { label: "Export PDF", icon: "download" as const, onClick: exportPdf },
   ];
 
   const hp = hover != null ? points[hover] : null;
@@ -267,22 +259,9 @@ export function TrendChart({
   return (
     <div className="widget">
       <div className="widget-head rv-head">
-        <div className="rv-head-left">
-          <div className="rv-title">
-            <h3>Review volume</h3>
-            <span className="rv-badge">{periodLabel}</span>
-          </div>
-          <div className="rv-legend">
-            <span className="rv-leg">
-              <SeriesGlyph kind="bar" /> Completed
-            </span>
-            <span className={cn("rv-leg", !showT && "rv-leg--off")}>
-              <SeriesGlyph kind="line" /> Turnaround
-            </span>
-            <span className={cn("rv-leg", !showOn && "rv-leg--off")}>
-              <SeriesGlyph kind="dashed" /> On-time
-            </span>
-          </div>
+        <div className="rv-title">
+          <h3>Review volume</h3>
+          <span className="rv-badge">{periodLabel}</span>
         </div>
         <ActionMenu items={menuItems} />
       </div>
@@ -413,32 +392,44 @@ export function TrendChart({
         )}
       </div>
 
+      {/* Series-aware: a metric shows only when its series is drawn. Bars
+          (Completed) are always present; the line metrics follow the overlay. */}
       <div className="rv-foot">
         <div className="rv-metric">
           <span className="rv-m-label">
             <SeriesGlyph kind="bar" /> Completed
           </span>
-          <span className="rv-m-val">{completed}</span>
-          <Delta
-            value={prev.completed ? Math.round(((completed - prev.completed) / prev.completed) * 100) : 0}
-            suffix="%"
-            lowerIsBetter={false}
-          />
-        </div>
-        <div className="rv-metric">
-          <span className="rv-m-label">
-            <SeriesGlyph kind="line" /> Avg turnaround
+          <span className="rv-m-line2">
+            <span className="rv-m-val">{completed}</span>
+            <Delta
+              value={prev.completed ? Math.round(((completed - prev.completed) / prev.completed) * 100) : 0}
+              suffix="%"
+              lowerIsBetter={false}
+            />
           </span>
-          <span className="rv-m-val">{avgT}m</span>
-          <Delta value={avgT - prev.avgT} suffix="m" lowerIsBetter={true} />
         </div>
-        <div className="rv-metric">
-          <span className="rv-m-label">
-            <SeriesGlyph kind="dashed" /> On-time
-          </span>
-          <span className="rv-m-val">{avgOn}%</span>
-          <Delta value={avgOn - prev.avgOn} suffix="pts" lowerIsBetter={false} />
-        </div>
+        {showT && (
+          <div className="rv-metric">
+            <span className="rv-m-label">
+              <SeriesGlyph kind="line" /> Avg turnaround
+            </span>
+            <span className="rv-m-line2">
+              <span className="rv-m-val">{avgT}m</span>
+              <Delta value={avgT - prev.avgT} suffix="m" lowerIsBetter={true} />
+            </span>
+          </div>
+        )}
+        {showOn && (
+          <div className="rv-metric">
+            <span className="rv-m-label">
+              <SeriesGlyph kind="dashed" /> On-time
+            </span>
+            <span className="rv-m-line2">
+              <span className="rv-m-val">{avgOn}%</span>
+              <Delta value={avgOn - prev.avgOn} suffix="pts" lowerIsBetter={false} />
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );

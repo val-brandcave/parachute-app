@@ -15,6 +15,10 @@
   --md-accent-c: #deebee; /* petrol tint */
   --md-secondary: #2a6f7f;
   --md-secondary-d: #14505e;
+  /* Selected/active surfaces derive from NAVY (not petrol) — keeps selection
+     chrome on-brand and removes the teal cast. Petrol stays for links/AI/chart. */
+  --md-selected: #d6e3ee; /* navy-derived selected/active tint */
+  --md-on-selected: #10344c; /* navy ink on a selected surface */
   /* True-neutral greys — no blue cast, so navy is the only blue */
   --md-surface: #ffffff;
   --md-surface-1: #f1f2f4; /* subtle raised / row hover */
@@ -99,6 +103,8 @@
   --md-accent-c: #11272d;
   --md-secondary: #4a93a4;
   --md-secondary-d: #9fd3de;
+  --md-selected: #1c3850; /* navy-derived selected/active tint (dark) */
+  --md-on-selected: #cfe0f1; /* light-blue ink on a selected surface (dark) */
   /* True-neutral dark greys — no blue cast */
   --md-surface: #17181b;
   --md-surface-1: #1e2023;
@@ -459,10 +465,10 @@ textarea {
   background: var(--md-surface-2);
 }
 .navitem.active {
-  color: var(--md-primary);
+  color: var(--md-on-selected);
 }
 .navitem.active .ind {
-  background: #d6e3ee;
+  background: var(--md-selected);
 }
 
 .content {
@@ -1329,8 +1335,8 @@ textarea {
   color: var(--md-info);
 }
 .ui-chip--accent {
-  background: var(--md-accent-c);
-  color: var(--md-accent-d);
+  background: var(--md-selected);
+  color: var(--md-on-selected);
 }
 .ui-chip--na {
   background: var(--md-surface-3);
@@ -1405,8 +1411,8 @@ textarea {
   color: #fff;
 }
 .ui-avatar--soft {
-  background: var(--md-accent-c);
-  color: var(--md-accent-d);
+  background: var(--md-selected);
+  color: var(--md-on-selected);
 }
 .ui-avatar--navy {
   background: var(--grad-primary);
@@ -1615,7 +1621,7 @@ textarea {
   color: var(--md-on-surface);
 }
 .ui-navitem.active {
-  color: var(--md-accent-d);
+  color: var(--md-on-selected);
   font-weight: 600;
 }
 .ui-navitem.collapsed {
@@ -1627,7 +1633,7 @@ textarea {
 .ui-navitem-pill {
   position: absolute;
   inset: 0;
-  background: var(--md-accent-c);
+  background: var(--md-selected);
   border-radius: 10px;
   z-index: 0;
 }
@@ -1654,7 +1660,7 @@ textarea {
   top: calc(100% + 6px);
   right: 0;
   z-index: 40;
-  background: #fff;
+  background: var(--md-surface);
   border: 1px solid var(--md-outline-v);
   border-radius: 11px;
   box-shadow: var(--md-elev-3);
@@ -1785,8 +1791,8 @@ textarea {
   border-color: var(--md-outline);
 }
 .org-card.active {
-  border-color: var(--md-accent);
-  background: var(--md-accent-c);
+  border-color: var(--md-primary);
+  background: var(--md-selected);
 }
 .org-card.collapsed {
   justify-content: center;
@@ -2327,10 +2333,10 @@ textarea {
   flex-shrink: 0;
 }
 .cmdk-item.active {
-  background: var(--md-accent-c);
+  background: var(--md-selected);
 }
 .cmdk-item.active .cmdk-ic {
-  background: var(--md-accent);
+  background: var(--md-primary);
   color: #fff;
 }
 .cmdk-item .cmdk-main {
@@ -2795,21 +2801,23 @@ textarea {
 .rv-tip-btn:hover svg {
   transform: translateX(2px);
 }
-/* footer metrics strip (hairline-divided segments, with vs-previous deltas) */
+/* footer metrics — centered, series-aware (only shows metrics whose series is
+   drawn). Two lines per metric: label row, then value + trend inline. */
 .rv-foot {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  display: flex;
+  justify-content: center;
   border-top: 1px solid var(--md-outline-v);
 }
 .rv-metric {
-  padding: 12px 18px;
-  border-right: 1px solid var(--md-outline-v);
+  padding: 13px 28px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  gap: 5px;
+  text-align: center;
 }
-.rv-metric:last-child {
-  border-right: none;
+.rv-metric + .rv-metric {
+  border-left: 1px solid var(--md-outline-v);
 }
 .rv-m-label {
   font-size: 11px;
@@ -2820,6 +2828,11 @@ textarea {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+}
+.rv-m-line2 {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
 }
 
 /* ---- series legend glyphs (mirror the chart marks) ---- */
@@ -2845,32 +2858,6 @@ textarea {
 }
 .rv-glyph-dot--alt {
   fill: var(--md-accent-d);
-}
-
-/* header legend (sits beside the title; reflects which lines are plotted) */
-.rv-head-left {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  min-width: 0;
-  flex-wrap: wrap;
-}
-.rv-legend {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-.rv-leg {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 11.5px;
-  font-weight: 500;
-  color: var(--md-on-surface-v);
-  white-space: nowrap;
-}
-.rv-leg--off {
-  opacity: 0.4;
 }
 .rv-m-val {
   font-family: var(--font-display);
@@ -3220,8 +3207,8 @@ textarea {
   color: var(--md-on-surface);
 }
 .qtab.on {
-  background: var(--md-accent-c);
-  color: var(--md-accent-d);
+  background: var(--md-selected);
+  color: var(--md-on-selected);
 }
 .qtab .cnt {
   font-size: 11px;
@@ -3303,11 +3290,11 @@ textarea {
 }
 .revtab.on {
   color: var(--md-primary);
-  border-bottom-color: var(--md-accent);
+  border-bottom-color: var(--md-primary);
 }
 .revtab-b {
-  background: var(--md-accent-c);
-  color: var(--md-accent-d);
+  background: var(--md-selected);
+  color: var(--md-on-selected);
   border-radius: 9px;
   font-size: 11px;
   padding: 1px 7px;
