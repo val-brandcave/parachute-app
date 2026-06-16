@@ -2083,6 +2083,33 @@ textarea {
   text-transform: uppercase;
   color: var(--md-on-surface-v);
 }
+/* "Live" marker — sits inline next to the number (like the period sublabel) */
+.statseg-live {
+  margin-left: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--md-on-surface-v);
+  white-space: nowrap;
+}
+.statseg-live i {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--md-success);
+  margin-right: 5px;
+  vertical-align: middle;
+  animation: live-pulse 1.7s ease-in-out infinite;
+}
+@keyframes live-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
 .statseg .v {
   font-family: var(--font-display);
   font-size: 30px;
@@ -2118,26 +2145,18 @@ textarea {
   display: grid;
   place-items: center;
   flex-shrink: 0;
+  /* Uniform, monochrome by default — calm and single-color across the bar. */
+  background: var(--md-surface-1);
+  color: var(--md-primary);
 }
-.statseg-badge.tone-accent {
-  background: var(--md-accent-c);
-  color: var(--md-accent-d);
-}
-.statseg-badge.tone-flag {
-  background: var(--md-warn-c);
-  color: var(--md-warn);
-}
-.statseg-badge.tone-fail {
+/* The one exception: a segment flagged as an alert (e.g. Overdue > 0) goes red
+   to surface urgency. When not flagged it stays monochrome like the rest. */
+.statseg.alert .statseg-badge {
   background: var(--md-error-c);
   color: var(--md-error);
 }
-.statseg-badge.tone-pass {
-  background: var(--md-success-c);
-  color: var(--md-success);
-}
-.statseg-badge.tone-info {
-  background: var(--md-info-c);
-  color: var(--md-info);
+.statseg.alert .v {
+  color: var(--md-error);
 }
 
 /* ---- tooltip ---- */
@@ -2640,48 +2659,273 @@ textarea {
   color: var(--md-on-surface-v);
 }
 
-/* trend chart */
-.trend-wrap {
-  padding: 18px;
+/* ---- Review volume chart (bespoke SVG combo: bars + line) ---- */
+.rv-head {
+  gap: 12px;
 }
-.trend-bars {
+.rv-title {
   display: flex;
-  align-items: flex-end;
-  gap: 10px;
-  height: 150px;
-}
-.trend-col {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 8px;
-  height: 100%;
-  justify-content: flex-end;
+  gap: 10px;
 }
-.trend-bar {
-  width: 100%;
-  max-width: 38px;
-  background: var(--grad-accent);
-  border-radius: 6px 6px 0 0;
-  min-height: 4px;
-  transition: height 0.4s ease;
-}
-.trend-x {
-  font-size: 11px;
+.rv-badge {
+  font-size: 11.5px;
+  font-weight: 600;
   color: var(--md-on-surface-v);
+  background: var(--md-surface-2);
+  border: 1px solid var(--md-outline-v);
+  padding: 2px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
 }
-.trend-legend {
+.rv-chart {
+  position: relative;
+  padding: 6px 6px 0;
+}
+.rv-grid {
+  stroke: var(--md-outline-v);
+  stroke-width: 1;
+}
+.rv-axis {
+  stroke: var(--md-outline);
+  stroke-width: 1;
+}
+.rv-bar {
+  fill: var(--md-accent);
+  transform-box: fill-box;
+  transform-origin: bottom;
+  animation: rv-grow 0.5s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+  transition: opacity 0.12s;
+}
+.rv-line {
+  stroke: var(--md-primary);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: rv-draw 0.9s ease forwards 0.15s;
+}
+.rv-line--alt {
+  stroke: var(--md-accent-d);
+  stroke-width: 2;
+  stroke-dasharray: 5 4;
+  animation: none;
+}
+.rv-pt {
+  fill: var(--md-primary);
+  stroke: var(--md-surface);
+  stroke-width: 2;
+  transition: r 0.12s;
+}
+.rv-pt--alt {
+  fill: var(--md-accent-d);
+}
+.rv-xlabel {
+  fill: var(--md-on-surface-t);
+  font-size: 11px;
+  font-family: var(--font-sans-base), system-ui, sans-serif;
+}
+.rv-guide {
+  stroke: var(--md-outline);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+.rv-tip {
+  position: absolute;
+  top: 4px;
+  transform: translateX(-50%);
+  background: var(--md-surface);
+  border: 1px solid var(--md-outline);
+  border-radius: 9px;
+  box-shadow: var(--md-elev-2);
+  padding: 9px 11px;
+  min-width: 150px;
+  /* Interactive: the mouse can move onto it to click "View reviews".
+     Hover is cleared by .rv-chart's onMouseLeave, so moving from a column
+     onto the tooltip (a child of .rv-chart) keeps it open. */
+  pointer-events: auto;
+  z-index: 3;
+}
+.rv-tip-x {
+  font-weight: 700;
+  font-size: 12.5px;
+  margin-bottom: 5px;
+}
+.rv-tip-row {
   display: flex;
-  gap: 18px;
-  padding: 0 18px 16px;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
   font-size: 12px;
   color: var(--md-on-surface-v);
+  line-height: 1.7;
 }
-.trend-legend b {
+.rv-tip-row > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.rv-tip-row b {
   color: var(--md-on-surface);
+}
+.rv-tip-btn {
+  margin-top: 8px;
+  padding-top: 8px;
+  width: 100%;
+  border: none;
+  border-top: 1px solid var(--md-outline-v);
+  background: none;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--md-accent-d);
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  cursor: pointer;
+  transition: color 0.12s;
+}
+.rv-tip-btn svg {
+  transition: transform 0.12s;
+}
+.rv-tip-btn:hover {
+  color: var(--md-primary);
+}
+.rv-tip-btn:hover svg {
+  transform: translateX(2px);
+}
+/* footer metrics strip (hairline-divided segments, with vs-previous deltas) */
+.rv-foot {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-top: 1px solid var(--md-outline-v);
+}
+.rv-metric {
+  padding: 12px 18px;
+  border-right: 1px solid var(--md-outline-v);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.rv-metric:last-child {
+  border-right: none;
+}
+.rv-m-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--md-on-surface-t);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ---- series legend glyphs (mirror the chart marks) ---- */
+.rv-glyph {
+  flex-shrink: 0;
+  overflow: visible;
+}
+.rv-glyph-bar {
+  fill: var(--md-accent);
+}
+.rv-glyph-line {
+  stroke: var(--md-primary);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+.rv-glyph-line--alt {
+  stroke: var(--md-accent-d);
+  stroke-width: 2;
+  stroke-dasharray: 4 3;
+}
+.rv-glyph-dot {
+  fill: var(--md-primary);
+}
+.rv-glyph-dot--alt {
+  fill: var(--md-accent-d);
+}
+
+/* header legend (sits beside the title; reflects which lines are plotted) */
+.rv-head-left {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+.rv-legend {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.rv-leg {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--md-on-surface-v);
+  white-space: nowrap;
+}
+.rv-leg--off {
+  opacity: 0.4;
+}
+.rv-m-val {
   font-family: var(--font-display);
-  font-size: 18px;
+  font-weight: 700;
+  font-size: 22px;
+  color: var(--md-on-surface);
+  font-variant-numeric: tabular-nums;
+}
+.rv-delta {
+  font-size: 11.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.rv-delta.good {
+  color: var(--md-success);
+}
+.rv-delta.bad {
+  color: var(--md-error);
+}
+.rv-delta.flat {
+  color: var(--md-on-surface-t);
+}
+/* ⋯ menu: section header, separator, selected check gutter */
+.ui-menu-header {
+  padding: 7px 12px 3px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--md-on-surface-t);
+}
+.ui-menu-sep {
+  height: 1px;
+  background: var(--md-outline-v);
+  margin: 4px 0;
+}
+.ui-menu-check {
+  width: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--md-accent-d);
+}
+@keyframes rv-grow {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+@keyframes rv-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
 }
 
 /* ---- period picker ---- */

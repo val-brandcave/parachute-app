@@ -5,10 +5,16 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Icon, type IconName } from "@/components/atoms";
 
 export type ActionItem = {
-  label: string;
+  label?: string;
   icon?: IconName;
-  onClick: () => void;
+  onClick?: () => void;
   danger?: boolean;
+  /** Radio/checkbox-style option — reserves a check gutter; shows a tick when true. */
+  selected?: boolean;
+  /** Render a hairline separator instead of a button (label/onClick ignored). */
+  divider?: boolean;
+  /** Render a small non-clickable section header. */
+  header?: boolean;
 };
 
 export function ActionMenu({ items }: { items: ActionItem[] }) {
@@ -42,19 +48,35 @@ export function ActionMenu({ items }: { items: ActionItem[] }) {
             exit={{ opacity: 0, y: -4, scale: 0.98 }}
             transition={{ duration: 0.12 }}
           >
-            {items.map((it) => (
-              <button
-                key={it.label}
-                className={cnItem(it.danger)}
-                onClick={() => {
-                  it.onClick();
-                  setOpen(false);
-                }}
-              >
-                {it.icon && <Icon name={it.icon} size={16} />}
-                {it.label}
-              </button>
-            ))}
+            {items.map((it, idx) => {
+              if (it.divider)
+                return <div key={`sep-${idx}`} className="ui-menu-sep" />;
+              if (it.header)
+                return (
+                  <div key={`hdr-${idx}`} className="ui-menu-header">
+                    {it.label}
+                  </div>
+                );
+              return (
+                <button
+                  key={it.label ?? `item-${idx}`}
+                  className={cnItem(it.danger)}
+                  onClick={() => {
+                    it.onClick?.();
+                    setOpen(false);
+                  }}
+                >
+                  {it.selected !== undefined ? (
+                    <span className="ui-menu-check">
+                      {it.selected && <Icon name="check" size={15} />}
+                    </span>
+                  ) : (
+                    it.icon && <Icon name={it.icon} size={16} />
+                  )}
+                  {it.label}
+                </button>
+              );
+            })}
           </motion.div>
         )}
       </AnimatePresence>
