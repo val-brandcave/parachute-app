@@ -3,6 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { useReview } from "@/store/useReview";
+import { Icon } from "@/components/atoms";
 
 export default function TriagePage() {
   const { id } = useParams<{ id: string }>();
@@ -51,11 +52,11 @@ export default function TriagePage() {
             className="btn btn-filled"
             onClick={() => router.push("/dashboard")}
           >
-            <span className="material-icons">undo</span>
+            <Icon name="undo" size={18} />
             Confirm &amp; return to appraiser
           </button>
           <button className="btn btn-outline" onClick={() => setOverride((o) => !o)}>
-            <span className="material-icons">lock_open</span>
+            <Icon name="unlock" size={18} />
             Override &amp; admit to review
           </button>
         </div>

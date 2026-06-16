@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Logo } from "@/components/Logo";
+import { Icon } from "@/components/atoms";
 
 /**
  * Interstitial handoff from YouConnect → Parachute (the "Transferring you to…"
@@ -53,12 +54,11 @@ export default function LaunchPage() {
         >
           <span style={{ fontSize: 13, opacity: 0.7 }}>YouConnect</span>
           <motion.span
-            className="material-icons"
             animate={{ x: [0, 6, 0] }}
             transition={{ repeat: Infinity, duration: 1.1 }}
-            style={{ opacity: 0.7 }}
+            style={{ opacity: 0.7, display: "inline-flex" }}
           >
-            arrow_forward
+            <Icon name="forward" size={20} />
           </motion.span>
           <Logo variant="white" full height={22} />
         </div>

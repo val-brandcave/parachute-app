@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn, SEV_META, formatPct } from "@/lib/utils";
+import { Icon } from "@/components/atoms";
 import { useWorkspaceStore } from "@/store";
 import type { Finding, FindingState } from "@/types";
 
@@ -74,7 +75,7 @@ export function FindingCard({
         </div>
         <div className="badges">
           <span className={cn("chip", sev.chip)}>
-            <span className="material-icons">{sev.icon}</span>
+            <Icon name={sev.icon} size={15} />
             {sev.label}
           </span>
           <span className="f-conf">Confidence {formatPct(finding.confidence)}</span>
@@ -104,12 +105,7 @@ export function FindingCard({
                       onCite(finding.page);
                     }}
                   >
-                    <span
-                      className="material-icons"
-                      style={{ fontSize: 14, marginLeft: 4 }}
-                    >
-                      menu_book
-                    </span>{" "}
+                    <Icon name="book" size={14} style={{ marginLeft: 4 }} />{" "}
                     p.{finding.page}
                   </span>
                 </div>
@@ -162,25 +158,25 @@ export function FindingCard({
           className={cn("act", disp === "accepted" && "sel-accept")}
           onClick={() => act("accepted")}
         >
-          <span className="material-icons">check</span>
+          <Icon name="check" size={17} />
           {finding.severity === "pass" ? "Accept" : "Agree"}
         </button>
         <button
           className={cn("act", disp === "override" && "sel-override")}
           onClick={() => act("override")}
         >
-          <span className="material-icons">edit</span>
+          <Icon name="edit" size={17} />
           Disagree / edit
         </button>
         <button
           className={cn("act", disp === "rejected" && "sel-reject")}
           onClick={() => act("rejected")}
         >
-          <span className="material-icons">block</span>
+          <Icon name="reject" size={17} />
           Reject
         </button>
         <button className="act" onClick={() => act("commented")}>
-          <span className="material-icons">chat_bubble_outline</span>
+          <Icon name="comment" size={17} />
           Comment
         </button>
 
@@ -196,13 +192,16 @@ export function FindingCard({
                     : "var(--md-warn)",
             }}
           >
-            <span className="material-icons" style={{ fontSize: 16 }}>
-              {disp === "accepted"
-                ? "check_circle"
-                : disp === "rejected"
-                  ? "cancel"
-                  : "edit"}
-            </span>
+            <Icon
+              name={
+                disp === "accepted"
+                  ? "check-circle"
+                  : disp === "rejected"
+                    ? "x-circle"
+                    : "edit"
+              }
+              size={16}
+            />
             {disp === "accepted"
               ? "In workbook"
               : disp === "rejected"

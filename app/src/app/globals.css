@@ -5,44 +5,50 @@
    Navy #10344C primary, gold #c9a84c secondary, Material 3 flavor
    ============================================================ */
 :root {
+  /* Brand navy (LOCKED) */
   --md-primary: #10344c;
-  --md-primary-c: #1b4f73;
+  --md-primary-c: #1b4f73; /* navy hover / container */
   --md-on-primary: #ffffff;
-  /* Accent = vivid teal. --md-secondary kept as alias for legacy CSS. */
-  --md-accent: #0fa39e;
-  --md-accent-d: #0a6e6b;
-  --md-accent-c: #d6f3f0;
-  --md-secondary: #0fa39e;
-  --md-secondary-d: #0a6e6b;
+  /* Accent = petrol (refresh Jun 2026). --md-secondary kept as alias for legacy CSS. */
+  --md-accent: #2a6f7f;
+  --md-accent-d: #14505e; /* petrol ink — text on tint */
+  --md-accent-c: #deebee; /* petrol tint */
+  --md-secondary: #2a6f7f;
+  --md-secondary-d: #14505e;
+  /* True-neutral greys — no blue cast, so navy is the only blue */
   --md-surface: #ffffff;
-  --md-surface-1: #f5f8fa;
-  --md-surface-2: #e9eef3;
-  --md-surface-3: #dde4ec;
-  --md-bg: #eef2f6; /* cool slate canvas, more contrast vs white cards */
+  --md-surface-1: #f1f2f4; /* subtle raised / row hover */
+  --md-surface-2: #e9ebee; /* sunken / pressed */
+  --md-surface-3: #dfe2e6;
+  --md-bg: #f6f7f8; /* canvas */
   --md-sidebar: #ffffff;
-  --md-outline: #cdd6df;
-  --md-outline-v: #e5eaf0; /* hairline */
-  --md-on-surface: #0f1d28; /* deeper ink for contrast (kills the dull look) */
-  --md-on-surface-v: #586673;
-  /* gradients & glow — the "AI-coded" depth cues */
-  --grad-primary: linear-gradient(180deg, #19476b 0%, #10344c 100%);
-  --grad-accent: linear-gradient(180deg, #14b8b1 0%, #0fa39e 100%);
-  --grad-sidebar: linear-gradient(180deg, #ffffff 0%, #fbfcfe 100%);
-  --ring-accent: 0 0 0 3px rgba(15, 163, 158, 0.22);
-  --md-error: #c2392e;
-  --md-error-c: #fbe5e1;
-  --md-success: #1f8a55;
-  --md-success-c: #dcf0e5;
-  --md-warn: #c2820e;
-  --md-warn-c: #fbeecf;
-  --md-crit: #7b1010;
-  --md-crit-c: #f3d9d9;
-  --md-info: #2c6e9b;
-  --md-info-c: #e1ecf3;
-  /* elevation — a touch more depth for the modern feel */
-  --md-elev-1: 0 1px 2px rgba(13, 30, 44, 0.07), 0 1px 1px rgba(13, 30, 44, 0.04);
-  --md-elev-2: 0 6px 18px rgba(13, 30, 44, 0.09);
-  --md-elev-3: 0 16px 40px rgba(13, 30, 44, 0.16);
+  --md-outline: #e2e4e8; /* border */
+  --md-outline-v: #edeef1; /* hairline */
+  /* Text scale */
+  --md-on-surface: #1a1d21; /* primary */
+  --md-on-surface-v: #565c64; /* secondary */
+  --md-on-surface-t: #868d96; /* tertiary — meta, captions, column labels */
+  --md-on-surface-dis: #aeb4bc; /* disabled */
+  /* Flat treatment — solid fills (kept as vars so component CSS is unchanged) */
+  --grad-primary: #10344c;
+  --grad-accent: #2a6f7f;
+  --grad-sidebar: #ffffff;
+  --ring-accent: 0 0 0 3px rgba(42, 111, 127, 0.25); /* petrol focus ring */
+  /* Semantic states — cleaner, each with a tint */
+  --md-error: #d23f34;
+  --md-error-c: #fce7e5;
+  --md-success: #15834a;
+  --md-success-c: #e3f5ea;
+  --md-warn: #c98a12;
+  --md-warn-c: #fcf1d8;
+  --md-crit: #7e1d1d;
+  --md-crit-c: #f6dcdc;
+  --md-info: #2d6ca6;
+  --md-info-c: #e4eef7;
+  /* elevation — neutral, single confident step */
+  --md-elev-1: 0 1px 2px rgba(16, 24, 33, 0.06), 0 1px 1px rgba(16, 24, 33, 0.04);
+  --md-elev-2: 0 4px 14px rgba(16, 24, 33, 0.08);
+  --md-elev-3: 0 16px 40px rgba(16, 24, 33, 0.14);
   --r: 12px;
 
   /* shell metrics */
@@ -85,35 +91,41 @@
 
 /* ════════════ DARK THEME ════════════ */
 :root[data-theme="dark"] {
-  --md-accent: #1ec9c1;
-  --md-accent-d: #84e7e0;
-  --md-accent-c: #103632;
-  --md-secondary: #1ec9c1;
-  --md-secondary-d: #84e7e0;
-  --md-surface: #15212d;
-  --md-surface-1: #1a2835;
-  --md-surface-2: #233241;
-  --md-surface-3: #2c3e4d;
-  --md-bg: #0e1822;
-  --md-sidebar: #111d28;
-  --md-outline: #34485b;
-  --md-outline-v: #243340;
-  --md-on-surface: #e7edf3;
-  --md-on-surface-v: #92a3b1;
+  /* Navy reads brighter on near-black */
+  --md-primary: #1b4f73;
+  --md-primary-c: #23618c;
+  --md-accent: #4a93a4; /* petrol, lifted for dark */
+  --md-accent-d: #9fd3de;
+  --md-accent-c: #11272d;
+  --md-secondary: #4a93a4;
+  --md-secondary-d: #9fd3de;
+  /* True-neutral dark greys — no blue cast */
+  --md-surface: #17181b;
+  --md-surface-1: #1e2023;
+  --md-surface-2: #26282c;
+  --md-surface-3: #2e3034;
+  --md-bg: #0e0f11;
+  --md-sidebar: #141517;
+  --md-outline: #2e3034;
+  --md-outline-v: #232528;
+  --md-on-surface: #ecedee;
+  --md-on-surface-v: #a0a5ab;
+  --md-on-surface-t: #71767d;
+  --md-on-surface-dis: #565b61;
   --md-error: #f0897e;
   --md-error-c: #3a1f1c;
   --md-success: #5fcb8e;
-  --md-success-c: #14301f;
+  --md-success-c: #11301e;
   --md-warn: #e2b25c;
   --md-warn-c: #33270f;
   --md-crit: #ff968b;
   --md-crit-c: #3a1714;
   --md-info: #7cb7de;
   --md-info-c: #142a3a;
-  --grad-primary: linear-gradient(180deg, #235a83 0%, #173f5c 100%);
-  --grad-accent: linear-gradient(180deg, #22cfc6 0%, #16a9a3 100%);
-  --grad-sidebar: linear-gradient(180deg, #121f2b 0%, #0f1a24 100%);
-  --ring-accent: 0 0 0 3px rgba(30, 201, 193, 0.26);
+  --grad-primary: #1b4f73;
+  --grad-accent: #4a93a4;
+  --grad-sidebar: #141517;
+  --ring-accent: 0 0 0 3px rgba(74, 147, 164, 0.3);
   --md-elev-1: 0 1px 2px rgba(0, 0, 0, 0.4);
   --md-elev-2: 0 6px 18px rgba(0, 0, 0, 0.45);
   --md-elev-3: 0 16px 40px rgba(0, 0, 0, 0.55);
@@ -147,13 +159,16 @@
   --color-outline-v: var(--md-outline-v);
   --color-ink: var(--md-on-surface);
   --color-ink-v: var(--md-on-surface-v);
+  --color-ink-t: var(--md-on-surface-t);
+  --color-ink-dis: var(--md-on-surface-dis);
   --color-error: var(--md-error);
   --color-success: var(--md-success);
   --color-warn: var(--md-warn);
   --color-crit: var(--md-crit);
   --font-display: var(--font-display), system-ui, sans-serif;
   --font-sans: var(--font-sans-base), system-ui, sans-serif;
-  --font-mono: var(--font-mono-base), monospace;
+  /* No monospace anywhere — alias kept pointing at the sans face. */
+  --font-mono: var(--font-sans-base), system-ui, sans-serif;
 }
 
 * {
@@ -178,24 +193,11 @@ h3,
   font-family: var(--font-display), system-ui, sans-serif;
   letter-spacing: -0.01em;
 }
+/* "mono" no longer means monospace — it means tabular sans for aligned numbers/IDs. */
 .mono {
-  font-family: var(--font-mono-base), monospace;
-}
-.material-icons {
-  font-family: "Material Icons";
-  font-weight: normal;
-  font-style: normal;
-  font-size: 20px;
-  line-height: 1;
-  letter-spacing: normal;
-  text-transform: none;
-  display: inline-block;
-  white-space: nowrap;
-  word-wrap: normal;
-  direction: ltr;
-  vertical-align: middle;
-  -webkit-font-feature-settings: "liga";
-  -webkit-font-smoothing: antialiased;
+  font-family: var(--font-sans-base), system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
 }
 
 /* ============ Buttons ============ */
@@ -282,9 +284,6 @@ h3,
   background: var(--md-surface-2);
   color: var(--md-on-surface-v);
   border: 1px solid transparent;
-}
-.chip .material-icons {
-  font-size: 15px;
 }
 .chip-pass {
   background: var(--md-success-c);
@@ -452,9 +451,6 @@ textarea {
 }
 .navitem.active .ind {
   background: #d6e3ee;
-}
-.navitem.active .material-icons {
-  color: var(--md-primary);
 }
 
 .content {
@@ -950,9 +946,6 @@ textarea {
   color: var(--md-warn);
   background: var(--md-warn-c);
 }
-.act .material-icons {
-  font-size: 17px;
-}
 .disp-tag {
   margin-left: auto;
   font-size: 12px;
@@ -1201,22 +1194,18 @@ textarea {
 .ui-btn--primary {
   background: var(--grad-primary);
   color: #fff;
-  box-shadow: 0 1px 2px rgba(13, 30, 44, 0.25),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  box-shadow: var(--md-elev-1);
 }
 .ui-btn--primary:hover {
-  filter: brightness(1.08);
-  box-shadow: 0 4px 12px rgba(16, 52, 76, 0.28);
+  background: var(--md-primary-c);
 }
 .ui-btn--accent {
   background: var(--grad-accent);
   color: #fff;
-  box-shadow: 0 1px 2px rgba(10, 110, 107, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  box-shadow: var(--md-elev-1);
 }
 .ui-btn--accent:hover {
-  filter: brightness(1.06);
-  box-shadow: 0 4px 14px rgba(15, 163, 158, 0.35);
+  filter: brightness(0.94);
 }
 .ui-btn:focus-visible {
   outline: none;
@@ -1357,7 +1346,17 @@ textarea {
 }
 .ui-input::placeholder,
 .ui-textarea::placeholder {
-  color: #97a3ad;
+  color: var(--md-on-surface-t);
+}
+/* Text-color utilities (the full scale) */
+.text-secondary {
+  color: var(--md-on-surface-v);
+}
+.text-tertiary {
+  color: var(--md-on-surface-t);
+}
+.text-disabled {
+  color: var(--md-on-surface-dis);
 }
 
 /* ---- atom: Avatar ---- */
@@ -1412,7 +1411,7 @@ textarea {
 
 /* ---- atom: Kbd ---- */
 .ui-kbd {
-  font-family: var(--font-mono-base), monospace;
+  font-family: var(--font-sans-base), system-ui, sans-serif;
   font-size: 11px;
   background: var(--md-surface-2);
   border: 1px solid var(--md-outline-v);
@@ -1655,9 +1654,9 @@ textarea {
   background: var(--md-error-c);
 }
 
-/* ---- AI cues (measured) ---- */
+/* ---- AI cues (measured, flat) — the one restrained accent for AI elements ---- */
 .ai-grad {
-  background: linear-gradient(120deg, #14b8b1 0%, #0fa39e 55%, #2c8fb8 100%);
+  background: var(--md-accent);
   color: #fff;
 }
 .ai-badge {
@@ -1670,7 +1669,7 @@ textarea {
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.2px;
-  background: linear-gradient(120deg, #14b8b1, #0fa39e);
+  background: var(--md-accent);
   color: #fff;
 }
 .ai-ring {
@@ -2316,7 +2315,7 @@ textarea {
   gap: 2px;
 }
 .searchtrigger .st-kbd kbd {
-  font-family: var(--font-mono-base), monospace;
+  font-family: var(--font-sans-base), system-ui, sans-serif;
   font-size: 10.5px;
   background: var(--md-surface-2);
   border: 1px solid var(--md-outline-v);
@@ -2442,7 +2441,7 @@ textarea {
   color: var(--md-on-surface-v);
 }
 .cmdk-foot kbd {
-  font-family: var(--font-mono-base), monospace;
+  font-family: var(--font-sans-base), system-ui, sans-serif;
   font-size: 10.5px;
   background: var(--md-surface-2);
   border: 1px solid var(--md-outline-v);
@@ -3265,7 +3264,8 @@ textarea {
   gap: 7px;
 }
 .qrow .num {
-  font-family: var(--font-mono-base);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
   font-weight: 600;
 }
 .qcols {
