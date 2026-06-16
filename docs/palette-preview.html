@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="en" data-theme="light" data-accent="teal">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Parachute — Palette Exploration</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..700&family=Schibsted+Grotesk:wght@500..800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+:root{
+  /* ---- Brand (LOCKED) ---- */
+  --navy:#10344C; --navy-hover:#16486A; --navy-active:#0C2A3E; --on-navy:#FFFFFF;
+
+  /* ---- Accent options (toggled via [data-accent]) ---- */
+  --accent:#0B7C78; --accent-hover:#096B68; --accent-ink:#075E5B; --accent-tint:#DCEFEE; --accent-tint-bd:#BDE2DF;
+
+  /* ---- TRUE-NEUTRAL greys (your pick) ---- */
+  --canvas:#F6F7F8; --surface:#FFFFFF; --surface-1:#F1F2F4; --surface-2:#E9EBEE;
+  --border:#E2E4E8; --hairline:#EDEEF1;
+
+  /* ---- Text scale (the missing piece) ---- */
+  --tx-primary:#1A1D21; --tx-secondary:#565C64; --tx-tertiary:#868D96; --tx-disabled:#AEB4BC; --tx-inverse:#FFFFFF;
+  --tx-link:var(--accent-ink);
+
+  /* ---- Semantic states (cleaner, not dusty) ---- */
+  --pass:#15834A; --pass-ink:#0F6B3C; --pass-tint:#E3F5EA; --pass-bd:#BCE6CC;
+  --flag:#C98A12; --flag-ink:#8A5E08; --flag-tint:#FCF1D8; --flag-bd:#F0DBA6;
+  --fail:#D23F34; --fail-ink:#A82A20; --fail-tint:#FCE7E5; --fail-bd:#F5C9C4;
+  --crit:#7E1D1D; --crit-ink:#FFFFFF; --crit-tint:#F6DCDC;
+  --info:#2D6CA6; --info-ink:#1F5485; --info-tint:#E4EEF7; --info-bd:#C5DBEE;
+
+  --elev-1:0 1px 2px rgba(16,24,33,.06), 0 1px 1px rgba(16,24,33,.04);
+  --elev-2:0 4px 14px rgba(16,24,33,.08);
+  --r:12px; --r-sm:8px;
+}
+[data-accent="petrol"]{ --accent:#2A6F7F; --accent-hover:#245E6C; --accent-ink:#14505E; --accent-tint:#DEEBEE; --accent-tint-bd:#C4DCE1; }
+[data-accent="current"]{ --accent:#0FA39E; --accent-hover:#0C8B87; --accent-ink:#0A6E6B; --accent-tint:#D6F3F0; --accent-tint-bd:#B6E6E1; }
+
+[data-theme="dark"]{
+  --canvas:#0E0F11; --surface:#17181B; --surface-1:#1E2023; --surface-2:#26282C;
+  --border:#2E3034; --hairline:#232528;
+  --tx-primary:#ECEDEE; --tx-secondary:#A0A5AB; --tx-tertiary:#71767D; --tx-disabled:#565B61; --tx-inverse:#0E0F11;
+  --navy:#1B4F73; --navy-hover:#23618C; --navy-active:#16486A;
+  --pass-tint:#11301E; --flag-tint:#33270F; --fail-tint:#3A1F1C; --crit-tint:#3A1714; --info-tint:#142A3A;
+  --pass-bd:#1d5a37; --flag-bd:#5a4717; --fail-bd:#5a322c; --info-bd:#274a66;
+  --elev-1:0 1px 2px rgba(0,0,0,.4); --elev-2:0 6px 18px rgba(0,0,0,.5);
+}
+[data-theme="dark"][data-accent="teal"]{ --accent:#19A39C; --accent-hover:#1FB5AD; --accent-ink:#74E4DC; --accent-tint:#0E2E2B; --accent-tint-bd:#1c4a45; }
+[data-theme="dark"][data-accent="petrol"]{ --accent:#4A93A4; --accent-hover:#57A2B3; --accent-ink:#9FD3DE; --accent-tint:#11272D; --accent-tint-bd:#244852; }
+[data-theme="dark"][data-accent="current"]{ --accent:#1EC9C1; --accent-hover:#2BD6CE; --accent-ink:#84E7E0; --accent-tint:#103632; --accent-tint-bd:#1c4f49; }
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--canvas); color:var(--tx-primary);
+  font-family:"Inter",system-ui,sans-serif; font-size:14px; line-height:1.5;
+  -webkit-font-smoothing:antialiased; font-feature-settings:"cv05","ss01";
+}
+h1,h2,h3,.display{font-family:"Schibsted Grotesk",sans-serif;letter-spacing:-.015em;margin:0}
+.mono{font-family:"IBM Plex Mono",monospace;font-feature-settings:"tnum"}
+.tnum{font-variant-numeric:tabular-nums}
+a{color:var(--tx-link);text-decoration:none;font-weight:500}
+a:hover{text-decoration:underline}
+
+/* Sticky control bar */
+.bar{position:sticky;top:0;z-index:10;background:color-mix(in srgb,var(--surface) 88%,transparent);
+  backdrop-filter:blur(8px);border-bottom:1px solid var(--border);padding:14px 32px;
+  display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.bar .title{font-family:"Schibsted Grotesk";font-weight:700;font-size:16px}
+.bar .grp{display:flex;gap:6px;align-items:center;margin-left:4px}
+.bar .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--tx-tertiary);font-weight:600}
+.seg{display:inline-flex;background:var(--surface-1);border:1px solid var(--border);border-radius:999px;padding:3px}
+.seg button{border:0;background:transparent;color:var(--tx-secondary);font:inherit;font-weight:600;font-size:12.5px;
+  padding:6px 14px;border-radius:999px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--tx-primary);box-shadow:var(--elev-1)}
+[data-theme="dark"] .seg button[aria-pressed="true"]{background:var(--surface-2)}
+
+main{max-width:1180px;margin:0 auto;padding:32px}
+section{margin-bottom:40px}
+.eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--accent-ink);font-weight:700;margin-bottom:6px}
+.sec-h{font-size:20px;font-weight:700;margin-bottom:4px}
+.sec-d{color:var(--tx-secondary);margin-bottom:18px;max-width:62ch}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--elev-1);padding:22px}
+
+/* swatch grids */
+.sw-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.sw{border:1px solid var(--border);border-radius:var(--r-sm);overflow:hidden;background:var(--surface)}
+.sw .chip{height:64px}
+.sw .meta{padding:8px 10px}
+.sw .nm{font-weight:600;font-size:12.5px}
+.sw .hex{font-family:"IBM Plex Mono";font-size:11.5px;color:var(--tx-tertiary)}
+
+/* text hierarchy */
+.txrow{display:flex;align-items:baseline;gap:14px;padding:9px 0;border-bottom:1px solid var(--hairline)}
+.txrow:last-child{border-bottom:0}
+.txrow .tag{width:120px;flex:none;font-family:"IBM Plex Mono";font-size:11.5px;color:var(--tx-tertiary)}
+
+/* buttons */
+.btn{font:inherit;font-weight:600;border-radius:var(--r-sm);padding:9px 16px;border:1px solid transparent;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+.btn-primary{background:var(--navy);color:var(--on-navy)}
+.btn-primary:hover{background:var(--navy-hover)}
+.btn-accent{background:var(--accent);color:#fff}
+.btn-accent:hover{background:var(--accent-hover)}
+.btn-outline{background:var(--surface);color:var(--tx-primary);border-color:var(--border)}
+.btn-outline:hover{background:var(--surface-1)}
+.btn-ghost{background:transparent;color:var(--tx-secondary)}
+.btn-ghost:hover{background:var(--surface-1);color:var(--tx-primary)}
+.btn:disabled{background:var(--surface-2);color:var(--tx-disabled);border-color:transparent;cursor:not-allowed}
+.btn-focus{outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 30%,transparent)}
+
+/* badges */
+.badge{display:inline-flex;align-items:center;gap:6px;font-weight:600;font-size:12px;padding:3px 10px;border-radius:999px;border:1px solid transparent}
+.b-pass{background:var(--pass-tint);color:var(--pass-ink);border-color:var(--pass-bd)}
+.b-flag{background:var(--flag-tint);color:var(--flag-ink);border-color:var(--flag-bd)}
+.b-fail{background:var(--fail-tint);color:var(--fail-ink);border-color:var(--fail-bd)}
+.b-crit{background:var(--crit);color:var(--crit-ink)}
+.b-info{background:var(--info-tint);color:var(--info-ink);border-color:var(--info-bd)}
+.dot{width:7px;height:7px;border-radius:50%}
+
+/* table */
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--tx-tertiary);font-weight:600;padding:10px 12px;border-bottom:1px solid var(--border)}
+td{padding:11px 12px;border-bottom:1px solid var(--hairline);color:var(--tx-secondary)}
+td.lead{color:var(--tx-primary);font-weight:500}
+tbody tr:hover{background:var(--surface-1)}
+tbody tr:last-child td{border-bottom:0}
+
+/* input */
+.field{display:block;max-width:320px}
+.field label{display:block;font-size:12px;font-weight:600;color:var(--tx-secondary);margin-bottom:6px}
+.input{width:100%;background:#fff;border:1px solid var(--border);border-radius:var(--r-sm);padding:10px 12px;font:inherit;color:#1A1D21}
+.input::placeholder{color:#9aa0a8}
+.input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent)}
+
+/* mini app mock */
+.mock{display:grid;grid-template-columns:200px 1fr;border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--elev-2)}
+.mock .side{background:var(--surface);border-right:1px solid var(--border);padding:16px 12px}
+.mock .logo{font-family:"Schibsted Grotesk";font-weight:800;color:var(--navy);font-size:17px;margin:2px 6px 16px}
+[data-theme="dark"] .mock .logo{color:#cfe0ec}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav a{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;color:var(--tx-secondary);font-weight:500}
+.nav a:hover{background:var(--surface-1);text-decoration:none}
+.nav a.active{background:var(--accent-tint);color:var(--accent-ink);font-weight:600}
+.nav a.active .ic{background:var(--accent)}
+.ic{width:16px;height:16px;border-radius:4px;background:var(--tx-tertiary);flex:none}
+.mock .body{background:var(--canvas);padding:20px}
+.mock .ph{display:flex;justify-content:space-between;align-items:flex-end;padding-bottom:14px;border-bottom:1px solid var(--border);margin-bottom:16px}
+.stat{display:grid;grid-template-columns:repeat(3,1fr);gap:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--r)}
+.stat .seg2{padding:14px 16px;border-right:1px solid var(--hairline)}
+.stat .seg2:last-child{border-right:0}
+.stat .k{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--tx-tertiary);font-weight:600}
+.stat .v{font-family:"Schibsted Grotesk";font-weight:700;font-size:24px;margin-top:4px}
+.aichip{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;color:var(--accent-ink);background:var(--accent-tint);border:1px solid var(--accent-tint-bd);padding:3px 9px;border-radius:999px}
+.spark{width:12px;height:12px;border-radius:50%;background:var(--accent)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.flex{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.mt12{margin-top:12px}.mt16{margin-top:16px}
+.note{font-size:12.5px;color:var(--tx-tertiary)}
+</style>
+</head>
+<body>
+<div class="bar">
+  <span class="title">Parachute · Palette Exploration</span>
+  <span class="grp"><span class="lbl">Accent</span>
+    <span class="seg" id="acc">
+      <button data-v="teal" aria-pressed="true">Deeper teal</button>
+      <button data-v="petrol" aria-pressed="false">Petrol</button>
+      <button data-v="current" aria-pressed="false">Current</button>
+    </span>
+  </span>
+  <span class="grp"><span class="lbl">Theme</span>
+    <span class="seg" id="thm">
+      <button data-v="light" aria-pressed="true">Light</button>
+      <button data-v="dark" aria-pressed="false">Dark</button>
+    </span>
+  </span>
+  <span class="note" style="margin-left:auto">Inter · Schibsted Grotesk · IBM Plex Mono — flat treatment</span>
+</div>
+
+<main>
+
+  <!-- LIVE MOCK -->
+  <section>
+    <div class="eyebrow">In context</div>
+    <h2 class="sec-h">The real thing, re-themed live</h2>
+    <p class="sec-d">Toggle the accent above and watch the active nav pill, links, AI chip, focus rings, and accent button change. Navy stays the primary CTA throughout.</p>
+    <div class="mock">
+      <div class="side">
+        <div class="logo">Parachute</div>
+        <nav class="nav">
+          <a class="active"><span class="ic"></span> Dashboard</a>
+          <a><span class="ic"></span> My Reviews</a>
+          <a><span class="ic"></span> Templates</a>
+          <a><span class="ic"></span> Settings</a>
+        </nav>
+      </div>
+      <div class="body">
+        <div class="ph">
+          <div>
+            <div class="eyebrow" style="margin-bottom:2px">Good morning</div>
+            <h1 style="font-size:22px">Review dashboard</h1>
+          </div>
+          <button class="btn btn-primary">+ Order a review</button>
+        </div>
+        <div class="stat">
+          <div class="seg2"><div class="k">In review</div><div class="v tnum">24</div></div>
+          <div class="seg2"><div class="k">Action needed</div><div class="v tnum" style="color:var(--flag-ink)">6</div></div>
+          <div class="seg2"><div class="k">Completed</div><div class="v tnum">142</div></div>
+        </div>
+        <div class="flex mt16"><span class="aichip"><span class="spark"></span> AI analysis ready</span>
+          <span class="badge b-pass"><span class="dot" style="background:var(--pass)"></span> Pass</span>
+          <span class="badge b-flag"><span class="dot" style="background:var(--flag)"></span> Flagged</span>
+          <span class="badge b-fail"><span class="dot" style="background:var(--fail)"></span> Fail</span>
+          <span class="badge b-crit">Critical</span>
+          <a>View all findings</a>
+        </div>
+        <div class="card mt16" style="padding:0">
+          <table>
+            <thead><tr><th>Property</th><th>Status</th><th>Value</th><th>Due</th></tr></thead>
+            <tbody>
+              <tr><td class="lead">1420 Harbor Blvd</td><td><span class="badge b-pass">Pass</span></td><td class="tnum">$2,450,000</td><td class="mono">06/18</td></tr>
+              <tr><td class="lead">88 Lakeshore Dr</td><td><span class="badge b-flag">Flagged</span></td><td class="tnum">$1,180,000</td><td class="mono">06/19</td></tr>
+              <tr><td class="lead">7 Meridian Park</td><td><span class="badge b-fail">Fail</span></td><td class="tnum">$960,000</td><td class="mono">06/20</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ACCENT COMPARE -->
+  <section>
+    <div class="eyebrow">Decision</div>
+    <h2 class="sec-h">Accent — all three, side by side</h2>
+    <p class="sec-d">So you can compare without toggling. Each block shows the accent button, an active pill, a link, and the AI chip on its own accent.</p>
+    <div class="sw-row" style="grid-template-columns:repeat(3,1fr)">
+      <div class="card" style="--accent:#0B7C78;--accent-hover:#096B68;--accent-ink:#075E5B;--accent-tint:#DCEFEE;--accent-tint-bd:#BDE2DF">
+        <div class="flex" style="justify-content:space-between"><strong>Deeper teal</strong><span class="mono note">#0B7C78</span></div>
+        <div class="flex mt12"><button class="btn btn-accent">Accept</button><a>A link</a></div>
+        <div class="flex mt12"><span class="aichip"><span class="spark"></span> AI ready</span><span class="badge" style="background:var(--accent-tint);color:var(--accent-ink);border-color:var(--accent-tint-bd)">Active</span></div>
+      </div>
+      <div class="card" style="--accent:#2A6F7F;--accent-hover:#245E6C;--accent-ink:#14505E;--accent-tint:#DEEBEE;--accent-tint-bd:#C4DCE1">
+        <div class="flex" style="justify-content:space-between"><strong>Petrol</strong><span class="mono note">#2A6F7F</span></div>
+        <div class="flex mt12"><button class="btn btn-accent">Accept</button><a>A link</a></div>
+        <div class="flex mt12"><span class="aichip"><span class="spark"></span> AI ready</span><span class="badge" style="background:var(--accent-tint);color:var(--accent-ink);border-color:var(--accent-tint-bd)">Active</span></div>
+      </div>
+      <div class="card" style="--accent:#0FA39E;--accent-hover:#0C8B87;--accent-ink:#0A6E6B;--accent-tint:#D6F3F0;--accent-tint-bd:#B6E6E1">
+        <div class="flex" style="justify-content:space-between"><strong>Current</strong><span class="mono note">#0FA39E</span></div>
+        <div class="flex mt12"><button class="btn btn-accent">Accept</button><a>A link</a></div>
+        <div class="flex mt12"><span class="aichip"><span class="spark"></span> AI ready</span><span class="badge" style="background:var(--accent-tint);color:var(--accent-ink);border-color:var(--accent-tint-bd)">Active</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TYPOGRAPHY / TEXT SCALE -->
+  <section>
+    <div class="eyebrow">Type & text colors</div>
+    <h2 class="sec-h">Text hierarchy (the missing scale)</h2>
+    <p class="sec-d">Inter for UI/body with tabular figures; Schibsted Grotesk kept for display. Six text roles instead of today's two.</p>
+    <div class="grid2">
+      <div class="card">
+        <div class="txrow"><span class="tag">primary</span><span style="color:var(--tx-primary);font-size:15px">Appraisal review summary</span></div>
+        <div class="txrow"><span class="tag">secondary</span><span style="color:var(--tx-secondary)">Supporting detail and descriptions</span></div>
+        <div class="txrow"><span class="tag">tertiary</span><span style="color:var(--tx-tertiary)">Meta, captions, column labels</span></div>
+        <div class="txrow"><span class="tag">disabled</span><span style="color:var(--tx-disabled)">Unavailable / inactive text</span></div>
+        <div class="txrow"><span class="tag">link</span><a>Open the workbook</a></div>
+        <div class="txrow"><span class="tag">numeric</span><span class="tnum" style="font-size:15px">$2,450,000 · 06/18/2026 · 1,284</span></div>
+      </div>
+      <div class="card">
+        <h1 style="font-size:30px">Display H1</h1>
+        <h2 style="font-size:22px;margin-top:8px">Section heading H2</h2>
+        <h3 style="font-size:17px;margin-top:8px">Subheading H3</h3>
+        <p style="margin:10px 0 0;color:var(--tx-secondary)">Body copy in Inter at 14px. Banks read dense tables of numbers, so body stays highly legible and figures are tabular for clean column alignment.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- NEUTRALS -->
+  <section>
+    <div class="eyebrow">Neutrals</div>
+    <h2 class="sec-h">True-neutral greys</h2>
+    <p class="sec-d">No blue cast — navy becomes the only blue, so surfaces read crisp instead of muddy. One clear elevation step.</p>
+    <div class="sw-row">
+      <div class="sw"><div class="chip" style="background:#F6F7F8"></div><div class="meta"><div class="nm">Canvas</div><div class="hex">#F6F7F8</div></div></div>
+      <div class="sw"><div class="chip" style="background:#FFFFFF"></div><div class="meta"><div class="nm">Surface</div><div class="hex">#FFFFFF</div></div></div>
+      <div class="sw"><div class="chip" style="background:#F1F2F4"></div><div class="meta"><div class="nm">Surface-1 / hover</div><div class="hex">#F1F2F4</div></div></div>
+      <div class="sw"><div class="chip" style="background:#E9EBEE"></div><div class="meta"><div class="nm">Surface-2 / sunken</div><div class="hex">#E9EBEE</div></div></div>
+      <div class="sw"><div class="chip" style="background:#E2E4E8"></div><div class="meta"><div class="nm">Border</div><div class="hex">#E2E4E8</div></div></div>
+      <div class="sw"><div class="chip" style="background:#EDEEF1"></div><div class="meta"><div class="nm">Hairline</div><div class="hex">#EDEEF1</div></div></div>
+      <div class="sw"><div class="chip" style="background:#1A1D21"></div><div class="meta"><div class="nm">Ink (primary)</div><div class="hex">#1A1D21</div></div></div>
+      <div class="sw"><div class="chip" style="background:#10344C"></div><div class="meta"><div class="nm">Navy (brand)</div><div class="hex">#10344C</div></div></div>
+    </div>
+  </section>
+
+  <!-- STATES -->
+  <section>
+    <div class="eyebrow">Semantic states</div>
+    <h2 class="sec-h">Cleaner status colors</h2>
+    <p class="sec-d">Brighter and clearer than the dusty originals, each with a tint background + matching border for badges. Critical keeps a solid fill.</p>
+    <div class="card">
+      <div class="flex" style="gap:14px">
+        <span class="badge b-pass"><span class="dot" style="background:var(--pass)"></span> Pass &nbsp;<span class="mono note">#15834A</span></span>
+        <span class="badge b-flag"><span class="dot" style="background:var(--flag)"></span> Flagged &nbsp;<span class="mono note">#C98A12</span></span>
+        <span class="badge b-fail"><span class="dot" style="background:var(--fail)"></span> Fail &nbsp;<span class="mono note">#D23F34</span></span>
+        <span class="badge b-crit">Critical &nbsp;<span class="mono" style="opacity:.8">#7E1D1D</span></span>
+        <span class="badge b-info"><span class="dot" style="background:var(--info)"></span> Info &nbsp;<span class="mono note">#2D6CA6</span></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- BUTTONS / CONTROLS -->
+  <section>
+    <div class="eyebrow">Controls</div>
+    <h2 class="sec-h">Buttons, inputs, focus</h2>
+    <p class="sec-d">Flat, confident fills. Primary = navy; accent reserved for accept/AI/links/active/focus.</p>
+    <div class="grid2">
+      <div class="card">
+        <div class="flex"><button class="btn btn-primary">Primary (navy)</button><button class="btn btn-accent">Accent</button><button class="btn btn-outline">Outline</button><button class="btn btn-ghost">Ghost</button><button class="btn btn-primary" disabled>Disabled</button></div>
+        <div class="flex mt16"><button class="btn btn-outline btn-focus">Focused (accent ring)</button><span class="note">3px accent-tinted ring</span></div>
+      </div>
+      <div class="card">
+        <div class="field"><label>Work email</label><input class="input" placeholder="reviewer@demobank.example" /></div>
+        <div class="field mt12"><label>Focused input</label><input class="input btn-focus" style="border-color:var(--accent)" value="1420 Harbor Blvd" /></div>
+        <p class="note mt12">Inputs stay white in both themes (standing client rule).</p>
+      </div>
+    </div>
+  </section>
+
+  <p class="note" style="text-align:center;padding:8px 0 32px">Preview only — your live app tokens are untouched. Pick an accent + theme and I'll wire it into <span class="mono">globals.css</span> / <span class="mono">tokens.ts</span>.</p>
+</main>
+
+<script>
+  const root=document.documentElement;
+  document.getElementById('acc').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+    root.setAttribute('data-accent',b.dataset.v);
+    [...e.currentTarget.children].forEach(x=>x.setAttribute('aria-pressed',x===b));});
+  document.getElementById('thm').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+    root.setAttribute('data-theme',b.dataset.v);
+    [...e.currentTarget.children].forEach(x=>x.setAttribute('aria-pressed',x===b));});
+</script>
+</body>
+</html>

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Logo } from "@/components/Logo";
+import { Icon } from "@/components/atoms";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -81,15 +82,11 @@ export default function LoginPage() {
         </div>
 
         <button className="sso" onClick={signIn}>
-          <span className="material-icons" style={{ fontSize: 18 }}>
-            window
-          </span>
+          <Icon name="brand-windows" size={18} />
           Microsoft SSO
         </button>
         <button className="sso" onClick={signIn}>
-          <span className="material-icons" style={{ fontSize: 18 }}>
-            account_circle
-          </span>
+          <Icon name="brand-google" size={18} />
           Google Workspace
         </button>
 

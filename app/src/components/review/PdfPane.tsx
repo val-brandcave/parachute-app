@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { SOURCE_PAGES } from "@/data/source-pages";
+import { Icon } from "@/components/atoms";
 
 /** Renders the cited appraisal page with the relevant excerpt highlighted. */
 export function PdfPane({
@@ -36,16 +37,15 @@ export function PdfPane({
     >
       <div className="pdfpane-h">
         <span>
-          <span
-            className="material-icons"
-            style={{ fontSize: 16, color: "var(--md-primary)", marginRight: 6 }}
-          >
-            picture_as_pdf
-          </span>
+          <Icon
+            name="pdf"
+            size={16}
+            style={{ color: "var(--md-primary)", marginRight: 6 }}
+          />
           Source appraisal — page {page}
         </span>
         <button className="appbar-icon" onClick={onClose} aria-label="Close" style={{ color: "var(--md-on-surface-v)" }}>
-          <span className="material-icons">close</span>
+          <Icon name="close" size={18} />
         </button>
       </div>
       <div className="pdfpage scroll">

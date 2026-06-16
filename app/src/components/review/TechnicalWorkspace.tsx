@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { cn, SEV_META } from "@/lib/utils";
+import { Icon } from "@/components/atoms";
 import { useWorkspaceStore } from "@/store";
 import { FindingCard } from "@/components/review/FindingCard";
 import { WorkbookRail } from "@/components/review/WorkbookRail";
@@ -80,18 +81,18 @@ export function TechnicalWorkspace({
       <div className="ws-toolbar" style={{ justifyContent: "flex-end" }}>
         <div style={{ flex: 1 }} />
         <button className="btn btn-outline btn-sm" onClick={() => setAdding((a) => !a)}>
-          <span className="material-icons">add</span>
+          <Icon name="add" size={16} />
           Add finding
         </button>
         <button className="btn btn-outline btn-sm" onClick={acceptAllPasses}>
-          <span className="material-icons">done_all</span>
+          <Icon name="check-all" size={16} />
           Accept all passes
         </button>
         <button
           className={cn("btn btn-sm", pdfPage ? "btn-filled" : "btn-tonal")}
           onClick={() => setPdfPage((p) => (p ? null : 47))}
         >
-          <span className="material-icons">picture_as_pdf</span>
+          <Icon name="pdf" size={16} />
           Source PDF
         </button>
       </div>
@@ -100,7 +101,7 @@ export function TechnicalWorkspace({
         <div
           className="cov-ring"
           style={{
-            background: `conic-gradient(var(--md-success) 0 ${pct}%, #e4e9ee ${pct}% 100%)`,
+            background: `conic-gradient(var(--md-success) 0 ${pct}%, var(--md-surface-2) ${pct}% 100%)`,
           }}
         >
           <span>{pct}%</span>

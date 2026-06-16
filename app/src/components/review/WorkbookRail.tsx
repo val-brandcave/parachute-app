@@ -2,6 +2,7 @@
 
 import type { FindingState } from "@/types";
 import { tally } from "@/store";
+import { Icon } from "@/components/atoms";
 
 export function WorkbookRail({
   states,
@@ -23,7 +24,7 @@ export function WorkbookRail({
       <div className="card wb-card">
         <div className="wb-head">
           <h3>
-            <span className="material-icons">menu_book</span>
+            <Icon name="book" size={18} />
             Workbook
           </h3>
           <div className="sub">{decided} of {total} findings dispositioned</div>
@@ -71,11 +72,11 @@ export function WorkbookRail({
 
         <div className="wb-foot">
           <button className="btn btn-filled" onClick={onCompile}>
-            <span className="material-icons">description</span>
+            <Icon name="document" size={18} />
             Compile workbook
           </button>
           <button className="btn btn-outline" onClick={onReturn}>
-            <span className="material-icons">undo</span>
+            <Icon name="undo" size={18} />
             Return to appraiser
           </button>
         </div>

@@ -16,14 +16,35 @@ type Palette = {
 
 const NAVY = "#10344C";
 const NEUTRALS: Role[] = [
-  { name: "Canvas", hex: "#F4F6F8" },
+  { name: "Canvas", hex: "#F6F7F8" },
   { name: "Surface", hex: "#FFFFFF" },
-  { name: "Hairline", hex: "#EAEEF2" },
-  { name: "Ink", hex: "#16242F", ink: "#fff" },
-  { name: "Ink muted", hex: "#5D6B78", ink: "#fff" },
+  { name: "Hairline", hex: "#EDEEF1" },
+  { name: "Border", hex: "#E2E4E8" },
+  { name: "Ink", hex: "#1A1D21", ink: "#fff" },
+  { name: "Secondary", hex: "#565C64", ink: "#fff" },
+  { name: "Tertiary", hex: "#868D96", ink: "#fff" },
+  { name: "Disabled", hex: "#AEB4BC" },
 ];
 
 const PALETTES: Palette[] = [
+  {
+    id: "petrol",
+    name: "Navy & Petrol",
+    tagline: "Selected — calm, credible, true-neutral",
+    recommended: true,
+    accent: "#2A6F7F",
+    accentTint: "#DEEBEE",
+    accentInk: "#14505E",
+    rationale:
+      "The shipped palette. Navy stays primary; a deeper petrol accent harmonizes with navy without the neon edge of the old teal. True-neutral greys (no blue cast) keep surfaces crisp, and a full text scale (primary/secondary/tertiary/disabled) replaces the old two-tone ink. Flat fills, no gradients.",
+    states: [
+      { label: "Pass", hex: "#15834A", tint: "#E3F5EA" },
+      { label: "Flag", hex: "#C98A12", tint: "#FCF1D8" },
+      { label: "Fail", hex: "#D23F34", tint: "#FCE7E5" },
+      { label: "Critical", hex: "#7E1D1D", tint: "#F6DCDC" },
+      { label: "Info", hex: "#2D6CA6", tint: "#E4EEF7" },
+    ],
+  },
   {
     id: "gold",
     name: "Heritage Gold",
@@ -44,8 +65,7 @@ const PALETTES: Palette[] = [
   {
     id: "teal",
     name: "Slate & Teal",
-    tagline: "Modern, precise, credible",
-    recommended: true,
+    tagline: "Previous direction — superseded",
     accent: "#0E8C8B",
     accentTint: "#DBF0EF",
     accentInk: "#0A5E5D",
@@ -117,7 +137,7 @@ function Swatch({ hex, label, ink }: { hex: string; label: string; ink?: string 
       </div>
       <div
         style={{
-          fontFamily: "var(--font-mono-base), monospace",
+          fontFamily: "var(--font-sans-base)",
           fontSize: 10,
           color: "#5D6B78",
           marginTop: 4,
@@ -146,9 +166,9 @@ export default function StyleguidePage() {
         Choose the color system
       </h1>
       <p style={{ color: "#5D6B78", maxWidth: 640, marginTop: 8 }}>
-        Navy <b style={{ color: NAVY, fontFamily: "var(--font-mono-base)" }}>{NAVY}</b> is
+        Navy <b style={{ color: NAVY, fontFamily: "var(--font-sans-base)" }}>{NAVY}</b> is
         locked as the primary. Compare accent + state colors below. Headings are Schibsted
-        Grotesk, body is Hanken Grotesk, numbers are IBM Plex Mono.
+        Grotesk, body and numbers are Inter (tabular figures) — no monospace anywhere.
       </p>
 
       {/* Shared neutrals */}
@@ -330,11 +350,11 @@ export default function StyleguidePage() {
                   </span>
                   <div style={{ fontSize: 12.5, color: "#5D6B78", marginTop: 2 }}>
                     Confidence{" "}
-                    <b style={{ fontFamily: "var(--font-mono-base)", color: p.accentInk }}>
+                    <b style={{ fontFamily: "var(--font-sans-base)", color: p.accentInk }}>
                       88%
                     </b>{" "}
                     · Loan{" "}
-                    <b style={{ fontFamily: "var(--font-mono-base)" }}>#LN-4471</b>
+                    <b style={{ fontFamily: "var(--font-sans-base)" }}>#LN-4471</b>
                   </div>
                 </div>
               </div>

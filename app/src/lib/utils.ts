@@ -1,4 +1,5 @@
 import type { Severity, Disposition, ReviewStatus } from "@/types";
+import type { IconName } from "@/components/atoms/Icon";
 
 /** Tailwind-friendly className combiner. */
 export function cn(...parts: Array<string | false | null | undefined>): string {
@@ -24,24 +25,24 @@ export function relativeDue(epoch: number): {
 
 export const SEV_META: Record<
   Severity,
-  { label: string; chip: string; icon: string; rank: number }
+  { label: string; chip: string; icon: IconName; rank: number }
 > = {
-  crit: { label: "Critical", chip: "chip-crit", icon: "gpp_maybe", rank: 0 },
-  fail: { label: "Fail", chip: "chip-fail", icon: "error", rank: 1 },
+  crit: { label: "Critical", chip: "chip-crit", icon: "crit", rank: 0 },
+  fail: { label: "Fail", chip: "chip-fail", icon: "fail", rank: 1 },
   flag: { label: "Flagged", chip: "chip-flag", icon: "flag", rank: 2 },
-  pass: { label: "Pass", chip: "chip-pass", icon: "check_circle", rank: 3 },
-  na: { label: "N/A", chip: "chip-na", icon: "remove", rank: 4 },
+  pass: { label: "Pass", chip: "chip-pass", icon: "check-circle", rank: 3 },
+  na: { label: "N/A", chip: "chip-na", icon: "na", rank: 4 },
 };
 
 export const DISP_META: Record<
   Disposition,
-  { label: string; icon: string }
+  { label: string; icon: IconName }
 > = {
-  pending: { label: "Pending", icon: "schedule" },
+  pending: { label: "Pending", icon: "clock" },
   accepted: { label: "Accepted", icon: "check" },
   override: { label: "Overridden", icon: "edit" },
-  rejected: { label: "Rejected", icon: "block" },
-  commented: { label: "Commented", icon: "chat_bubble" },
+  rejected: { label: "Rejected", icon: "reject" },
+  commented: { label: "Commented", icon: "comment" },
 };
 
 export const STATUS_META: Record<
