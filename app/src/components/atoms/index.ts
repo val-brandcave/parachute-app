@@ -1,4 +1,5 @@
 export { Icon, ICONS, type IconName } from "./Icon";
+export { MicrosoftGlyph, YouConnectGlyph } from "./BrandGlyph";
 export { Button } from "./Button";
 export { IconButton } from "./IconButton";
 export { Chip, type ChipTone } from "./Chip";

@@ -333,19 +333,21 @@ h3,
   font-size: 14px;
   font-family: inherit;
   background: #ffffff;
-  color: var(--md-on-surface);
+  /* always-white input → fixed dark ink + light scheme so it reads in dark theme */
+  color: #1a1d21;
+  color-scheme: light;
 }
 .field textarea {
   resize: vertical;
   min-height: 72px;
 }
+/* Stacked label above the input — theme-robust (works with always-white inputs
+   on a dark card, where the old floating-over-border style broke). */
 .field label {
-  position: absolute;
-  top: -8px;
-  left: 10px;
-  background: #ffffff;
-  padding: 0 6px;
-  font-size: 12px;
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
   color: var(--md-on-surface-v);
 }
 .field input:focus,
@@ -359,6 +361,16 @@ input,
 select,
 textarea {
   background: #ffffff;
+}
+/* Always-white inputs: Chrome paints autofill dark when the page color-scheme is
+   dark — force white bg + dark ink so autofilled fields match the rest. */
+.field input:-webkit-autofill,
+.field textarea:-webkit-autofill,
+.ui-input:-webkit-autofill,
+.ui-textarea:-webkit-autofill {
+  -webkit-text-fill-color: #1a1d21;
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset;
+  caret-color: #1a1d21;
 }
 
 /* ============ Segmented buttons ============ */
@@ -1118,24 +1130,42 @@ textarea {
 
 /* ============ Login ============ */
 .sso {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
   width: 100%;
-  height: 44px;
+  height: 46px;
   border: 1px solid var(--md-outline);
-  border-radius: 22px;
-  font-weight: 500;
+  border-radius: 10px;
+  font-weight: 600;
   color: var(--md-on-surface);
   margin-bottom: 10px;
-  background: #fff;
+  background: var(--md-surface);
   cursor: pointer;
   font-family: inherit;
   font-size: 14px;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
 }
 .sso:hover {
   background: var(--md-surface-1);
+  border-color: var(--md-on-surface-t);
+}
+.sso:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-accent);
+}
+/* Primary SSO — the path the reviewer most likely arrives from (YouConnect) */
+.sso--primary {
+  background: var(--grad-primary);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: var(--md-elev-1);
+}
+.sso--primary:hover {
+  background: var(--md-primary-c);
+  border-color: transparent;
 }
 
 /* ============ Scrollbar polish ============ */
@@ -1330,7 +1360,9 @@ textarea {
   font-size: 14px;
   font-family: inherit;
   background: #fff;
-  color: var(--md-on-surface);
+  /* always-white input → fixed dark ink + light scheme so it reads in dark theme */
+  color: #1a1d21;
+  color-scheme: light;
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 .ui-textarea {
@@ -1864,86 +1896,6 @@ textarea {
   background: var(--md-bg);
 }
 
-/* ── Ambient edge beams ──────────────────────────────────────
-   Thin teal streaks that slowly travel along the shell's divider
-   hairlines — the sidebar's right border (vertical) and the
-   header's bottom border (horizontal). Decorative only. */
-.edge-beam {
-  position: absolute;
-  pointer-events: none;
-  z-index: 5;
-  background-repeat: no-repeat;
-  filter: drop-shadow(0 0 5px rgba(15, 163, 158, 0.5));
-}
-/* vertical — rides the sidebar/content divider */
-.edge-beam--v {
-  top: 0;
-  bottom: 0;
-  left: -1px;
-  width: 2px;
-  background-image: linear-gradient(
-    to bottom,
-    rgba(15, 163, 158, 0) 0%,
-    rgba(15, 163, 158, 0.9) 50%,
-    rgba(15, 163, 158, 0) 100%
-  );
-  background-size: 100% 16%;
-  animation: edge-beam-v 5s linear infinite;
-}
-/* horizontal — rides the header's bottom hairline, launching from
-   the sidebar corner (the nav margin) and tracking right */
-.edge-beam--h {
-  top: var(--hdr-h);
-  left: 0;
-  right: 0;
-  height: 2px;
-  margin-top: -1px;
-  background-image: linear-gradient(
-    to right,
-    rgba(15, 163, 158, 0) 0%,
-    rgba(15, 163, 158, 0.9) 50%,
-    rgba(15, 163, 158, 0) 100%
-  );
-  background-size: 11% 100%;
-  animation: edge-beam-h 5s linear infinite;
-  animation-delay: 1.6s;
-}
-/* Travel from just off the leading edge to just off the trailing edge
-   so the streak slides in from the margin rather than fading in mid-track. */
-@keyframes edge-beam-v {
-  0% {
-    background-position: 0 -25%;
-    opacity: 0;
-  }
-  8%,
-  92% {
-    opacity: 1;
-  }
-  100% {
-    background-position: 0 125%;
-    opacity: 0;
-  }
-}
-@keyframes edge-beam-h {
-  0% {
-    background-position: -25% 0;
-    opacity: 0;
-  }
-  8%,
-  92% {
-    opacity: 1;
-  }
-  100% {
-    background-position: 125% 0;
-    opacity: 0;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .edge-beam {
-    display: none;
-  }
-}
-
 /* defined page-header region — slim full-width bar, hairline below */
 .pagehead {
   display: flex;
@@ -2283,50 +2235,6 @@ textarea {
   flex: 1;
   overflow-y: auto;
   padding: 28px;
-}
-
-/* ---- header search trigger ---- */
-.searchtrigger {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  height: 36px;
-  padding: 0 10px 0 12px;
-  border: 1px solid var(--md-outline-v);
-  background: var(--md-surface-1);
-  border-radius: 9px;
-  color: var(--md-on-surface-v);
-  font-family: inherit;
-  font-size: 13.5px;
-  cursor: pointer;
-  width: 160px;
-  transition: border-color 0.13s, background 0.13s;
-}
-.searchtrigger:hover {
-  border-color: var(--md-outline);
-  background: var(--md-surface);
-}
-.searchtrigger .st-label {
-  flex: 1;
-  text-align: left;
-}
-.searchtrigger .st-kbd {
-  display: inline-flex;
-  gap: 2px;
-}
-.searchtrigger .st-kbd kbd {
-  font-family: var(--font-sans-base), system-ui, sans-serif;
-  font-size: 10.5px;
-  background: var(--md-surface-2);
-  border: 1px solid var(--md-outline-v);
-  border-radius: 5px;
-  padding: 1px 5px;
-  color: var(--md-on-surface-v);
-}
-.searchtrigger.icononly {
-  width: 36px;
-  padding: 0;
-  justify-content: center;
 }
 
 /* ---- command palette ---- */

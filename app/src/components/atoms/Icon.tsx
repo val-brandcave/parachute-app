@@ -51,6 +51,8 @@ import {
   IconCircleX,
   IconBrandWindows,
   IconBrandGoogle,
+  IconPlugConnected,
+  IconShieldLock,
   type Icon as TablerIcon,
 } from "@tabler/icons-react";
 
@@ -108,6 +110,8 @@ export const ICONS = {
   "x-circle": IconCircleX,
   "brand-windows": IconBrandWindows,
   "brand-google": IconBrandGoogle,
+  connect: IconPlugConnected,
+  sso: IconShieldLock,
 } satisfies Record<string, TablerIcon>;
 
 export type IconName = keyof typeof ICONS;
