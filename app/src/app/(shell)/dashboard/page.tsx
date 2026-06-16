@@ -27,33 +27,32 @@ export default function DashboardPage() {
   } = useDashboard();
 
   const stats: Stat[] = [
+    // Lifecycle order: intake → processing → review → SLA → done.
     {
-      label: "Needs my action",
-      value: kpis.needsAction,
-      icon: "flag",
-      tone: "flag",
-      tip: "Reviews assigned to you that are waiting on a decision or sign-off.",
+      label: "Intake triage",
+      value: kpis.triage,
+      icon: "checklist",
+      tip: "Appraisals auto-rejected at intake within the selected period that need your confirm or override.",
     },
     {
       label: "Pipeline running",
       value: kpis.running,
       icon: "ai",
-      tone: "accent",
-      tip: "Appraisals currently being processed by Parachute's analysis pipeline.",
+      live: true,
+      tip: "Appraisals being processed by Parachute's pipeline right now — a live count, not affected by the period picker.",
+    },
+    {
+      label: "Needs my action",
+      value: kpis.needsAction,
+      icon: "flag",
+      tip: "Reviews that needed your decision or sign-off within the selected period.",
     },
     {
       label: "Overdue",
       value: kpis.overdue,
       icon: "warn",
-      tone: "fail",
-      tip: "Reviews past their SLA due date and not yet completed.",
-    },
-    {
-      label: "Intake triage",
-      value: kpis.triage,
-      icon: "checklist",
-      tone: "info",
-      tip: "Appraisals auto-rejected at intake that need your confirm or override.",
+      alert: kpis.overdue > 0,
+      tip: "Reviews that went past their SLA due date within the selected period.",
     },
     {
       label: "Completed",
@@ -68,7 +67,6 @@ export default function DashboardPage() {
         </>
       ),
       icon: "check-all",
-      tone: "pass",
       tip: "Reviews you completed in the selected period. Avg turnaround ~24 min · ≈9.5 hrs saved vs. manual review.",
     },
   ];
@@ -96,13 +94,13 @@ export default function DashboardPage() {
           <StatBar stats={stats} />
         </motion.div>
 
+        <div style={{ marginTop: "var(--d-gap)" }}>
+          <TrendChart {...trend} periodLabel={periodLabel(period, range)} />
+        </div>
+
         <div className="dash-grid">
           <ActionNeeded reviews={actionNeeded} />
           <RecentReviews reviews={recent} />
-        </div>
-
-        <div style={{ marginTop: "var(--d-gap)" }}>
-          <TrendChart data={trend} periodLabel={periodLabel(period, range)} />
         </div>
       </div>
     </>

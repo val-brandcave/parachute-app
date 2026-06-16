@@ -21,7 +21,7 @@ export default function MyReviewsPage() {
 
   return (
     <>
-      {/* Header band IS the table toolbar (no redundant title — nav says My Reviews) */}
+      {/* Header band IS the table toolbar (no redundant title — nav says Reviews) */}
       <div className="pagehead">
         <Tabs
           value={tab}

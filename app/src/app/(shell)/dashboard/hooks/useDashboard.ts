@@ -22,33 +22,6 @@ export function useDashboard() {
 
   const [now] = useState(() => Date.now());
 
-  // Current-state KPIs (point-in-time; not period-scoped).
-  const kpis = useMemo(() => {
-    const needsAction = reviews.filter((r) => r.status === "needs_action").length;
-    const running = reviews.filter((r) => r.status === "running").length;
-    const overdue = reviews.filter(
-      (r) => r.slaDueAt < now && r.status !== "completed",
-    ).length;
-    const triage = reviews.filter((r) => r.status === "autorejected").length;
-    return { needsAction, running, overdue, triage };
-  }, [reviews, now]);
-
-  // Throughput "completed" is period-scoped (mocked counts per period).
-  const completed = useMemo(() => {
-    const base = reviews.filter((r) => r.status === "completed").length;
-    if (period === "custom" && range) {
-      const days = Math.max(1, Math.round((range.end - range.start) / DAY));
-      return Math.max(base, Math.round(days * 1.1));
-    }
-    const MULT: Partial<Record<Period, number>> = {
-      week: 6,
-      month: 18,
-      quarter: 52,
-      year: 196,
-    };
-    return Math.max(base, MULT[period] ?? 18);
-  }, [reviews, period, range]);
-
   // Action needed: most urgent items waiting on the reviewer.
   const actionNeeded = useMemo(
     () =>
@@ -70,36 +43,87 @@ export function useDashboard() {
     [reviews],
   );
 
-  // Throughput trend (mock bars for the chart, scaled by period).
+  // Review-volume series + summary (mock; date-based buckets per period).
+  // v = reviews completed, t = avg turnaround (min), onTime = % within SLA.
   const trend = useMemo(() => {
+    const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const md = (d: Date) => `${d.getMonth() + 1}/${d.getDate()}`;
+    const tr = (i: number) => 18 + ((i * 5 + 2) % 12); // 18–29 min
+    const on = (i: number) => 88 + ((i * 7 + 1) % 11); // 88–98 %
+
+    let count: number;
+    let target: number; // approx total completed for the period
+    let label: (i: number) => string;
+    let tickEvery: number;
+
     if (period === "custom" && range) {
-      const n = 6;
-      const span = range.end - range.start;
-      return Array.from({ length: n }, (_, i) => {
-        const d = new Date(range.start + (span * i) / (n - 1));
-        return {
-          x: `${d.getMonth() + 1}/${d.getDate()}`,
-          v: 4 + ((i * 7 + 3) % 9),
-        };
-      });
+      const span = Math.max(DAY, range.end - range.start);
+      const days = Math.round(span / DAY);
+      const daily = days <= 31;
+      count = daily ? Math.max(2, days) : Math.min(16, Math.ceil(days / 7));
+      const step = span / Math.max(1, count - 1);
+      target = Math.max(count, Math.round(days * 1.0));
+      tickEvery = Math.max(1, Math.ceil(count / 6));
+      label = (i) => md(new Date(range.start + step * i));
+    } else if (period === "week") {
+      count = 7;
+      target = 8;
+      tickEvery = 1;
+      label = (i) => DOW[new Date(now - (count - 1 - i) * DAY).getDay()];
+    } else if (period === "month") {
+      count = 5; // weekly buckets
+      target = 20;
+      tickEvery = 1;
+      label = (i) => md(new Date(now - (count - 1 - i) * 7 * DAY));
+    } else if (period === "quarter") {
+      count = 13; // weekly buckets
+      target = 55;
+      tickEvery = 3;
+      label = (i) => md(new Date(now - (count - 1 - i) * 7 * DAY));
+    } else {
+      count = 12; // monthly buckets
+      target = 200;
+      tickEvery = 1;
+      const m0 = new Date(now).getMonth();
+      label = (i) => MONTHS[(m0 - (count - 1 - i) + 1200) % 12];
     }
-    const labels =
-      period === "week"
-        ? ["Mon", "Tue", "Wed", "Thu", "Fri"]
-        : period === "month"
-          ? ["W1", "W2", "W3", "W4"]
-          : period === "quarter"
-            ? ["Mon 1", "Mon 2", "Mon 3"]
-            : ["Q1", "Q2", "Q3", "Q4"];
-    const SEED: Partial<Record<Period, number>> = {
-      week: 2,
-      month: 5,
-      quarter: 17,
-      year: 49,
+
+    const base = target / count;
+    const points = Array.from({ length: count }, (_, i) => {
+      const wave = 1 + 0.45 * Math.sin(i * 0.9) + ((i % 3) - 1) * 0.12;
+      return {
+        key: `${period}-${i}`,
+        label: label(i),
+        tick: i % tickEvery === 0 || i === count - 1,
+        v: Math.max(0, Math.round(base * wave)),
+        t: tr(i),
+        onTime: on(i),
+      };
+    });
+
+    const completed = points.reduce((s, p) => s + p.v, 0);
+    const avgT = Math.round(points.reduce((s, p) => s + p.t, 0) / count);
+    const avgOn = Math.round(points.reduce((s, p) => s + p.onTime, 0) / count);
+    const prev = {
+      completed: Math.round(completed * 0.92),
+      avgT: avgT + 2,
+      avgOn: Math.max(0, avgOn - 2),
     };
-    const seed = SEED[period] ?? 5;
-    return labels.map((x, i) => ({ x, v: seed + ((i * 7 + 3) % 9) }));
-  }, [period, range]);
+    return { points, completed, avgT, avgOn, prev };
+  }, [period, range, now]);
+
+  // KPIs. Historical tiles are PERIOD-SCOPED (counts of events within the selected
+  // range, derived from the period volume); "running" stays a live "now" count.
+  const kpis = useMemo(() => {
+    const c = trend.completed;
+    return {
+      needsAction: Math.round(c * 0.13), // needed your action during the period
+      running: reviews.filter((r) => r.status === "running").length, // LIVE — now
+      overdue: Math.round(c * 0.06), // went overdue during the period
+      triage: Math.round(c * 0.05), // auto-rejected at intake during the period
+    };
+  }, [trend.completed, reviews]);
 
   return {
     isLoading: initial,
@@ -108,7 +132,7 @@ export function useDashboard() {
     range,
     setRange,
     kpis,
-    completed,
+    completed: trend.completed,
     actionNeeded,
     recent,
     trend,

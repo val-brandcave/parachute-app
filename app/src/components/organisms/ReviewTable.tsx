@@ -1,18 +1,7 @@
 import Link from "next/link";
-import { Chip, Icon, Avatar } from "@/components/atoms";
+import { Chip, Icon } from "@/components/atoms";
 import { cn, relativeDue, STATUS_META } from "@/lib/utils";
 import type { Review, ReviewStatus } from "@/types";
-
-/** Initials from a property address (first letters of the first two words). */
-function propInitials(addr: string): string {
-  const words = addr
-    .replace(/[^a-zA-Z ]/g, " ")
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean);
-  if (!words.length) return "–";
-  return (words[0][0] + (words[1]?.[0] ?? "")).toUpperCase();
-}
 
 export const STATUS_TONE: Record<ReviewStatus, Parameters<typeof Chip>[0]["tone"]> =
   {
@@ -63,7 +52,6 @@ export function ReviewTable({ reviews }: { reviews: Review[] }) {
         return (
           <Link key={r.id} href={reviewHref(r)} className="qrow">
             <div className="prop-cell">
-              <Avatar initials={propInitials(r.propertyAddress)} tone="soft" size={38} />
               <div style={{ minWidth: 0 }}>
                 <div className="addr">{r.propertyAddress}</div>
                 <div className="meta">

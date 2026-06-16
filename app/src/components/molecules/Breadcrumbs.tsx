@@ -9,7 +9,7 @@ type Crumb = { label: string; href?: string };
 
 const TOP_LABELS: Record<string, string> = {
   dashboard: "Dashboard",
-  reviews: "My Reviews",
+  reviews: "Reviews",
   templates: "Templates",
   settings: "Settings",
   components: "Components",
@@ -31,7 +31,7 @@ export function Breadcrumbs() {
 
   if (segs[0] === "reviews" && segs[1]) {
     const review = reviews.find((r) => r.id === segs[1]);
-    crumbs.push({ label: "My Reviews", href: "/reviews" });
+    crumbs.push({ label: "Reviews", href: "/reviews" });
     crumbs.push({
       label: review?.propertyAddress ?? "Review",
       href: `/reviews/${segs[1]}`,
