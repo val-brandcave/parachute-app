@@ -2,10 +2,10 @@
 
 import { useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Button, IconButton, Icon } from "@/components/atoms";
+import { Button, IconButton, Icon, type IconName } from "@/components/atoms";
 import { cn } from "@/lib/utils";
 
-export type Step = { key: string; label: string; desc?: string };
+export type Step = { key: string; label: string; desc?: string; icon?: IconName };
 
 /**
  * Full-page takeover modal with a left stepper rail and a footer action bar.
@@ -92,15 +92,23 @@ export function StepperModal({
                     onClick={clickable ? () => onNavigate!(i) : undefined}
                     aria-current={active ? "step" : undefined}
                   >
-                    <span className="spm-step-rail">
-                      <span className="spm-num">
-                        {done ? <Icon name="check" size={15} /> : i + 1}
+                    {/* Active pill slides between steps (shared layout, like the nav) */}
+                    {active && (
+                      <motion.span
+                        layoutId="spm-pill"
+                        className="spm-step-pill"
+                        transition={{ type: "spring", stiffness: 520, damping: 42 }}
+                      />
+                    )}
+                    {s.icon && (
+                      <span className="spm-step-ic">
+                        <Icon name={s.icon} size={18} strokeWidth={active ? 2.2 : 1.9} />
                       </span>
-                      {i < steps.length - 1 && <span className="spm-connector" />}
-                    </span>
-                    <span className="spm-step-text">
-                      <span className="spm-step-label">{s.label}</span>
-                      {s.desc && <span className="spm-step-desc">{s.desc}</span>}
+                    )}
+                    <span className="spm-step-label">{s.label}</span>
+                    {/* Donut: hollow ring until the step is done, then petrol + check */}
+                    <span className="spm-ind" aria-hidden="true">
+                      {done && <Icon name="check" size={12} />}
                     </span>
                   </button>
                 );
@@ -113,38 +121,33 @@ export function StepperModal({
           </div>
 
           <footer className="spm-foot">
-            <Button variant="ghost" onClick={onClose}>
-              Cancel
-            </Button>
-            <span className="spm-progress">
-              Step {current + 1} of {steps.length}
-            </span>
-            <div className="spm-foot-right">
-              {current > 0 && (
-                <Button variant="outline" iconLeft="back" onClick={onBack}>
-                  Back
-                </Button>
-              )}
-              {isLast ? (
-                <Button
-                  variant="primary"
-                  iconRight="check"
-                  onClick={onSubmit}
-                  disabled={submitting}
-                >
-                  {submitting ? "Submitting…" : submitLabel}
-                </Button>
-              ) : (
-                <Button
-                  variant="primary"
-                  iconRight="chevron-right"
-                  onClick={onNext}
-                  disabled={nextDisabled}
-                >
-                  {nextLabel}
-                </Button>
-              )}
-            </div>
+            {/* Back is the left action; the top X handles dismiss (no Cancel). */}
+            {current > 0 ? (
+              <Button variant="outline" iconLeft="back" onClick={onBack}>
+                Back
+              </Button>
+            ) : (
+              <span />
+            )}
+            {isLast ? (
+              <Button
+                variant="primary"
+                iconRight="check"
+                onClick={onSubmit}
+                disabled={submitting}
+              >
+                {submitting ? "Submitting…" : submitLabel}
+              </Button>
+            ) : (
+              <Button
+                variant="primary"
+                iconRight="chevron-right"
+                onClick={onNext}
+                disabled={nextDisabled}
+              >
+                {nextLabel}
+              </Button>
+            )}
           </footer>
         </motion.div>
       )}

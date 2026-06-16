@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { Logo } from "@/components/Logo";
 import { Icon, MicrosoftGlyph, YouConnectGlyph } from "@/components/atoms";
 
@@ -10,6 +10,9 @@ export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("reviewer@demobank.example");
   const [password, setPassword] = useState("••••••••••");
+  // Email form is progressively disclosed — SSO is the default path, so the
+  // card opens with one filled primary (YouConnect) and the form tucked away.
+  const [showEmail, setShowEmail] = useState(false);
 
   const signIn = () => router.push("/dashboard");
 
@@ -73,73 +76,94 @@ export default function LoginPage() {
           Single sign-on
         </button>
 
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
-            color: "var(--md-on-surface-t)",
-            fontSize: 12,
-            margin: "20px 0 18px",
-          }}
-        >
-          <span style={{ flex: 1, height: 1, background: "var(--md-outline-v)" }} />
-          or sign in with email
-          <span style={{ flex: 1, height: 1, background: "var(--md-outline-v)" }} />
-        </div>
-
-        <div className="field">
-          <label>Work email</label>
-          <input value={email} onChange={(e) => setEmail(e.target.value)} />
-        </div>
-        <div className="field" style={{ marginBottom: 14 }}>
-          <label>Password</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        </div>
-
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: 18,
-            fontSize: 13,
-          }}
-        >
-          <label
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 7,
-              color: "var(--md-on-surface-v)",
-              cursor: "pointer",
-            }}
-          >
-            <input
-              type="checkbox"
-              style={{ width: 15, height: 15, accentColor: "var(--md-accent)" }}
-            />
-            Keep me signed in
-          </label>
-          <a
-            href="#"
-            style={{ color: "var(--md-accent-d)", fontWeight: 600 }}
-          >
-            Forgot password?
-          </a>
-        </div>
-
+        {/* Progressive disclosure — reveal the email/password path on demand */}
         <button
-          className="btn btn-filled"
-          style={{ width: "100%", justifyContent: "center" }}
-          onClick={signIn}
+          type="button"
+          className="login-email-toggle"
+          aria-expanded={showEmail}
+          aria-controls="login-email-form"
+          onClick={() => setShowEmail((v) => !v)}
         >
-          Sign in
+          {showEmail ? "Hide email sign-in" : "Sign in with email instead"}
+          <Icon name={showEmail ? "chevron-down" : "chevron-right"} size={15} />
         </button>
+
+        <AnimatePresence initial={false}>
+          {showEmail && (
+            <motion.div
+              id="login-email-form"
+              key="email-form"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.28, ease: "easeOut" }}
+              style={{ overflow: "hidden" }}
+            >
+              <div style={{ paddingTop: 18 }}>
+                <div className="field">
+                  <label>Work email</label>
+                  <input
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                </div>
+                <div className="field" style={{ marginBottom: 14 }}>
+                  <label>Password</label>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                </div>
+
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    marginBottom: 18,
+                    fontSize: 13,
+                  }}
+                >
+                  <label
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 7,
+                      color: "var(--md-on-surface-v)",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      style={{
+                        width: 15,
+                        height: 15,
+                        accentColor: "var(--md-accent)",
+                      }}
+                    />
+                    Keep me signed in
+                  </label>
+                  <a
+                    href="#"
+                    style={{ color: "var(--md-accent-d)", fontWeight: 600 }}
+                  >
+                    Forgot password?
+                  </a>
+                </div>
+
+                {/* Secondary action — YouConnect stays the single filled primary */}
+                <button
+                  className="sso"
+                  style={{ marginBottom: 0 }}
+                  onClick={signIn}
+                >
+                  Sign in
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
     </div>
   );

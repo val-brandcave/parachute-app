@@ -7,4 +7,5 @@ export { Input, Textarea, Label } from "./Input";
 export { Avatar, Divider, Spinner, Kbd, Card } from "./primitives";
 export { Tooltip, InfoTip } from "./Tooltip";
 export { Modal } from "./Modal";
+export { Skeleton, type SkeletonProps } from "./Skeleton";
 export { Logo } from "../Logo";

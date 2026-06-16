@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Parachute v2 — IA Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Schibsted+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  /* Navy & Petrol tokens (mirrors app/AGENTS.md) — NO monospace anywhere */
+  :root{
+    --navy:#10344C; --navy-h:#1B4F73; --petrol:#2A6F7F; --petrol-tint:#DEEBEE;
+    --canvas:#F6F7F8; --surface:#FFFFFF; --surface-1:#F1F2F4; --surface-2:#E9EBEE;
+    --border:#E2E4E8; --hair:#EDEEF1;
+    --ink:#1A1D21; --ink-2:#565C64; --ink-3:#868D96;
+    --built:#15834A; --locked:#2A6F7F; --undecided:#C98A12; --temp:#868D96;
+    --line:#C7CCD2;
+    --r:12px;
+    font-family:'Inter',-apple-system,'Segoe UI',Roboto,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--canvas);color:var(--ink);font-size:13px;line-height:1.5;padding:28px 32px 80px}
+  h1{font-family:'Schibsted Grotesk','Inter',sans-serif;font-size:24px;color:var(--navy);letter-spacing:.2px}
+  .sub{color:var(--ink-2);margin-top:4px;font-size:13px;max-width:880px}
+
+  /* legend */
+  .legend{display:flex;flex-wrap:wrap;gap:14px;margin:18px 0 24px;align-items:center}
+  .legend .lg{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--ink-2)}
+  .legend .dot{width:12px;height:12px;border-radius:4px}
+  .legend .meta{margin-left:auto;font-size:11.5px;color:var(--ink-3)}
+
+  /* area container — FigJam pill-labelled band. Overflow lives on the inner
+     .area-scroll so the header pill is never clipped and stays put when the
+     tree scrolls horizontally. */
+  .area{position:relative;background:var(--surface-1);border:1px solid var(--border);border-radius:16px;padding:34px 22px 24px;margin-bottom:26px}
+  /* Top padding gives the card pills (top:-11px) headroom inside the scroll
+     box (overflow-x forces overflow-y to clip); the matching negative margin
+     keeps card positions unchanged. */
+  .area-scroll{overflow-x:auto;padding-top:14px;margin-top:-14px;padding-bottom:4px}
+  .area > .area-label{position:absolute;top:-13px;left:18px;background:var(--navy);color:#fff;font-weight:600;font-size:12px;letter-spacing:.3px;padding:5px 13px;border-radius:9px}
+  .area.tint-petrol{background:var(--petrol-tint)}
+  .area-note{font-size:11.5px;color:var(--ink-2);margin:-6px 0 14px}
+
+  /* card */
+  .node{position:relative;display:inline-block;width:248px;vertical-align:top;text-align:left}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:0 1px 2px rgba(16,52,76,.06),0 2px 8px rgba(16,52,76,.05);padding:26px 14px 14px;position:relative;min-height:118px}
+  .pill{position:absolute;top:-11px;left:12px;color:#fff;font-weight:600;font-size:11.5px;padding:4px 11px;border-radius:8px;box-shadow:0 1px 2px rgba(0,0,0,.12);max-width:218px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pill.built{background:var(--built)} .pill.locked{background:var(--locked)}
+  .pill.undecided{background:var(--undecided)} .pill.temp{background:var(--temp)}
+  .card .body{display:flex;gap:11px}
+  .thumb{flex:0 0 64px;height:64px;background:repeating-linear-gradient(135deg,#dfe3e8 0 6px,#e7eaee 6px 12px);border:1px solid var(--border);border-radius:7px;display:grid;place-items:center;text-align:center;font-size:8.5px;color:var(--ink-3);padding:4px;line-height:1.2}
+  .card .desc{flex:1;font-size:11.5px;color:var(--ink-2);line-height:1.45}
+  .card .route{display:block;color:var(--petrol);font-weight:600;font-size:10.5px;margin-bottom:3px}
+  .card .openq{display:block;margin-top:6px;color:var(--undecided);font-size:10.5px;font-weight:600}
+  .kindtag{position:absolute;top:8px;right:10px;font-size:9px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-3)}
+
+  /* ---- CSS org-chart tree (orthogonal connectors) ---- */
+  .tree{display:inline-block;padding-top:6px}
+  .tree ul{display:flex;justify-content:center;padding-top:26px;position:relative}
+  .tree li{list-style:none;position:relative;padding:26px 14px 0}
+  .tree li::before,.tree li::after{content:'';position:absolute;top:0;right:50%;border-top:2px solid var(--line);width:50%;height:26px}
+  .tree li::after{right:auto;left:50%;border-left:2px solid var(--line)}
+  .tree li:only-child::after,.tree li:only-child::before{display:none}
+  .tree li:only-child{padding-top:26px}
+  .tree li:first-child::before,.tree li:last-child::after{border:0 none}
+  .tree li:last-child::before{border-right:2px solid var(--line);border-radius:0 6px 0 0}
+  .tree li:first-child::after{border-radius:6px 0 0 0}
+  .tree ul ul::before{content:'';position:absolute;top:0;left:50%;border-left:2px solid var(--line);width:0;height:26px}
+  .tree > ul{padding-top:0}
+  .tree > ul > li::before,.tree > ul > li::after{display:none}
+  .tree > ul > li{padding-top:0}
+
+  /* flat row (overlays / dev) */
+  .flatrow{display:flex;flex-wrap:wrap;gap:18px}
+
+  /* sub-view marker */
+  .subview .pill::before{content:'▸ ';opacity:.8}
+  .tabnode .pill::before{content:'⊞ ';opacity:.85}
+</style>
+</head>
+<body>
+  <h1>Parachute v2 — Information Architecture</h1>
+  <div class="sub">Screen tree in the FigJam card-board style. Companion to the Mermaid diagrams in <b>parachute-v2-ia-map.md</b> (GitHub quick-view) and the prose <b>parachute-v2-ia-route-map.md</b>. Living artifact — edit the <code>AREAS</code> data at the bottom of this file to update. Thumbnails are placeholders; swap in real page screenshots later.</div>
+
+  <div class="legend">
+    <span class="lg"><span class="dot" style="background:var(--built)"></span> Built</span>
+    <span class="lg"><span class="dot" style="background:var(--locked)"></span> Locked in plans</span>
+    <span class="lg"><span class="dot" style="background:var(--undecided)"></span> 🟧 Not decided (Phase 3)</span>
+    <span class="lg"><span class="dot" style="background:var(--temp)"></span> Temporary / dev</span>
+    <span class="lg" style="margin-left:14px">⊞ in-page tab · ▸ sub-view (state, not routes)</span>
+    <span class="meta">Jun 16 2026 · IA session</span>
+  </div>
+
+  <div id="board"></div>
+
+<script>
+/* ============================================================
+   IA DATA — single source of truth for this board.
+   Edit nodes here; the board re-renders. Keep in sync with the
+   feature inventory + decisions log in parachute-v2-ia-map.md.
+   node = { name, status, route?, desc, openq?, kind?, children?[] }
+   status: built | locked | undecided | temp
+   kind:   page (default) | tab | subview | overlay
+   ============================================================ */
+const AREAS = [
+  {
+    label:'Authentication', kind:'tree',
+    roots:[
+      { name:'Login', status:'built', route:'/login',
+        desc:'Email/password + SSO-first (YouConnect, Microsoft, generic). Entry to the app.',
+        children:[
+          { name:'Launch', status:'built', route:'/launch',
+            desc:'YouConnect→Parachute interstitial. Smooths the SSO hand-off, then routes to Dashboard.' }
+        ]}
+    ]
+  },
+  {
+    label:'Core App (authenticated)', kind:'tree',
+    note:'Shell = collapsible sidebar (Dashboard · Reviews · Templates · Settings) + Org card · app header (search→command palette, notifications, help, avatar).',
+    roots:[
+      { name:'App shell', status:'built',
+        desc:'Authenticated shell: sidebar nav, header, global command palette (Ctrl/Cmd-K), global Order modal.',
+        children:[
+          { name:'Dashboard', status:'built', route:'/dashboard',
+            desc:'Overview: greeting, period picker, KPI StatBar (+ live "Pipeline running" tile), Review-volume chart, Action-needed, Recent reviews.' },
+
+          { name:'Reviews', status:'built', route:'/reviews',
+            desc:'Operational queue — tabs (All/Mine/Flagged) + search + status filter + table. Order-a-review button.',
+            children:[
+              { name:'Review detail', status:'locked', route:'/reviews/[id]', kind:'page',
+                desc:'Single route. Property context bar; Technical / Administrative in-page tabs (redirects to Technical).',
+                children:[
+                  { name:'Tab / Technical', status:'locked', kind:'tab',
+                    desc:'Findings focus-mode + workbook tally. Owns three sub-views.',
+                    children:[
+                      { name:'Findings', status:'locked', kind:'subview',
+                        desc:'Focus mode: one finding at a time. Accept/Reject primary (navy); Disagree-edit/Comment/Add-condition/Flag behind ⋯. Cited source docked beside it.' },
+                      { name:'Builder', status:'locked', kind:'subview',
+                        desc:'Customize the workbook layout. Decided: v2 = focused customize panel (reorder/exclude sections, show-hide, theme, font, risk labels) + owns all customization. Full 3-pane builder + appraisal-section import + org section-library publish deferred to a later phase.' },
+                      { name:'Workbook', status:'locked', kind:'subview',
+                        desc:'Compiled branded document. DRAFT watermark → Sign → Complete (file) / Return to appraiser. Decided: clean output + lifecycle only; customization lives in Builder.' }
+                    ]},
+                  { name:'Tab / Administrative', status:'locked', kind:'tab',
+                    desc:'AI-prefilled bank checklist. Attest Yes/No/NA (+ audited reason on change), evidence + page cite, sign. Decided: shares the Technical focus-mode shell (list rail + focus pane + docked source).' },
+                  { name:'Triage', status:'locked', route:'/reviews/[id]/triage', kind:'page',
+                    desc:'Auto-rejected intake: failed-criterion card → "Override & admit" (audited, navy) or "Confirm & return" (outline). SLA paused. Decided: keep as its own route (only routed review sub-page); linked from the Dashboard "Intake triage" tile.' }
+                ]}
+            ]},
+
+          { name:'Templates', status:'locked', route:'/templates',
+            desc:'Hub for the templating tools. Decided: landing with cards; each tool opens its own sub-route.',
+            children:[
+              { name:'Checklist Mapper', status:'locked', route:'/templates/checklist',
+                desc:'Upload bank checklist .docx → AI extracts items → map (binary/qualitative) / flag ambiguous → re-extract → publish version. Drives Administrative Review. Decided: home is Templates; Settings → Compliance links here.' },
+              { name:'Response Templates', status:'locked', route:'/templates/responses',
+                desc:'Org + personal canned responses (Concur / Condition / Requires revision / Override…) with merge fields. Populate the finding ⋯ and workbook. Decided: master/detail (list + editor) within this sub-route.' },
+              { name:'Org Workbook Layout', status:'locked', route:'/templates/workbook-layout',
+                desc:'= Builder in org-default mode: section library, versioned "Publish vN".' }
+            ]},
+
+          { name:'Settings', status:'built', route:'/settings',
+            desc:'Tabbed: Organization · Review defaults · Compliance · My profile · Preferences (theme + density live).' }
+        ]}
+    ]
+  },
+  {
+    label:'Global overlays (mounted in shell, store-driven)', kind:'flat', tint:true,
+    roots:[
+      { name:'Order stepper', status:'locked', kind:'overlay',
+        desc:'Full-page StepperModal, global via useOrderStore. Source → Review type → Reviewer → Options → Confirm & run. Decided: "Run pipeline" routes into the new review in its running state.' },
+      { name:'Command palette', status:'built', kind:'overlay',
+        desc:'Ctrl/Cmd-K — search reviews, go-to pages, run actions. Keyboard-navigable.' },
+      { name:'Notifications panel', status:'locked', kind:'overlay',
+        desc:'In-app bell panel (review ready / returned / assigned / overdue); items deep-link to the review. Decided: build the demoable in-app panel now; email is the real production channel (engineering-owned).' },
+      { name:'Quick-look drawer', status:'locked', kind:'overlay',
+        desc:'Peek a review from the queue (status, findings summary, next action, download) without leaving it. Decided: right side drawer; "Open review" goes to the full route. Reused by Add-finding.' },
+      { name:'Download menu', status:'locked', kind:'overlay',
+        desc:'Anchored popover from context bar / rows: Technical PDF/DOCX, Admin PDF/DOCX, ZIP. DRAFT vs FINAL.' },
+      { name:'Source-preview modal', status:'locked', kind:'overlay',
+        desc:'Builder import: preview an extracted appraisal section before including it.' },
+      { name:'Snackbar / toast', status:'built', kind:'overlay',
+        desc:'Transient confirmations with UNDO.' }
+    ]
+  },
+  {
+    label:'Dev / temporary (not product pages)', kind:'flat',
+    roots:[
+      { name:'/components', status:'temp', kind:'page', desc:'Design-system showcase. Internal dev tool — decide if it ships.' },
+      { name:'/styleguide', status:'temp', kind:'page', desc:'Palette decision surface. Remove before hand-off.' }
+    ]
+  }
+];
+
+/* ---------- renderer ---------- */
+function card(n){
+  const kind = n.kind || 'page';
+  const kindLabel = kind==='tab' ? 'Tab' : kind==='subview' ? 'Sub-view' : kind==='overlay' ? 'Overlay' : '';
+  const cls = kind==='subview' ? 'subview' : kind==='tab' ? 'tabnode' : '';
+  return `<div class="node ${cls}">
+    <div class="card">
+      <span class="pill ${n.status}">${n.name}</span>
+      ${kindLabel?`<span class="kindtag">${kindLabel}</span>`:''}
+      <div class="body">
+        <div class="thumb">${n.name}</div>
+        <div class="desc">${n.route?`<span class="route">${n.route}</span>`:''}${n.desc}${n.openq?`<span class="openq">🟧 ${n.openq}</span>`:''}</div>
+      </div>
+    </div>
+  </div>`;
+}
+function treeList(nodes){
+  return `<ul>${nodes.map(n=>{
+    const kids = n.children && n.children.length ? treeList(n.children) : '';
+    return `<li>${card(n)}${kids}</li>`;
+  }).join('')}</ul>`;
+}
+function renderArea(a){
+  const label = `<span class="area-label">${a.label}</span>`;
+  const note = a.note?`<div class="area-note">${a.note}</div>`:'';
+  let inner;
+  if(a.kind==='tree'){
+    inner = `<div class="tree">${treeList(a.roots)}</div>`;
+  } else {
+    inner = `<div class="flatrow">${a.roots.map(card).join('')}</div>`;
+  }
+  return `<section class="area ${a.tint?'tint-petrol':''}">${label}${note}<div class="area-scroll">${inner}</div></section>`;
+}
+document.getElementById('board').innerHTML = AREAS.map(renderArea).join('');
+</script>
+</body>
+</html>

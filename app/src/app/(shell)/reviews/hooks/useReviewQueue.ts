@@ -13,7 +13,10 @@ export function useReviewQueue() {
   const [status, setStatus] = useState<StatusFilter>("any");
 
   useEffect(() => {
-    fetchReviews().then(() => setInitial(false));
+    // Mock reads resolve synchronously, so hold the loading state for a short
+    // minimum to emulate real data loading (and let the skeleton shimmer show).
+    const minVisible = new Promise((r) => setTimeout(r, 700));
+    Promise.all([fetchReviews(), minVisible]).then(() => setInitial(false));
   }, [fetchReviews]);
 
   const counts = useMemo(
