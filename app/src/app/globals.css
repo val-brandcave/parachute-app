@@ -54,6 +54,7 @@
   --md-elev-2: 0 4px 14px rgba(16, 24, 33, 0.08);
   --md-elev-3: 0 16px 40px rgba(16, 24, 33, 0.14);
   --r: 12px;
+  --skel-sweep: rgba(255, 255, 255, 0.62); /* skeleton shimmer highlight */
 
   /* shell metrics */
   --hdr-h: 60px;
@@ -135,6 +136,7 @@
   --md-elev-1: 0 1px 2px rgba(0, 0, 0, 0.4);
   --md-elev-2: 0 6px 18px rgba(0, 0, 0, 0.45);
   --md-elev-3: 0 16px 40px rgba(0, 0, 0, 0.55);
+  --skel-sweep: rgba(255, 255, 255, 0.07); /* subtle highlight on dark surfaces */
 }
 /* crit chip keeps solid fill; ensure readable text in dark */
 :root[data-theme="dark"] .ui-chip--crit {
@@ -1144,7 +1146,7 @@ textarea {
   width: 100%;
   height: 46px;
   border: 1px solid var(--md-outline);
-  border-radius: 10px;
+  border-radius: 8px;
   font-weight: 600;
   color: var(--md-on-surface);
   margin-bottom: 10px;
@@ -1172,6 +1174,37 @@ textarea {
 .sso--primary:hover {
   background: var(--md-primary-c);
   border-color: transparent;
+}
+/* Progressive disclosure: reveal the email/password form. Text link, not a
+   button — keeps YouConnect the single filled primary on the card. */
+.login-email-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  margin-top: 6px;
+  padding: 8px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--md-accent-d);
+  border-radius: 8px;
+  transition: background 0.15s, color 0.15s;
+}
+.login-email-toggle svg {
+  flex-shrink: 0;
+}
+.login-email-toggle:hover {
+  background: var(--md-surface-1);
+}
+.login-email-toggle:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-accent);
 }
 
 /* ============ Scrollbar polish ============ */
@@ -1730,6 +1763,33 @@ textarea {
   );
   background-size: 200% 100%;
   animation: ai-shimmer 1.4s linear infinite;
+}
+
+/* ---- skeleton loaders (neutral grey; distinct from the petrol AI cue).
+   The sweep is a Framer Motion transform (translateX) over a static base. ---- */
+.ui-skel {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--md-surface-2);
+  border-radius: 7px;
+}
+.ui-skel-sweep {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--skel-sweep) 50%,
+    transparent 100%
+  );
+  will-change: transform;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ui-skel-sweep {
+    display: none;
+  }
 }
 
 /* ════════════ ORGANISMS / SHELL v2 ════════════ */
@@ -2424,88 +2484,90 @@ textarea {
 .spm-rail {
   border-right: 1px solid var(--md-outline-v);
   background: var(--md-surface);
-  padding: 26px 20px;
+  padding: 18px 14px;
   overflow-y: auto;
 }
+/* Row-style step: icon + label left, donut indicator right, animated pill when active. */
 .spm-step {
+  position: relative;
   display: flex;
-  gap: 14px;
+  align-items: center;
+  gap: 11px;
   width: 100%;
   text-align: left;
   border: none;
   background: transparent;
-  padding: 0;
+  padding: 11px 12px;
+  border-radius: 10px;
   cursor: default;
-  position: relative;
+  transition: background 0.15s;
 }
 .spm-step.clickable {
   cursor: pointer;
 }
+.spm-step.clickable:hover:not(.active) {
+  background: var(--md-surface-1);
+}
 .spm-step + .spm-step {
-  margin-top: 6px;
+  margin-top: 2px;
 }
-.spm-step-rail {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  flex-shrink: 0;
+/* Animated active pill (framer layoutId) — slides between steps like the nav. */
+.spm-step-pill {
+  position: absolute;
+  inset: 0;
+  background: var(--md-selected);
+  border-radius: 10px;
+  z-index: 0;
 }
-.spm-num {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
+.spm-step-ic {
   display: grid;
   place-items: center;
-  font-size: 13px;
-  font-weight: 700;
-  border: 2px solid var(--md-outline);
-  color: var(--md-on-surface-v);
-  background: var(--md-surface);
-  transition: all 0.18s;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+  color: var(--md-on-surface-t);
+  transition: color 0.18s;
 }
-.spm-step.active .spm-num {
-  border-color: var(--md-primary);
-  background: var(--grad-primary);
-  color: #fff;
+.spm-step.active .spm-step-ic {
+  color: var(--md-on-selected);
 }
-.spm-step.done .spm-num {
-  border-color: var(--md-accent);
-  background: var(--md-accent);
-  color: #fff;
-}
-.spm-connector {
-  width: 2px;
-  flex: 1;
-  min-height: 22px;
-  background: var(--md-outline-v);
-  margin: 4px 0;
-}
-.spm-step.done .spm-connector {
-  background: var(--md-accent);
-}
-.spm-step-text {
-  padding-bottom: 18px;
-  padding-top: 4px;
-}
-.spm-step:last-child .spm-step-text {
-  padding-bottom: 0;
+.spm-step.done .spm-step-ic {
+  color: var(--md-accent);
 }
 .spm-step-label {
-  display: block;
+  position: relative;
+  z-index: 1;
   font-weight: 600;
   font-size: 14px;
   color: var(--md-on-surface-v);
 }
-.spm-step.active .spm-step-label,
+.spm-step.active .spm-step-label {
+  color: var(--md-on-selected);
+}
 .spm-step.done .spm-step-label {
   color: var(--md-on-surface);
 }
-.spm-step-desc {
-  display: block;
-  font-size: 12px;
-  color: var(--md-on-surface-v);
-  margin-top: 3px;
-  line-height: 1.4;
+/* Donut indicator: hollow ring (grey → petrol when active) → petrol disc + check */
+.spm-ind {
+  position: relative;
+  z-index: 1;
+  margin-left: auto;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--md-outline);
+  color: #fff;
+  transition: border-color 0.18s, background 0.18s;
+}
+.spm-step.active .spm-ind {
+  border-color: var(--md-accent);
+}
+.spm-step.done .spm-ind {
+  border-color: var(--md-accent);
+  background: var(--md-accent);
 }
 .spm-content {
   overflow-y: auto;
@@ -2524,14 +2586,6 @@ textarea {
   padding: 14px 22px;
   background: var(--md-surface);
   border-top: 1px solid var(--md-outline-v);
-}
-.spm-foot-right {
-  display: flex;
-  gap: 10px;
-}
-.spm-progress {
-  font-size: 12.5px;
-  color: var(--md-on-surface-v);
 }
 
 /* ---- dashboard widgets ---- */
@@ -2609,12 +2663,11 @@ textarea {
 .an-row:hover {
   background: var(--md-surface-1);
 }
-.an-ic {
-  width: 34px;
-  height: 34px;
-  border-radius: 9px;
-  display: grid;
-  place-items: center;
+/* Leading risk dot — small severity marker (color only for moderate/elevated). */
+.an-risk {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
   flex-shrink: 0;
 }
 .an-main {
@@ -2663,6 +2716,13 @@ textarea {
 .rc-main .s {
   font-size: 12px;
   color: var(--md-on-surface-v);
+}
+/* Routine statuses render as muted text (no badge) so color marks exceptions. */
+.rc-status {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--md-on-surface-t);
+  white-space: nowrap;
 }
 
 /* ---- Review volume chart (bespoke SVG combo: bars + line) ---- */

@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Parachute v2 — IA Board (canvas)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Schibsted+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#10344C; --navy-h:#1B4F73; --petrol:#2A6F7F; --petrol-tint:#DEEBEE;
+    --canvas:#ECEEF1; --surface:#FFFFFF; --surface-1:#F1F2F4; --surface-2:#E9EBEE;
+    --border:#E2E4E8; --hair:#EDEEF1;
+    --ink:#1A1D21; --ink-2:#565C64; --ink-3:#868D96;
+    --built:#15834A; --locked:#2A6F7F; --undecided:#C98A12; --temp:#868D96;
+    --line:#C7CCD2;
+    --r:12px;
+    font-family:'Inter',-apple-system,'Segoe UI',Roboto,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;overflow:hidden;background:var(--canvas);color:var(--ink);font-size:13px;line-height:1.5}
+
+  /* ---- canvas viewport + world ---- */
+  #viewport{position:fixed;inset:0;overflow:hidden;cursor:grab;touch-action:none;
+    background:
+      radial-gradient(circle at 1px 1px, #d4d8dd 1px, transparent 0) 0 0/26px 26px,
+      var(--canvas);}
+  #viewport.grabbing{cursor:grabbing}
+  #world{position:absolute;top:0;left:0;transform-origin:0 0;user-select:none;will-change:transform}
+
+  /* ---- area container ---- */
+  .area{position:absolute;background:rgba(241,242,244,.78);border:1px solid var(--border);border-radius:18px;padding:38px 26px 28px;width:max-content}
+  .area.flat{padding-bottom:26px}
+  .area.tint-petrol{background:rgba(222,235,238,.7)}
+  .area > .area-label{position:absolute;top:-14px;left:20px;background:var(--navy);color:#fff;font-weight:600;font-size:13px;letter-spacing:.3px;padding:6px 15px;border-radius:10px;box-shadow:0 2px 5px rgba(16,52,76,.2)}
+  .area-note{font-size:11.5px;color:var(--ink-2);margin:-4px 0 16px;max-width:760px}
+
+  /* ---- card ---- */
+  .node{position:relative;z-index:1;display:inline-block;width:248px;vertical-align:top;text-align:left}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:0 1px 2px rgba(16,52,76,.06),0 3px 10px rgba(16,52,76,.06);padding:26px 14px 14px;position:relative;min-height:118px;cursor:zoom-in;transition:box-shadow .12s,border-color .12s}
+  .card:hover{box-shadow:0 4px 16px rgba(16,52,76,.16);border-color:#cfd4da}
+  .pill{position:absolute;top:-11px;left:12px;color:#fff;font-weight:600;font-size:11.5px;padding:4px 11px;border-radius:8px;box-shadow:0 1px 2px rgba(0,0,0,.12);max-width:218px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pill.built{background:var(--built)} .pill.locked{background:var(--locked)}
+  .pill.undecided{background:var(--undecided)} .pill.temp{background:var(--temp)}
+  .card .body{display:flex;gap:11px}
+  .thumb{flex:0 0 64px;height:64px;background:repeating-linear-gradient(135deg,#dfe3e8 0 6px,#e7eaee 6px 12px);border:1px solid var(--border);border-radius:7px;display:grid;place-items:center;text-align:center;font-size:8.5px;color:var(--ink-3);padding:4px;line-height:1.2}
+  .card .desc{flex:1;font-size:11.5px;color:var(--ink-2);line-height:1.45}
+  .card .route{display:block;color:var(--petrol);font-weight:600;font-size:10.5px;margin-bottom:3px}
+  .card .openq{display:block;margin-top:6px;color:var(--undecided);font-size:10.5px;font-weight:600}
+  .kindtag{position:absolute;top:8px;right:10px;font-size:9px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-3)}
+
+  /* ---- tree layout (connectors are drawn as SVG by drawTreeConnectors,
+     computed from real card positions so they always touch the cards) ---- */
+  .tree{display:inline-block;position:relative;padding-top:4px}
+  .tree ul{display:flex;justify-content:center;padding-top:36px;position:relative}
+  .tree li{list-style:none;position:relative;padding:0 16px;text-align:center}
+  .tree > ul{padding-top:0}
+  .conn-svg{position:absolute;top:0;left:0;overflow:visible;pointer-events:none;z-index:0}
+
+  .flatrow{display:flex;flex-wrap:wrap;gap:18px}
+  .subview .pill::before{content:'▸ ';opacity:.8}
+  .tabnode .pill::before{content:'⊞ ';opacity:.85}
+
+  /* ---- floating chrome ---- */
+  .toolbar{position:fixed;top:14px;left:14px;z-index:30;display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.92);backdrop-filter:blur(6px);border:1px solid var(--border);border-radius:14px;padding:10px 14px;box-shadow:0 4px 16px rgba(16,52,76,.12);max-width:min(680px,calc(100vw - 28px))}
+  .toolbar .ttl{font-family:'Schibsted Grotesk','Inter',sans-serif;font-weight:700;color:var(--navy);font-size:15px;white-space:nowrap}
+  .toolbar .legend{display:flex;flex-wrap:wrap;gap:9px;align-items:center;border-left:1px solid var(--border);padding-left:12px}
+  .toolbar .lg{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--ink-2)}
+  .toolbar .dot{width:10px;height:10px;border-radius:3px}
+  .zoombar{position:fixed;top:14px;right:14px;z-index:30;display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.92);backdrop-filter:blur(6px);border:1px solid var(--border);border-radius:14px;padding:7px 9px;box-shadow:0 4px 16px rgba(16,52,76,.12)}
+  .zoombar button{font-family:inherit;border:1px solid var(--border);background:var(--surface);color:var(--navy);border-radius:9px;height:34px;min-width:34px;padding:0 11px;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+  .zoombar button:hover{background:var(--surface-1);border-color:#cfd4da}
+  .zoombar .zlevel{min-width:50px;text-align:center;font-size:12px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+  .hint{position:fixed;bottom:14px;left:14px;z-index:30;background:rgba(255,255,255,.9);border:1px solid var(--border);border-radius:10px;padding:7px 12px;font-size:11.5px;color:var(--ink-2);box-shadow:0 2px 8px rgba(16,52,76,.1)}
+  .hint b{color:var(--navy)}
+
+  /* ---- minimap ---- */
+  #minimap{position:fixed;bottom:14px;right:14px;z-index:30;width:230px;height:158px;background:rgba(255,255,255,.94);border:1px solid var(--border);border-radius:12px;box-shadow:0 4px 16px rgba(16,52,76,.14);overflow:hidden;cursor:pointer}
+  #minimap .mm-inner{position:absolute;inset:0}
+  #minimap .mm-area{position:absolute;border-radius:3px}
+  #minimap .mm-view{position:absolute;border:2px solid var(--navy);background:rgba(16,52,76,.1);border-radius:3px;pointer-events:none}
+  #minimap .mm-label{position:absolute;top:5px;left:8px;font-size:9px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-3)}
+</style>
+</head>
+<body>
+  <div class="toolbar">
+    <span class="ttl">Parachute v2 · IA</span>
+    <span class="legend">
+      <span class="lg"><span class="dot" style="background:var(--built)"></span>Built</span>
+      <span class="lg"><span class="dot" style="background:var(--locked)"></span>Locked</span>
+      <span class="lg"><span class="dot" style="background:var(--undecided)"></span>Undecided</span>
+      <span class="lg"><span class="dot" style="background:var(--temp)"></span>Temp</span>
+      <span class="lg">⊞ tab · ▸ sub-view</span>
+    </span>
+  </div>
+
+  <div class="zoombar">
+    <button id="z-out" title="Zoom out">−</button>
+    <span class="zlevel" id="zlevel">100%</span>
+    <button id="z-in" title="Zoom in">+</button>
+    <button id="z-fit" title="Fit whole board">Fit</button>
+    <button id="z-reset" title="Reset to 100%">Reset</button>
+  </div>
+
+  <div id="viewport">
+    <div id="world"></div>
+  </div>
+
+  <div id="minimap"><div class="mm-inner" id="mm-inner"></div><span class="mm-label">Overview</span></div>
+  <div class="hint">Scroll / pinch to <b>zoom</b> · drag to <b>pan</b> · click a <b>card</b> to focus · click empty space to <b>fit</b></div>
+
+<script>
+/* ============================================================
+   IA DATA — kept in sync with parachute-v2-ia-board.html / ia-map.md.
+   (Canvas variant: same data, zoomable 2D board.)
+   ============================================================ */
+const AREAS = [
+  {
+    label:'Authentication', kind:'tree',
+    roots:[
+      { name:'Login', status:'built', route:'/login',
+        desc:'Email/password + SSO-first (YouConnect, Microsoft, generic). Entry to the app.',
+        children:[
+          { name:'Launch', status:'built', route:'/launch',
+            desc:'YouConnect→Parachute interstitial. Smooths the SSO hand-off, then routes to Dashboard.' }
+        ]}
+    ]
+  },
+  {
+    label:'Core App (authenticated)', kind:'tree',
+    note:'Shell = collapsible sidebar (Dashboard · Reviews · Templates · Settings) + Org card · app header (search→command palette, notifications, help, avatar).',
+    roots:[
+      { name:'App shell', status:'built',
+        desc:'Authenticated shell: sidebar nav, header, global command palette (Ctrl/Cmd-K), global Order modal.',
+        children:[
+          { name:'Dashboard', status:'built', route:'/dashboard',
+            desc:'Overview: greeting, period picker, KPI StatBar (+ live "Pipeline running" tile), Review-volume chart, Action-needed, Recent reviews.' },
+
+          { name:'Reviews', status:'built', route:'/reviews',
+            desc:'Operational queue — tabs (All/Mine/Flagged) + search + status filter + table. Order-a-review button.',
+            children:[
+              { name:'Review detail', status:'locked', route:'/reviews/[id]', kind:'page',
+                desc:'Single route. Property context bar; Technical / Administrative in-page tabs (redirects to Technical).',
+                children:[
+                  { name:'Tab / Technical', status:'locked', kind:'tab',
+                    desc:'Findings focus-mode + workbook tally. Owns three sub-views.',
+                    children:[
+                      { name:'Findings', status:'locked', kind:'subview',
+                        desc:'Focus mode: one finding at a time. Accept/Reject primary (navy); Disagree-edit/Comment/Add-condition/Flag behind ⋯. Cited source docked beside it.' },
+                      { name:'Builder', status:'locked', kind:'subview',
+                        desc:'Customize the workbook layout. Decided: v2 = focused customize panel (reorder/exclude sections, show-hide, theme, font, risk labels) + owns all customization. Full 3-pane builder + appraisal-section import + org section-library publish deferred.' },
+                      { name:'Workbook', status:'locked', kind:'subview',
+                        desc:'Compiled branded document. DRAFT watermark → Sign → Complete (file) / Return to appraiser. Decided: clean output + lifecycle only; customization lives in Builder.' }
+                    ]},
+                  { name:'Tab / Administrative', status:'locked', kind:'tab',
+                    desc:'AI-prefilled bank checklist. Attest Yes/No/NA (+ audited reason on change), evidence + page cite, sign. Decided: shares the Technical focus-mode shell (list rail + focus pane + docked source).' },
+                  { name:'Triage', status:'locked', route:'/reviews/[id]/triage', kind:'page',
+                    desc:'Auto-rejected intake: failed-criterion card → "Override & admit" (audited, navy) or "Confirm & return" (outline). SLA paused. Decided: keep as its own route (only routed review sub-page); linked from the Dashboard "Intake triage" tile.' }
+                ]}
+            ]},
+
+          { name:'Templates', status:'locked', route:'/templates',
+            desc:'Hub for the templating tools. Decided: landing with cards; each tool opens its own sub-route.',
+            children:[
+              { name:'Checklist Mapper', status:'locked', route:'/templates/checklist',
+                desc:'Upload bank checklist .docx → AI extracts items → map (binary/qualitative) / flag ambiguous → re-extract → publish version. Drives Administrative Review. Decided: home is Templates; Settings → Compliance links here.' },
+              { name:'Response Templates', status:'locked', route:'/templates/responses',
+                desc:'Org + personal canned responses (Concur / Condition / Requires revision / Override…) with merge fields. Populate the finding ⋯ and workbook. Decided: master/detail (list + editor) within this sub-route.' },
+              { name:'Org Workbook Layout', status:'locked', route:'/templates/workbook-layout',
+                desc:'= Builder in org-default mode: section library, versioned "Publish vN".' }
+            ]},
+
+          { name:'Settings', status:'built', route:'/settings',
+            desc:'Tabbed: Organization · Review defaults · Compliance · My profile · Preferences (theme + density live).' }
+        ]}
+    ]
+  },
+  {
+    label:'Global overlays (mounted in shell, store-driven)', kind:'flat', tint:true,
+    roots:[
+      { name:'Order stepper', status:'locked', kind:'overlay',
+        desc:'Full-page StepperModal, global via useOrderStore. Source → Review type → Reviewer → Options → Confirm & run. Decided: "Run pipeline" routes into the new review in its running state.' },
+      { name:'Command palette', status:'built', kind:'overlay',
+        desc:'Ctrl/Cmd-K — search reviews, go-to pages, run actions. Keyboard-navigable.' },
+      { name:'Notifications panel', status:'locked', kind:'overlay',
+        desc:'In-app bell panel (review ready / returned / assigned / overdue); items deep-link to the review. Decided: build the demoable in-app panel now; email is the real production channel (engineering-owned).' },
+      { name:'Quick-look drawer', status:'locked', kind:'overlay',
+        desc:'Peek a review from the queue (status, findings summary, next action, download) without leaving it. Decided: right side drawer; "Open review" goes to the full route. Reused by Add-finding.' },
+      { name:'Download menu', status:'locked', kind:'overlay',
+        desc:'Anchored popover from context bar / rows: Technical PDF/DOCX, Admin PDF/DOCX, ZIP. DRAFT vs FINAL.' },
+      { name:'Source-preview modal', status:'locked', kind:'overlay',
+        desc:'Builder import: preview an extracted appraisal section before including it.' },
+      { name:'Snackbar / toast', status:'built', kind:'overlay',
+        desc:'Transient confirmations with UNDO.' }
+    ]
+  },
+  {
+    label:'Dev / temporary (not product pages)', kind:'flat',
+    roots:[
+      { name:'/components', status:'temp', kind:'page', desc:'Design-system showcase. Internal dev tool — decide if it ships.' },
+      { name:'/styleguide', status:'temp', kind:'page', desc:'Palette decision surface. Remove before hand-off.' }
+    ]
+  }
+];
+
+/* ---------- card / tree renderers ---------- */
+function card(n){
+  const kind = n.kind || 'page';
+  const kindLabel = kind==='tab' ? 'Tab' : kind==='subview' ? 'Sub-view' : kind==='overlay' ? 'Overlay' : '';
+  const cls = kind==='subview' ? 'subview' : kind==='tab' ? 'tabnode' : '';
+  return `<div class="node ${cls}">
+    <div class="card">
+      <span class="pill ${n.status}">${n.name}</span>
+      ${kindLabel?`<span class="kindtag">${kindLabel}</span>`:''}
+      <div class="body">
+        <div class="thumb">${n.name}</div>
+        <div class="desc">${n.route?`<span class="route">${n.route}</span>`:''}${n.desc}${n.openq?`<span class="openq">🟧 ${n.openq}</span>`:''}</div>
+      </div>
+    </div>
+  </div>`;
+}
+function treeList(nodes){
+  return `<ul>${nodes.map(n=>{
+    const kids = n.children && n.children.length ? treeList(n.children) : '';
+    return `<li>${card(n)}${kids}</li>`;
+  }).join('')}</ul>`;
+}
+function areaHTML(a){
+  const label = `<span class="area-label">${a.label}</span>`;
+  const note = a.note?`<div class="area-note">${a.note}</div>`:'';
+  const inner = a.kind==='tree'
+    ? `<div class="tree">${treeList(a.roots)}</div>`
+    : `<div class="flatrow">${a.roots.map(card).join('')}</div>`;
+  return label+note+inner;
+}
+
+/* ---------- build areas + spatial layout ---------- */
+const world = document.getElementById('world');
+const areaEls = AREAS.map(a=>{
+  const el = document.createElement('section');
+  el.className = 'area '+(a.kind==='flat'?'flat ':'')+(a.tint?'tint-petrol':'');
+  if(a.kind==='flat') el.style.width = '820px';   // wrap flat areas into ~3-up rows
+  el.innerHTML = areaHTML(a);
+  world.appendChild(el);
+  return el;
+});
+
+let contentW=0, contentH=0;
+function layout(){
+  const m = areaEls.map(el=>({w:el.offsetWidth,h:el.offsetHeight}));
+  const GAP=90;
+  // left column: Authentication (0) over Core App (1); right column: Overlays (2) over Dev (3)
+  const leftW = Math.max(m[0].w, m[1].w);
+  // left column
+  pos(0, 0, 0);
+  pos(1, 0, m[0].h + GAP);
+  const leftH = m[0].h + GAP + m[1].h;
+  // right column
+  const rightX = leftW + GAP*1.4;
+  pos(2, rightX, 0);
+  pos(3, rightX, m[2].h + GAP);
+  const rightH = m[2].h + GAP + m[3].h;
+  contentW = rightX + Math.max(m[2].w, m[3].w);
+  contentH = Math.max(leftH, rightH);
+  function pos(i,x,y){areaEls[i].style.left=x+'px';areaEls[i].style.top=y+'px';}
+  buildMinimap(m);
+}
+
+/* ---------- pan / zoom ---------- */
+const vp = document.getElementById('viewport');
+const zlevel = document.getElementById('zlevel');
+const MIN=0.05, MAX=2;
+let scale=1, tx=0, ty=0;
+
+function apply(animate){
+  world.style.transition = animate ? 'transform .35s cubic-bezier(.4,0,.2,1)' : 'none';
+  world.style.transform = `translate(${tx}px,${ty}px) scale(${scale})`;
+  zlevel.textContent = Math.round(scale*100)+'%';
+  updateMiniView();
+}
+const clampS = s => Math.max(MIN, Math.min(MAX, s));
+function zoomAt(cx,cy,factor){
+  const ns = clampS(scale*factor);
+  const wx=(cx-tx)/scale, wy=(cy-ty)/scale;
+  scale=ns; tx=cx-wx*scale; ty=cy-wy*scale; apply();
+}
+function fitView(animate=true){
+  const r=vp.getBoundingClientRect(), pad=90;
+  scale=clampS(Math.min((r.width-pad)/contentW,(r.height-pad)/contentH));
+  tx=(r.width-contentW*scale)/2; ty=(r.height-contentH*scale)/2; apply(animate);
+}
+function resetView(){
+  scale=1; const r=vp.getBoundingClientRect();
+  tx=40; ty=Math.min(40,(r.height-contentH)/2); apply(true);
+}
+function zoomToEl(el){
+  const r=el.getBoundingClientRect(), vr=vp.getBoundingClientRect(), pad=80;
+  const wx=(r.left-vr.left-tx)/scale, wy=(r.top-vr.top-ty)/scale;
+  const wW=r.width/scale, wH=r.height/scale;
+  scale=clampS(Math.min((vr.width-pad)/wW,(vr.height-pad)/wH));
+  tx=(vr.width-wW*scale)/2 - wx*scale;
+  ty=(vr.height-wH*scale)/2 - wy*scale;
+  apply(true);
+}
+
+vp.addEventListener('wheel',e=>{
+  e.preventDefault();
+  const r=vp.getBoundingClientRect();
+  zoomAt(e.clientX-r.left, e.clientY-r.top, Math.exp(-e.deltaY*0.0015));
+},{passive:false});
+
+let dragging=false, moved=false, sx=0, sy=0;
+vp.addEventListener('pointerdown',e=>{dragging=true;moved=false;sx=e.clientX;sy=e.clientY;vp.classList.add('grabbing');});
+window.addEventListener('pointermove',e=>{
+  if(!dragging)return;
+  const dx=e.clientX-sx, dy=e.clientY-sy;
+  if(Math.abs(dx)+Math.abs(dy)>3) moved=true;
+  tx+=dx; ty+=dy; sx=e.clientX; sy=e.clientY; apply();
+});
+window.addEventListener('pointerup',e=>{
+  if(!dragging)return;
+  dragging=false; vp.classList.remove('grabbing');
+  if(moved) return;                               // it was a pan, not a click
+  const t=document.elementFromPoint(e.clientX,e.clientY);
+  const cardEl = t && t.closest && t.closest('.card');
+  if(cardEl) zoomToEl(cardEl);
+  else if(t && (t.id==='viewport' || t.id==='world' || (t.classList&&t.classList.contains('area')))) fitView();
+});
+
+document.getElementById('z-in').onclick = ()=>{const r=vp.getBoundingClientRect();zoomAt(r.width/2,r.height/2,1.25);};
+document.getElementById('z-out').onclick = ()=>{const r=vp.getBoundingClientRect();zoomAt(r.width/2,r.height/2,0.8);};
+document.getElementById('z-fit').onclick = ()=>fitView();
+document.getElementById('z-reset').onclick = ()=>resetView();
+window.addEventListener('keydown',e=>{
+  if(e.key==='+'||e.key==='='){document.getElementById('z-in').click();}
+  else if(e.key==='-'){document.getElementById('z-out').click();}
+  else if(e.key==='0'){fitView();}
+});
+
+/* ---------- minimap ---------- */
+const mmInner = document.getElementById('mm-inner');
+const minimap = document.getElementById('minimap');
+let mmScale=1, mmOffX=0, mmOffY=0, mmView;
+const AREA_FILL=['rgba(16,52,76,.18)','rgba(16,52,76,.22)','rgba(42,111,127,.22)','rgba(134,141,150,.22)'];
+function buildMinimap(m){
+  const box=minimap.getBoundingClientRect(), pad=12;
+  mmScale=Math.min((box.width-pad*2)/contentW,(box.height-pad*2)/contentH);
+  mmOffX=(box.width-contentW*mmScale)/2; mmOffY=(box.height-contentH*mmScale)/2;
+  mmInner.innerHTML='';
+  areaEls.forEach((el,i)=>{
+    const d=document.createElement('div'); d.className='mm-area';
+    d.style.left=(mmOffX+el.offsetLeft*mmScale)+'px';
+    d.style.top=(mmOffY+el.offsetTop*mmScale)+'px';
+    d.style.width=(el.offsetWidth*mmScale)+'px';
+    d.style.height=(el.offsetHeight*mmScale)+'px';
+    d.style.background=AREA_FILL[i]||'rgba(0,0,0,.15)';
+    d.style.border='1px solid rgba(16,52,76,.25)';
+    mmInner.appendChild(d);
+  });
+  mmView=document.createElement('div'); mmView.className='mm-view'; mmInner.appendChild(mmView);
+}
+function updateMiniView(){
+  if(!mmView)return;
+  const r=vp.getBoundingClientRect();
+  const visX=-tx/scale, visY=-ty/scale, visW=r.width/scale, visH=r.height/scale;
+  mmView.style.left=(mmOffX+visX*mmScale)+'px';
+  mmView.style.top=(mmOffY+visY*mmScale)+'px';
+  mmView.style.width=(visW*mmScale)+'px';
+  mmView.style.height=(visH*mmScale)+'px';
+}
+minimap.addEventListener('click',e=>{
+  const box=minimap.getBoundingClientRect();
+  const wx=(e.clientX-box.left-mmOffX)/mmScale, wy=(e.clientY-box.top-mmOffY)/mmScale;
+  const r=vp.getBoundingClientRect();
+  tx=r.width/2-wx*scale; ty=r.height/2-wy*scale; apply(true);
+});
+
+/* ---------- connectors (SVG, computed from real card positions) ---------- */
+function drawTreeConnectors(){
+  document.querySelectorAll('.conn-svg').forEach(s=>s.remove());
+  const prevT = world.style.transform;
+  world.style.transform = 'none';                 // measure at scale 1
+  const NS='http://www.w3.org/2000/svg';
+  document.querySelectorAll('.area .tree').forEach(tree=>{
+    const tr = tree.getBoundingClientRect();
+    const rel = el=>{const r=el.getBoundingClientRect();return{cx:r.left+r.width/2-tr.left, top:r.top-tr.top, bottom:r.bottom-tr.top};};
+    const svg = document.createElementNS(NS,'svg');
+    svg.setAttribute('class','conn-svg');
+    svg.setAttribute('width', tree.scrollWidth);
+    svg.setAttribute('height', tree.scrollHeight);
+    tree.querySelectorAll('li').forEach(li=>{
+      const pc = li.querySelector(':scope > .node > .card'); if(!pc) return;
+      const kids = [...li.querySelectorAll(':scope > ul > li > .node > .card')]; if(!kids.length) return;
+      const p = rel(pc), k = kids.map(rel);
+      const childTop = Math.min(...k.map(x=>x.top));
+      const busY = p.bottom + (childTop - p.bottom)/2;     // elbow midline
+      const minX = Math.min(...k.map(x=>x.cx)), maxX = Math.max(...k.map(x=>x.cx));
+      let d = `M ${p.cx} ${p.bottom} V ${busY} M ${minX} ${busY} H ${maxX} `;
+      k.forEach(x=>{ d += `M ${x.cx} ${busY} V ${x.top} `; });
+      const path = document.createElementNS(NS,'path');
+      path.setAttribute('d', d);
+      path.setAttribute('fill','none');
+      path.setAttribute('stroke','#AAB1B9');
+      path.setAttribute('stroke-width','2');
+      path.setAttribute('stroke-linecap','round');
+      svg.appendChild(path);
+    });
+    tree.insertBefore(svg, tree.firstChild);
+  });
+  world.style.transform = prevT;
+}
+
+/* ---------- init ---------- */
+function init(){ layout(); drawTreeConnectors(); fitView(false); }
+window.addEventListener('load', init);
+if(document.fonts && document.fonts.ready){ document.fonts.ready.then(init); }
+window.addEventListener('resize', ()=>{ layout(); drawTreeConnectors(); updateMiniView(); });
+init();
+</script>
+</body>
+</html>

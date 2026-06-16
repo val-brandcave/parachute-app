@@ -1,7 +1,8 @@
 "use client";
 
+import { AnimatePresence, motion } from "framer-motion";
 import { useReviewQueue } from "./hooks/useReviewQueue";
-import { ReviewTable, OrderButton } from "@/components/organisms";
+import { ReviewTable, ReviewTableSkeleton, OrderButton } from "@/components/organisms";
 import { Tabs } from "@/components/molecules";
 import { Icon } from "@/components/atoms";
 
@@ -66,28 +67,51 @@ export default function MyReviewsPage() {
             overflow: "hidden",
           }}
         >
-          {isLoading ? (
-            <div style={{ padding: 44, textAlign: "center", color: "var(--md-on-surface-v)" }}>
-              Loading reviews…
-            </div>
-          ) : reviews.length === 0 ? (
-            <div style={{ padding: 44, textAlign: "center", color: "var(--md-on-surface-v)" }}>
-              No reviews match your filters.
-            </div>
-          ) : (
-            <ReviewTable reviews={reviews} />
-          )}
+          <AnimatePresence mode="wait">
+            {isLoading ? (
+              <motion.div
+                key="skeleton"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <ReviewTableSkeleton />
+              </motion.div>
+            ) : (
+              <motion.div
+                key="content"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.25 }}
+              >
+                {reviews.length === 0 ? (
+                  <div
+                    style={{
+                      padding: 44,
+                      textAlign: "center",
+                      color: "var(--md-on-surface-v)",
+                    }}
+                  >
+                    No reviews match your filters.
+                  </div>
+                ) : (
+                  <ReviewTable reviews={reviews} />
+                )}
 
-          <div
-            style={{
-              padding: "10px 20px",
-              fontSize: 12.5,
-              color: "var(--md-on-surface-v)",
-              borderTop: "1px solid var(--md-outline-v)",
-            }}
-          >
-            Showing {reviews.length} of {total}
-          </div>
+                <div
+                  style={{
+                    padding: "10px 20px",
+                    fontSize: 12.5,
+                    color: "var(--md-on-surface-v)",
+                    borderTop: "1px solid var(--md-outline-v)",
+                  }}
+                >
+                  Showing {reviews.length} of {total}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </>

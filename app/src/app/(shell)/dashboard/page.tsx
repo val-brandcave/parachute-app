@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { useDashboard } from "./hooks/useDashboard";
 import { PageHeader } from "@/components/templates/PageHeader";
 import { PeriodPicker, PERIOD_LABEL, periodLabel } from "@/components/molecules";
@@ -11,10 +11,12 @@ import {
   ActionNeeded,
   RecentReviews,
   TrendChart,
+  DashboardSkeleton,
 } from "@/components/organisms";
 
 export default function DashboardPage() {
   const {
+    isLoading,
     period,
     setPeriod,
     range,
@@ -86,22 +88,37 @@ export default function DashboardPage() {
       />
 
       <div className="pagebody">
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25 }}
-        >
-          <StatBar stats={stats} />
-        </motion.div>
+        <AnimatePresence mode="wait">
+          {isLoading ? (
+            <motion.div
+              key="skeleton"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <DashboardSkeleton />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="content"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.28 }}
+            >
+              <StatBar stats={stats} />
 
-        <div style={{ marginTop: "var(--d-gap)" }}>
-          <TrendChart {...trend} periodLabel={periodLabel(period, range)} />
-        </div>
+              <div style={{ marginTop: "var(--d-gap)" }}>
+                <TrendChart {...trend} periodLabel={periodLabel(period, range)} />
+              </div>
 
-        <div className="dash-grid">
-          <ActionNeeded reviews={actionNeeded} />
-          <RecentReviews reviews={recent} />
-        </div>
+              <div className="dash-grid">
+                <ActionNeeded reviews={actionNeeded} />
+                <RecentReviews reviews={recent} />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </>
   );

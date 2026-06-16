@@ -6,11 +6,11 @@ import { StepperModal, type Step } from "./StepperModal";
 import { useOrderStore } from "@/store";
 
 const STEPS: Step[] = [
-  { key: "source", label: "Source", desc: "YouConnect or upload" },
-  { key: "type", label: "Review type", desc: "Technical / Administrative" },
-  { key: "reviewer", label: "Reviewer", desc: "Assign the review" },
-  { key: "options", label: "Options", desc: "Defaults & overrides" },
-  { key: "confirm", label: "Confirm & run", desc: "Review and submit" },
+  { key: "source", label: "Source", icon: "connect" },
+  { key: "type", label: "Review type", icon: "checklist" },
+  { key: "reviewer", label: "Reviewer", icon: "user" },
+  { key: "options", label: "Options", icon: "settings" },
+  { key: "confirm", label: "Confirm & run", icon: "check-circle" },
 ];
 
 const PLACEHOLDER: Record<string, { title: string; body: string }> = {

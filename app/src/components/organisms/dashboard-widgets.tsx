@@ -6,10 +6,25 @@ import { useEffect, useRef, useState } from "react";
 import { Icon, Chip } from "@/components/atoms";
 import { ActionMenu, type ActionItem } from "@/components/molecules";
 import { cn, relativeDue, STATUS_META } from "@/lib/utils";
-import { reviewHref, STATUS_TONE } from "./ReviewTable";
-import type { Review } from "@/types";
+import { reviewHref } from "./ReviewTable";
+import type { Review, ReviewStatus } from "@/types";
 
-/** Action-needed widget: the most urgent items waiting on the reviewer. */
+/** Risk → dot color. Calm by default: only elevated (red) and moderate (amber)
+ *  carry color; low/unrated stay neutral grey so color signals real severity. */
+const riskColor = (rating: Review["riskRating"]) =>
+  rating === "elevated"
+    ? "var(--md-error)"
+    : rating === "moderate"
+      ? "var(--md-warn)"
+      : "var(--md-on-surface-t)";
+
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+/** Action-needed widget: the most urgent items waiting on the reviewer.
+ *  Leading risk dot, then the property; the right-hand badge carries the one
+ *  meaningful signal per row — due urgency (neutral/amber/red) or, for an
+ *  auto-rejected item, its failure state. No status text (the widget IS the
+ *  status) and no decorative icon tiles. */
 export function ActionNeeded({ reviews }: { reviews: Review[] }) {
   return (
     <div className="widget">
@@ -25,30 +40,31 @@ export function ActionNeeded({ reviews }: { reviews: Review[] }) {
         ) : (
           reviews.map((r) => {
             const due = relativeDue(r.slaDueAt);
-            const tone =
-              r.status === "autorejected"
-                ? { bg: "var(--md-error-c)", c: "var(--md-error)", icon: "checklist" as const }
-                : due.tone === "overdue"
-                  ? { bg: "var(--md-error-c)", c: "var(--md-error)", icon: "warn" as const }
-                  : { bg: "var(--md-warn-c)", c: "var(--md-warn)", icon: "flag" as const };
             return (
               <Link key={r.id} href={reviewHref(r)} className="an-row">
-                <span className="an-ic" style={{ background: tone.bg, color: tone.c }}>
-                  <Icon name={tone.icon} size={17} />
-                </span>
+                <span
+                  className="an-risk"
+                  style={r.riskRating ? { background: riskColor(r.riskRating) } : undefined}
+                  title={r.riskRating ? `${cap(r.riskRating)} risk` : undefined}
+                  aria-label={r.riskRating ? `${cap(r.riskRating)} risk` : undefined}
+                />
                 <span className="an-main">
                   <div className="t">{r.propertyAddress}</div>
                   <div className="s">
-                    {STATUS_META[r.status].label} · {r.propertyType} · Loan #{r.loanNo}
+                    {r.propertyType} · Loan #{r.loanNo}
                   </div>
                 </span>
-                <span
-                  className={
-                    "due2 " + (r.status !== "completed" && due.tone !== "ok" ? due.tone : "")
-                  }
-                >
-                  {due.label}
-                </span>
+                {r.status === "autorejected" ? (
+                  <Chip tone="fail">Auto-rejected</Chip>
+                ) : (
+                  <Chip
+                    tone={
+                      due.tone === "overdue" ? "fail" : due.tone === "soon" ? "flag" : "neutral"
+                    }
+                  >
+                    {due.label}
+                  </Chip>
+                )}
               </Link>
             );
           })
@@ -57,6 +73,14 @@ export function ActionNeeded({ reviews }: { reviews: Review[] }) {
     </div>
   );
 }
+
+/** Statuses that warrant a badge in Recent reviews — the rest are routine and
+ *  render as plain muted text, so color marks only failures / open actions. */
+const RC_BADGE: Partial<Record<ReviewStatus, "fail" | "neutral">> = {
+  autorejected: "fail",
+  needs_action: "neutral",
+  returned: "neutral",
+};
 
 /** Recent reviews: compact recent-activity list. */
 export function RecentReviews({ reviews }: { reviews: Review[] }) {
@@ -69,18 +93,25 @@ export function RecentReviews({ reviews }: { reviews: Review[] }) {
         </Link>
       </div>
       <div className="widget-body">
-        {reviews.map((r) => (
-          <Link key={r.id} href={reviewHref(r)} className="rc-row">
-            <span className="rc-main">
-              <div className="t">{r.propertyAddress}</div>
-              <div className="s">
-                {r.propertyType} · Loan #{r.loanNo}
-              </div>
-            </span>
-            <Chip tone={STATUS_TONE[r.status]}>{STATUS_META[r.status].label}</Chip>
-            <Icon name="chevron-right" size={16} style={{ color: "var(--md-on-surface-v)" }} />
-          </Link>
-        ))}
+        {reviews.map((r) => {
+          const badge = RC_BADGE[r.status];
+          return (
+            <Link key={r.id} href={reviewHref(r)} className="rc-row">
+              <span className="rc-main">
+                <div className="t">{r.propertyAddress}</div>
+                <div className="s">
+                  {r.propertyType} · Loan #{r.loanNo}
+                </div>
+              </span>
+              {badge ? (
+                <Chip tone={badge}>{STATUS_META[r.status].label}</Chip>
+              ) : (
+                <span className="rc-status">{STATUS_META[r.status].label}</span>
+              )}
+              <Icon name="chevron-right" size={16} style={{ color: "var(--md-on-surface-v)" }} />
+            </Link>
+          );
+        })}
       </div>
     </div>
   );
