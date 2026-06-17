@@ -2,6 +2,12 @@
 
 > **Draft / to-discuss.** First-cut specs for the pages we haven't built yet (and
 > the Technical Review rebuild). Status/route map: `parachute-v2-build-plan.md`.
+>
+> **Update (Jun 16 2026):** the interaction-pattern questions in these specs were
+> settled in the IA session. The **decisions log in `parachute-v2-ia-map.md` is the
+> source of truth**; resolved items are marked **✅ RESOLVED (decision #N)** inline
+> below. These are working decisions — fine to revisit at build time if they cause
+> friction, but start from them.
 
 ## Reference & principle
 
@@ -39,8 +45,8 @@ content per step. Draft state shape: `orderDraft { source, ycEngagementId?, file
 2. **Review type** — choose Technical and/or Administrative (≥1). Each option card explains its output (Technical → workbook; Administrative → compliance attestation). Admin shows which checklist template applies.
 3. **Reviewer** — assignee select (default inherited from the YC engagement). Optional due-date / priority.
 4. **Options** — org defaults shown with per-order overrides: auto-reject quality gate on/off, SLA start, compliance template, bank policy. Audited if overridden.
-5. **Confirm & run** — order summary; "Run pipeline" submits → creates a `review` (status `running`, pipelineStage advancing S1–S5 with `ai-processing` shimmer) → routes to `/reviews` (or the new review). 
-   - *To discuss:* whether run jumps straight into the review or back to the queue.
+5. **Confirm & run** — order summary; "Run pipeline" submits → creates a `review` (status `running`, pipelineStage advancing S1–S5 with `ai-processing` shimmer).
+   - **✅ RESOLVED (decision #1):** "Run pipeline" **routes into the new review** (Technical tab, running state); "Back to queue" stays available. CTA: "Run pipeline" primary navy.
 
 ---
 
@@ -66,7 +72,9 @@ Replaces the first-pass page. Core loop = decide on each finding fast, with evid
 - **Pipeline states:** empty (not ordered), running (staged S1–S5 with shimmer), content.
 - **Send back to appraiser:** batches all rejected/condition findings into a return letter; sets status `returned`; SLA keeps running. (Appraisers want mistakes batched, not one-by-one.)
 - **Workbook tally:** Accepted / Overridden / Rejected / Pending → "Compile workbook" (to Workbook) and "Return to appraiser".
-- *To discuss:* exact 2- vs 3-pane behavior on narrow widths; whether the list rail and source can both show at once.
+- **Add finding / bulk accept — ✅ RESOLVED (decision #3):** "Add finding" opens a **right side-drawer** form (reuses the quick-look drawer pattern); "Accept all passes" is a secondary toolbar button. "Add" is primary navy in the drawer.
+- **Quick-look from the queue — ✅ RESOLVED (decision #2):** the `/reviews` queue gets a **right side-drawer quick-look** (status, findings summary, next action, download); "Open review" enters this workspace. (Lives on the Reviews queue, but shares the drawer used above.)
+- *Still open (build-time detail, not an IA call):* exact 2- vs 3-pane behavior on narrow widths; whether the list rail and source can both show at once.
 
 ---
 
@@ -74,9 +82,10 @@ Replaces the first-pass page. Core loop = decide on each finding fast, with evid
 
 **POC ref:** `#screen-adminreview` (attestation cards + side PDF).
 **Analyze, don't clone:** reuse the attestation idea but apply our finding/card patterns and
-the `⋯`/primary-action hierarchy for consistency with Technical Review. *Q:* should Technical
-and Administrative share one workspace chrome (same focus-mode shell, different content) to
-avoid two divergent review UIs?
+the `⋯`/primary-action hierarchy for consistency with Technical Review.
+**✅ RESOLVED (decision #4):** Administrative **shares the Technical focus-mode shell**
+(list rail + focus pane + docked source), with attestation content instead of findings —
+one workspace UI, not two.
 
 AI-prefilled compliance checklist the reviewer attests to.
 
@@ -92,14 +101,15 @@ AI-prefilled compliance checklist the reviewer attests to.
 **POC ref:** `#screen-workbook` (compiled doc) + the customize panel.
 **Analyze, don't clone:** the POC mixes document preview and a long settings list. *Suggest:*
 keep the document clean and move customization into the Builder / a focused side panel; surface
-only the lifecycle actions (sign / complete / return) on the Workbook itself. *Q:* how much
-customization belongs inline on the Workbook vs. living entirely in the Builder?
+only the lifecycle actions (sign / complete / return) on the Workbook itself.
+**✅ RESOLVED (decision #5):** the **Builder owns all customization**; the Workbook is the
+clean compiled doc + lifecycle (Sign → Complete / Return) only — no customization controls on it.
 
 The compiled, branded, auditor-facing output — the v2 "make it my work" surface.
 
 - **Compiled document** rendered from `SECTIONS` + finding dispositions + `docSettings`. DRAFT watermark until signed.
 - **Lifecycle:** Sign (signature block: name, timestamp, SHA-256) → **Complete** (filed) OR **Return to appraiser** (drafts return letter from Conditions). 
-- **Customize** (links to Builder / inline panel): show/hide rejected & overridden, show/hide status & confidence, color-coding on/off, **theme**, **font**, **font size**, **risk rating** (custom labels/colors/wording), header/footer + logo. Org-level brand defaults vs per-workbook overrides — *to discuss the split.*
+- **Customize** (lives in the **Builder** — decision #5): show/hide rejected & overridden, show/hide status & confidence, color-coding on/off, **theme**, **font**, **font size**, **risk rating** (custom labels/colors/wording), header/footer + logo. Org-level brand defaults vs per-workbook overrides — *still open (build-time detail).*
 - **Conditions of Approval / Action items** auto-aggregated from findings whose response is "requires revision" / "concur with condition".
 - **Exhibits** the doc renderer supports: tables, bar charts, cap-rate range plot, SWOT, heat-shaded sensitivity (from POC).
 - Download menu: PDF / DOCX / ZIP, DRAFT vs FINAL.
@@ -111,8 +121,9 @@ The compiled, branded, auditor-facing output — the v2 "make it my work" surfac
 **POC ref:** `#screen-builder` (3-pane: section list · editor · template library / live preview).
 **Analyze, don't clone:** the 3-pane concept is sound but POC-dense. *Suggest:* keep the
 three zones but apply our spacing/atoms, and reuse `StepperModal`/panels where a full builder
-is overkill. *Q (important):* does v2 need the full builder, or is a simpler Workbook
-customization panel enough for launch, with the full builder later?
+is overkill. **✅ RESOLVED (decision #6):** v2 ships a **focused customize panel**
+(reorder/exclude sections, show-hide, theme, font, risk labels) that **owns all customization**;
+the full 3-pane builder + appraisal-section import + org section-library publish are **deferred**.
 
 Assemble/configure the workbook layout. Two modes: **per-review** and **org default** (versioned).
 
@@ -121,7 +132,7 @@ Assemble/configure the workbook layout. Two modes: **per-review** and **org defa
 - **Document Settings** (pinned): the customization listed under Workbook above.
 - **Merge fields:** `{{property}} {{page}} {{topic}} {{action}} {{condition}} {{detail}}` — auto-filled or bracket placeholders.
 - Org mode: Section Library + "Publish org default vN".
-- *Note:* this is the deepest surface; time-box and start from the POC's working model. *To discuss:* how much builder vs. a simpler customization panel on the Workbook is needed for v2.
+- *Note:* this is the deepest surface. **For v2, build only the customize panel (decision #6)**; treat the full 3-pane / import / org-publish as a later phase. (The 3-pane details above describe that eventual full builder.)
 
 ---
 
@@ -139,15 +150,17 @@ cards, each opening a sub-route or panel.
 - **Checklist Template Mapper** — upload the bank's checklist `.docx`; AI extracts items; each mapped/flagged (BINARY vs QUALITATIVE; flags ambiguous/double-barreled rows); re-extract; publish new version. This is what drives Administrative Review.
 - **Response Templates** — org library + personal: Concur / Concur w/ observation / Concur subject to condition / Requires revision / Reviewer override / Not applicable / Free text. Editor with merge-field chips + live preview. These populate the finding `ActionMenu` and workbook responses.
 - **Org Workbook Layout** — = Builder in org-default mode (section library, versioned publish).
-- *To discuss:* whether compliance-checklist management lives here vs. Settings (overlap flagged in the build plan); tabs vs. cards for the hub.
+- **✅ RESOLVED (decision #7):** the hub is **cards → sub-routes**; the **Checklist Mapper's home is Templates** (Settings → Compliance links to it); the Response-template editor is **master/detail within its sub-route**.
 
 ---
 
 ## 7. Intake Triage (`/reviews/[id]/triage`) — restyle
 
 **POC ref:** `#screen-triage`. **Analyze, don't clone:** logic is fine; just bring the
-existing first-pass page onto current patterns (`.pagehead`/atoms). *Q:* should triage be its
-own route or a state/banner within the review workspace?
+existing first-pass page onto current patterns (`.pagehead`/atoms).
+**✅ RESOLVED (decision #8):** triage **stays its own route** `/reviews/[id]/triage`
+(the only routed review sub-page), linked from the Dashboard "Intake triage" tile.
+CTA: "Override & admit" primary navy (audited); "Confirm & return" secondary outline.
 
 Functional, needs current-pattern restyle. Auto-rejected appraisal: failed-criterion card +
 evidence; "Your call" → Confirm & return to appraiser, or Override & admit (audited reason →
