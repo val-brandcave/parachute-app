@@ -61,7 +61,7 @@ How each POC screen translates under our current patterns (changes from the POC 
 - **Settings — partial:**
   - *Organization:* logo upload works (live preview, not persisted); name/short-name are static inputs (no save).
   - *Review defaults:* quality-gate chips, SLA-start, default profile, default checklist — **static** (display only).
-  - *Compliance:* checklist "Manage" button and bank-policy "Upload" are **placeholders** (no flow). Overlaps with Templates — *to discuss* where checklist management canonically lives.
+  - *Compliance:* checklist "Manage" button and bank-policy "Upload" are **placeholders** (no flow). **✅ Resolved (decision #7):** checklist management lives in **Templates**; Settings → Compliance "Manage" links to the Templates checklist mapper.
   - *My profile:* static inputs.
   - *Preferences:* theme + density are **fully wired/live**.
 - **Dashboard:** the Review volume chart (bespoke SVG combo — volume bars + turnaround/on-time overlay) uses **mock** per-period data; metric cards are period-scoped from the same mock volume (the live "Pipeline running" tile is not).
@@ -75,20 +75,23 @@ How each POC screen translates under our current patterns (changes from the POC 
 - **`/styleguide`** — palette decision surface; delete before handoff.
 - **`globals.css` legacy block** — contains v1 classes. Some are now **unused** (e.g. dashboard-v1 `.stat-row`/`.review-row`, `.page` head styles); some are **still used** by the not-yet-redesigned Technical Review / triage / login (`.field`, `.sso`, `.ws`, `.finding`, `.pdfpane`, doc renderer). Clean up as those screens are rebuilt — don't delete classes still in use.
 
-## Suggested build order (to discuss)
+## Suggested build order (decisions #1–#9 baked in; sequence still flexible)
 
-1. **Technical Review focus-mode** (the core loop; highest value) — rebuild + migrate review components to atomic.
-2. **Order stepper — real step content.**
-3. **Workbook + Builder** (the v2 output-control differentiator).
-4. **Administrative Review** (checklist attestation).
-5. **Templates hub** (checklist mapper, response templates, org workbook layout).
-6. **Triage restyle**, Settings deepening (compliance flows), notifications.
+1. **Technical Review focus-mode** (the core loop; highest value) — rebuild + migrate review components to atomic. Add-finding = side drawer (#3); queue quick-look drawer (#2) can ride along.
+2. **Order stepper — real step content.** "Run pipeline" lands in the new review (#1).
+3. **Workbook + customize panel** (the v2 output-control differentiator) — per **#6**, build the **customize panel** (Builder owns customization, #5), *not* the full 3-pane builder/import (deferred).
+4. **Administrative Review** (checklist attestation) — **reuses the Technical focus-mode shell** (#4).
+5. **Templates hub** — cards → sub-routes (#7): checklist mapper (home here), response templates, org workbook layout.
+6. **Triage restyle** (own route, #8), Settings deepening (compliance "Manage" → Templates, #7), notifications (in-app bell panel, #9).
 7. Cleanup: remove `/styleguide`, prune unused v1 CSS, finalize responsive.
 
 ## Open questions (parking lot)
 
-- Where compliance-checklist management canonically lives (Settings vs Templates).
-- Notification model for async "review ready" (email near-term; in-app later).
+> Interaction-pattern decisions (#1–#9) were settled Jun 16 — see the **decisions log
+> in `parachute-v2-ia-map.md`** (and the inline ✅ RESOLVED notes in `parachute-v2-early-specs.md`).
+
+- ✅ **Resolved (#7):** compliance-checklist management lives in **Templates** (Settings → Compliance links to it).
+- ✅ **Resolved (#9):** notifications — build the **in-app bell panel** (review ready / returned / assigned / overdue); email is the production channel (engineering-owned).
 - Whether `/components` ships or stays internal.
 - Persisting settings/profile (currently display-only) — depends on the real API layer.
 - Mobile/tablet responsive pass (desktop-first for now).
