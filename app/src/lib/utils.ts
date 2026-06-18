@@ -67,11 +67,11 @@ export const STATUS_META: Record<
 };
 
 export const PIPELINE_STAGES = [
-  "S1 Checklist",
-  "S2 Validation",
-  "S3 Consistency",
-  "S4 Analytics",
-  "S5 Policy",
+  "Checklist",
+  "Validation",
+  "Consistency",
+  "Analytics",
+  "Policy",
 ];
 
 export function formatPct(v: number): string {

@@ -7,9 +7,6 @@ import type { PipelineView } from "@/lib/review-lifecycle";
 
 const TOTAL = PIPELINE_STAGES.length;
 
-/** "S1 Checklist" → "Checklist" (the callout/segment display name). */
-const shortName = (s: string) => s.replace(/^S\d+\s/, "");
-
 /** Stable per-review baseline % (30–85) for the active stage — derived, not
  *  random, so a given review always shows the same starting progress. */
 function seedPct(seed: string): number {
@@ -60,7 +57,7 @@ export function PipelineTracker({
   footnote?: string;
 }) {
   if (view.mode === "word") {
-    return (
+    const chip = (
       <span
         className={`pipe-word pipe-word--${view.tone}${view.badge ? " pipe-word--badge" : ""}`}
       >
@@ -71,6 +68,22 @@ export function PipelineTracker({
         )}
         {view.label}
       </span>
+    );
+    // States with a description (New / Auto Rejected) get the same panel hover
+    // card as the stepper tooltip — a bold header over a description body.
+    if (!view.hint) return chip;
+    const hintCard = (
+      <span className="pipe-card">
+        <span className="pipe-card-head">
+          <span className="pipe-card-title">{view.hintTitle ?? view.label}</span>
+        </span>
+        <span className="pipe-card-desc">{view.hint}</span>
+      </span>
+    );
+    return (
+      <Tooltip content={hintCard} side="top" panel>
+        {chip}
+      </Tooltip>
     );
   }
 
@@ -119,7 +132,7 @@ export function PipelineTracker({
         {running ? (
           <span className="pipe-badge">
             <span className="pipe-badge-dot" />
-            {shortName(PIPELINE_STAGES[active!])}
+            {PIPELINE_STAGES[active!]}
           </span>
         ) : (
           <span className={`pipe-badge pipe-badge--${tone}`}>
@@ -127,21 +140,26 @@ export function PipelineTracker({
             {view.label}
           </span>
         )}
-        <span className="pipe-segs">
-          {PIPELINE_STAGES.map((title, i) => {
-            const state = i < filled ? "done" : active === i ? "run" : "idle";
-            // Active segment = static half-fill to the seeded baseline (petrol → tint).
-            const style =
-              state === "run"
-                ? {
-                    background: `linear-gradient(90deg, var(--md-accent) ${base}%, var(--md-accent-c) ${base}%)`,
-                  }
-                : undefined;
-            return (
-              <span key={title} className={`pipe-seg pipe-seg--${state}`} style={style} />
-            );
-          })}
-        </span>
+        {/* The segment track is only meaningful mid-flight — Ready / Completed are
+            terminal, so they read as a clean badge (the hover card still shows the
+            full stage list). */}
+        {running && (
+          <span className="pipe-segs">
+            {PIPELINE_STAGES.map((title, i) => {
+              const state = i < filled ? "done" : active === i ? "run" : "idle";
+              // Active segment = static half-fill to the seeded baseline (petrol → tint).
+              const style =
+                state === "run"
+                  ? {
+                      background: `linear-gradient(90deg, var(--md-accent) ${base}%, var(--md-accent-c) ${base}%)`,
+                    }
+                  : undefined;
+              return (
+                <span key={title} className={`pipe-seg pipe-seg--${state}`} style={style} />
+              );
+            })}
+          </span>
+        )}
       </span>
     </Tooltip>
   );

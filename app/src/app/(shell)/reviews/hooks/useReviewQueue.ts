@@ -6,7 +6,6 @@ import {
   needsMyAction,
   isOverdue,
   findingsKey,
-  dueBucket,
   type LifecycleBucket,
 } from "@/lib/review-lifecycle";
 import type { SortCol } from "@/components/organisms/review-columns";
@@ -69,7 +68,6 @@ export interface QueueFilters {
   types: MultiSel; // technical / administrative
   reviewers: MultiSel; // assignee ids (selecting yourself = "Mine")
   firms: MultiSel; // appraisal firms
-  due: MultiSel; // overdue / soon / paused
 }
 
 export const EMPTY_FILTERS: QueueFilters = {
@@ -77,7 +75,6 @@ export const EMPTY_FILTERS: QueueFilters = {
   types: "all",
   reviewers: "all",
   firms: "all",
-  due: "all",
 };
 
 const ME = CURRENT_USER.id;
@@ -101,8 +98,7 @@ export function activeFilterCount(f: QueueFilters): number {
     (f.findings !== "all" ? 1 : 0) +
     (f.types !== "all" ? 1 : 0) +
     (f.reviewers !== "all" ? 1 : 0) +
-    (f.firms !== "all" ? 1 : 0) +
-    (f.due !== "all" ? 1 : 0)
+    (f.firms !== "all" ? 1 : 0)
   );
 }
 
@@ -206,10 +202,6 @@ export function useReviewQueue() {
       list = list.filter((r) => filters.reviewers.includes(r.assigneeId));
     if (filters.firms !== "all")
       list = list.filter((r) => filters.firms.includes(r.appraisalFirm));
-    if (filters.due !== "all") {
-      const sel = filters.due;
-      list = list.filter((r) => sel.includes(dueBucket(r, now)));
-    }
 
     const q = query.trim().toLowerCase();
     if (q) list = list.filter((r) => matchesQuery(r, q));

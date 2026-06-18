@@ -88,7 +88,7 @@
     <span class="lg"><span class="dot" style="background:var(--undecided)"></span> 🟧 Not decided (Phase 3)</span>
     <span class="lg"><span class="dot" style="background:var(--temp)"></span> Temporary / dev</span>
     <span class="lg" style="margin-left:14px">⊞ in-page tab · ▸ sub-view (state, not routes)</span>
-    <span class="meta">Jun 16 2026 · IA session</span>
+    <span class="meta">Jun 18 2026 · IA session</span>
   </div>
 
   <div id="board"></div>
@@ -107,86 +107,86 @@ const AREAS = [
     label:'Authentication', kind:'tree',
     roots:[
       { name:'Login', status:'built', route:'/login',
-        desc:'Email/password + SSO-first (YouConnect, Microsoft, generic). Entry to the app.',
+        desc:'Sign in with email or single sign-on. The way into the app.',
         children:[
           { name:'Launch', status:'built', route:'/launch',
-            desc:'YouConnect→Parachute interstitial. Smooths the SSO hand-off, then routes to Dashboard.' }
+            desc:'A brief hand-off screen when you arrive from YouConnect, then takes you to the dashboard.' }
         ]}
     ]
   },
   {
-    label:'Core App (authenticated)', kind:'tree',
-    note:'Shell = collapsible sidebar (Dashboard · Reviews · Templates · Settings) + Org card · app header (search→command palette, notifications, help, avatar).',
+    label:'Core app', kind:'tree',
+    note:'The signed-in app — a sidebar to move between sections and a top bar with search, notifications, and your profile.',
     roots:[
       { name:'App shell', status:'built',
-        desc:'Authenticated shell: sidebar nav, header, global command palette (Ctrl/Cmd-K), global Order modal.',
+        desc:'The frame around every signed-in screen: navigation, top bar, quick search, and the order flow.',
         children:[
           { name:'Dashboard', status:'built', route:'/dashboard',
-            desc:'Overview: greeting, period picker, KPI StatBar (+ live "Pipeline running" tile), Review-volume chart, Action-needed, and New from YouConnect (intake deliveries → "Confirm & run" opens the Order stepper pre-selected). Replaced the redundant "Recent reviews" widget, which overlapped Action-needed.' },
+            desc:'<b>Function</b> — your overview of recent activity and what needs attention.<br><b>Actions</b> — jump into work, or start something new from YouConnect.' },
 
           { name:'Reviews', status:'built', route:'/reviews',
-            desc:'Operational TEAM queue (rebuilt Jun 2026). Tabs partition by lifecycle stage (All · Needs action · In pipeline · Sent back · Completed · Intake); Mine-only toggle + severity filter + search. Parties-rich table — Property & parties (reviewer avatar + appraisal firm + loan + type) · Type · Pipeline tracker · Findings · Due · Next action · ⋯. NO Status column: state is derived (Pipeline + Findings + Type) via lib/review-lifecycle. Org = the bank (context, not a column); appraisal firm = the external fee appraiser. Order-a-review button.',
+            desc:'<b>Function</b> — the team\'s queue of appraisal reviews.<br><b>Actions</b> — filter, search, open a review, or start a new one.',
             children:[
               { name:'Review detail', status:'locked', route:'/reviews/[id]', kind:'page',
-                desc:'Single route. Property context bar; Technical / Administrative in-page tabs (redirects to Technical).',
+                desc:'<b>Function</b> — a single review, with a technical and an administrative side.<br><b>Actions</b> — switch sides, work through it, then compile or return it.',
                 children:[
                   { name:'Tab / Technical', status:'locked', kind:'tab',
-                    desc:'Findings focus-mode + workbook tally. Owns three sub-views.',
+                    desc:'Work through the review\'s findings and build the report.',
                     children:[
                       { name:'Findings', status:'locked', kind:'subview',
-                        desc:'Focus mode: one finding at a time. Accept/Reject primary (navy); Disagree-edit/Comment/Add-condition/Flag behind ⋯. Cited source docked beside it.' },
+                        desc:'<b>Function</b> — review findings one at a time, with the source document alongside.<br><b>Actions</b> — accept, reject, or comment on each.' },
                       { name:'Builder', status:'locked', kind:'subview',
-                        desc:'Customize the workbook layout. Decided: v2 = focused customize panel (reorder/exclude sections, show-hide, theme, font, risk labels) + owns all customization. Full 3-pane builder + appraisal-section import + org section-library publish deferred to a later phase.' },
+                        desc:'Adjust how the final report is laid out.' },
                       { name:'Workbook', status:'locked', kind:'subview',
-                        desc:'Compiled branded document. DRAFT watermark → Sign → Complete (file) / Return to appraiser. Decided: clean output + lifecycle only; customization lives in Builder.' }
+                        desc:'<b>Function</b> — the finished, branded report.<br><b>Actions</b> — sign it off, or send it back to the appraiser.' }
                     ]},
                   { name:'Tab / Administrative', status:'locked', kind:'tab',
-                    desc:'AI-prefilled bank checklist. Attest Yes/No/NA (+ audited reason on change), evidence + page cite, sign. Decided: shares the Technical focus-mode shell (list rail + focus pane + docked source).' },
+                    desc:'<b>Function</b> — the bank\'s compliance checklist.<br><b>Actions</b> — answer each item with evidence, then sign off.' },
                   { name:'Triage', status:'locked', route:'/reviews/[id]/triage', kind:'page',
-                    desc:'Auto-rejected intake: failed-criterion card → "Override & admit" (audited, navy) or "Confirm & return" (outline). SLA paused. Decided: keep as its own route (only routed review sub-page); linked from the Dashboard "Intake triage" tile.' }
+                    desc:'<b>Function</b> — a review the system automatically rejected.<br><b>Actions</b> — let it through, or confirm the rejection.' }
                 ]}
             ]},
 
           { name:'Templates', status:'locked', route:'/templates',
-            desc:'Hub for the templating tools. Decided: landing with cards; each tool opens its own sub-route.',
+            desc:'A home for reusable pieces — checklists, saved responses, and report layouts.',
             children:[
               { name:'Checklist Mapper', status:'locked', route:'/templates/checklist',
-                desc:'Upload bank checklist .docx → AI extracts items → map (binary/qualitative) / flag ambiguous → re-extract → publish version. Drives Administrative Review. Decided: home is Templates; Settings → Compliance links here.' },
+                desc:'Turn a bank\'s checklist document into the questions used in administrative reviews.' },
               { name:'Response Templates', status:'locked', route:'/templates/responses',
-                desc:'Org + personal canned responses (Concur / Condition / Requires revision / Override…) with merge fields. Populate the finding ⋯ and workbook. Decided: master/detail (list + editor) within this sub-route.' },
+                desc:'Saved wording you can drop into findings and reports.' },
               { name:'Org Workbook Layout', status:'locked', route:'/templates/workbook-layout',
-                desc:'= Builder in org-default mode: section library, versioned "Publish vN".' }
+                desc:'Set the organization\'s default report layout.' }
             ]},
 
           { name:'Settings', status:'built', route:'/settings',
-            desc:'Tabbed: Organization · Review defaults · Compliance · My profile · Preferences (theme + density live).' }
+            desc:'Manage the organization, review defaults, compliance, your profile, and preferences.' }
         ]}
     ]
   },
   {
-    label:'Global overlays (mounted in shell, store-driven)', kind:'flat', tint:true,
+    label:'Global overlays', kind:'flat', tint:true,
     roots:[
       { name:'Order stepper', status:'locked', kind:'overlay',
-        desc:'Full-page StepperModal, global via useOrderStore. Source → Review type → Reviewer → Options → Confirm & run. Decided: "Run pipeline" routes into the new review in its running state.' },
+        desc:'<b>Function</b> — order a new review.<br><b>Actions</b> — choose a source, set it up, and start it.' },
       { name:'Command palette', status:'built', kind:'overlay',
-        desc:'Ctrl/Cmd-K — search reviews, go-to pages, run actions. Keyboard-navigable.' },
+        desc:'A keyboard shortcut to jump anywhere or run a quick action.' },
       { name:'Notifications panel', status:'locked', kind:'overlay',
-        desc:'In-app bell panel (review ready / returned / assigned / overdue); items deep-link to the review. Decided: build the demoable in-app panel now; email is the real production channel (engineering-owned).' },
+        desc:'A panel of review updates that link straight to the review.' },
       { name:'Quick-look drawer', status:'locked', kind:'overlay',
-        desc:'Peek a review from the queue (status, findings summary, next action, download) without leaving it. Decided: right side drawer; "Open review" goes to the full route. Reused by Add-finding.' },
+        desc:'Peek at a review without leaving the queue.' },
       { name:'Download menu', status:'locked', kind:'overlay',
-        desc:'Anchored popover from context bar / rows: Technical PDF/DOCX, Admin PDF/DOCX, ZIP. DRAFT vs FINAL.' },
+        desc:'Download a review as PDF, Word, or a ZIP.' },
       { name:'Source-preview modal', status:'locked', kind:'overlay',
-        desc:'Builder import: preview an extracted appraisal section before including it.' },
+        desc:'Preview an appraisal section before adding it to the report.' },
       { name:'Snackbar / toast', status:'built', kind:'overlay',
-        desc:'Transient confirmations with UNDO.' }
+        desc:'Brief confirmation messages, with an undo.' }
     ]
   },
   {
-    label:'Dev / temporary (not product pages)', kind:'flat',
+    label:'Dev / temporary', kind:'flat',
     roots:[
-      { name:'/components', status:'temp', kind:'page', desc:'Design-system showcase. Internal dev tool — decide if it ships.' },
-      { name:'/styleguide', status:'temp', kind:'page', desc:'Palette decision surface. Remove before hand-off.' }
+      { name:'/components', status:'temp', kind:'page', desc:'Internal showcase of the building-block components.' },
+      { name:'/styleguide', status:'temp', kind:'page', desc:'Internal color and style reference.' }
     ]
   }
 ];

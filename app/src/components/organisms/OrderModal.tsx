@@ -148,8 +148,9 @@ export function OrderModal() {
       onBack={() => setStep(Math.max(0, step - 1))}
       onNext={() => setStep(Math.min(STEPS.length - 1, step + 1))}
       onSubmit={submit}
-      submitLabel="Run pipeline"
+      submitLabel="Run"
       submitIcon="rocket"
+      submitIconSide="left"
       nextDisabled={!canContinue}
       submitting={submitting}
     >

@@ -55,8 +55,9 @@ function NextAction({ review }: { review: Review }) {
   const openOrder = useOrderStore((s) => s.openOrder);
   const a: NextActionView = nextActionView(review);
 
-  // Quiet waits (Running… / With appraiser) carry no action — render nothing,
-  // leaving just the ⋯ menu in the Actions cell.
+  // Quiet waits (returned → "With appraiser") carry no action — render nothing,
+  // leaving just the ⋯ menu. Every other row has an icon-only primary (label in
+  // a tooltip), including running rows, which get an Eye → "View".
   if (a.tone === "quiet") return null;
 
   const onClick = (e: React.MouseEvent) => {
@@ -134,7 +135,7 @@ function DueCell({ review }: { review: Review }) {
 function RowMenu({ review }: { review: Review }) {
   const router = useRouter();
   const items = [
-    { label: "Open review", icon: "forward" as const, onClick: () => router.push(reviewHref(review)) },
+    { label: "Review", icon: "reviews" as const, onClick: () => router.push(reviewHref(review)) },
     ...(review.status === "autorejected"
       ? [{ label: "Open triage", icon: "gavel" as const, onClick: () => router.push(`/reviews/${review.id}/triage`) }]
       : []),
@@ -194,7 +195,7 @@ function Cell({
         <div className="qreviewer">
           {a && (
             <Tooltip content={`${a.name} · ${a.designation}`}>
-              <Avatar initials={a.initials} size={28} tone="soft" />
+              <Avatar initials={a.initials} size={24} tone="soft" />
             </Tooltip>
           )}
         </div>
