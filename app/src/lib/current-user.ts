@@ -13,7 +13,7 @@ export const CURRENT_USER = {
 } as const;
 
 export const CURRENT_ORG = {
-  name: "Demo Bank, N.A.",
+  name: "Meridian Trust Bank, N.A.",
   kind: "Organization",
-  initials: "DB",
+  initials: "MT",
 } as const;

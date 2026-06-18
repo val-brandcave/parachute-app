@@ -23,6 +23,15 @@ export function relativeDue(epoch: number): {
   return { label: `Due in ${d}d`, tone: d <= 2 ? "soon" : "ok" };
 }
 
+/** Short calendar date for the Due column, e.g. "Jun 24". Deterministic given
+ *  the epoch (no Date.now()), so it's safe to call during render. */
+export function formatShortDate(epoch: number): string {
+  return new Date(epoch).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+}
+
 export const SEV_META: Record<
   Severity,
   { label: string; chip: string; icon: IconName; rank: number }

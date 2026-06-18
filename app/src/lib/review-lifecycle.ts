@@ -56,6 +56,38 @@ export function isOverdue(r: Review, now: number): boolean {
   );
 }
 
+/* ---------- Filter facets (derived, never a synthetic field) ---------- */
+
+/** The honest "Findings" facet — replaces the made-up "severity" filter.
+ *  Reads the same outcome the Findings column shows. `null` = no findings yet
+ *  (pre-pipeline / running), so those rows fall out of any Findings filter. */
+export type FindingsKey = "crit" | "fail" | "flag" | "clean";
+export function findingsKey(r: Review): FindingsKey | null {
+  const o = outcomeView(r);
+  if (!o) return null;
+  return o.tone === "pass" ? "clean" : (o.tone as FindingsKey);
+}
+
+/** Due/SLA bucket for the Due facet. Auto-rejected pauses the clock; only
+ *  active phases can be overdue or due-soon (≤2d). Derived from `slaDueAt`. */
+export type DueBucket = "overdue" | "soon" | "paused" | "none";
+export function dueBucket(r: Review, now: number): DueBucket {
+  if (r.status === "autorejected") return "paused";
+  if (isOverdue(r, now)) return "overdue";
+  const active =
+    r.status === "running" ||
+    r.status === "in_review" ||
+    r.status === "returned" ||
+    r.status === "intake";
+  if (active) {
+    const diff = r.slaDueAt - now;
+    // Match relativeDue()'s "soon" (≤2 days, same rounding) so the Due filter
+    // and the Due column's yellow warning agree on what counts as due-soon.
+    if (diff >= 0 && Math.round(diff / 86_400_000) <= 2) return "soon";
+  }
+  return "none";
+}
+
 /* ---------- Pipeline column (the phase carrier) ---------- */
 
 export type PipelineView =
@@ -124,6 +156,8 @@ export interface NextActionView {
   iconRight?: IconName;
   kind: NextActionKind;
   href?: string;
+  /** Render the button icon-only (label moves to a tooltip). */
+  iconOnly?: boolean;
 }
 
 /** The single most useful next step for a row. `kind` tells the component how to
@@ -131,12 +165,12 @@ export interface NextActionView {
 export function nextActionView(r: Review): NextActionView {
   switch (r.status) {
     case "intake":
-      return { label: "Confirm & run", tone: "primary", icon: "ai", kind: "order" };
+      return { label: "Run", tone: "primary", icon: "rocket", kind: "order" };
     case "autorejected":
       return {
         label: "Triage",
         tone: "primary",
-        icon: "warn",
+        icon: "gavel",
         kind: "route",
         href: `/reviews/${r.id}/triage`,
       };
@@ -157,7 +191,7 @@ export function nextActionView(r: Review): NextActionView {
       return {
         label: "Review",
         tone: "primary",
-        iconRight: "forward",
+        icon: "reviews",
         kind: "route",
         href: `/reviews/${r.id}`,
       };
@@ -165,6 +199,12 @@ export function nextActionView(r: Review): NextActionView {
     case "returned":
       return { label: "With appraiser", tone: "quiet", icon: "undo", kind: "none" };
     case "completed":
-      return { label: "Download", tone: "primary", icon: "download", kind: "download" };
+      return {
+        label: "Download",
+        tone: "primary",
+        icon: "download",
+        kind: "download",
+        iconOnly: true,
+      };
   }
 }

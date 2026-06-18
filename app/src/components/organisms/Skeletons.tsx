@@ -110,10 +110,11 @@ export function ReviewTableSkeleton({ rows = 7 }: { rows?: number }) {
     <div role="status" aria-label="Loading reviews">
       <div className="qcols">
         <div>Property</div>
-        <div>Status</div>
-        <div>Risk</div>
-        <div>Open findings</div>
-        <div>SLA</div>
+        <div className="qcol-center">Reviewer</div>
+        <div>Type</div>
+        <div>Pipeline</div>
+        <div>Findings</div>
+        <div>Due</div>
         <div />
       </div>
       {Array.from({ length: rows }).map((_, i) => (
@@ -124,20 +125,23 @@ export function ReviewTableSkeleton({ rows = 7 }: { rows?: number }) {
               <Skeleton width="40%" height={11} style={{ marginTop: 7 }} />
             </div>
           </div>
-          <div>
-            <Skeleton width={84} height={22} radius={8} />
+          <div className="qreviewer">
+            <Skeleton width={28} height={28} radius={14} />
           </div>
           <div>
-            <Skeleton width={58} height={13} />
+            <Skeleton width={50} height={18} radius={6} />
           </div>
           <div>
-            <Skeleton width={26} height={14} />
+            <Skeleton width={120} height={14} />
           </div>
           <div>
-            <Skeleton width={70} height={13} />
+            <Skeleton width={64} height={22} radius={11} />
           </div>
           <div>
-            <Skeleton width={18} height={18} radius={9} />
+            <Skeleton width={60} height={13} />
+          </div>
+          <div className="qactions">
+            <Skeleton width={92} height={32} radius={8} />
           </div>
         </div>
       ))}

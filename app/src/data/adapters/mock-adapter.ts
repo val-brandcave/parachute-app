@@ -19,8 +19,8 @@ function writeCollection<T>(collection: string, items: T[]): void {
 
 const SEEDED_KEY = `${STORAGE_PREFIX}:__seeded__`;
 // Bump this whenever seed data changes so existing browsers re-seed on next
-// load (v4: team reviewers + appraisalFirm/worstSeverity, honest lifecycle phases).
-const SEED_VERSION = "v4";
+// load (v6: wider spread of SLA due dates for the date-based Due column).
+const SEED_VERSION = "v6";
 
 export const mockAdapter: DataAdapter = {
   async getAll<T>(collection: string): Promise<T[]> {

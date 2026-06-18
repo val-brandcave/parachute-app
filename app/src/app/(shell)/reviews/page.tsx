@@ -3,32 +3,34 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useReviewQueue } from "./hooks/useReviewQueue";
 import { ReviewTable, ReviewTableSkeleton, OrderButton } from "@/components/organisms";
-import { Tabs } from "@/components/molecules";
+import { Tabs, QueueFilters, ActiveFilters } from "@/components/molecules";
 import { Icon } from "@/components/atoms";
-import { cn } from "@/lib/utils";
 
 export default function MyReviewsPage() {
   const {
     isLoading,
     counts,
     team,
+    firmOptions,
     reviews,
     total,
     tab,
     setTab,
-    mineOnly,
-    setMineOnly,
-    severity,
-    setSeverity,
+    filters,
+    setFilters,
     query,
     setQuery,
+    sort,
+    cycleSort,
   } = useReviewQueue();
 
   return (
     <>
       {/* Header band IS the table toolbar (no redundant title — nav says Reviews).
           Tabs partition by lifecycle stage (Ed: "separate the different stages");
-          Mine-only + severity + search are the filter set. */}
+          search + a Filters popover (Findings · Type · Reviewer · Firm · Due) +
+          the Order CTA share the one line. Active filters show as removable chips
+          below. "Mine only" is folded into the Reviewer facet. */}
       <div className="pagehead">
         <Tabs
           value={tab}
@@ -43,36 +45,24 @@ export default function MyReviewsPage() {
           ]}
         />
         <div style={{ flex: 1 }} />
-        <button
-          type="button"
-          className={cn("qtoggle", mineOnly && "on")}
-          onClick={() => setMineOnly(!mineOnly)}
-          aria-pressed={mineOnly}
-        >
-          <Icon name={mineOnly ? "check" : "user"} size={14} />
-          Mine only
-        </button>
         <div className="qsearch">
           <Icon name="search" size={15} />
           <input
-            placeholder="Search property, loan #, firm…"
+            placeholder="Search reviews…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
         </div>
-        <select
-          className="qfilter"
-          value={severity}
-          onChange={(e) => setSeverity(e.target.value as typeof severity)}
-          aria-label="Filter by severity"
-        >
-          <option value="any">Any severity</option>
-          <option value="crit">Critical</option>
-          <option value="fail">Fail</option>
-          <option value="flag">Flagged</option>
-        </select>
+        <QueueFilters
+          filters={filters}
+          setFilters={setFilters}
+          team={team}
+          firmOptions={firmOptions}
+        />
         <OrderButton />
       </div>
+
+      <ActiveFilters filters={filters} setFilters={setFilters} team={team} />
 
       <div className="pagebody">
         <div
@@ -112,7 +102,12 @@ export default function MyReviewsPage() {
                     No reviews match your filters.
                   </div>
                 ) : (
-                  <ReviewTable reviews={reviews} team={team} />
+                  <ReviewTable
+                    reviews={reviews}
+                    team={team}
+                    sort={sort}
+                    onSort={cycleSort}
+                  />
                 )}
 
                 <div

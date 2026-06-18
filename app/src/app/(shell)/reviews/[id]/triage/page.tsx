@@ -40,7 +40,7 @@ export default function TriagePage() {
         </div>
         <div className="f-evidence">
           The certification page (p.8) is present but no appraiser signature or license
-          number was detected. Demo Bank&apos;s auto-reject policy returns unsigned reports to
+          number was detected. Meridian Trust Bank&apos;s auto-reject policy returns unsigned reports to
           the appraiser before review.
         </div>
       </div>

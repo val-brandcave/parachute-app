@@ -23,6 +23,10 @@ import {
   IconX,
   IconArrowLeft,
   IconArrowRight,
+  IconArrowUp,
+  IconArrowDown,
+  IconArrowsSort,
+  IconColumns,
   IconArrowBackUp,
   IconLockOpen,
   IconDots,
@@ -54,6 +58,8 @@ import {
   IconBrandGoogle,
   IconPlugConnected,
   IconShieldLock,
+  IconRocket,
+  IconGavel,
   type Icon as TablerIcon,
 } from "@tabler/icons-react";
 
@@ -83,6 +89,10 @@ export const ICONS = {
   close: IconX,
   back: IconArrowLeft,
   forward: IconArrowRight,
+  "arrow-up": IconArrowUp,
+  "arrow-down": IconArrowDown,
+  sort: IconArrowsSort,
+  columns: IconColumns,
   undo: IconArrowBackUp,
   unlock: IconLockOpen,
   more: IconDots,
@@ -113,6 +123,8 @@ export const ICONS = {
   "brand-google": IconBrandGoogle,
   connect: IconPlugConnected,
   sso: IconShieldLock,
+  rocket: IconRocket,
+  gavel: IconGavel,
 } satisfies Record<string, TablerIcon>;
 
 export type IconName = keyof typeof ICONS;

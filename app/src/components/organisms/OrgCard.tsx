@@ -8,7 +8,7 @@ import { Icon, Tooltip } from "@/components/atoms";
 /** Organization card pinned to the bottom of the sidebar → org settings. */
 export function OrgCard({
   collapsed,
-  name = "Demo Bank, N.A.",
+  name = "Meridian Trust Bank, N.A.",
   sub = "Organization",
 }: {
   collapsed: boolean;
