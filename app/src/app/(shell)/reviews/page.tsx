@@ -20,9 +20,24 @@ export default function MyReviewsPage() {
     setFilters,
     query,
     setQuery,
+    searching,
     sort,
     cycleSort,
   } = useReviewQueue();
+
+  // All lifecycle tabs; while searching, hide the ones with no matches (keep
+  // "All" so there's always a home + a visible empty state for a no-results query).
+  const allTabs = [
+    { value: "all" as const, label: "All", count: counts.all },
+    { value: "needs_action" as const, label: "Needs action", count: counts.needs_action },
+    { value: "in_pipeline" as const, label: "In pipeline", count: counts.in_pipeline },
+    // "Sent back" tab removed pending client Q1 (see client-questions doc).
+    { value: "intake" as const, label: "Intake", count: counts.intake },
+    { value: "completed" as const, label: "Completed", count: counts.completed },
+  ];
+  const visibleTabs = allTabs.filter(
+    (t) => t.value === "all" || !searching || t.count > 0,
+  );
 
   return (
     <>
@@ -32,18 +47,7 @@ export default function MyReviewsPage() {
           the Order CTA share the one line. Active filters show as removable chips
           below. "Mine only" is folded into the Reviewer facet. */}
       <div className="pagehead">
-        <Tabs
-          value={tab}
-          onChange={setTab}
-          tabs={[
-            { value: "all", label: "All", count: counts.all },
-            { value: "needs_action", label: "Needs action", count: counts.needs_action },
-            { value: "in_pipeline", label: "In pipeline", count: counts.in_pipeline },
-            { value: "sent_back", label: "Sent back", count: counts.sent_back },
-            { value: "completed", label: "Completed", count: counts.completed },
-            { value: "intake", label: "Intake", count: counts.intake },
-          ]}
-        />
+        <Tabs value={tab} onChange={setTab} tabs={visibleTabs} />
         <div style={{ flex: 1 }} />
         <div className="qsearch">
           <Icon name="search" size={15} />

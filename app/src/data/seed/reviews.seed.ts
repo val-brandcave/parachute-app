@@ -110,26 +110,11 @@ export const seedReviews: Review[] = [
     orderedAt: NOW - 9 * DAY,
     createdAt: NOW - 9 * DAY,
   },
-  {
-    id: "review-006",
-    propertyAddress: "240 Oak Street Medical Office",
-    propertyType: "Office (Medical)",
-    bank: "Meridian Trust Bank, N.A.",
-    appraisalFirm: "Crossland Valuation Partners",
-    loanNo: "LN-4455",
-    status: "returned",
-    reviewTypes: ["technical"],
-    assigneeId: "user-001",
-    source: "manual",
-    riskRating: "elevated",
-    openFindings: 0,
-    flaggedCount: 4,
-    worstSeverity: "flag",
-    pipelineStage: 5,
-    slaDueAt: NOW + 2 * DAY,
-    orderedAt: NOW - 7 * DAY,
-    createdAt: NOW - 7 * DAY,
-  },
+  // NOTE: the "Sent back / returned" example (review-006, 240 Oak Street) was
+  // removed pending client clarification on whether sent-back appraisals belong
+  // in this queue — see docs/plans/parachute-v2-client-questions.md (Q1). The
+  // `returned` status + `sent_back` lifecycle code is left dormant for easy
+  // restore if the client confirms it should appear here.
   {
     id: "review-007",
     propertyAddress: "Pine Valley Self-Storage",

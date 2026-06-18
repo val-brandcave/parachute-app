@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Icon, Tooltip } from "@/components/atoms";
+import { Icon, Tooltip, YouConnectGlyph } from "@/components/atoms";
 import { PIPELINE_STAGES } from "@/lib/utils";
 import type { PipelineView } from "@/lib/review-lifecycle";
 
@@ -49,11 +49,26 @@ function StageProgress({ start }: { start: number }) {
  * where the active row carries a slowly-climbing stage %. Pre/post-pipeline
  * phases render a word-state. Driven by `pipelineView()`.
  */
-export function PipelineTracker({ view, seed }: { view: PipelineView; seed: string }) {
+export function PipelineTracker({
+  view,
+  seed,
+  footnote,
+}: {
+  view: PipelineView;
+  seed: string;
+  /** Optional byline shown at the foot of the hover card (e.g. who completed it). */
+  footnote?: string;
+}) {
   if (view.mode === "word") {
     return (
-      <span className={`pipe-word pipe-word--${view.tone}`}>
-        <Icon name={view.icon} size={13} />
+      <span
+        className={`pipe-word pipe-word--${view.tone}${view.badge ? " pipe-word--badge" : ""}`}
+      >
+        {view.brand === "yc" ? (
+          <YouConnectGlyph size={13} />
+        ) : (
+          <Icon name={view.icon} size={13} />
+        )}
         {view.label}
       </span>
     );
@@ -89,6 +104,12 @@ export function PipelineTracker({ view, seed }: { view: PipelineView; seed: stri
           );
         })}
       </span>
+      {footnote && (
+        <span className="pipe-card-foot">
+          <Icon name="check-circle" size={12} />
+          {footnote}
+        </span>
+      )}
     </span>
   );
 
@@ -101,7 +122,7 @@ export function PipelineTracker({ view, seed }: { view: PipelineView; seed: stri
             {shortName(PIPELINE_STAGES[active!])}
           </span>
         ) : (
-          <span className="pipe-jt-label">
+          <span className={`pipe-badge pipe-badge--${tone}`}>
             {done && <Icon name="check" size={12} />}
             {view.label}
           </span>

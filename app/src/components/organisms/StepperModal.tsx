@@ -25,8 +25,10 @@ export function StepperModal({
   onSubmit,
   nextLabel = "Continue",
   submitLabel = "Submit",
+  submitIcon = "check",
   nextDisabled = false,
   submitting = false,
+  aside,
   children,
 }: {
   open: boolean;
@@ -41,8 +43,12 @@ export function StepperModal({
   onSubmit?: () => void;
   nextLabel?: string;
   submitLabel?: string;
+  submitIcon?: IconName;
   nextDisabled?: boolean;
   submitting?: boolean;
+  /** Optional persistent right rail rendered beside the step content
+   *  (e.g. the Order summary). Omit it on a step to use the full width. */
+  aside?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const isLast = current === steps.length - 1;
@@ -115,8 +121,11 @@ export function StepperModal({
               })}
             </nav>
 
-            <div className="spm-content scroll">
-              <div className="spm-content-inner">{children}</div>
+            <div className={cn("spm-body", !!aside && "has-aside")}>
+              <div className="spm-content scroll">
+                <div className="spm-content-inner">{children}</div>
+              </div>
+              {aside && <aside className="spm-aside scroll">{aside}</aside>}
             </div>
           </div>
 
@@ -132,7 +141,7 @@ export function StepperModal({
             {isLast ? (
               <Button
                 variant="primary"
-                iconRight="check"
+                iconRight={submitIcon}
                 onClick={onSubmit}
                 disabled={submitting}
               >

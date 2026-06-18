@@ -125,14 +125,17 @@ export function useDashboard() {
   }, [period, range, now]);
 
   // KPIs. Historical tiles are PERIOD-SCOPED (counts of events within the selected
-  // range, derived from the period volume); "running" stays a live "now" count.
+  // range, derived from the period volume); "running" and "intake" stay point-in-time
+  // "now" counts (current backlog, not affected by the period picker).
   const kpis = useMemo(() => {
     const c = trend.completed;
     return {
       needsAction: Math.round(c * 0.13), // needed your action during the period
       running: reviews.filter((r) => r.status === "running").length, // LIVE — now
       overdue: Math.round(c * 0.06), // went overdue during the period
-      triage: Math.round(c * 0.05), // auto-rejected at intake during the period
+      // New-from-YouConnect deliveries awaiting an order — current backlog (now).
+      intake: reviews.filter((r) => r.status === "intake" && r.source === "yc")
+        .length,
     };
   }, [trend.completed, reviews]);
 

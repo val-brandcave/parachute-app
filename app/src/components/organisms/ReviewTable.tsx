@@ -6,7 +6,7 @@ import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Avatar, Button, Chip, Icon, Tooltip } from "@/components/atoms";
 import { ActionMenu, PipelineTracker } from "@/components/molecules";
-import { useOrderStore } from "@/store";
+import { useOrderStore, ORDER_STEP } from "@/store";
 import { cn, relativeDue, formatShortDate } from "@/lib/utils";
 import {
   pipelineView,
@@ -55,20 +55,16 @@ function NextAction({ review }: { review: Review }) {
   const openOrder = useOrderStore((s) => s.openOrder);
   const a: NextActionView = nextActionView(review);
 
-  if (a.tone === "quiet")
-    return (
-      <span className="nextact-quiet">
-        {a.icon && <Icon name={a.icon} size={14} />}
-        {a.label}
-      </span>
-    );
+  // Quiet waits (Running… / With appraiser) carry no action — render nothing,
+  // leaving just the ⋯ menu in the Actions cell.
+  if (a.tone === "quiet") return null;
 
   const onClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     if (a.kind === "order")
       openOrder({
-        step: 4,
+        step: ORDER_STEP.confirm,
         prefill: {
           reviewId: review.id,
           source: review.source,
@@ -109,15 +105,17 @@ function NextAction({ review }: { review: Review }) {
 
 /** Due column: a neutral date; urgency is a trailing marker — amber clock for
  *  due-soon, red triangle for overdue — whose tooltip carries the magnitude
- *  ("Due in 2d" / "Overdue 1d"). On-track = date only; auto-rejected = SLA
- *  paused; completed = no due. */
+ *  ("Due in 2d" / "Overdue 1d"). On-track = date only; completed shows its date
+ *  without any urgency marker; auto-rejected (SLA paused) shows a plain dash. */
 function DueCell({ review }: { review: Review }) {
-  if (review.status === "autorejected")
-    return <span className="duepaused">SLA paused</span>;
-  if (review.status === "completed") return <span className="qmuted">—</span>;
+  // Auto-rejected pauses the SLA — no meaningful due date to show.
+  if (review.status === "autorejected") return <span className="qmuted">—</span>;
 
   const due = relativeDue(review.slaDueAt);
-  const warn = due.tone === "soon" || due.tone === "overdue";
+  // A completed review still shows its due date, but never an urgency marker.
+  const warn =
+    review.status !== "completed" &&
+    (due.tone === "soon" || due.tone === "overdue");
   return (
     <div className="duecell">
       <span className="duedate">{formatShortDate(review.slaDueAt)}</span>
@@ -211,7 +209,15 @@ function Cell({
     case "pipeline":
       return (
         <div>
-          <PipelineTracker view={pipelineView(r)} seed={r.id} />
+          <PipelineTracker
+            view={pipelineView(r)}
+            seed={r.id}
+            footnote={
+              r.status === "completed"
+                ? `Reviewed and signed by ${team[r.assigneeId]?.name ?? "reviewer"}`
+                : undefined
+            }
+          />
         </div>
       );
     case "findings": {

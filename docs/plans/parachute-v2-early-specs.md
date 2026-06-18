@@ -28,25 +28,42 @@ light/dark, density. New domain entities get added to `src/types` + `src/data/se
 
 ---
 
-## 1. Order a review — stepper modal (fill in the shell)
+## 1. Order a review — stepper modal (settled Jun 18 2026)
 
 **POC ref:** `#screen-order` (the two-column "checkout": source toggle + summary rail).
 **Analyze, don't clone:** the POC crams source, type, reviewer, and options onto one dense
-screen. *Suggest:* break it into the guided `StepperModal` we built (less at once,
-progressive disclosure) rather than replicate the single-screen checkout.
+single screen. We **reinterpret** it as the guided `StepperModal` (less at once, progressive
+disclosure) **but keep the POC's "cart" mental model** as a live summary rail — the part users
+liked. Built Jun 18 2026 against these decisions (`OrderModal` + `StepperModal`, global via
+`useOrderStore`).
 
-Component exists (`StepperModal` + `OrderModal`, global via `useOrderStore`). Build real
-content per step. Draft state shape: `orderDraft { source, ycEngagementId?, file?, reviewTypes[], assigneeId, options{}, }`.
+**Consolidated to THREE steps** (the POC's type/reviewer/options were each ~1 click — three
+separate stepper rows felt like busywork). The summary rail makes a heavyweight Confirm step
+unnecessary: the rail *graduates* into it.
 
-1. **Source** — segmented "From YouConnect" | "Upload".
-   - YouConnect: searchable inbox of deliveries (property, doc, SLA, NEW/IN-QUEUE badges); remote search + import; duplicate warning if already in queue.
-   - Upload: dropzone (PDF), parsed file pill + extracted property summary (editable).
-   - *Next disabled until a source is chosen.*
-2. **Review type** — choose Technical and/or Administrative (≥1). Each option card explains its output (Technical → workbook; Administrative → compliance attestation). Admin shows which checklist template applies.
-3. **Reviewer** — assignee select (default inherited from the YC engagement). Optional due-date / priority.
-4. **Options** — org defaults shown with per-order overrides: auto-reject quality gate on/off, SLA start, compliance template, bank policy. Audited if overridden.
-5. **Confirm & run** — order summary; "Run pipeline" submits → creates a `review` (status `running`, pipelineStage advancing S1–S5 with `ai-processing` shimmer).
-   - **✅ RESOLVED (decision #1):** "Run pipeline" **routes into the new review** (Technical tab, running state); "Back to queue" stays available. CTA: "Run pipeline" primary navy.
+Draft state shape (`store/order.store.ts`): `orderDraft { source, ycDeliveryId?, property{address,propertyType,lender,loanNo,firm}?, doc{name,pages,viaApi}?, slaDueAt?, isSecondReview, existingReviewId?, uploadParsed, reviewTypes[], assigneeId, dueDate, priority, autoReject, optionsOverridden }`.
+
+1. **Source** — `SegmentedControl` "From YouConnect" | "Standalone upload".
+   - **YouConnect:** searchable select-list of deliveries (`YcDelivery` seed — property, `loan# · type · delivered date · bank`, **NEW** / **IN QUEUE** badge). Filter inbox / search all of YC. An **IN QUEUE** pick is a **second review** → amber *"Already in your queue — continue only for an intentional second review"* note (allowed, not blocked — **decision: Allow + amber warning**).
+   - **Standalone (upload-first — decision):** the dropzone is the hero; on parse, the editable property fields (address, type, lender, loan#, firm, due) **auto-fill** (AI-extracted) + a parsed file pill, in a white card. Fields are verify-and-correct, not blank entry — so both source modes converge on the same "verify the property" gesture.
+   - *Next disabled until a delivery is selected or a PDF is parsed.*
+2. **Configure** — one white card, three hairline-divided sections:
+   - **Review type** — selectable cards, Technical and/or Administrative (≥1). Each explains its output (Technical → Reviewer Workbook; Administrative → signed attestation). Admin shows the checklist template.
+   - **Reviewer & schedule** — assignee select (inherited from the YC delivery when applicable; "inherited — changeable, SLA unaffected" tag). Optional **due date** + **priority**.
+   - **Org defaults** — a **direct toggle** for the auto-reject quality gate (no "Override…" disclosure); flipping it shows a *"this override applies to this order only — audited"* note.
+3. **Summary** (the final step; `ORDER_STEP` key stays `confirm`) — a **two-section** review card, **one ✎ Edit per editable step** (not per field): **Appraisal** (property recap · source doc `From YouConnect — read-only / Report mismatch` · SLA/due · second-review warning → **Source**) and **Configure** (sub-grouped Review type · Reviewer & schedule · Options → **Configure**). **Run pipeline** (rocket icon) submits → creates a `review` (status `running`).
+   - **✅ RESOLVED (decision #1):** "Run pipeline" (primary navy) **routes into the new review** (Technical tab, running state); "Back" stays available.
+
+**No progressive summary rail (decision reversed Jun 18 2026).** An earlier build added a
+persist-then-graduate summary rail on Source + Configure; it was dropped — with only two steps
+before the Summary, a constant rail wasn't worth the width. Instead the **Summary step is the
+review surface**, with per-section Edit jump-backs (above). `StepperModal` keeps its optional
+`aside` slot for future wizards, but the Order flow no longer uses it.
+
+**Optimizations baked in:** happy path = *pick → run* (YC-launched orders use `prefill`/`step`
+to open pre-selected on the Summary step); upload-first AI autofill mirrors how YC deliveries
+already arrive pre-filled; per-step gating (Next disabled until source chosen / ≥1 type);
+duplicate detection; autofocused YC search; segmented active = navy-tint selected surface.
 
 ---
 
@@ -201,9 +218,9 @@ department… separate the different stages"*). The queue is a **team view**. Mo
 statuses are gone. `ReviewStatus` = honest phases (`intake · autorejected · running ·
 in_review · returned · completed`). A row's state reads from **Pipeline + Findings + Type**
 together — there is **no Status column**. All derivation lives in `lib/review-lifecycle.ts`:
-- `pipelineView` → the **Pipeline column = the phase carrier**: S1–S5 dots (done/active/idle) for in/post-pipeline, or a word-state (`Awaiting order` · `Blocked at intake` · `Returned · rev 2`).
+- `pipelineView` → the **Pipeline column = the phase carrier**: S1–S5 dots (done/active/idle) for in/post-pipeline, or a **word-state badge** (revised Jun 18 2026): pre-order intake = **`New`** / **`New from YC`** (YouConnect glyph when `source==="yc"`) info-pill; auto-rejected = red **`Auto Rejected`** pill; in_review = `Ready`; completed = **`Completed`** (hover card adds a "Reviewed and signed by {reviewer}" footnote). (`returned`→`Returned · rev 2` is dormant — see Q1.)
 - `outcomeView` → **Findings**: worst-severity chip + count (`1 critical` / `5 fail` / `2 flagged` / `clean`); `—` before the pipeline produces findings (needs `Review.worstSeverity`).
-- `nextActionView` → **one derived primary per row** (`Run`→Order stepper pre-selected on its Confirm & run step · `Triage` · `Review →` · `Sign attestation` · `Compile` · `Download`); quiet text for waits (`Running…`, `With appraiser`).
+- `nextActionView` → **one derived primary per row** (`Run`→Order stepper pre-selected on its Confirm & run step · `Triage` · `Review →` · `Sign attestation` · `Compile` · `Download`). **Quiet waits render nothing** (revised Jun 18 2026): `Running…` / `With appraiser` are dropped — those rows show only the `⋯` menu.
 - `lifecycleBucket` / `needsMyAction` / `isOverdue` → drive tabs + sort + the dashboard's Action-needed.
 
 **Columns (aligned grid, desktop-first — column set revised Jun 18 2026):**
@@ -212,8 +229,8 @@ narrow, avatar-only column** — `Avatar` + name on hover; pulled OUT of Propert
 (TECH/ADMIN **chips** — spaced pills, can be both; `— at order` pre-order) · `Pipeline`
 (`PipelineTracker` molecule — see below) · `Findings` · `Due` (a **neutral date** + a trailing
 **urgency marker** — amber clock = due-soon, red triangle = overdue — whose tooltip carries
-the magnitude `Due in Nd`/`Overdue Nd`; on-track = date only; `SLA paused` for auto-rejected;
-`—` for completed) · `Actions` (**one merged right-aligned cell**: the derived
+the magnitude `Due in Nd`/`Overdue Nd`; on-track = date only; **completed shows its date with
+NO marker**; `—` for auto-rejected (SLA paused)) · `Actions` (**one merged right-aligned cell**: the derived
 primary action + `⋯` `ActionMenu` (Open · Triage · Download) — the old "Next action"
 header is dropped as redundant). **Risk is NOT a queue column** (it's a workbook/finding
 concept). Row click → review; the Actions cell stops propagation.
@@ -222,12 +239,16 @@ concept). Row click → review; the Actions cell stops propagation.
 track of S1–S5 where done segments fill, the **active segment is a static half-fill**
 (petrol→tint; the single petrol "AI working" cue is the badge's pulsing dot above the
 track), upcoming segments stay idle; the **live stage name shows inline** and a hover
-tooltip lists all five stages with their state. Pre/post-pipeline phases render a word-state
-(`Awaiting order` · `Blocked at intake` · `Returned · rev 2` · `Ready` · `Done`).
+tooltip lists all five stages with their state. Pre/post-pipeline phases render a **word-state
+badge** (revised Jun 18 2026): `New` / `New from YC` (intake) · `Auto Rejected` (red pill) ·
+`Ready` (in_review) · `Completed` (with a "Reviewed and signed by {reviewer}" hover footnote). Dot-states render the label as a **pill badge stacked on top** of the track (ready/completed = green, running = petrol w/ pulsing dot). (`Returned
+· rev 2` is dormant pending Q1.)
 
-**Tabs = lifecycle stages** (Ed's "separate the stages"), **not** scope: `All · Needs action
-(in_review) · In pipeline (running) · Sent back (returned) · Completed · Intake (intake +
-auto-rejected)`. **All scope filters are encapsulated in one `Filters` popover**
+**Tabs = lifecycle stages** (Ed's "separate the stages"), **not** scope (revised Jun 18 2026):
+`All · Needs action · In pipeline · Intake · Completed`. **Auto-rejected folds into Needs
+action** (`lifecycleBucket: autorejected → needs_action`) — it needs the reviewer to triage;
+Intake = plain `intake` (awaiting order) only. The **`Sent back` (returned) tab + example are
+removed pending client Q1** (`parachute-v2-client-questions.md`); the code is left dormant. **All scope filters are encapsulated in one `Filters` popover**
 (`QueueFilters` molecule — portal, staged draft, Apply/Clear) with **five facets that are ALL
 the same multi-select dropdown** (`MultiSelect`): **Findings (severity color cues on rows +
 tinted trigger) · Type · Reviewer (avatar + name, "You" tag) · Appraisal firm (text-only) ·

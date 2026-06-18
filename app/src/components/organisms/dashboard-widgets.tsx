@@ -6,14 +6,9 @@ import { useEffect, useRef, useState } from "react";
 import { Icon, Chip, Button } from "@/components/atoms";
 import { ActionMenu, type ActionItem } from "@/components/molecules";
 import { cn, relativeDue } from "@/lib/utils";
-import { useOrderStore } from "@/store";
+import { useOrderStore, ORDER_STEP } from "@/store";
 import { reviewHref } from "./ReviewTable";
 import type { Review } from "@/types";
-
-/** "Review" lands the user on the Order stepper's final step with the
- *  YouConnect delivery pre-selected (decisions #1/#2). The stepper index of the
- *  "Confirm & run" step in OrderModal. */
-const ORDER_CONFIRM_STEP = 4;
 
 /** Risk → dot color. Calm by default: only elevated (red) and moderate (amber)
  *  carry color; low/unrated stay neutral grey so color signals real severity. */
@@ -36,7 +31,7 @@ export function ActionNeeded({ reviews }: { reviews: Review[] }) {
     <div className="widget">
       <div className="widget-head">
         <h3>Action needed</h3>
-        <Link href="/reviews" className="link">
+        <Link href="/reviews?tab=needs_action" className="link">
           View all <Icon name="chevron-right" size={14} />
         </Link>
       </div>
@@ -87,9 +82,9 @@ export function ActionNeeded({ reviews }: { reviews: Review[] }) {
 export function NewFromYouConnect({ reviews }: { reviews: Review[] }) {
   const openOrder = useOrderStore((s) => s.openOrder);
 
-  const startReview = (r: Review) =>
+  const runReview = (r: Review) =>
     openOrder({
-      step: ORDER_CONFIRM_STEP,
+      step: ORDER_STEP.confirm,
       prefill: {
         reviewId: r.id,
         source: "yc",
@@ -103,7 +98,7 @@ export function NewFromYouConnect({ reviews }: { reviews: Review[] }) {
     <div className="widget">
       <div className="widget-head">
         <h3>New from YouConnect</h3>
-        <Link href="/reviews" className="link">
+        <Link href="/reviews?tab=intake" className="link">
           View all <Icon name="chevron-right" size={14} />
         </Link>
       </div>
@@ -122,9 +117,10 @@ export function NewFromYouConnect({ reviews }: { reviews: Review[] }) {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => startReview(r)}
+                iconLeft="rocket"
+                onClick={() => runReview(r)}
               >
-                Review
+                Run
               </Button>
             </div>
           ))
@@ -342,7 +338,11 @@ export function TrendChart({
                 width={barW}
                 height={barH(d.v)}
                 rx={Math.min(5, barW / 2)}
-                style={{ animationDelay: `${i * 35}ms`, opacity: hover === i ? 1 : 0.85 }}
+                style={{
+                  animationDelay: `${i * 35}ms`,
+                  // Full strength at rest; dim only the siblings while hovering one.
+                  opacity: hover === null || hover === i ? 1 : 0.45,
+                }}
               />
               {d.tick && (
                 <text className="rv-xlabel" x={cx(i)} y={H - 8} textAnchor="middle">

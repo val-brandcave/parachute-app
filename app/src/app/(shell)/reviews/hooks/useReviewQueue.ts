@@ -15,6 +15,16 @@ import type { Review, User } from "@/types";
 export type QueueTab = "all" | LifecycleBucket;
 export type SortState = { col: SortCol; dir: "asc" | "desc" } | null;
 
+/** Tabs the UI exposes — used to validate a `?tab=` deep-link (e.g. the
+ *  dashboard "New from YouConnect → View all" jumps straight to Intake). */
+const URL_TABS: QueueTab[] = [
+  "all",
+  "needs_action",
+  "in_pipeline",
+  "intake",
+  "completed",
+];
+
 /* ---- sort rank helpers (column comparators; reviewer needs the team) ---- */
 
 /** Type grouping order: Technical · Tech+Admin · Administrative · (unordered). */
@@ -72,6 +82,19 @@ export const EMPTY_FILTERS: QueueFilters = {
 
 const ME = CURRENT_USER.id;
 
+/** Free-text search match (property / loan# / firm / type). Empty query matches
+ *  everything. Shared by the row filter and the per-tab counts so the tab badges
+ *  agree with what a search actually surfaces. */
+function matchesQuery(r: Review, q: string): boolean {
+  return (
+    !q ||
+    r.propertyAddress.toLowerCase().includes(q) ||
+    r.loanNo.toLowerCase().includes(q) ||
+    r.appraisalFirm.toLowerCase().includes(q) ||
+    r.propertyType.toLowerCase().includes(q)
+  );
+}
+
 /** Count of *active* facets — drives the Filters button badge. */
 export function activeFilterCount(f: QueueFilters): number {
   return (
@@ -109,6 +132,18 @@ export function useReviewQueue() {
     );
   }, [fetchReviews, fetchUsers]);
 
+  // Honor a `?tab=` deep-link once on mount (dashboard widgets link straight to
+  // the Intake / Needs action tab). Read client-side to avoid a Suspense
+  // boundary; the loading skeleton covers the brief set, so there's no flash.
+  useEffect(() => {
+    const t = new URLSearchParams(window.location.search).get("tab");
+    // One-time sync from the URL deep-link after mount — running it in the effect
+    // (not a lazy initializer) keeps the SSR render = "all", so there's no
+    // hydration mismatch on the tab bar.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (t && (URL_TABS as string[]).includes(t)) setTab(t as QueueTab);
+  }, []);
+
   const [now] = useState(() => Date.now());
 
   const team = useMemo<Record<string, User>>(
@@ -122,24 +157,39 @@ export function useReviewQueue() {
     [reviews],
   );
 
-  // Per-tab counts (computed on the full set so the badges are stable as
-  // filters change). "all" is the grand total.
+  // Per-tab counts, scoped to the current search so the badges reflect what a
+  // query surfaces (empty query → full counts). Facet filters are deliberately
+  // NOT applied here, so the badges stay stable as facets change. "all" is the
+  // grand total of matches.
   const counts = useMemo(() => {
     const c: Record<QueueTab, number> = {
-      all: reviews.length,
+      all: 0,
       needs_action: 0,
       in_pipeline: 0,
       sent_back: 0,
       completed: 0,
       intake: 0,
     };
-    for (const r of reviews) c[lifecycleBucket(r)]++;
+    const q = query.trim().toLowerCase();
+    for (const r of reviews) {
+      if (!matchesQuery(r, q)) continue;
+      c.all++;
+      c[lifecycleBucket(r)]++;
+    }
     return c;
-  }, [reviews]);
+  }, [reviews, query]);
+
+  // While searching, tabs with no matches are hidden (see page.tsx). If the
+  // active tab is one of them, fall back to "all" so the user still sees results
+  // — derived, so clearing the search restores their original tab automatically.
+  const searching = query.trim().length > 0;
+  const effectiveTab: QueueTab =
+    searching && tab !== "all" && counts[tab] === 0 ? "all" : tab;
 
   const filtered = useMemo(() => {
     let list = [...reviews];
-    if (tab !== "all") list = list.filter((r) => lifecycleBucket(r) === tab);
+    if (effectiveTab !== "all")
+      list = list.filter((r) => lifecycleBucket(r) === effectiveTab);
 
     if (filters.findings !== "all") {
       const sel = filters.findings;
@@ -162,14 +212,7 @@ export function useReviewQueue() {
     }
 
     const q = query.trim().toLowerCase();
-    if (q)
-      list = list.filter(
-        (r) =>
-          r.propertyAddress.toLowerCase().includes(q) ||
-          r.loanNo.toLowerCase().includes(q) ||
-          r.appraisalFirm.toLowerCase().includes(q) ||
-          r.propertyType.toLowerCase().includes(q),
-      );
+    if (q) list = list.filter((r) => matchesQuery(r, q));
 
     if (sort) {
       const dir = sort.dir === "asc" ? 1 : -1;
@@ -205,7 +248,7 @@ export function useReviewQueue() {
             ? 2
             : 3;
     return list.sort((a, b) => rank(a) - rank(b) || a.slaDueAt - b.slaDueAt);
-  }, [reviews, tab, filters, query, now, sort, team]);
+  }, [reviews, effectiveTab, filters, query, now, sort, team]);
 
   return {
     isLoading: initial,
@@ -214,8 +257,9 @@ export function useReviewQueue() {
     firmOptions,
     reviews: filtered,
     total: reviews.length,
-    tab,
+    tab: effectiveTab,
     setTab,
+    searching,
     filters,
     setFilters,
     query,

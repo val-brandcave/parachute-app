@@ -110,7 +110,7 @@ export function ReviewTableSkeleton({ rows = 7 }: { rows?: number }) {
     <div role="status" aria-label="Loading reviews">
       <div className="qcols">
         <div>Property</div>
-        <div className="qcol-center">Reviewer</div>
+        <div>Reviewer</div>
         <div>Type</div>
         <div>Pipeline</div>
         <div>Findings</div>

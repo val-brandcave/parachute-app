@@ -1513,6 +1513,7 @@ textarea {
   gap: 2px;
 }
 .ui-seg button {
+  position: relative;
   border: none;
   background: transparent;
   font-family: inherit;
@@ -1522,15 +1523,29 @@ textarea {
   padding: 6px 14px;
   border-radius: 7px;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition: color 0.15s;
 }
 .ui-seg button:hover {
   color: var(--md-on-surface);
 }
 .ui-seg button.on {
-  background: #fff;
-  color: var(--md-primary);
+  /* the sliding .ui-seg-thumb provides the raised fill (navy-derived) */
+  color: var(--md-on-selected);
+}
+/* Framer layoutId thumb that slides between segments. Active = navy-derived
+   selected surface (our rule: active surfaces derive from navy; solid navy
+   stays reserved for CTAs). */
+.ui-seg-thumb {
+  position: absolute;
+  inset: 0;
+  background: var(--md-selected);
+  border-radius: 7px;
   box-shadow: var(--md-elev-1);
+  z-index: 0;
+}
+.ui-seg-lb {
+  position: relative;
+  z-index: 1;
 }
 
 /* ---- molecule: StatCard ---- */
@@ -2259,6 +2274,10 @@ textarea {
 .ui-tip {
   position: relative;
   z-index: 200;
+  /* inline-block so width:max-content applies AND the background covers block
+     content (the panel variant wraps a flex .pipe-card; an inline box would
+     leave it transparent). */
+  display: inline-block;
   width: max-content;
   max-width: 248px;
   background: var(--md-on-surface);
@@ -2281,7 +2300,8 @@ textarea {
   background: var(--md-on-surface);
 }
 .ui-tip--top::after {
-  left: 50%;
+  /* arrow tracks the trigger even when the tip is edge-clamped (--arrow-dx) */
+  left: calc(50% + var(--arrow-dx, 0px));
   bottom: -4px;
   transform: translateX(-50%) rotate(45deg);
 }
@@ -2604,6 +2624,16 @@ textarea {
   border-color: var(--md-accent);
   background: var(--md-accent);
 }
+/* Second grid cell: holds the scrolling step content and, optionally, a rail. */
+.spm-body {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+.spm-body.has-aside {
+  grid-template-columns: minmax(0, 1fr) 340px;
+}
 .spm-content {
   overflow-y: auto;
   padding: 32px 40px;
@@ -2611,6 +2641,13 @@ textarea {
 .spm-content-inner {
   max-width: 640px;
   margin: 0 auto;
+}
+/* Right rail column (Order summary) — canvas so the summary reads as a floating
+   card; graduates away on the final step and can collapse to an edge tab. */
+.spm-aside {
+  background: var(--md-bg);
+  overflow-y: auto;
+  padding: 24px 20px;
 }
 .spm-foot {
   flex-shrink: 0;
@@ -2621,6 +2658,586 @@ textarea {
   padding: 14px 22px;
   background: var(--md-surface);
   border-top: 1px solid var(--md-outline-v);
+}
+
+/* ============ Order stepper (OrderModal) ============ */
+
+/* Label-as-wrapper variant of .field (implicit label↔control association). */
+label.field {
+  display: block;
+}
+.field > span {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--md-on-surface-v);
+}
+.ord-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 16px;
+}
+.ord-form .field {
+  margin-bottom: 14px;
+}
+
+/* White card wrapper for step content (sits on the modal's canvas). */
+.ord-card {
+  background: var(--md-surface);
+  border: 1px solid var(--md-outline);
+  border-radius: var(--r);
+}
+.ord-pad {
+  padding: 20px;
+}
+
+/* Summary step: section header with a trailing Edit jump-back button. */
+.ord-sec-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.ord-sec-head .ord-h {
+  margin: 0;
+}
+.ord-sum-edit {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--md-accent-d);
+  padding: 4px 8px;
+  border-radius: 7px;
+  transition: background 0.14s;
+}
+.ord-sum-edit:hover {
+  background: var(--md-accent-c);
+}
+
+/* Step 1 — YouConnect inbox */
+.ord-inbox {
+  background: var(--md-surface);
+  border: 1px solid var(--md-outline);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+.ord-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--md-outline-v);
+  color: var(--md-on-surface-t);
+}
+.ord-search input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--md-on-surface);
+  outline: none;
+}
+.ord-search input::placeholder {
+  color: var(--md-on-surface-t);
+}
+.ord-list {
+  display: flex;
+  flex-direction: column;
+}
+.ord-deliv {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  padding: 13px 16px;
+  border: none;
+  border-left: 3px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.14s, border-color 0.14s;
+}
+.ord-deliv + .ord-deliv {
+  border-top: 1px solid var(--md-outline-v);
+}
+.ord-deliv:hover {
+  background: var(--md-surface-1);
+}
+.ord-deliv.sel {
+  background: var(--md-selected);
+  border-left-color: var(--md-primary);
+}
+.ord-deliv-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ord-deliv-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--md-on-surface);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ord-deliv-sub {
+  font-size: 12px;
+  color: var(--md-on-surface-v);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ord-empty,
+.ord-sum-empty {
+  padding: 22px 16px;
+  font-size: 13px;
+  color: var(--md-on-surface-v);
+  text-align: center;
+}
+.ord-foot-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 16px;
+  border-top: 1px solid var(--md-outline-v);
+  font-size: 12px;
+  color: var(--md-on-surface-v);
+}
+.ord-foot-note svg {
+  flex-shrink: 0;
+  color: var(--md-accent);
+}
+
+/* Step 1 — Standalone upload (upload-first) */
+.ord-drop {
+  width: 100%;
+  border: 1.5px dashed var(--md-outline);
+  border-radius: 14px;
+  background: var(--md-surface-1);
+  padding: 48px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: var(--md-on-surface-v);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.ord-drop:hover:not(:disabled) {
+  border-color: var(--md-accent);
+  background: var(--md-accent-c);
+}
+.ord-drop.busy {
+  cursor: default;
+}
+.ord-drop-title {
+  font-family: var(--font-display);
+  font-size: 17px;
+  color: var(--md-on-surface);
+  margin-top: 8px;
+}
+.ord-drop p {
+  font-size: 13px;
+  margin: 0;
+}
+.ord-link {
+  color: var(--md-accent-d);
+  font-weight: 600;
+  cursor: pointer;
+}
+.ord-link:hover {
+  text-decoration: underline;
+}
+.ord-filepill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--md-surface-1);
+  border: 1px solid var(--md-outline-v);
+  font-size: 13px;
+  color: var(--md-on-surface);
+}
+.ord-filepill svg {
+  flex-shrink: 0;
+  color: var(--md-error);
+}
+.ord-parsed {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--md-success);
+  font-weight: 600;
+  font-size: 12px;
+}
+.ord-parsed svg {
+  color: var(--md-success);
+}
+.ord-extract-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--md-accent-d);
+  margin: 14px 0;
+}
+
+/* Step 2 — Configure: one white card, sections divided by hairlines. */
+.ord-config {
+  overflow: hidden;
+}
+.ord-sec {
+  padding: 20px;
+}
+.ord-sec + .ord-sec {
+  border-top: 1px solid var(--md-outline-v);
+}
+.ord-h {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--md-on-surface);
+  margin: 0 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ord-typegrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.ord-typecard {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  text-align: left;
+  padding: 14px;
+  border: 1px solid var(--md-outline);
+  border-radius: 12px;
+  background: var(--md-surface);
+  cursor: pointer;
+  transition: border-color 0.14s, background 0.14s;
+}
+.ord-typecard:hover {
+  border-color: var(--md-on-surface-t);
+}
+.ord-typecard.sel {
+  border-color: var(--md-primary);
+  background: var(--md-selected);
+}
+.ord-check {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  border: 2px solid var(--md-outline);
+  display: grid;
+  place-items: center;
+  color: #fff;
+  margin-top: 1px;
+}
+.ord-check.on {
+  background: var(--md-primary);
+  border-color: var(--md-primary);
+}
+.ord-typecard-title {
+  display: block;
+  font-weight: 600;
+  font-size: 13.5px;
+  color: var(--md-on-surface);
+}
+.ord-typecard-sub {
+  display: block;
+  font-size: 12px;
+  color: var(--md-on-surface-v);
+  margin-top: 2px;
+}
+.ord-tpl-note,
+.ord-inherit {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--md-on-surface-v);
+  margin: 10px 0 0;
+}
+.ord-inherit {
+  color: var(--md-accent-d);
+}
+/* Org defaults: a direct toggle row (no "Override…" disclosure). */
+.ord-switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+.ord-switch-text strong {
+  display: block;
+  font-size: 13px;
+  color: var(--md-on-surface);
+}
+.ord-sub {
+  display: block;
+  font-size: 11.5px;
+  color: var(--md-on-surface-v);
+  margin-top: 3px;
+}
+/* On/off toggle (role="switch"). */
+.ord-switch {
+  flex-shrink: 0;
+  width: 38px;
+  height: 22px;
+  border-radius: 999px;
+  border: none;
+  padding: 0;
+  background: var(--md-surface-3);
+  cursor: pointer;
+  position: relative;
+  transition: background 0.16s;
+}
+.ord-switch.on {
+  background: var(--md-primary);
+}
+.ord-switch-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: var(--md-elev-1);
+  transition: transform 0.16s;
+}
+.ord-switch.on .ord-switch-thumb {
+  transform: translateX(16px);
+}
+.ord-override-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 12px 0 0;
+  padding: 9px 11px;
+  border-radius: 8px;
+  background: var(--md-warn-c);
+  color: var(--md-warn);
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+.ord-override-note svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* Order summary — a clean white card in both the rail and the Confirm step. */
+.ord-summary--rail,
+.ord-summary--full {
+  background: var(--md-surface);
+  border: 1px solid var(--md-outline);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+.ord-summary--rail {
+  position: sticky;
+  top: 0;
+}
+.ord-sum-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--md-outline-v);
+}
+.ord-sum-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--md-on-surface);
+}
+.ord-sum-collapse {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--md-on-surface-t);
+  display: grid;
+  place-items: center;
+  padding: 2px;
+  border-radius: 6px;
+  transition: background 0.14s, color 0.14s;
+}
+.ord-sum-collapse:hover {
+  background: var(--md-surface-1);
+  color: var(--md-on-surface);
+}
+/* Collapsed rail → a labelled tab pinned to the right edge. */
+.ord-rail-tab {
+  position: fixed;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 7px;
+  background: var(--md-surface);
+  border: 1px solid var(--md-outline);
+  border-right: none;
+  border-radius: 10px 0 0 10px;
+  box-shadow: var(--md-elev-1);
+  cursor: pointer;
+  color: var(--md-on-surface-v);
+  transition: color 0.14s;
+}
+.ord-rail-tab:hover {
+  color: var(--md-on-surface);
+}
+.ord-rail-tab-label {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+.ord-sum-body {
+  padding: 16px 18px;
+}
+.ord-sum-prop {
+  margin-bottom: 12px;
+}
+.ord-sum-addr {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--md-on-surface);
+}
+.ord-sum-meta {
+  font-size: 12px;
+  color: var(--md-on-surface-v);
+  margin-top: 2px;
+}
+.ord-sum-doc {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 11px;
+  border-radius: 9px;
+  background: var(--md-surface-1);
+  font-size: 12.5px;
+  color: var(--md-on-surface);
+}
+.ord-sum-doc svg {
+  flex-shrink: 0;
+  color: var(--md-error);
+}
+.ord-sum-doc-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ord-sum-doc-pages {
+  color: var(--md-on-surface-v);
+}
+.ord-lock {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11.5px;
+  color: var(--md-on-surface-v);
+  margin-top: 6px;
+}
+.ord-lock span:first-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.ord-sum-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--md-on-surface-v);
+}
+.ord-sum-val {
+  margin-left: auto;
+  color: var(--md-on-surface);
+  font-weight: 600;
+}
+.ord-warn {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 9px;
+  background: var(--md-warn-c);
+  color: var(--md-warn);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.ord-warn svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.ord-sum-sec {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--md-on-surface-t);
+  margin: 18px 0 8px;
+}
+/* First sub-label right under a section header doesn't need the big top gap. */
+.ord-sec-head + .ord-sum-sec {
+  margin-top: 0;
+}
+.ord-sum-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.ord-sum-muted {
+  font-size: 12.5px;
+  color: var(--md-on-surface-v);
+  margin: 0;
+}
+.ord-sum-reviewer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--md-on-surface);
+}
+.ord-recap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 20px;
+  padding: 11px 13px;
+  border-radius: 10px;
+  background: var(--md-accent-c);
+  color: var(--md-accent-d);
+  font-size: 12.5px;
+  font-weight: 600;
 }
 
 /* ---- dashboard widgets ---- */
@@ -2823,7 +3440,10 @@ textarea {
   stroke-width: 1;
 }
 .rv-bar {
-  fill: var(--md-accent);
+  /* low-opacity navy (not petrol); color-mix keeps it theme-safe — light navy on
+     light, the lifted dark-mode navy on dark. The full-navy overlay line then
+     reads on top of the muted bars. */
+  fill: color-mix(in srgb, var(--md-primary) 90%, transparent);
   transform-box: fill-box;
   transform-origin: bottom;
   animation: rv-grow 0.5s cubic-bezier(0.2, 0.7, 0.3, 1) both;
@@ -2977,7 +3597,7 @@ textarea {
   overflow: visible;
 }
 .rv-glyph-bar {
-  fill: var(--md-accent);
+  fill: color-mix(in srgb, var(--md-primary) 90%, transparent);
 }
 .rv-glyph-line {
   stroke: var(--md-primary);
@@ -3333,6 +3953,7 @@ textarea {
   gap: 2px;
 }
 .qtab {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 7px;
@@ -3351,10 +3972,24 @@ textarea {
   color: var(--md-on-surface);
 }
 .qtab.on {
-  background: var(--md-selected);
+  background: transparent; /* the sliding .qtab-pill provides the active fill */
   color: var(--md-on-selected);
 }
+/* Framer layoutId pill that slides between active tabs (sits under the label) */
+.qtab-pill {
+  position: absolute;
+  inset: 0;
+  background: var(--md-selected);
+  border-radius: 8px;
+  z-index: 0;
+}
+.qtab-lb {
+  position: relative;
+  z-index: 1;
+}
 .qtab .cnt {
+  position: relative;
+  z-index: 1;
   font-size: 11px;
   background: var(--md-surface-2);
   border-radius: 8px;
@@ -3505,7 +4140,9 @@ textarea {
 /* Queue grid: Property&parties · Type · Pipeline · Findings · Due · Next action · ⋯ */
 .qrow {
   display: grid;
-  grid-template-columns: minmax(200px, 2fr) 72px 104px 158px 128px 104px minmax(128px, max-content);
+  /* Default (all columns) — kept in sync with REVIEW_COLUMNS; the live table sets
+     this inline from gridTemplate(visible), but the skeleton uses this rule. */
+  grid-template-columns: minmax(168px, 2.4fr) minmax(80px, 0.5fr) minmax(92px, 0.9fr) minmax(148px, 1.5fr) minmax(104px, 0.9fr) minmax(88px, 0.8fr) minmax(136px, max-content);
   align-items: center;
   gap: 18px;
   padding: 0 20px;
@@ -3557,7 +4194,7 @@ textarea {
 }
 .qcols {
   display: grid;
-  grid-template-columns: minmax(200px, 2fr) 72px 104px 158px 128px 104px minmax(128px, max-content);
+  grid-template-columns: minmax(168px, 2.4fr) minmax(80px, 0.5fr) minmax(92px, 0.9fr) minmax(148px, 1.5fr) minmax(104px, 0.9fr) minmax(88px, 0.8fr) minmax(136px, max-content);
   gap: 18px;
   padding: 9px 20px;
   background: var(--md-surface-1);
@@ -3602,10 +4239,6 @@ textarea {
 }
 .duemark.overdue {
   color: var(--md-error);
-}
-.duepaused {
-  font-size: 13px;
-  color: var(--md-on-surface-t);
 }
 
 /* ----- Queue row: property cell (stacked, ellipsised, tooltip-on-clip) ----- */
@@ -3694,7 +4327,7 @@ textarea {
 }
 .qreviewer {
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
 }
 
 /* Merged Actions cell — primary next-action + ⋯ overflow, right-aligned */
@@ -3713,6 +4346,12 @@ textarea {
   gap: 5px;
 }
 .tbadge {
+  /* center the all-caps label both axes: as a flex container the single text
+     line is truly centred, instead of block-flow pinning it to the top of the
+     content box (which read as "too high"). */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.4px;
@@ -3805,26 +4444,12 @@ textarea {
     var(--md-accent-c) 50%
   );
 }
-.pipe-jt-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 11.5px;
-  font-variant-numeric: tabular-nums;
-  color: var(--md-on-surface-v);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  min-width: 0;
-}
-.pipe-jt--ready .pipe-jt-label,
-.pipe-jt--done .pipe-jt-label {
+/* Ready / Completed render as a success-tinted badge stacked ON TOP of the
+   track — the same pill treatment as the running stage badge, just green. */
+.pipe-badge--ready,
+.pipe-badge--done {
+  background: var(--md-success-c);
   color: var(--md-success);
-  font-weight: 600;
-}
-.pipe-jt--running .pipe-jt-label {
-  color: var(--md-accent-d);
-  font-weight: 500;
 }
 /* Hover tooltip = a light progress panel: a "Stage X of N" header over a
    vertical stepper. Rendered inside .ui-tip--panel (light surface). */
@@ -3942,14 +4567,39 @@ textarea {
 .pipe-word--warn {
   color: var(--md-warn);
 }
-
-/* Quiet (non-actionable) next-action states: Running… / With appraiser */
-.nextact-quiet {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 12px;
-  color: var(--md-on-surface-t);
+.pipe-word--info {
+  color: var(--md-info);
+}
+/* Tinted pill for word-states that read as a badge, not plain coloured text
+   (auto-rejected = fail, new intake = info). Shape here; the tint follows the
+   tone modifier below so it stays theme-safe. */
+.pipe-word--badge {
+  gap: 4px;
+  padding: 2px 9px 2px 7px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+.pipe-word--badge.pipe-word--fail {
+  background: var(--md-error-c);
+}
+.pipe-word--badge.pipe-word--info {
+  background: var(--md-info-c);
+}
+/* Hover-card footnote (e.g. "Reviewed & completed by …") */
+.pipe-card-foot {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 9px 14px 11px;
+  border-top: 1px solid var(--md-outline-v);
+  font-size: 11.5px;
+  color: var(--md-on-surface-v);
+}
+.pipe-card-foot svg {
+  color: var(--md-success);
+  flex-shrink: 0;
+  /* sit on the first text line, not centred across the wrapped name */
+  margin-top: 1px;
 }
 
 /* "Mine only" toggle pill in the toolbar */

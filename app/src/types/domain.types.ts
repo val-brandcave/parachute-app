@@ -55,6 +55,27 @@ export interface Review extends BaseEntity {
   orderedAt: number;
 }
 
+/* ============ YouConnect deliveries (Order stepper inbox) ============ */
+// An appraisal that has landed in YouConnect and can be ordered for review.
+// Backs the "From YouConnect" source step. `status` drives the inbox badge:
+//   new      = not yet ordered → "NEW"
+//   in_queue = already has an active review → "IN QUEUE" (a second review needs intent)
+export interface YcDelivery extends BaseEntity {
+  propertyAddress: string;
+  propertyType: string;
+  bank: string; // lending entity/branch
+  appraisalFirm: string; // the fee-appraiser firm whose work would be reviewed
+  loanNo: string;
+  deliveredAt: number; // epoch ms — when YouConnect delivered it
+  docName: string; // e.g. "Commercial Appraisal Report.pdf"
+  docPages: number;
+  viaApi: boolean; // delivered straight over the YC API (read-only source)
+  slaDueAt: number; // epoch ms — SLA clock from YC delivery
+  defaultAssigneeId: UUID; // inherited reviewer (changeable in the stepper)
+  status: "new" | "in_queue";
+  existingReviewId?: UUID; // set when status === "in_queue" (the second-review target)
+}
+
 /* ============ Findings ============ */
 export type Severity = "crit" | "fail" | "flag" | "pass" | "na";
 export type Disposition =

@@ -25,14 +25,19 @@ export interface ReviewColDef {
   align?: "center" | "end";
 }
 
+// Every data column is `minmax(floor, weight-fr)` so the grid stays balanced AND
+// the remaining columns spread to fill when one is hidden (only Property used to
+// flex, so hiding a column left a gap). Actions is floored to the widest button
+// (≈ "Review" + ⋯) and grows only if a longer label appears, so it never shifts
+// other columns under it.
 export const REVIEW_COLUMNS: ReviewColDef[] = [
-  { id: "property", label: "Property", width: "minmax(200px, 2fr)", sortable: true, locked: true },
-  { id: "reviewer", label: "Reviewer", width: "72px", sortable: true, locked: false, align: "center" },
-  { id: "type", label: "Type", width: "104px", sortable: true, locked: false },
-  { id: "pipeline", label: "Pipeline", width: "158px", sortable: true, locked: false },
-  { id: "findings", label: "Findings", width: "128px", sortable: true, locked: false },
-  { id: "due", label: "Due", width: "104px", sortable: true, locked: false },
-  { id: "actions", label: "", width: "minmax(128px, max-content)", sortable: false, locked: true, align: "end" },
+  { id: "property", label: "Property", width: "minmax(168px, 2.4fr)", sortable: true, locked: true },
+  { id: "reviewer", label: "Reviewer", width: "minmax(80px, 0.5fr)", sortable: true, locked: false },
+  { id: "type", label: "Type", width: "minmax(92px, 0.9fr)", sortable: true, locked: false },
+  { id: "pipeline", label: "Pipeline", width: "minmax(148px, 1.5fr)", sortable: true, locked: false },
+  { id: "findings", label: "Findings", width: "minmax(104px, 0.9fr)", sortable: true, locked: false },
+  { id: "due", label: "Due", width: "minmax(88px, 0.8fr)", sortable: true, locked: false },
+  { id: "actions", label: "", width: "minmax(136px, max-content)", sortable: false, locked: true, align: "end" },
 ];
 
 /** All columns visible — the default (column choices are session-only). */

@@ -17,11 +17,13 @@ export type LifecycleBucket =
   | "completed"
   | "intake";
 
-/** Which lifecycle-stage tab a review belongs to. Intake folds in auto-rejected
- *  (both are pre-review intake-desk states: confirm-&-run and triage). */
+/** Which lifecycle-stage tab a review belongs to. Auto-rejected lives under
+ *  "Needs action" — it needs the reviewer to triage a decision now — while plain
+ *  intake (awaiting order) stays in the Intake tab. */
 export function lifecycleBucket(r: Review): LifecycleBucket {
   switch (r.status) {
     case "in_review":
+    case "autorejected":
       return "needs_action";
     case "running":
       return "in_pipeline";
@@ -30,7 +32,6 @@ export function lifecycleBucket(r: Review): LifecycleBucket {
     case "completed":
       return "completed";
     case "intake":
-    case "autorejected":
       return "intake";
   }
 }
@@ -98,14 +99,33 @@ export type PipelineView =
       label: string;
       tone: "running" | "ready" | "done";
     }
-  | { mode: "word"; label: string; icon: IconName; tone: "muted" | "fail" | "warn" };
+  | {
+      mode: "word";
+      label: string;
+      icon: IconName;
+      tone: "muted" | "fail" | "warn" | "info";
+      /** Render as a tinted pill (vs. plain coloured text) — terminal/new states. */
+      badge?: boolean;
+      /** Swap the leading icon for a brand glyph (YouConnect intake). */
+      brand?: "yc";
+    };
 
 export function pipelineView(r: Review): PipelineView {
   switch (r.status) {
     case "intake":
-      return { mode: "word", label: "Awaiting order", icon: "clock", tone: "muted" };
+      // Pre-order arrivals read as "New" (or "New from YC" for YouConnect feeds),
+      // not a pipeline state — they haven't entered the pipeline yet.
+      return r.source === "yc"
+        ? { mode: "word", label: "New from YC", icon: "connect", tone: "info", badge: true, brand: "yc" }
+        : { mode: "word", label: "New", icon: "add", tone: "info", badge: true };
     case "autorejected":
-      return { mode: "word", label: "Blocked at intake", icon: "reject", tone: "fail" };
+      return {
+        mode: "word",
+        label: "Auto Rejected",
+        icon: "reject",
+        tone: "fail",
+        badge: true,
+      };
     case "returned":
       return { mode: "word", label: "Returned · rev 2", icon: "undo", tone: "warn" };
     case "running": {
@@ -121,7 +141,7 @@ export function pipelineView(r: Review): PipelineView {
     case "in_review":
       return { mode: "dots", filled: 5, active: null, label: "Ready", tone: "ready" };
     case "completed":
-      return { mode: "dots", filled: 5, active: null, label: "Done", tone: "done" };
+      return { mode: "dots", filled: 5, active: null, label: "Completed", tone: "done" };
   }
 }
 

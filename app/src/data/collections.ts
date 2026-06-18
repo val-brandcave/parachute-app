@@ -7,6 +7,7 @@ export const Collections = {
   ORGS: "orgs",
   REVIEWS: "reviews",
   FINDINGS: "findings",
+  YC_DELIVERIES: "yc_deliveries",
 } as const;
 
 export type CollectionName = (typeof Collections)[keyof typeof Collections];
