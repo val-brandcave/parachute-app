@@ -26,6 +26,7 @@ export function StepperModal({
   nextLabel = "Continue",
   submitLabel = "Submit",
   submitIcon = "check",
+  submitIconSide = "right",
   nextDisabled = false,
   submitting = false,
   aside,
@@ -44,6 +45,9 @@ export function StepperModal({
   nextLabel?: string;
   submitLabel?: string;
   submitIcon?: IconName;
+  /** Which side the submit icon sits on (default "right"; the Order flow uses
+   *  "left" so the rocket reads as a leading "launch" cue: 🚀 Run). */
+  submitIconSide?: "left" | "right";
   nextDisabled?: boolean;
   submitting?: boolean;
   /** Optional persistent right rail rendered beside the step content
@@ -141,7 +145,8 @@ export function StepperModal({
             {isLast ? (
               <Button
                 variant="primary"
-                iconRight={submitIcon}
+                iconLeft={submitIconSide === "left" ? submitIcon : undefined}
+                iconRight={submitIconSide === "right" ? submitIcon : undefined}
                 onClick={onSubmit}
                 disabled={submitting}
               >

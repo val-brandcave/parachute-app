@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { Avatar, Icon, type IconName } from "@/components/atoms";
+import { Avatar, Icon, IconButton, type IconName } from "@/components/atoms";
 import { cn } from "@/lib/utils";
 import { CURRENT_USER } from "@/lib/current-user";
 import {
@@ -37,12 +37,6 @@ const TYPE_OPTS: MSOption[] = [
   { value: "administrative", label: "Administrative" },
 ];
 
-const DUE_OPTS: MSOption[] = [
-  { value: "overdue", label: "Overdue" },
-  { value: "soon", label: "Due soon (≤2d)" },
-  { value: "paused", label: "SLA paused" },
-];
-
 const labelOf = (opts: MSOption[], v: string) =>
   opts.find((o) => o.value === v)?.label ?? v;
 
@@ -52,17 +46,18 @@ function toggle<T>(arr: T[], v: T): T[] {
 }
 
 /* ============================================================= *
- *  MultiSelect — the shared filter dropdown (tri-state select-all)
- * ============================================================= */
-
-/**
- * A select-styled trigger (summary + chevron) that opens a portal checkbox
- * menu. Tri-state: the "All" row toggles select-all ("all") ↔ deselect-all
- * ([]); a full selection collapses back to "all"; [] = none. Portaled so the
- * parent popover's scroll can't clip it; mousedown is stopped so ticking a box
- * never dismisses the parent popover.
+ *  FacetPills — small, fixed-option facets as inline toggle pills
+ * ============================================================= *
+ *
+ * For bounded enumerable facets (Findings, Type, Due) pills are faster than a
+ * dropdown — every option is visible and one tap away. Tri-state MultiSel:
+ *   • "all"  → the "All …" pill is filled, options neutral  (no filter)
+ *   • subset → those option pills filled
+ *   • []     → nothing filled (none — surfaces a "No …" chip in the subhead)
+ * Picking an option while "all" starts a fresh single-value selection; selecting
+ * every option collapses back to "all" (thumb rule: all-selected == default).
  */
-function MultiSelect({
+function FacetPills({
   placeholder,
   options,
   selected,
@@ -73,9 +68,84 @@ function MultiSelect({
   selected: MultiSel;
   onChange: (next: MultiSel) => void;
 }) {
+  const allValues = options.map((o) => o.value);
+  const allOn = selected === "all";
+  const picked: string[] = allOn ? [] : selected;
+
+  const reset = () => onChange("all");
+  const handleToggle = (value: string) => {
+    if (allOn) {
+      onChange([value]);
+      return;
+    }
+    const next = toggle(selected, value);
+    onChange(next.length === allValues.length ? "all" : next);
+  };
+
+  return (
+    <div className="qf-opts">
+      <button
+        type="button"
+        className={cn("qf-opt qf-opt--all", allOn && "on")}
+        aria-pressed={allOn}
+        onClick={reset}
+      >
+        {placeholder}
+      </button>
+      {options.map((o) => {
+        const on = !allOn && picked.includes(o.value);
+        return (
+          <button
+            key={o.value}
+            type="button"
+            className={cn("qf-opt", o.iconTone && `qf-opt--${o.iconTone}`, on && "on")}
+            aria-pressed={on}
+            onClick={() => handleToggle(o.value)}
+          >
+            {o.icon && (
+              <Icon
+                name={o.icon}
+                size={14}
+                className={cn("qf-ic", o.iconTone && `qf-ic--${o.iconTone}`)}
+              />
+            )}
+            <span>{o.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ============================================================= *
+ *  MultiSelectField — large, open-ended facets as a searchable
+ *  multi-select dropdown (Reviewer, Appraisal firm)
+ * ============================================================= *
+ *
+ * Pills don't scale to dozens of reviewers/firms, so these facets use a
+ * select-styled trigger that opens a portal menu with a search box + checkbox
+ * rows. Tri-state: the "All" row toggles select-all ("all") ↔ deselect-all ([]);
+ * a full selection collapses back to "all". The menu is portaled above the modal
+ * (z-index) and repositions on scroll; Esc closes the menu only (not the modal).
+ */
+function MultiSelectField({
+  placeholder,
+  options,
+  selected,
+  onChange,
+  searchPlaceholder,
+}: {
+  placeholder: string;
+  options: MSOption[];
+  selected: MultiSel;
+  onChange: (next: MultiSel) => void;
+  searchPlaceholder?: string;
+}) {
   const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
   const ref = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
   const [pos, setPos] = useState<{ top: number; left: number; width: number } | null>(
     null,
   );
@@ -99,6 +169,7 @@ function MultiSelect({
 
   useEffect(() => {
     if (!open) return;
+    searchRef.current?.focus();
     const onDown = (e: MouseEvent) => {
       if (
         ref.current?.contains(e.target as Node) ||
@@ -107,24 +178,27 @@ function MultiSelect({
         return;
       setOpen(false);
     };
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    // Capture-phase so Esc closes the dropdown only — it never reaches the
+    // modal's own bubble-phase Esc handler (which would close the whole modal).
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        setOpen(false);
+      }
+    };
     document.addEventListener("mousedown", onDown);
-    document.addEventListener("keydown", onKey);
+    document.addEventListener("keydown", onKey, true);
     return () => {
       document.removeEventListener("mousedown", onDown);
-      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("keydown", onKey, true);
     };
   }, [open]);
 
   const allValues = options.map((o) => o.value);
   const allOn = selected === "all";
-  const picked: string[] = selected === "all" ? [] : selected; // explicit set
+  const picked: string[] = allOn ? [] : selected;
 
-  // "All" row = plain toggle: select-all ("all") ↔ deselect-all ([]).
   const toggleAll = () => onChange(allOn ? [] : "all");
-
-  // Toggle one value against the effective set; a full result collapses to
-  // "all", an empty result stays [] (none) — so deselect-all really clears.
   const handleToggle = (value: string) => {
     const eff = allOn ? allValues : selected;
     const next = toggle(eff, value);
@@ -140,6 +214,11 @@ function MultiSelect({
       : picked.length === 1
         ? (soloOpt?.label ?? "1 selected")
         : `${picked.length} selected`;
+
+  const needle = q.trim().toLowerCase();
+  const filtered = needle
+    ? options.filter((o) => o.label.toLowerCase().includes(needle))
+    : options;
 
   type RowState = "on" | "off" | "mixed";
   const row = (
@@ -184,15 +263,7 @@ function MultiSelect({
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
       >
-        <span
-          className={cn(
-            "qf-select-val",
-            allOn && "muted",
-            soloOpt?.iconTone && `qf-ic--${soloOpt.iconTone}`,
-          )}
-        >
-          {summary}
-        </span>
+        <span className={cn("qf-select-val", allOn && "muted")}>{summary}</span>
         <Icon name="chevron-down" size={15} />
       </button>
 
@@ -212,21 +283,37 @@ function MultiSelect({
                 style={{ position: "fixed", top: pos.top, left: pos.left, width: pos.width }}
                 onMouseDown={(e) => e.stopPropagation()}
               >
-                {row(
-                  "__all",
-                  allOn ? "on" : picked.length === 0 ? "off" : "mixed",
-                  placeholder,
-                  toggleAll,
-                )}
-                {options.map((o) =>
-                  row(
-                    o.value,
-                    allOn || picked.includes(o.value) ? "on" : "off",
-                    o.label,
-                    () => handleToggle(o.value),
-                    o,
-                  ),
-                )}
+                <div className="qf-search">
+                  <Icon name="search" size={15} />
+                  <input
+                    ref={searchRef}
+                    type="text"
+                    value={q}
+                    placeholder={searchPlaceholder ?? "Search…"}
+                    onChange={(e) => setQ(e.target.value)}
+                  />
+                </div>
+                <div className="qf-checks">
+                  {!needle &&
+                    row(
+                      "__all",
+                      allOn ? "on" : picked.length === 0 ? "off" : "mixed",
+                      placeholder,
+                      toggleAll,
+                    )}
+                  {filtered.map((o) =>
+                    row(
+                      o.value,
+                      allOn || picked.includes(o.value) ? "on" : "off",
+                      o.label,
+                      () => handleToggle(o.value),
+                      o,
+                    ),
+                  )}
+                  {filtered.length === 0 && (
+                    <div className="qf-ms-empty">No matches</div>
+                  )}
+                </div>
               </motion.div>
             )}
           </AnimatePresence>,
@@ -236,78 +323,69 @@ function MultiSelect({
   );
 }
 
-/* ============================================================= *
- *  Filters button + popover (staged draft, committed on Apply)
- * ============================================================= */
+/* small labelled wrapper around a facet control inside the modal */
+function Facet({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="qf-facet">
+      <div className="qf-facet-head">
+        <span className="qf-facet-label">{label}</span>
+      </div>
+      {children}
+    </div>
+  );
+}
 
+/* ============================================================= *
+ *  QueueFilters — Filters button + filter modal (staged draft)
+ * ============================================================= *
+ *
+ * `open` is controlled by the page so the subhead's "+N more" chip can reopen
+ * the modal. Small fixed facets render as inline pills; large open-ended facets
+ * (Reviewer, Firm) render as searchable multi-select dropdowns. Selections edit a
+ * draft and only commit on Apply; X / Esc / backdrop cancel and discard the draft.
+ */
 export function QueueFilters({
   filters,
   setFilters,
   team,
   firmOptions,
+  open,
+  onOpenChange,
 }: {
   filters: Filters;
   setFilters: (f: Filters) => void;
   team: Record<string, User>;
   firmOptions: string[];
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<Filters>(filters);
-  const btnRef = useRef<HTMLButtonElement>(null);
-  const popRef = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
+  const [wasOpen, setWasOpen] = useState(open);
   const count = activeFilterCount(filters);
+  const draftCount = activeFilterCount(draft);
 
-  // Open: seed the draft from committed filters and anchor under the button.
-  const openPop = () => {
-    setDraft(filters);
-    const r = btnRef.current?.getBoundingClientRect();
-    if (r) setPos({ top: r.bottom + 8, right: window.innerWidth - r.right });
-    setOpen(true);
-  };
+  // Seed the draft from the committed filters on the closed→open transition
+  // (React's "adjust state during render" pattern — no effect, no cascading
+  // render). Filters can't change while the modal is up, so seeding only on open
+  // is correct; X / Esc / backdrop discard the draft.
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) setDraft(filters);
+  }
 
-  useLayoutEffect(() => {
-    if (!open) return;
-    const reposition = () => {
-      const r = btnRef.current?.getBoundingClientRect();
-      if (r) setPos({ top: r.bottom + 8, right: window.innerWidth - r.right });
-    };
-    window.addEventListener("resize", reposition);
-    window.addEventListener("scroll", reposition, true);
-    return () => {
-      window.removeEventListener("resize", reposition);
-      window.removeEventListener("scroll", reposition, true);
-    };
-  }, [open]);
-
-  // Outside-click / Escape dismiss (cancels — draft is discarded).
+  // Esc closes the modal (cancel). Dropdowns swallow Esc first (capture phase).
   useEffect(() => {
     if (!open) return;
-    const onDown = (e: MouseEvent) => {
-      if (
-        popRef.current?.contains(e.target as Node) ||
-        btnRef.current?.contains(e.target as Node)
-      )
-        return;
-      setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
-    document.addEventListener("mousedown", onDown);
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onOpenChange(false);
     document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onDown);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open, onOpenChange]);
 
   const apply = () => {
     setFilters(draft);
-    setOpen(false);
+    onOpenChange(false);
   };
-  const clear = () => {
-    setDraft(EMPTY_FILTERS);
-    setFilters(EMPTY_FILTERS);
-  };
+  const clearDraft = () => setDraft(EMPTY_FILTERS);
 
   const reviewerOpts: MSOption[] = Object.values(team).map((u) => ({
     value: u.id,
@@ -320,10 +398,9 @@ export function QueueFilters({
   return (
     <>
       <button
-        ref={btnRef}
         type="button"
         className={cn("qf-btn", (open || count > 0) && "on")}
-        onClick={() => (open ? setOpen(false) : openPop())}
+        onClick={() => onOpenChange(!open)}
         aria-haspopup="dialog"
         aria-expanded={open}
       >
@@ -335,76 +412,86 @@ export function QueueFilters({
       {typeof document !== "undefined" &&
         createPortal(
           <AnimatePresence>
-            {open && pos && (
+            {open && (
               <motion.div
-                ref={popRef}
-                className="qf-pop"
-                role="dialog"
-                aria-label="Filter reviews"
-                initial={{ opacity: 0, y: -6, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -6, scale: 0.98 }}
-                transition={{ duration: 0.13 }}
-                style={{ position: "fixed", top: pos.top, right: pos.right }}
+                className="ui-modal-backdrop"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                onMouseDown={(e) =>
+                  e.target === e.currentTarget && onOpenChange(false)
+                }
               >
-                <div className="qf-sec">
-                  <div className="qf-sec-label">Findings</div>
-                  <MultiSelect
-                    placeholder="All findings"
-                    options={FINDINGS_OPTS}
-                    selected={draft.findings}
-                    onChange={(next) => setDraft({ ...draft, findings: next })}
-                  />
-                </div>
+                <motion.div
+                  className="qf-modal"
+                  role="dialog"
+                  aria-label="Filter reviews"
+                  initial={{ opacity: 0, y: 16, scale: 0.985 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 12, scale: 0.99 }}
+                  transition={{ duration: 0.18, ease: "easeOut" }}
+                >
+                  <div className="qf-modal-head">
+                    <h2>Filter reviews</h2>
+                    <IconButton
+                      name="close"
+                      onClick={() => onOpenChange(false)}
+                      aria-label="Close"
+                    />
+                  </div>
 
-                <div className="qf-sec">
-                  <div className="qf-sec-label">Type</div>
-                  <MultiSelect
-                    placeholder="All types"
-                    options={TYPE_OPTS}
-                    selected={draft.types}
-                    onChange={(next) => setDraft({ ...draft, types: next })}
-                  />
-                </div>
+                  <div className="qf-modal-body scroll">
+                    <Facet label="Findings">
+                      <FacetPills
+                        placeholder="All findings"
+                        options={FINDINGS_OPTS}
+                        selected={draft.findings}
+                        onChange={(next) => setDraft({ ...draft, findings: next })}
+                      />
+                    </Facet>
+                    <Facet label="Type">
+                      <FacetPills
+                        placeholder="All types"
+                        options={TYPE_OPTS}
+                        selected={draft.types}
+                        onChange={(next) => setDraft({ ...draft, types: next })}
+                      />
+                    </Facet>
+                    <Facet label="Reviewer">
+                      <MultiSelectField
+                        placeholder="All reviewers"
+                        options={reviewerOpts}
+                        selected={draft.reviewers}
+                        onChange={(next) => setDraft({ ...draft, reviewers: next })}
+                        searchPlaceholder="Search reviewers…"
+                      />
+                    </Facet>
+                    <Facet label="Appraisal firm">
+                      <MultiSelectField
+                        placeholder="All firms"
+                        options={firmOpts}
+                        selected={draft.firms}
+                        onChange={(next) => setDraft({ ...draft, firms: next })}
+                        searchPlaceholder="Search firms…"
+                      />
+                    </Facet>
+                  </div>
 
-                <div className="qf-sec">
-                  <div className="qf-sec-label">Reviewer</div>
-                  <MultiSelect
-                    placeholder="All reviewers"
-                    options={reviewerOpts}
-                    selected={draft.reviewers}
-                    onChange={(next) => setDraft({ ...draft, reviewers: next })}
-                  />
-                </div>
-
-                <div className="qf-sec">
-                  <div className="qf-sec-label">Appraisal firm</div>
-                  <MultiSelect
-                    placeholder="All firms"
-                    options={firmOpts}
-                    selected={draft.firms}
-                    onChange={(next) => setDraft({ ...draft, firms: next })}
-                  />
-                </div>
-
-                <div className="qf-sec">
-                  <div className="qf-sec-label">Due</div>
-                  <MultiSelect
-                    placeholder="All due dates"
-                    options={DUE_OPTS}
-                    selected={draft.due}
-                    onChange={(next) => setDraft({ ...draft, due: next })}
-                  />
-                </div>
-
-                <div className="qf-foot">
-                  <button type="button" className="qf-clear" onClick={clear}>
-                    Clear all
-                  </button>
-                  <button type="button" className="qf-apply" onClick={apply}>
-                    Apply
-                  </button>
-                </div>
+                  <div className="qf-modal-foot">
+                    <button
+                      type="button"
+                      className="qf-clear"
+                      onClick={clearDraft}
+                      disabled={draftCount === 0}
+                    >
+                      Clear all
+                    </button>
+                    <button type="button" className="qf-apply" onClick={apply}>
+                      {draftCount > 0 ? `Apply (${draftCount})` : "Apply"}
+                    </button>
+                  </div>
+                </motion.div>
               </motion.div>
             )}
           </AnimatePresence>,
@@ -415,23 +502,31 @@ export function QueueFilters({
 }
 
 /* ============================================================= *
- *  Active-filter chip strip (removable; only renders when filtering)
- * ============================================================= */
+ *  ActiveFilters — removable chip strip in the table subhead
+ * ============================================================= *
+ *
+ * One row only: chips that don't fit collapse into a "+N more" pill that reopens
+ * the filter modal (via onExpand). Overflow is measured off-screen so the visible
+ * row never wraps or flickers.
+ */
+type Chip = { key: string; label: string; onRemove: () => void };
 
 export function ActiveFilters({
   filters,
   setFilters,
   team,
+  onExpand,
 }: {
   filters: Filters;
   setFilters: (f: Filters) => void;
   team: Record<string, User>;
+  onExpand: () => void;
 }) {
-  const chips: { key: string; label: string; onRemove: () => void }[] = [];
+  const chips: Chip[] = [];
 
   // A facet contributes: nothing when "all", a "None" chip when [], else one
   // removable chip per selected value. (All-selected collapses to "all" in the
-  // dropdown, so "everything selected" never shows chips — the thumb rule.)
+  // modal, so "everything selected" never shows chips — the thumb rule.)
   const facetChips = (
     sel: MultiSel,
     prefix: string,
@@ -480,37 +575,106 @@ export function ActiveFilters({
     (v) => v,
     (next) => setFilters({ ...filters, firms: next }),
   );
-  facetChips(
-    filters.due,
-    "due",
-    "No due dates",
-    (v) => labelOf(DUE_OPTS, v),
-    (next) => setFilters({ ...filters, due: next }),
-  );
+
+  const rowRef = useRef<HTMLDivElement>(null);
+  const measureRef = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(chips.length);
+  const chipsKey = chips.map((c) => c.key).join("|");
+
+  // Measure off-screen: how many chips fit on one row, reserving room for the
+  // "+N more" pill and the trailing "Clear all".
+  useLayoutEffect(() => {
+    const row = rowRef.current;
+    const measure = measureRef.current;
+    if (!row || !measure) return;
+
+    const recompute = () => {
+      const avail = row.clientWidth;
+      const kids = Array.from(measure.children) as HTMLElement[];
+      const n = chips.length;
+      const chipEls = kids.slice(0, n);
+      const moreW = kids[n]?.offsetWidth ?? 80;
+      const clearW = kids[n + 1]?.offsetWidth ?? 64;
+      const gap = 8;
+
+      // Fast path: do all chips + "Clear all" fit without needing a "+more" pill?
+      const totalAll =
+        chipEls.reduce((s, el) => s + el.offsetWidth, 0) + gap * n + clearW;
+      if (totalAll <= avail) {
+        setVisible(n);
+        return;
+      }
+
+      // Otherwise reserve space for the "+N more" pill.
+      let used = clearW;
+      let fit = 0;
+      for (let i = 0; i < n; i++) {
+        const w = chipEls[i].offsetWidth;
+        if (used + gap + w + gap + moreW <= avail) {
+          used += gap + w;
+          fit++;
+        } else break;
+      }
+      setVisible(fit);
+    };
+
+    recompute();
+    const ro = new ResizeObserver(recompute);
+    ro.observe(row);
+    return () => ro.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chipsKey]);
 
   if (chips.length === 0) return null;
+  const hidden = Math.max(0, chips.length - visible);
+
+  const chipEl = (c: Chip, onClick: () => void) => (
+    <button
+      key={c.key}
+      type="button"
+      className="qf-chip"
+      onClick={onClick}
+      aria-label={`Remove filter: ${c.label}`}
+    >
+      {c.label}
+      <Icon name="close" size={13} />
+    </button>
+  );
 
   return (
     <div className="qf-chips">
-      {chips.map((c) => (
+      {/* hidden measurement row — all chips + spacers on one line */}
+      <div className="qf-chips-measure" ref={measureRef} aria-hidden>
+        {chips.map((c) => (
+          <span key={c.key} className="qf-chip">
+            {c.label}
+            <Icon name="close" size={13} />
+          </span>
+        ))}
+        <span className="qf-chip qf-chip--more">+{chips.length} more</span>
+        <span className="qf-chip-clear">Clear all</span>
+      </div>
+
+      <div className="qf-chips-row" ref={rowRef}>
+        {chips.slice(0, visible).map((c) => chipEl(c, c.onRemove))}
+        {hidden > 0 && (
+          <button
+            type="button"
+            className="qf-chip qf-chip--more"
+            onClick={onExpand}
+            aria-label={`Show ${hidden} more active filter${hidden > 1 ? "s" : ""}`}
+          >
+            +{hidden} more
+          </button>
+        )}
         <button
-          key={c.key}
           type="button"
-          className="qf-chip"
-          onClick={c.onRemove}
-          aria-label={`Remove filter: ${c.label}`}
+          className="qf-chip-clear"
+          onClick={() => setFilters(EMPTY_FILTERS)}
         >
-          {c.label}
-          <Icon name="close" size={13} />
+          Clear all
         </button>
-      ))}
-      <button
-        type="button"
-        className="qf-chip-clear"
-        onClick={() => setFilters(EMPTY_FILTERS)}
-      >
-        Clear all
-      </button>
+      </div>
     </div>
   );
 }

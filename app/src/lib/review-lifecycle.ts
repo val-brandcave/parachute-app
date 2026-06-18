@@ -108,16 +108,40 @@ export type PipelineView =
       badge?: boolean;
       /** Swap the leading icon for a brand glyph (YouConnect intake). */
       brand?: "yc";
+      /** Optional hover-card (same `panel` style as the pipeline stepper card):
+       *  `hintTitle` is the bold header, `hint` the description body. Used to
+       *  explain why a review auto-rejected, or that a "New" item hasn't entered
+       *  the pipeline yet. */
+      hintTitle?: string;
+      hint?: string;
     };
 
 export function pipelineView(r: Review): PipelineView {
   switch (r.status) {
     case "intake":
-      // Pre-order arrivals read as "New" (or "New from YC" for YouConnect feeds),
-      // not a pipeline state — they haven't entered the pipeline yet.
+      // Pre-order arrivals read as "New" — they haven't entered the pipeline yet.
+      // The leading glyph (YouConnect vs. +) carries the source; the tooltip
+      // spells it out.
       return r.source === "yc"
-        ? { mode: "word", label: "New from YC", icon: "connect", tone: "info", badge: true, brand: "yc" }
-        : { mode: "word", label: "New", icon: "add", tone: "info", badge: true };
+        ? {
+            mode: "word",
+            label: "New",
+            icon: "connect",
+            tone: "info",
+            badge: true,
+            brand: "yc",
+            hintTitle: "New from YouConnect",
+            hint: "Received from YouConnect but not yet run through Parachute. Use Run to start the review pipeline.",
+          }
+        : {
+            mode: "word",
+            label: "New",
+            icon: "add",
+            tone: "info",
+            badge: true,
+            hintTitle: "New intake",
+            hint: "Awaiting an order — not yet run through Parachute. Use Run to start the review pipeline.",
+          };
     case "autorejected":
       return {
         mode: "word",
@@ -125,6 +149,8 @@ export function pipelineView(r: Review): PipelineView {
         icon: "reject",
         tone: "fail",
         badge: true,
+        hintTitle: "Auto-rejected at intake",
+        hint: "One or more automated compliance checks didn't pass, so it never entered the pipeline. Open Triage to review the reason and override or confirm the rejection.",
       };
     case "returned":
       return { mode: "word", label: "Returned · rev 2", icon: "undo", tone: "warn" };
@@ -185,7 +211,13 @@ export interface NextActionView {
 export function nextActionView(r: Review): NextActionView {
   switch (r.status) {
     case "intake":
-      return { label: "Run", tone: "primary", icon: "rocket", kind: "order" };
+      return {
+        label: "Run",
+        tone: "primary",
+        icon: "rocket",
+        kind: "order",
+        iconOnly: true,
+      };
     case "autorejected":
       return {
         label: "Triage",
@@ -193,9 +225,18 @@ export function nextActionView(r: Review): NextActionView {
         icon: "gavel",
         kind: "route",
         href: `/reviews/${r.id}/triage`,
+        iconOnly: true,
       };
     case "running":
-      return { label: "Running…", tone: "quiet", icon: "clock", kind: "none" };
+      // In pipeline — no edit action yet, but you can open the running review.
+      return {
+        label: "View",
+        tone: "primary",
+        icon: "eye",
+        kind: "route",
+        href: `/reviews/${r.id}`,
+        iconOnly: true,
+      };
     case "in_review": {
       const adminOnly =
         r.reviewTypes.includes("administrative") &&
@@ -207,6 +248,7 @@ export function nextActionView(r: Review): NextActionView {
           icon: "edit",
           kind: "route",
           href: `/reviews/${r.id}`,
+          iconOnly: true,
         };
       return {
         label: "Review",
@@ -214,6 +256,7 @@ export function nextActionView(r: Review): NextActionView {
         icon: "reviews",
         kind: "route",
         href: `/reviews/${r.id}`,
+        iconOnly: true,
       };
     }
     case "returned":

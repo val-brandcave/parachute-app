@@ -60,6 +60,7 @@ import {
   IconShieldLock,
   IconRocket,
   IconGavel,
+  IconEye,
   type Icon as TablerIcon,
 } from "@tabler/icons-react";
 
@@ -125,6 +126,7 @@ export const ICONS = {
   sso: IconShieldLock,
   rocket: IconRocket,
   gavel: IconGavel,
+  eye: IconEye,
 } satisfies Record<string, TablerIcon>;
 
 export type IconName = keyof typeof ICONS;

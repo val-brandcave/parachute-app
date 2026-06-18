@@ -365,6 +365,19 @@ h3,
   border-color: var(--md-primary);
   border-width: 2px;
 }
+/* Native <select> chevron: the OS arrow is drawn in its own button region flush
+   to the right border and ignores padding-right (cramped, esp. on Windows). Drop
+   it and paint our own SVG chevron with real right spacing. .field is always-white
+   in both themes, so a fixed secondary-grey (#565c64 = --md-on-surface-v) reads. */
+.field select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='16'%20height='16'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23565c64'%20stroke-width='1.75'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpath%20d='M6%209l6%206%206-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 16px 16px;
+  padding-right: 42px;
+}
 input,
 select,
 textarea {
@@ -1892,6 +1905,9 @@ textarea {
   flex-shrink: 0;
   background: var(--grad-primary);
   color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
 }
 .org-main {
   flex: 1;
@@ -4033,6 +4049,20 @@ label.field {
 .qfilter:hover {
   border-color: var(--md-outline);
 }
+/* Custom chevron (see .field select) — .qfilter follows the theme, so its chevron
+   tracks the secondary-ink token: #565c64 (light) / #a0a5ab (dark). */
+select.qfilter {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='16'%20height='16'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23565c64'%20stroke-width='1.75'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpath%20d='M6%209l6%206%206-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 16px 16px;
+  padding-right: 32px;
+}
+:root[data-theme="dark"] select.qfilter {
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='16'%20height='16'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23a0a5ab'%20stroke-width='1.75'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpath%20d='M6%209l6%206%206-6'/%3E%3C/svg%3E");
+}
 
 /* ---- organism: ReviewContextBar (tabs) ---- */
 .revbar {
@@ -4142,7 +4172,7 @@ label.field {
   display: grid;
   /* Default (all columns) — kept in sync with REVIEW_COLUMNS; the live table sets
      this inline from gridTemplate(visible), but the skeleton uses this rule. */
-  grid-template-columns: minmax(168px, 2.4fr) minmax(80px, 0.5fr) minmax(92px, 0.9fr) minmax(148px, 1.5fr) minmax(104px, 0.9fr) minmax(88px, 0.8fr) minmax(136px, max-content);
+  grid-template-columns: minmax(200px, 1fr) minmax(72px, max-content) minmax(110px, max-content) minmax(140px, max-content) minmax(100px, max-content) minmax(92px, max-content) minmax(76px, max-content);
   align-items: center;
   gap: 18px;
   padding: 0 20px;
@@ -4194,7 +4224,7 @@ label.field {
 }
 .qcols {
   display: grid;
-  grid-template-columns: minmax(168px, 2.4fr) minmax(80px, 0.5fr) minmax(92px, 0.9fr) minmax(148px, 1.5fr) minmax(104px, 0.9fr) minmax(88px, 0.8fr) minmax(136px, max-content);
+  grid-template-columns: minmax(200px, 1fr) minmax(72px, max-content) minmax(110px, max-content) minmax(140px, max-content) minmax(100px, max-content) minmax(92px, max-content) minmax(76px, max-content);
   gap: 18px;
   padding: 9px 20px;
   background: var(--md-surface-1);
@@ -4335,7 +4365,7 @@ label.field {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 4px;
+  gap: 6px;
 }
 
 /* Review-type chips (TECH / ADMIN) — a review can be either or both, so they
@@ -4466,6 +4496,15 @@ label.field {
   font-size: 12.5px;
   font-weight: 700;
   color: var(--md-on-surface);
+}
+/* Description body for word-state cards (New / Auto Rejected) — mirrors the
+   bordered .pipe-card-steps section so word + stepper cards read consistently. */
+.pipe-card-desc {
+  padding: 11px 14px 13px;
+  border-top: 1px solid var(--md-outline-v);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--md-on-surface-v);
 }
 .pipe-card-steps {
   display: flex;
@@ -4667,31 +4706,92 @@ label.field {
   font-variant-numeric: tabular-nums;
 }
 
-.qf-pop {
-  z-index: 60;
-  width: 304px;
-  max-height: min(70vh, 540px);
-  overflow-y: auto;
+/* ---- Filter modal: compact centered panel, scroll body + pinned footer.
+   Sits on the shared .ui-modal-backdrop; facets render as inline toggle pills
+   (.qf-opts) so there are no nested dropdowns. ---- */
+.qf-modal {
+  width: min(560px, 94vw);
+  max-height: min(82vh, 680px);
   background: var(--md-surface);
   border: 1px solid var(--md-outline-v);
-  border-radius: 12px;
+  border-radius: 16px;
   box-shadow: var(--md-elev-3);
-  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
-.qf-sec {
-  padding: 10px 0;
+.qf-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 14px 15px 20px;
   border-bottom: 1px solid var(--md-outline-v);
 }
-.qf-sec:first-child {
-  padding-top: 2px;
+.qf-modal-head h2 {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--md-on-surface);
 }
-.qf-sec-label {
+.qf-modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 2px 20px;
+}
+.qf-modal-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-top: 1px solid var(--md-outline-v);
+}
+.qf-facet {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--md-outline-v);
+}
+.qf-facet:last-child {
+  border-bottom: none;
+}
+.qf-facet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 18px;
+  margin-bottom: 10px;
+}
+.qf-facet-label {
   font-size: 10.5px;
   font-weight: 700;
   letter-spacing: 0.6px;
   text-transform: uppercase;
   color: var(--md-on-surface-v);
-  margin-bottom: 9px;
+}
+/* Search box inside the multi-select menu — matches the toolbar .qsearch */
+.qf-search {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 34px;
+  margin-bottom: 6px;
+  padding: 0 10px;
+  border: 1px solid var(--md-outline-v);
+  border-radius: 8px;
+  background: var(--md-surface-1);
+  color: var(--md-on-surface-t);
+}
+.qf-search:focus-within {
+  border-color: var(--md-primary);
+  background: var(--md-surface);
+}
+.qf-search input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: none;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--md-on-surface);
 }
 .qf-opts {
   display: flex;
@@ -4738,24 +4838,22 @@ label.field {
   background: var(--md-success-c);
   color: var(--md-success);
 }
+/* ---- Searchable multi-select dropdown (Reviewer / Firm) ----
+   Select-styled trigger + a portal menu (search box + checkbox rows). The menu
+   is portaled to <body>, so its z-index must clear the modal backdrop (100). */
 .qf-select {
   width: 100%;
-  height: 36px;
-  padding: 0 10px;
+  height: 38px;
+  padding: 0 12px;
   border: 1px solid var(--md-outline-v);
   border-radius: 9px;
-  background: #ffffff;
-  color: #1a1d21;
-  color-scheme: light;
+  background: var(--md-surface);
+  color: var(--md-on-surface);
   font-family: inherit;
   font-size: 13.5px;
   cursor: pointer;
   outline: none;
 }
-.qf-select:focus {
-  border-color: var(--md-primary);
-}
-/* Multi-select dropdown (Reviewer / Firm): select-styled trigger + portal menu */
 .qf-select--btn {
   display: flex;
   align-items: center;
@@ -4774,34 +4872,36 @@ label.field {
   white-space: nowrap;
 }
 .qf-select-val.muted {
-  color: #868d96;
+  color: var(--md-on-surface-t);
 }
 .qf-select--btn > svg {
   flex-shrink: 0;
-  color: #868d96;
+  color: var(--md-on-surface-t);
 }
 .qf-ms-menu {
-  z-index: 70;
-  max-height: 248px;
-  overflow-y: auto;
+  z-index: 140;
+  max-height: 280px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   background: var(--md-surface);
   border: 1px solid var(--md-outline-v);
   border-radius: 10px;
   box-shadow: var(--md-elev-3);
-  padding: 5px;
+  padding: 6px;
 }
-/* checkbox rows (used inside the multi-select menu) */
 .qf-checks {
   display: flex;
   flex-direction: column;
   gap: 1px;
+  overflow-y: auto;
 }
 .qf-check {
   display: flex;
   align-items: center;
   gap: 10px;
   width: 100%;
-  padding: 6px 8px;
+  padding: 7px 8px;
   border: none;
   background: none;
   border-radius: 8px;
@@ -4844,7 +4944,12 @@ label.field {
   text-transform: uppercase;
   color: var(--md-on-surface-t);
 }
-/* Findings severity color cues — on the row icon and the tinted trigger label */
+.qf-ms-empty {
+  padding: 10px 8px;
+  font-size: 13px;
+  color: var(--md-on-surface-t);
+}
+/* Findings severity color cues — colors the pill icon (red/amber/green) */
 .qf-ic {
   flex-shrink: 0;
 }
@@ -4858,12 +4963,6 @@ label.field {
 .qf-ic--pass {
   color: var(--md-success);
 }
-.qf-foot {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-top: 14px;
-}
 .qf-clear {
   border: none;
   background: none;
@@ -4875,6 +4974,10 @@ label.field {
 }
 .qf-clear:hover {
   color: var(--md-on-surface);
+}
+.qf-clear:disabled {
+  color: var(--md-on-surface-dis);
+  cursor: default;
 }
 .qf-apply {
   height: 34px;
@@ -4892,16 +4995,34 @@ label.field {
   background: var(--md-primary-c);
 }
 
-/* Active-filter chip strip — sits under the toolbar, only when filtering */
+/* Active-filter chip strip — one row under the toolbar, only when filtering.
+   Chips that don't fit collapse into a "+N more" pill (reopens the modal). The
+   absolute .qf-chips-measure row holds every chip off-screen so the visible row
+   can be measured without wrapping or flicker. */
 .qf-chips {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
+  position: relative;
   padding: 10px 16px;
   border-bottom: 1px solid var(--md-outline-v);
+  overflow: hidden;
+}
+.qf-chips-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.qf-chips-measure {
+  position: absolute;
+  top: 10px;
+  left: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  visibility: hidden;
+  pointer-events: none;
+  white-space: nowrap;
 }
 .qf-chip {
+  flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -4921,7 +5042,17 @@ label.field {
   border-color: var(--md-error);
   color: var(--md-error);
 }
+/* "+N more" overflow pill — reopens the modal; accent (not removable) */
+.qf-chip--more {
+  padding: 0 12px;
+  color: var(--md-accent-d);
+}
+.qf-chip--more:hover {
+  border-color: var(--md-accent);
+  color: var(--md-accent-d);
+}
 .qf-chip-clear {
+  flex: 0 0 auto;
   border: none;
   background: none;
   font-family: inherit;

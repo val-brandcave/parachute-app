@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useReviewQueue } from "./hooks/useReviewQueue";
 import { ReviewTable, ReviewTableSkeleton, OrderButton } from "@/components/organisms";
@@ -25,6 +26,9 @@ export default function MyReviewsPage() {
     cycleSort,
   } = useReviewQueue();
 
+  // Filter modal open state lives here so the subhead "+N more" chip can reopen it.
+  const [filterOpen, setFilterOpen] = useState(false);
+
   // All lifecycle tabs; while searching, hide the ones with no matches (keep
   // "All" so there's always a home + a visible empty state for a no-results query).
   const allTabs = [
@@ -43,9 +47,10 @@ export default function MyReviewsPage() {
     <>
       {/* Header band IS the table toolbar (no redundant title — nav says Reviews).
           Tabs partition by lifecycle stage (Ed: "separate the different stages");
-          search + a Filters popover (Findings · Type · Reviewer · Firm · Due) +
-          the Order CTA share the one line. Active filters show as removable chips
-          below. "Mine only" is folded into the Reviewer facet. */}
+          search + a Filters modal (Findings · Type pills, Reviewer · Firm
+          searchable dropdowns) + the Order CTA share the one line. Active
+          filters show as removable chips in a one-row subhead below ("+N more"
+          reopens the modal). "Mine only" is folded into the Reviewer facet. */}
       <div className="pagehead">
         <Tabs value={tab} onChange={setTab} tabs={visibleTabs} />
         <div style={{ flex: 1 }} />
@@ -62,11 +67,18 @@ export default function MyReviewsPage() {
           setFilters={setFilters}
           team={team}
           firmOptions={firmOptions}
+          open={filterOpen}
+          onOpenChange={setFilterOpen}
         />
         <OrderButton />
       </div>
 
-      <ActiveFilters filters={filters} setFilters={setFilters} team={team} />
+      <ActiveFilters
+        filters={filters}
+        setFilters={setFilters}
+        team={team}
+        onExpand={() => setFilterOpen(true)}
+      />
 
       <div className="pagebody">
         <div
