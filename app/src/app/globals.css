@@ -1260,6 +1260,11 @@ textarea {
   padding: 0 22px;
   font-size: 15px;
 }
+/* Icon-only variant — square, no label padding (size class sets the height) */
+.ui-btn--icon {
+  width: 32px;
+  padding: 0;
+}
 .ui-btn--primary {
   background: var(--grad-primary);
   color: #fff;
@@ -1508,6 +1513,7 @@ textarea {
   gap: 2px;
 }
 .ui-seg button {
+  position: relative;
   border: none;
   background: transparent;
   font-family: inherit;
@@ -1517,15 +1523,29 @@ textarea {
   padding: 6px 14px;
   border-radius: 7px;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition: color 0.15s;
 }
 .ui-seg button:hover {
   color: var(--md-on-surface);
 }
 .ui-seg button.on {
-  background: #fff;
-  color: var(--md-primary);
+  /* the sliding .ui-seg-thumb provides the raised fill (navy-derived) */
+  color: var(--md-on-selected);
+}
+/* Framer layoutId thumb that slides between segments. Active = navy-derived
+   selected surface (our rule: active surfaces derive from navy; solid navy
+   stays reserved for CTAs). */
+.ui-seg-thumb {
+  position: absolute;
+  inset: 0;
+  background: var(--md-selected);
+  border-radius: 7px;
   box-shadow: var(--md-elev-1);
+  z-index: 0;
+}
+.ui-seg-lb {
+  position: relative;
+  z-index: 1;
 }
 
 /* ---- molecule: StatCard ---- */
@@ -2243,8 +2263,21 @@ textarea {
   opacity: 1;
   color: var(--md-accent-d);
 }
-.ui-tip {
+.ui-tip-pos {
   z-index: 200;
+  pointer-events: none;
+  /* position:fixed blockifies this span → without an explicit width it would
+     fill the viewport and translate(-50%) would offset by half the screen.
+     Shrink to the bubble so the centering transform is correct. */
+  width: max-content;
+}
+.ui-tip {
+  position: relative;
+  z-index: 200;
+  /* inline-block so width:max-content applies AND the background covers block
+     content (the panel variant wraps a flex .pipe-card; an inline box would
+     leave it transparent). */
+  display: inline-block;
   width: max-content;
   max-width: 248px;
   background: var(--md-on-surface);
@@ -2267,7 +2300,8 @@ textarea {
   background: var(--md-on-surface);
 }
 .ui-tip--top::after {
-  left: 50%;
+  /* arrow tracks the trigger even when the tip is edge-clamped (--arrow-dx) */
+  left: calc(50% + var(--arrow-dx, 0px));
   bottom: -4px;
   transform: translateX(-50%) rotate(45deg);
 }
@@ -2278,6 +2312,27 @@ textarea {
 }
 .ui-tip--right {
   font-weight: 600;
+}
+/* Compact label chip — minimal, for icon-button labels (More options, Download) */
+.ui-tip--compact {
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 6px;
+}
+/* Light rich-content variant (vs. the dark label tip) — content owns padding */
+.ui-tip--panel {
+  background: var(--md-surface);
+  color: var(--md-on-surface);
+  border: 1px solid var(--md-outline-v);
+  padding: 0;
+  max-width: 260px;
+  font-weight: 500;
+}
+.ui-tip--panel::after {
+  background: var(--md-surface);
+  border-right: 1px solid var(--md-outline-v);
+  border-bottom: 1px solid var(--md-outline-v);
 }
 
 /* ---- full-page modal ---- */
@@ -2569,6 +2624,16 @@ textarea {
   border-color: var(--md-accent);
   background: var(--md-accent);
 }
+/* Second grid cell: holds the scrolling step content and, optionally, a rail. */
+.spm-body {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+.spm-body.has-aside {
+  grid-template-columns: minmax(0, 1fr) 340px;
+}
 .spm-content {
   overflow-y: auto;
   padding: 32px 40px;
@@ -2576,6 +2641,13 @@ textarea {
 .spm-content-inner {
   max-width: 640px;
   margin: 0 auto;
+}
+/* Right rail column (Order summary) — canvas so the summary reads as a floating
+   card; graduates away on the final step and can collapse to an edge tab. */
+.spm-aside {
+  background: var(--md-bg);
+  overflow-y: auto;
+  padding: 24px 20px;
 }
 .spm-foot {
   flex-shrink: 0;
@@ -2586,6 +2658,586 @@ textarea {
   padding: 14px 22px;
   background: var(--md-surface);
   border-top: 1px solid var(--md-outline-v);
+}
+
+/* ============ Order stepper (OrderModal) ============ */
+
+/* Label-as-wrapper variant of .field (implicit label↔control association). */
+label.field {
+  display: block;
+}
+.field > span {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--md-on-surface-v);
+}
+.ord-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 16px;
+}
+.ord-form .field {
+  margin-bottom: 14px;
+}
+
+/* White card wrapper for step content (sits on the modal's canvas). */
+.ord-card {
+  background: var(--md-surface);
+  border: 1px solid var(--md-outline);
+  border-radius: var(--r);
+}
+.ord-pad {
+  padding: 20px;
+}
+
+/* Summary step: section header with a trailing Edit jump-back button. */
+.ord-sec-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.ord-sec-head .ord-h {
+  margin: 0;
+}
+.ord-sum-edit {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--md-accent-d);
+  padding: 4px 8px;
+  border-radius: 7px;
+  transition: background 0.14s;
+}
+.ord-sum-edit:hover {
+  background: var(--md-accent-c);
+}
+
+/* Step 1 — YouConnect inbox */
+.ord-inbox {
+  background: var(--md-surface);
+  border: 1px solid var(--md-outline);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+.ord-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--md-outline-v);
+  color: var(--md-on-surface-t);
+}
+.ord-search input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--md-on-surface);
+  outline: none;
+}
+.ord-search input::placeholder {
+  color: var(--md-on-surface-t);
+}
+.ord-list {
+  display: flex;
+  flex-direction: column;
+}
+.ord-deliv {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  padding: 13px 16px;
+  border: none;
+  border-left: 3px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.14s, border-color 0.14s;
+}
+.ord-deliv + .ord-deliv {
+  border-top: 1px solid var(--md-outline-v);
+}
+.ord-deliv:hover {
+  background: var(--md-surface-1);
+}
+.ord-deliv.sel {
+  background: var(--md-selected);
+  border-left-color: var(--md-primary);
+}
+.ord-deliv-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ord-deliv-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--md-on-surface);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ord-deliv-sub {
+  font-size: 12px;
+  color: var(--md-on-surface-v);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ord-empty,
+.ord-sum-empty {
+  padding: 22px 16px;
+  font-size: 13px;
+  color: var(--md-on-surface-v);
+  text-align: center;
+}
+.ord-foot-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 16px;
+  border-top: 1px solid var(--md-outline-v);
+  font-size: 12px;
+  color: var(--md-on-surface-v);
+}
+.ord-foot-note svg {
+  flex-shrink: 0;
+  color: var(--md-accent);
+}
+
+/* Step 1 — Standalone upload (upload-first) */
+.ord-drop {
+  width: 100%;
+  border: 1.5px dashed var(--md-outline);
+  border-radius: 14px;
+  background: var(--md-surface-1);
+  padding: 48px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: var(--md-on-surface-v);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.ord-drop:hover:not(:disabled) {
+  border-color: var(--md-accent);
+  background: var(--md-accent-c);
+}
+.ord-drop.busy {
+  cursor: default;
+}
+.ord-drop-title {
+  font-family: var(--font-display);
+  font-size: 17px;
+  color: var(--md-on-surface);
+  margin-top: 8px;
+}
+.ord-drop p {
+  font-size: 13px;
+  margin: 0;
+}
+.ord-link {
+  color: var(--md-accent-d);
+  font-weight: 600;
+  cursor: pointer;
+}
+.ord-link:hover {
+  text-decoration: underline;
+}
+.ord-filepill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--md-surface-1);
+  border: 1px solid var(--md-outline-v);
+  font-size: 13px;
+  color: var(--md-on-surface);
+}
+.ord-filepill svg {
+  flex-shrink: 0;
+  color: var(--md-error);
+}
+.ord-parsed {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--md-success);
+  font-weight: 600;
+  font-size: 12px;
+}
+.ord-parsed svg {
+  color: var(--md-success);
+}
+.ord-extract-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--md-accent-d);
+  margin: 14px 0;
+}
+
+/* Step 2 — Configure: one white card, sections divided by hairlines. */
+.ord-config {
+  overflow: hidden;
+}
+.ord-sec {
+  padding: 20px;
+}
+.ord-sec + .ord-sec {
+  border-top: 1px solid var(--md-outline-v);
+}
+.ord-h {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--md-on-surface);
+  margin: 0 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ord-typegrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.ord-typecard {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  text-align: left;
+  padding: 14px;
+  border: 1px solid var(--md-outline);
+  border-radius: 12px;
+  background: var(--md-surface);
+  cursor: pointer;
+  transition: border-color 0.14s, background 0.14s;
+}
+.ord-typecard:hover {
+  border-color: var(--md-on-surface-t);
+}
+.ord-typecard.sel {
+  border-color: var(--md-primary);
+  background: var(--md-selected);
+}
+.ord-check {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  border: 2px solid var(--md-outline);
+  display: grid;
+  place-items: center;
+  color: #fff;
+  margin-top: 1px;
+}
+.ord-check.on {
+  background: var(--md-primary);
+  border-color: var(--md-primary);
+}
+.ord-typecard-title {
+  display: block;
+  font-weight: 600;
+  font-size: 13.5px;
+  color: var(--md-on-surface);
+}
+.ord-typecard-sub {
+  display: block;
+  font-size: 12px;
+  color: var(--md-on-surface-v);
+  margin-top: 2px;
+}
+.ord-tpl-note,
+.ord-inherit {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--md-on-surface-v);
+  margin: 10px 0 0;
+}
+.ord-inherit {
+  color: var(--md-accent-d);
+}
+/* Org defaults: a direct toggle row (no "Override…" disclosure). */
+.ord-switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+.ord-switch-text strong {
+  display: block;
+  font-size: 13px;
+  color: var(--md-on-surface);
+}
+.ord-sub {
+  display: block;
+  font-size: 11.5px;
+  color: var(--md-on-surface-v);
+  margin-top: 3px;
+}
+/* On/off toggle (role="switch"). */
+.ord-switch {
+  flex-shrink: 0;
+  width: 38px;
+  height: 22px;
+  border-radius: 999px;
+  border: none;
+  padding: 0;
+  background: var(--md-surface-3);
+  cursor: pointer;
+  position: relative;
+  transition: background 0.16s;
+}
+.ord-switch.on {
+  background: var(--md-primary);
+}
+.ord-switch-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: var(--md-elev-1);
+  transition: transform 0.16s;
+}
+.ord-switch.on .ord-switch-thumb {
+  transform: translateX(16px);
+}
+.ord-override-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 12px 0 0;
+  padding: 9px 11px;
+  border-radius: 8px;
+  background: var(--md-warn-c);
+  color: var(--md-warn);
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+.ord-override-note svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* Order summary — a clean white card in both the rail and the Confirm step. */
+.ord-summary--rail,
+.ord-summary--full {
+  background: var(--md-surface);
+  border: 1px solid var(--md-outline);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+.ord-summary--rail {
+  position: sticky;
+  top: 0;
+}
+.ord-sum-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--md-outline-v);
+}
+.ord-sum-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--md-on-surface);
+}
+.ord-sum-collapse {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--md-on-surface-t);
+  display: grid;
+  place-items: center;
+  padding: 2px;
+  border-radius: 6px;
+  transition: background 0.14s, color 0.14s;
+}
+.ord-sum-collapse:hover {
+  background: var(--md-surface-1);
+  color: var(--md-on-surface);
+}
+/* Collapsed rail → a labelled tab pinned to the right edge. */
+.ord-rail-tab {
+  position: fixed;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 7px;
+  background: var(--md-surface);
+  border: 1px solid var(--md-outline);
+  border-right: none;
+  border-radius: 10px 0 0 10px;
+  box-shadow: var(--md-elev-1);
+  cursor: pointer;
+  color: var(--md-on-surface-v);
+  transition: color 0.14s;
+}
+.ord-rail-tab:hover {
+  color: var(--md-on-surface);
+}
+.ord-rail-tab-label {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+.ord-sum-body {
+  padding: 16px 18px;
+}
+.ord-sum-prop {
+  margin-bottom: 12px;
+}
+.ord-sum-addr {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--md-on-surface);
+}
+.ord-sum-meta {
+  font-size: 12px;
+  color: var(--md-on-surface-v);
+  margin-top: 2px;
+}
+.ord-sum-doc {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 11px;
+  border-radius: 9px;
+  background: var(--md-surface-1);
+  font-size: 12.5px;
+  color: var(--md-on-surface);
+}
+.ord-sum-doc svg {
+  flex-shrink: 0;
+  color: var(--md-error);
+}
+.ord-sum-doc-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ord-sum-doc-pages {
+  color: var(--md-on-surface-v);
+}
+.ord-lock {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11.5px;
+  color: var(--md-on-surface-v);
+  margin-top: 6px;
+}
+.ord-lock span:first-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.ord-sum-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--md-on-surface-v);
+}
+.ord-sum-val {
+  margin-left: auto;
+  color: var(--md-on-surface);
+  font-weight: 600;
+}
+.ord-warn {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 9px;
+  background: var(--md-warn-c);
+  color: var(--md-warn);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.ord-warn svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.ord-sum-sec {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--md-on-surface-t);
+  margin: 18px 0 8px;
+}
+/* First sub-label right under a section header doesn't need the big top gap. */
+.ord-sec-head + .ord-sum-sec {
+  margin-top: 0;
+}
+.ord-sum-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.ord-sum-muted {
+  font-size: 12.5px;
+  color: var(--md-on-surface-v);
+  margin: 0;
+}
+.ord-sum-reviewer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--md-on-surface);
+}
+.ord-recap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 20px;
+  padding: 11px 13px;
+  border-radius: 10px;
+  background: var(--md-accent-c);
+  color: var(--md-accent-d);
+  font-size: 12.5px;
+  font-weight: 600;
 }
 
 /* ---- dashboard widgets ---- */
@@ -2725,6 +3377,37 @@ textarea {
   white-space: nowrap;
 }
 
+/* New-from-YouConnect row: property · "Review" (the dashboard's intake front
+   door — opens the Order stepper pre-selected on this delivery). */
+.yc-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--md-outline-v);
+}
+.yc-row:last-child {
+  border-bottom: none;
+}
+.yc-main {
+  flex: 1;
+  min-width: 0;
+}
+.yc-main .t {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.yc-main .s {
+  font-size: 12px;
+  color: var(--md-on-surface-v);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 1px;
+}
+
 /* ---- Review volume chart (bespoke SVG combo: bars + line) ---- */
 .rv-head {
   gap: 12px;
@@ -2757,7 +3440,10 @@ textarea {
   stroke-width: 1;
 }
 .rv-bar {
-  fill: var(--md-accent);
+  /* low-opacity navy (not petrol); color-mix keeps it theme-safe — light navy on
+     light, the lifted dark-mode navy on dark. The full-navy overlay line then
+     reads on top of the muted bars. */
+  fill: color-mix(in srgb, var(--md-primary) 90%, transparent);
   transform-box: fill-box;
   transform-origin: bottom;
   animation: rv-grow 0.5s cubic-bezier(0.2, 0.7, 0.3, 1) both;
@@ -2777,6 +3463,16 @@ textarea {
   stroke-width: 2;
   stroke-dasharray: 5 4;
   animation: none;
+}
+/* Left-to-right reveal for the dashed on-time overlay (line + points), timed to
+   the turnaround draw so both series plot together. transform-box: view-box
+   anchors the scaleX origin to the SVG's left edge. */
+.rv-on-wipe {
+  transform-box: view-box;
+  transform-origin: left center;
+  /* `both` so the hidden scaleX(0) start state also applies during the 0.15s
+     delay — otherwise the line flashes fully visible, vanishes, then animates. */
+  animation: rv-wipe 0.9s cubic-bezier(0.2, 0.7, 0.3, 1) both 0.15s;
 }
 .rv-pt {
   fill: var(--md-primary);
@@ -2901,7 +3597,7 @@ textarea {
   overflow: visible;
 }
 .rv-glyph-bar {
-  fill: var(--md-accent);
+  fill: color-mix(in srgb, var(--md-primary) 90%, transparent);
 }
 .rv-glyph-line {
   stroke: var(--md-primary);
@@ -2972,6 +3668,14 @@ textarea {
 @keyframes rv-draw {
   to {
     stroke-dashoffset: 0;
+  }
+}
+@keyframes rv-wipe {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
   }
 }
 
@@ -3249,6 +3953,7 @@ textarea {
   gap: 2px;
 }
 .qtab {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 7px;
@@ -3267,10 +3972,24 @@ textarea {
   color: var(--md-on-surface);
 }
 .qtab.on {
-  background: var(--md-selected);
+  background: transparent; /* the sliding .qtab-pill provides the active fill */
   color: var(--md-on-selected);
 }
+/* Framer layoutId pill that slides between active tabs (sits under the label) */
+.qtab-pill {
+  position: absolute;
+  inset: 0;
+  background: var(--md-selected);
+  border-radius: 8px;
+  z-index: 0;
+}
+.qtab-lb {
+  position: relative;
+  z-index: 1;
+}
 .qtab .cnt {
+  position: relative;
+  z-index: 1;
   font-size: 11px;
   background: var(--md-surface-2);
   border-radius: 8px;
@@ -3287,7 +4006,7 @@ textarea {
   border: 1px solid var(--md-outline-v);
   border-radius: 9px;
   padding: 7px 11px;
-  width: 240px;
+  width: 200px;
   color: var(--md-on-surface-v);
 }
 .qsearch input {
@@ -3418,18 +4137,24 @@ textarea {
   font-weight: 500;
   margin-left: 8px;
 }
+/* Queue grid: Property&parties · Type · Pipeline · Findings · Due · Next action · ⋯ */
 .qrow {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) 140px 96px 150px 120px 32px;
+  /* Default (all columns) — kept in sync with REVIEW_COLUMNS; the live table sets
+     this inline from gridTemplate(visible), but the skeleton uses this rule. */
+  grid-template-columns: minmax(168px, 2.4fr) minmax(80px, 0.5fr) minmax(92px, 0.9fr) minmax(148px, 1.5fr) minmax(104px, 0.9fr) minmax(88px, 0.8fr) minmax(136px, max-content);
   align-items: center;
-  gap: 14px;
+  gap: 18px;
   padding: 0 20px;
   min-height: var(--d-row-h);
   border-bottom: 1px solid var(--md-outline-v);
   cursor: pointer;
-  text-decoration: none;
   color: inherit;
   transition: background 0.12s;
+}
+.qrow:focus-visible {
+  outline: 2px solid var(--ring-accent);
+  outline-offset: -2px;
 }
 .qrow:last-child {
   border-bottom: none;
@@ -3469,8 +4194,8 @@ textarea {
 }
 .qcols {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) 140px 96px 150px 120px 32px;
-  gap: 14px;
+  grid-template-columns: minmax(168px, 2.4fr) minmax(80px, 0.5fr) minmax(92px, 0.9fr) minmax(148px, 1.5fr) minmax(104px, 0.9fr) minmax(88px, 0.8fr) minmax(136px, max-content);
+  gap: 18px;
   padding: 9px 20px;
   background: var(--md-surface-1);
   border-bottom: 1px solid var(--md-outline-v);
@@ -3482,6 +4207,7 @@ textarea {
 }
 .due2 {
   font-size: 13px;
+  font-variant-numeric: tabular-nums;
 }
 .due2.soon {
   color: var(--md-warn);
@@ -3490,4 +4216,720 @@ textarea {
 .due2.overdue {
   color: var(--md-error);
   font-weight: 700;
+}
+
+/* Due column: neutral date + a trailing urgency marker (amber clock = soon,
+   red triangle = overdue); the marker's tooltip carries the magnitude. */
+.duecell {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.duedate {
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: var(--md-on-surface);
+}
+.duemark {
+  display: inline-flex;
+  align-items: center;
+}
+.duemark.soon {
+  color: var(--md-warn);
+}
+.duemark.overdue {
+  color: var(--md-error);
+}
+
+/* ----- Queue row: property cell (stacked, ellipsised, tooltip-on-clip) ----- */
+.qprop {
+  min-width: 0;
+}
+.trunc {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ----- Sortable column headers + sort glyph ----- */
+.qhcol {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: var(--md-on-surface-v);
+  cursor: pointer;
+}
+.qhcol--center {
+  justify-content: center;
+  width: 100%;
+}
+.qhcol:hover {
+  color: var(--md-on-surface);
+}
+.qsort {
+  flex-shrink: 0;
+  color: var(--md-on-surface-t);
+}
+.qsort-idle {
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.qhcol:hover .qsort-idle {
+  opacity: 0.55;
+}
+.qhcol.is-active {
+  color: var(--md-on-surface);
+}
+.qhcol.is-active .qsort {
+  color: var(--md-accent-d);
+}
+.qhead-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Column-config menu (reuses .qf-ms-menu + .qf-check checkbox rows) */
+.colcfg-menu {
+  width: 196px;
+}
+.colcfg-head {
+  padding: 6px 8px 8px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--md-on-surface-v);
+}
+.qf-check.is-locked {
+  opacity: 0.5;
+  cursor: default;
+}
+.qf-check.is-locked:hover {
+  background: none;
+}
+.qmuted {
+  font-size: 12.5px;
+  color: var(--md-on-surface-t);
+}
+
+/* Reviewer = its own narrow, avatar-only column (name on hover) */
+.qcol-center {
+  text-align: center;
+}
+.qreviewer {
+  display: flex;
+  justify-content: flex-start;
+}
+
+/* Merged Actions cell — primary next-action + ⋯ overflow, right-aligned */
+.qactions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+/* Review-type chips (TECH / ADMIN) — a review can be either or both, so they
+   read as distinct chips, not a fused "TECHADMIN" word. */
+.tbadges {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.tbadge {
+  /* center the all-caps label both axes: as a flex container the single text
+     line is truly centred, instead of block-flow pinning it to the top of the
+     content box (which read as "too high"). */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  line-height: 1;
+  padding: 3px 7px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+}
+.tbadge--t {
+  color: var(--md-accent-d);
+  background: var(--md-accent-c);
+  border-color: color-mix(in srgb, var(--md-accent) 22%, transparent);
+}
+.tbadge--a {
+  color: var(--md-on-surface-v);
+  background: var(--md-surface-2);
+  border-color: var(--md-outline-v);
+}
+
+/* ----- Pipeline journey tracker (segmented track + live stage) -----
+   The review's path through the parachute: filled segments = done, the active
+   segment shimmers (the one restrained petrol "AI working" cue), upcoming
+   segments are idle. Active stage name shows inline; hover lists all five. */
+.pipe-jt {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 0;
+  cursor: default;
+}
+/* Running callout — petrol badge with a pulsing dot, sits ABOVE the segments */
+.pipe-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 3px 9px 3px 8px;
+  border-radius: 999px;
+  background: var(--md-accent-c);
+  color: var(--md-accent-d);
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pipe-badge-dot {
+  flex-shrink: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--md-accent);
+  animation: pipe-dot-pulse 1.3s ease-in-out infinite;
+}
+@keyframes pipe-dot-pulse {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--md-accent) 45%, transparent);
+  }
+  60% {
+    opacity: 0.55;
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--md-accent) 0%, transparent);
+  }
+}
+.pipe-segs {
+  display: inline-flex;
+  gap: 3px;
+  flex-shrink: 0;
+}
+.pipe-seg {
+  width: 14px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--md-surface-2);
+  box-shadow: inset 0 0 0 1px var(--md-outline-v);
+}
+.pipe-seg--done {
+  background: var(--md-accent);
+  box-shadow: none;
+}
+/* Active segment: STATIC half-fill (petrol → tint) set inline to the seeded
+   baseline — distinct from done/idle without competing with the badge pulse. */
+.pipe-seg--run {
+  box-shadow: none;
+  background: linear-gradient(
+    90deg,
+    var(--md-accent) 50%,
+    var(--md-accent-c) 50%
+  );
+}
+/* Ready / Completed render as a success-tinted badge stacked ON TOP of the
+   track — the same pill treatment as the running stage badge, just green. */
+.pipe-badge--ready,
+.pipe-badge--done {
+  background: var(--md-success-c);
+  color: var(--md-success);
+}
+/* Hover tooltip = a light progress panel: a "Stage X of N" header over a
+   vertical stepper. Rendered inside .ui-tip--panel (light surface). */
+.pipe-card {
+  display: flex;
+  flex-direction: column;
+  width: 216px;
+  text-align: left;
+}
+.pipe-card-head {
+  padding: 12px 14px 11px;
+}
+.pipe-card-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--md-on-surface);
+}
+.pipe-card-steps {
+  display: flex;
+  flex-direction: column;
+  padding: 11px 14px 13px;
+  border-top: 1px solid var(--md-outline-v);
+}
+.pipe-step {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 26px;
+  font-size: 12px;
+}
+/* connector line between consecutive nodes */
+.pipe-step:not(:last-child) .pipe-step-node::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 16px;
+  width: 1.5px;
+  /* span exactly the gap between this node's bottom and the next node's top
+     edge, so the line meets the active node's OUTER ring (never pierces it) */
+  height: calc(26px - 16px);
+  transform: translateX(-50%);
+  background: var(--md-outline);
+}
+.pipe-step--done:not(:last-child) .pipe-step-node::after {
+  background: var(--md-accent);
+}
+.pipe-step-node {
+  position: relative;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+.pipe-step--done .pipe-step-node {
+  background: var(--md-accent);
+  color: #fff;
+}
+.pipe-step--run .pipe-step-node {
+  border: 2px solid var(--md-accent);
+}
+.pipe-step--idle .pipe-step-node {
+  border: 2px solid var(--md-outline);
+}
+.pipe-step-pulse {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--md-accent);
+  animation: pipe-dot-pulse 1.3s ease-in-out infinite;
+}
+.pipe-step-label {
+  flex: 1;
+  color: var(--md-on-surface-v);
+}
+.pipe-step--done .pipe-step-label {
+  color: var(--md-on-surface);
+}
+.pipe-step--run .pipe-step-label {
+  color: var(--md-on-surface);
+  font-weight: 700;
+}
+.pipe-step--idle .pipe-step-label {
+  color: var(--md-on-surface-t);
+}
+.pipe-step-pct {
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--md-accent-d);
+}
+@media (prefers-reduced-motion: reduce) {
+  .pipe-badge-dot,
+  .pipe-step-pulse {
+    animation: none;
+  }
+}
+/* Word-state phases (no dots): awaiting / blocked / returned */
+.pipe-word {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 500;
+}
+.pipe-word--muted {
+  color: var(--md-on-surface-t);
+}
+.pipe-word--fail {
+  color: var(--md-error);
+}
+.pipe-word--warn {
+  color: var(--md-warn);
+}
+.pipe-word--info {
+  color: var(--md-info);
+}
+/* Tinted pill for word-states that read as a badge, not plain coloured text
+   (auto-rejected = fail, new intake = info). Shape here; the tint follows the
+   tone modifier below so it stays theme-safe. */
+.pipe-word--badge {
+  gap: 4px;
+  padding: 2px 9px 2px 7px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+.pipe-word--badge.pipe-word--fail {
+  background: var(--md-error-c);
+}
+.pipe-word--badge.pipe-word--info {
+  background: var(--md-info-c);
+}
+/* Hover-card footnote (e.g. "Reviewed & completed by …") */
+.pipe-card-foot {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 9px 14px 11px;
+  border-top: 1px solid var(--md-outline-v);
+  font-size: 11.5px;
+  color: var(--md-on-surface-v);
+}
+.pipe-card-foot svg {
+  color: var(--md-success);
+  flex-shrink: 0;
+  /* sit on the first text line, not centred across the wrapped name */
+  margin-top: 1px;
+}
+
+/* "Mine only" toggle pill in the toolbar */
+.qtoggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: var(--r);
+  border: 1px solid var(--md-outline);
+  background: var(--md-surface);
+  color: var(--md-on-surface-v);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+.qtoggle:hover {
+  background: var(--md-surface-1);
+}
+.qtoggle.on {
+  background: var(--md-selected);
+  color: var(--md-on-selected);
+  border-color: transparent;
+}
+
+/* ============ Queue filters: button · popover · active chips ============ */
+.qf-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 36px;
+  padding: 0 13px;
+  border-radius: 9px;
+  border: 1px solid var(--md-outline-v);
+  background: var(--md-surface-1);
+  color: var(--md-on-surface);
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s;
+}
+.qf-btn:hover {
+  border-color: var(--md-outline);
+}
+.qf-btn.on {
+  border-color: var(--md-accent);
+  background: var(--md-accent-c);
+  color: var(--md-accent-d);
+}
+.qf-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--md-accent);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.qf-pop {
+  z-index: 60;
+  width: 304px;
+  max-height: min(70vh, 540px);
+  overflow-y: auto;
+  background: var(--md-surface);
+  border: 1px solid var(--md-outline-v);
+  border-radius: 12px;
+  box-shadow: var(--md-elev-3);
+  padding: 14px;
+}
+.qf-sec {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--md-outline-v);
+}
+.qf-sec:first-child {
+  padding-top: 2px;
+}
+.qf-sec-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--md-on-surface-v);
+  margin-bottom: 9px;
+}
+.qf-opts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.qf-opt {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 11px;
+  border-radius: 999px;
+  border: 1px solid var(--md-outline-v);
+  background: var(--md-surface);
+  color: var(--md-on-surface-v);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s, color 0.12s;
+}
+.qf-opt:hover {
+  border-color: var(--md-outline);
+}
+.qf-opt.on {
+  background: var(--md-selected);
+  border-color: transparent;
+  color: var(--md-on-selected);
+}
+/* Findings options carry their severity color when selected */
+.qf-opt--crit.on {
+  background: var(--md-error-c);
+  color: var(--md-error);
+}
+.qf-opt--fail.on {
+  background: var(--md-error-c);
+  color: var(--md-error);
+}
+.qf-opt--flag.on {
+  background: var(--md-warn-c);
+  color: var(--md-warn);
+}
+.qf-opt--pass.on {
+  background: var(--md-success-c);
+  color: var(--md-success);
+}
+.qf-select {
+  width: 100%;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--md-outline-v);
+  border-radius: 9px;
+  background: #ffffff;
+  color: #1a1d21;
+  color-scheme: light;
+  font-family: inherit;
+  font-size: 13.5px;
+  cursor: pointer;
+  outline: none;
+}
+.qf-select:focus {
+  border-color: var(--md-primary);
+}
+/* Multi-select dropdown (Reviewer / Firm): select-styled trigger + portal menu */
+.qf-select--btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  text-align: left;
+}
+.qf-select--btn:hover {
+  border-color: var(--md-outline);
+}
+.qf-select-val {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.qf-select-val.muted {
+  color: #868d96;
+}
+.qf-select--btn > svg {
+  flex-shrink: 0;
+  color: #868d96;
+}
+.qf-ms-menu {
+  z-index: 70;
+  max-height: 248px;
+  overflow-y: auto;
+  background: var(--md-surface);
+  border: 1px solid var(--md-outline-v);
+  border-radius: 10px;
+  box-shadow: var(--md-elev-3);
+  padding: 5px;
+}
+/* checkbox rows (used inside the multi-select menu) */
+.qf-checks {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.qf-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 6px 8px;
+  border: none;
+  background: none;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--md-on-surface);
+  text-align: left;
+  cursor: pointer;
+}
+.qf-check:hover {
+  background: var(--md-surface-1);
+}
+.qf-check-box {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 17px;
+  height: 17px;
+  border-radius: 5px;
+  border: 1.5px solid var(--md-outline);
+  color: #fff;
+}
+.qf-check.on .qf-check-box,
+.qf-check.mixed .qf-check-box {
+  background: var(--md-accent);
+  border-color: var(--md-accent);
+}
+.qf-check-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.qf-check-you {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--md-on-surface-t);
+}
+/* Findings severity color cues — on the row icon and the tinted trigger label */
+.qf-ic {
+  flex-shrink: 0;
+}
+.qf-ic--crit,
+.qf-ic--fail {
+  color: var(--md-error);
+}
+.qf-ic--flag {
+  color: var(--md-warn);
+}
+.qf-ic--pass {
+  color: var(--md-success);
+}
+.qf-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 14px;
+}
+.qf-clear {
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--md-on-surface-v);
+  cursor: pointer;
+}
+.qf-clear:hover {
+  color: var(--md-on-surface);
+}
+.qf-apply {
+  height: 34px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 8px;
+  background: var(--grad-primary);
+  color: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.qf-apply:hover {
+  background: var(--md-primary-c);
+}
+
+/* Active-filter chip strip — sits under the toolbar, only when filtering */
+.qf-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--md-outline-v);
+}
+.qf-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 6px 0 11px;
+  border-radius: 999px;
+  border: 1px solid var(--md-outline-v);
+  background: var(--md-surface-1);
+  color: var(--md-on-surface);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.12s, color 0.12s;
+}
+.qf-chip:hover {
+  border-color: var(--md-error);
+  color: var(--md-error);
+}
+.qf-chip-clear {
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--md-accent-d);
+  cursor: pointer;
+}
+.qf-chip-clear:hover {
+  text-decoration: underline;
 }

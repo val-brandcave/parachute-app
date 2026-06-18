@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useReviewsStore } from "@/store";
+import { isOverdue } from "@/lib/review-lifecycle";
 import type { Period, DateRange } from "@/components/molecules";
 
 const DAY = 86400000;
@@ -25,24 +26,31 @@ export function useDashboard() {
 
   const [now] = useState(() => Date.now());
 
-  // Action needed: most urgent items waiting on the reviewer.
+  // Action needed: items waiting on a reviewer decision. Excludes intake
+  // (those live in the "New from YouConnect" widget) to avoid duplication.
   const actionNeeded = useMemo(
     () =>
       [...reviews]
         .filter(
           (r) =>
-            r.status === "needs_action" ||
+            r.status === "in_review" ||
             r.status === "autorejected" ||
-            (r.slaDueAt < now && r.status !== "completed"),
+            isOverdue(r, now),
         )
         .sort((a, b) => a.slaDueAt - b.slaDueAt)
         .slice(0, 5),
     [reviews, now],
   );
 
-  // Recent reviews: most recently ordered.
-  const recent = useMemo(
-    () => [...reviews].sort((a, b) => b.orderedAt - a.orderedAt).slice(0, 5),
+  // New from YouConnect: deliveries that have landed (status "intake", source
+  // "yc") but haven't been ordered yet — the dashboard's "front door". Disjoint
+  // from Action needed by construction (that excludes intake), newest first.
+  const newFromYc = useMemo(
+    () =>
+      [...reviews]
+        .filter((r) => r.status === "intake" && r.source === "yc")
+        .sort((a, b) => b.createdAt - a.createdAt)
+        .slice(0, 5),
     [reviews],
   );
 
@@ -117,14 +125,17 @@ export function useDashboard() {
   }, [period, range, now]);
 
   // KPIs. Historical tiles are PERIOD-SCOPED (counts of events within the selected
-  // range, derived from the period volume); "running" stays a live "now" count.
+  // range, derived from the period volume); "running" and "intake" stay point-in-time
+  // "now" counts (current backlog, not affected by the period picker).
   const kpis = useMemo(() => {
     const c = trend.completed;
     return {
       needsAction: Math.round(c * 0.13), // needed your action during the period
       running: reviews.filter((r) => r.status === "running").length, // LIVE — now
       overdue: Math.round(c * 0.06), // went overdue during the period
-      triage: Math.round(c * 0.05), // auto-rejected at intake during the period
+      // New-from-YouConnect deliveries awaiting an order — current backlog (now).
+      intake: reviews.filter((r) => r.status === "intake" && r.source === "yc")
+        .length,
     };
   }, [trend.completed, reviews]);
 
@@ -137,7 +148,7 @@ export function useDashboard() {
     kpis,
     completed: trend.completed,
     actionNeeded,
-    recent,
+    newFromYc,
     trend,
   };
 }

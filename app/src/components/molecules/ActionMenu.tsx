@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Icon, type IconName } from "@/components/atoms";
+import { Icon, Tooltip, type IconName } from "@/components/atoms";
 
 export type ActionItem = {
   label?: string;
@@ -17,7 +17,14 @@ export type ActionItem = {
   header?: boolean;
 };
 
-export function ActionMenu({ items }: { items: ActionItem[] }) {
+export function ActionMenu({
+  items,
+  tooltip,
+}: {
+  items: ActionItem[];
+  /** When set, the ⋯ trigger gets a hover tooltip (and this as its aria-label). */
+  tooltip?: string;
+}) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -30,15 +37,25 @@ export function ActionMenu({ items }: { items: ActionItem[] }) {
     return () => document.removeEventListener("mousedown", close);
   }, [open]);
 
+  const trigger = (
+    <button
+      className="ui-iconbtn"
+      onClick={() => setOpen((o) => !o)}
+      aria-label={tooltip ?? "More options"}
+    >
+      <Icon name="more" size={18} />
+    </button>
+  );
+
   return (
     <div className="ui-menu" ref={ref}>
-      <button
-        className="ui-iconbtn"
-        onClick={() => setOpen((o) => !o)}
-        aria-label="More options"
-      >
-        <Icon name="more" size={18} />
-      </button>
+      {tooltip ? (
+        <Tooltip content={tooltip} compact disabled={open}>
+          {trigger}
+        </Tooltip>
+      ) : (
+        trigger
+      )}
       <AnimatePresence>
         {open && (
           <motion.div

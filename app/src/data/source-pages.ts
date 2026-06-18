@@ -15,7 +15,7 @@ export const SOURCE_PAGES: Record<number, SourcePage> = {
   12: {
     page: 12,
     heading: "Scope of Work & Engagement",
-    body: "This appraisal was prepared for Demo Bank, N.A. for mortgage lending purposes. Five improved sale comparables were analyzed. Comparable 4 closed 24 months prior to the effective date; Comparable 5 closed 27 months prior. Bank policy requires comparables within 18 months of the effective date unless supported by commentary.",
+    body: "This appraisal was prepared for Meridian Trust Bank, N.A. for mortgage lending purposes. Five improved sale comparables were analyzed. Comparable 4 closed 24 months prior to the effective date; Comparable 5 closed 27 months prior. Bank policy requires comparables within 18 months of the effective date unless supported by commentary.",
     highlight:
       "Comparable 4 closed 24 months prior to the effective date; Comparable 5 closed 27 months prior.",
   },

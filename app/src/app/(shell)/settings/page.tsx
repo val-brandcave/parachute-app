@@ -74,7 +74,7 @@ export default function SettingsPage() {
                 </div>
                 <div>
                   <Label>Short name</Label>
-                  <Input defaultValue="Demo Bank" />
+                  <Input defaultValue="Meridian Trust" />
                 </div>
               </div>
             </Section>
@@ -114,9 +114,9 @@ export default function SettingsPage() {
                 </div>
                 <div>
                   <Label>Default administrative checklist</Label>
-                  <select className="qfilter" defaultValue="demo-commercial" style={{ width: "100%", height: 42 }}>
-                    <option value="demo-commercial">Demo Bank — Commercial Review</option>
-                    <option value="demo-sba">Demo Bank — SBA 7(a)/504</option>
+                  <select className="qfilter" defaultValue="mt-commercial" style={{ width: "100%", height: 42 }}>
+                    <option value="mt-commercial">Meridian Trust — Commercial Review</option>
+                    <option value="mt-sba">Meridian Trust — SBA 7(a)/504</option>
                   </select>
                 </div>
               </div>
@@ -143,7 +143,7 @@ export default function SettingsPage() {
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <Icon name="checklist" size={18} />
                   <div>
-                    <div style={{ fontWeight: 600 }}>Demo Bank — Commercial Review</div>
+                    <div style={{ fontWeight: 600 }}>Meridian Trust — Commercial Review</div>
                     <div style={{ fontSize: 12, color: "var(--md-on-surface-v)" }}>
                       22 items · v3 · updated last month
                     </div>

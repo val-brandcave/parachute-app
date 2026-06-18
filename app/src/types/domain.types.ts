@@ -17,11 +17,18 @@ export interface Org extends BaseEntity {
 }
 
 /* ============ Reviews ============ */
+// Honest lifecycle phases (no synthetic "status"). The queue derives its
+// columns/tabs from these via lib/review-lifecycle — it never prints the raw value.
+//   intake       = delivered / new-from-YC, awaiting order ("Confirm & run")
+//   autorejected = failed the quality gate at intake ("Triage")
+//   running      = pipeline S1–S5 in progress
+//   in_review    = pipeline complete, reviewer deciding findings / attesting
+//   returned     = sent back to the fee appraiser, awaiting resubmission
+//   completed    = signed off / filed
 export type ReviewStatus =
   | "intake"
   | "autorejected"
   | "running"
-  | "needs_action"
   | "in_review"
   | "returned"
   | "completed";
@@ -32,7 +39,8 @@ export type ReviewType = "technical" | "administrative";
 export interface Review extends BaseEntity {
   propertyAddress: string;
   propertyType: string; // e.g. "Office (Medical)"
-  bank: string;
+  bank: string; // the lending entity/branch this loan sits under (org = the bank itself)
+  appraisalFirm: string; // the external fee-appraiser firm whose work is under review
   loanNo: string;
   status: ReviewStatus;
   reviewTypes: ReviewType[];
@@ -41,9 +49,31 @@ export interface Review extends BaseEntity {
   riskRating: "low" | "moderate" | "elevated" | null;
   openFindings: number;
   flaggedCount: number;
+  worstSeverity: Severity | null; // drives the queue Outcome chip (crit/fail/flag); null = clean / pre-pipeline
   pipelineStage: number; // 0-5 (0 = not started, 5 = done)
   slaDueAt: number; // epoch ms
   orderedAt: number;
+}
+
+/* ============ YouConnect deliveries (Order stepper inbox) ============ */
+// An appraisal that has landed in YouConnect and can be ordered for review.
+// Backs the "From YouConnect" source step. `status` drives the inbox badge:
+//   new      = not yet ordered → "NEW"
+//   in_queue = already has an active review → "IN QUEUE" (a second review needs intent)
+export interface YcDelivery extends BaseEntity {
+  propertyAddress: string;
+  propertyType: string;
+  bank: string; // lending entity/branch
+  appraisalFirm: string; // the fee-appraiser firm whose work would be reviewed
+  loanNo: string;
+  deliveredAt: number; // epoch ms — when YouConnect delivered it
+  docName: string; // e.g. "Commercial Appraisal Report.pdf"
+  docPages: number;
+  viaApi: boolean; // delivered straight over the YC API (read-only source)
+  slaDueAt: number; // epoch ms — SLA clock from YC delivery
+  defaultAssigneeId: UUID; // inherited reviewer (changeable in the stepper)
+  status: "new" | "in_queue";
+  existingReviewId?: UUID; // set when status === "in_queue" (the second-review target)
 }
 
 /* ============ Findings ============ */

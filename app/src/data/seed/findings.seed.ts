@@ -135,14 +135,14 @@ export const seedFindings: Finding[] = [
     confidence: 0.83,
     page: 12,
     question:
-      "Does the engagement satisfy Demo Bank policy on comparable recency (≤18 months)?",
+      "Does the engagement satisfy Meridian Trust Bank policy on comparable recency (≤18 months)?",
     analysis:
       "Two of five sale comparables closed 24 and 27 months prior to the effective date, exceeding the bank's 18-month recency policy. Permitted with commentary, but commentary is absent.",
     evidence:
       "Comparable 4 closed 24 months prior; Comparable 5 closed 27 months prior (grid, p.47).",
     auditTag: "FLAGGED",
     auditText:
-      "S5 Policy applied Demo Bank's uploaded policy rules and flagged a recency exception lacking the required commentary.",
+      "S5 Policy applied Meridian Trust Bank's uploaded policy rules and flagged a recency exception lacking the required commentary.",
     material: false,
     suggestedDisposition: "commented",
     createdAt: NOW,

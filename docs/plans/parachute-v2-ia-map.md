@@ -188,3 +188,44 @@ Updated as Phase-3 calls land. `OPEN` = to decide; record the chosen pattern + C
 | 9 | Notifications model + bell panel | **In-app bell panel** (demoable: review ready / returned / assigned / overdue); **email = production channel, engineering-owned** | Panel items deep-link to the review; no standalone primary CTA | ✅ DECIDED Jun 16 |
 
 **All 9 Phase-3 items decided (Jun 16 2026). No open IA items remain.**
+
+---
+
+## 7. Reviews queue — IA & state model (settled Jun 17–18 2026)
+
+Follow-on decisions made while rebuilding `/reviews` from the POC's team queue. Full
+write-up in `parachute-v2-early-specs.md` §9; locked build rules in `app/AGENTS.md`.
+
+| # | Decision | Resolution | Status |
+|---|---|---|---|
+| Q1 | Org / persona model | **Single bank, multi-branch.** User = reviewer/chief appraiser in the bank's review **department** (team view). Org = the bank (org-card context, **not** a row column). Per-row parties = reviewer · external **appraisal firm** (fee appraiser, the send-back target) · loan/property. | ✅ DECIDED Jun 17 |
+| Q2 | Tabs vs filters | **Tabs partition by lifecycle stage** (All · Needs action · In pipeline · Sent back · Completed · Intake) — Ed's "separate the stages." Scope filters → see Q7. | ✅ DECIDED Jun 17, refined Q7 |
+| Q3 | Columns | **Parties-rich aligned grid:** Property & parties (reviewer avatar + firm/loan/type) · Type · Pipeline · Findings · Due · Next action · `⋯`. **Risk column dropped** (not a queue signal). | ✅ DECIDED Jun 17, superseded by Q8 |
+| Q4 | "Cooked-up" statuses | **No Status column.** State is **derived** from Pipeline (phase) + Findings (outcome) + Type (kind) via `lib/review-lifecycle.ts`. `ReviewStatus` = honest phases only (`intake · autorejected · running · in_review · returned · completed`). | ✅ DECIDED Jun 18 |
+| Q5 | Pipeline tracker | **Journey track** (`PipelineTracker`): S1–S5 segments — done filled · active **static half-fill** · idle. The single petrol "AI working" cue is the **running badge's pulsing dot** stacked above the track; active stage name on the badge; hover tooltip = light panel with a vertical stepper + climbing stage %. Word-states for pre/post-pipeline. | ✅ DECIDED Jun 17, restyled Jun 18 |
+| Q6 | Next action / row actions | **One derived primary** per row + `⋯` `ActionMenu`, now in **one merged right-aligned Actions cell** (Q8); no "Next action" header. | ✅ DECIDED Jun 17, refined Q8 |
+| Q7 | Filter encapsulation | **One `Filters` popover** (`QueueFilters` molecule — portal, staged draft, Apply/Clear) + removable **active-filter chip** strip. **All five facets are the SAME multi-select dropdown**: **Findings (severity color cues) · Type · Reviewer (avatar + name, "You" tag) · Appraisal firm · Due (Overdue/Due soon/SLA paused)**. Every facet uses **tri-state select-all** (`MultiSel = "all" | string[]`): **"All" row toggles select-all↔deselect-all**, `"all"` default (every row checked, **no chip** — thumb rule: all-selected = default), subset → master indeterminate (full collapses back to `"all"`), `[]` → none (matches nothing, shows a "No …" chip). Isolate one = click All to clear, then check it. **"Mine" = checking your own name**; **"severity" filter killed — it's the honest Findings facet** (`findingsKey()`). **Due column** = neutral date + trailing urgency marker (amber clock = soon, red triangle = overdue), magnitude in the marker's tooltip. **Download** primary (completed) = icon-only outline + tooltip; `⋯` = "More options" tooltip. `Tooltip` animates via Framer (rise+fade+scale, two-layer to avoid the centering-transform clash). Toolbar = tabs + search + Filters + Order CTA on one line. | ✅ DECIDED Jun 18 |
+| Q8 | Column refinements | **Reviewer = its own narrow avatar-only column** (name on hover), pulled out of Property. **Type = spaced chips** (can be both). **Actions merged** into one right-aligned cell. Property header simplified to `Property`. | ✅ DECIDED Jun 18 |
+| Q9 | Column behaviors | **Sortable headers** (all but Actions): click cycles asc → desc → smart default; active ↑/↓, idle faint ⇅. **Column-config gear** in the Actions header toggles visibility — **Property + Actions locked-on**, other five hideable, **session-only**. **Dynamic grid** (`gridTemplate(visible)`). **Property title+subtext ellipsise responsively** with tooltip only-when-clipped (`TruncText`). Config in `review-columns.ts`; sort in `useReviewQueue`. | ✅ DECIDED Jun 18 |
+| Q10 | Tab set & order | **`All · Needs action · In pipeline · Intake · Completed`.** "Sent back"/returned **removed pending client** ([client Q1](parachute-v2-client-questions.md)); **auto-rejected folds into Needs action** (`lifecycleBucket: autorejected → needs_action`), Intake = plain `intake` only. | ✅ DECIDED Jun 18 (revisit after client) |
+| Q11 | Auto-rejected presentation | Pipeline = red **"Auto Rejected"** badge (was "Blocked at intake"); **Due = `—`** (was "SLA paused"). | ✅ DECIDED Jun 18 |
+| Q12 | Intake (pre-order) presentation | Pipeline = **"New"** info-pill, or **"New from YC"** (YouConnect glyph) when `source==="yc"` — was "Awaiting order". | ✅ DECIDED Jun 18 |
+| Q13 | Completed presentation | Pipeline label **"Completed"** (was "Done"); hover card adds a **"Reviewed and signed by {reviewer}" footnote**; **Due shows its date** (no marker) instead of `—`. | ✅ DECIDED Jun 18 |
+| Q14 | Quiet wait-actions | The grey `Running…` / `With appraiser` next-action labels are **removed** — those rows show only the `⋯` menu. | ✅ DECIDED Jun 18 |
+| Q16 | Tab motion & search scoping | Tab bars (`Tabs` + `SegmentedControl`) use a **Framer `layoutId` sliding pill** (queue + settings). **Search scopes the tabs**: counts reflect the query and zero-match tabs are **hidden** while searching (All stays; active tab falls back to All via `effectiveTab`). | ✅ DECIDED Jun 18 |
+| Q15 | Column sizing & alignment | Every data column is **`minmax(floor, weight-fr)`** (in `review-columns.ts`) so hidden columns make the rest **spread** (was: only Property flexed). **All data columns + headers left-aligned** (Reviewer was centred); Actions right, floored to the widest button (`minmax(136px, max-content)`). Property narrowed; Pipeline gets the most secondary space. All dot-states (**Ready / Completed / running**) render the label as a **pill badge stacked on top** of the S1–S5 track (ready/completed green, running petrol). CSS `.qrow`/`.qcols` default template kept in sync (skeleton uses it). | ✅ DECIDED Jun 18 |
+
+---
+
+## 8. Order a review — flow decisions (settled Jun 18 2026)
+
+Made while rebuilding the Order stepper from the POC's single-screen "checkout." Full
+write-up in `parachute-v2-early-specs.md` §1; locked build rules in `app/AGENTS.md`.
+
+| # | Decision | Resolution | Status |
+|---|---|---|---|
+| O1 | Stepper shape | **Three steps** — `Source · Configure · Summary` (final step relabeled from "Confirm & run"; `ORDER_STEP` key stays `confirm`). The POC's separate type/reviewer/options (each ~1 click) fold into one **Configure** step. Each step's content is one white `.ord-card` on the modal canvas. | ✅ DECIDED Jun 18 |
+| O2 | Summary surface (no rail) | **No progressive summary rail.** An earlier build added a persist-then-graduate "Order summary" rail on Source + Configure; **reversed Jun 18 2026** — with only two steps before Summary it wasn't worth the width. Instead the **Summary step is the review surface**: a sectioned card (Appraisal · Review type · Reviewer & schedule · Options) where **each section has an ✎ Edit button that jumps back to its step**. `StepperModal` keeps an optional `aside` slot for future wizards; the Order flow doesn't use it. | ✅ DECIDED Jun 18 (rail reversed same day) |
+| O3 | Standalone upload flow | **Upload-first.** The dropzone is the hero; on parse, property fields (address/type/lender/loan#/firm/due) **AI-autofill** (editable verify-and-correct). Mirrors how YC deliveries arrive pre-filled — both source modes converge on "verify the property." | ✅ DECIDED Jun 18 |
+| O4 | Second review (in-queue YC) | Selecting a YC delivery **already in the queue** is **allowed, with an amber "already in your queue — continue only for an intentional second review" warning** (not blocked; no separate route). | ✅ DECIDED Jun 18 |
+| O5 | Source data | New `YcDelivery` seed (`yc-deliveries.seed.ts`) backs the YouConnect inbox: property, loan#, type, delivered date, bank, doc meta, `status: new \| in_queue` (+ `existingReviewId` for second-review detection). | ✅ DECIDED Jun 18 |

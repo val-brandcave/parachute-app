@@ -9,7 +9,7 @@ import {
   StatBar,
   type Stat,
   ActionNeeded,
-  RecentReviews,
+  NewFromYouConnect,
   TrendChart,
   DashboardSkeleton,
 } from "@/components/organisms";
@@ -24,17 +24,17 @@ export default function DashboardPage() {
     kpis,
     completed,
     actionNeeded,
-    recent,
+    newFromYc,
     trend,
   } = useDashboard();
 
   const stats: Stat[] = [
     // Lifecycle order: intake → processing → review → SLA → done.
     {
-      label: "Intake triage",
-      value: kpis.triage,
-      icon: "checklist",
-      tip: "Appraisals auto-rejected at intake within the selected period that need your confirm or override.",
+      label: "Intake",
+      value: kpis.intake,
+      icon: "connect",
+      tip: "New appraisals delivered from YouConnect, waiting to be ordered — a current backlog, not affected by the period picker.",
     },
     {
       label: "Pipeline running",
@@ -114,7 +114,7 @@ export default function DashboardPage() {
 
               <div className="dash-grid">
                 <ActionNeeded reviews={actionNeeded} />
-                <RecentReviews reviews={recent} />
+                <NewFromYouConnect reviews={newFromYc} />
               </div>
             </motion.div>
           )}
