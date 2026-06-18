@@ -39,7 +39,7 @@ const PLACEHOLDER: Record<string, { title: string; body: string }> = {
 /** The global "Order a review" stepper, mounted once in the shell. */
 export function OrderModal() {
   const router = useRouter();
-  const { open, step, close, setStep } = useOrderStore();
+  const { open, step, close, setStep, prefill } = useOrderStore();
   const current = STEPS[step];
   const content = PLACEHOLDER[current.key];
 
@@ -59,6 +59,28 @@ export function OrderModal() {
       }}
       submitLabel="Run pipeline"
     >
+      {prefill?.propertyAddress && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            marginBottom: 16,
+            padding: "10px 14px",
+            borderRadius: 12,
+            background: "var(--md-accent-c)",
+            color: "var(--md-accent-d)",
+            fontSize: 13,
+          }}
+        >
+          <Icon name="connect" size={16} />
+          <span>
+            Pre-selected from YouConnect:{" "}
+            <strong>{prefill.propertyAddress}</strong>
+            {prefill.loanNo && <> · Loan #{prefill.loanNo}</>}
+          </span>
+        </div>
+      )}
       <div
         style={{
           border: "1px dashed var(--md-outline)",

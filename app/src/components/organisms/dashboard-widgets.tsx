@@ -3,11 +3,17 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Icon, Chip } from "@/components/atoms";
+import { Icon, Chip, Button } from "@/components/atoms";
 import { ActionMenu, type ActionItem } from "@/components/molecules";
-import { cn, relativeDue, STATUS_META } from "@/lib/utils";
+import { cn, relativeDue } from "@/lib/utils";
+import { useOrderStore } from "@/store";
 import { reviewHref } from "./ReviewTable";
-import type { Review, ReviewStatus } from "@/types";
+import type { Review } from "@/types";
+
+/** "Review" lands the user on the Order stepper's final step with the
+ *  YouConnect delivery pre-selected (decisions #1/#2). The stepper index of the
+ *  "Confirm & run" step in OrderModal. */
+const ORDER_CONFIRM_STEP = 4;
 
 /** Risk → dot color. Calm by default: only elevated (red) and moderate (amber)
  *  carry color; low/unrated stay neutral grey so color signals real severity. */
@@ -74,44 +80,55 @@ export function ActionNeeded({ reviews }: { reviews: Review[] }) {
   );
 }
 
-/** Statuses that warrant a badge in Recent reviews — the rest are routine and
- *  render as plain muted text, so color marks only failures / open actions. */
-const RC_BADGE: Partial<Record<ReviewStatus, "fail" | "neutral">> = {
-  autorejected: "fail",
-  needs_action: "neutral",
-  returned: "neutral",
-};
+/** New from YouConnect: appraisal deliveries that have landed but aren't ordered
+ *  yet (status "intake", source "yc"). The dashboard's front door — each row's
+ *  "Confirm & run" opens the Order stepper on its final step, pre-selected on
+ *  that delivery (decisions #1/#2). Disjoint from Action needed by construction. */
+export function NewFromYouConnect({ reviews }: { reviews: Review[] }) {
+  const openOrder = useOrderStore((s) => s.openOrder);
 
-/** Recent reviews: compact recent-activity list. */
-export function RecentReviews({ reviews }: { reviews: Review[] }) {
+  const startReview = (r: Review) =>
+    openOrder({
+      step: ORDER_CONFIRM_STEP,
+      prefill: {
+        reviewId: r.id,
+        source: "yc",
+        propertyAddress: r.propertyAddress,
+        loanNo: r.loanNo,
+        bank: r.bank,
+      },
+    });
+
   return (
     <div className="widget">
       <div className="widget-head">
-        <h3>Recent reviews</h3>
+        <h3>New from YouConnect</h3>
         <Link href="/reviews" className="link">
           View all <Icon name="chevron-right" size={14} />
         </Link>
       </div>
       <div className="widget-body">
-        {reviews.map((r) => {
-          const badge = RC_BADGE[r.status];
-          return (
-            <Link key={r.id} href={reviewHref(r)} className="rc-row">
-              <span className="rc-main">
+        {reviews.length === 0 ? (
+          <div className="widget-empty">No new deliveries from YouConnect.</div>
+        ) : (
+          reviews.map((r) => (
+            <div key={r.id} className="yc-row">
+              <span className="yc-main">
                 <div className="t">{r.propertyAddress}</div>
                 <div className="s">
-                  {r.propertyType} · Loan #{r.loanNo}
+                  {r.propertyType} · Loan #{r.loanNo} · {r.bank}
                 </div>
               </span>
-              {badge ? (
-                <Chip tone={badge}>{STATUS_META[r.status].label}</Chip>
-              ) : (
-                <span className="rc-status">{STATUS_META[r.status].label}</span>
-              )}
-              <Icon name="chevron-right" size={16} style={{ color: "var(--md-on-surface-v)" }} />
-            </Link>
-          );
-        })}
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => startReview(r)}
+              >
+                Review
+              </Button>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
@@ -351,16 +368,24 @@ export function TrendChart({
           )}
           {showOn && (
             <>
-              <path className="rv-line rv-line--alt" d={onLine.path} fill="none" />
-              {points.map((d, i) => (
-                <circle
-                  key={d.key}
-                  className="rv-pt rv-pt--alt"
-                  cx={cx(i)}
-                  cy={onLine.y(d.onTime)}
-                  r={hover === i ? 4.5 : 3}
-                />
-              ))}
+              {/* Dashed line can't draw via stroke-dashoffset (dasharray is spent
+                  on the dashes), so it plots via a left-to-right clip wipe that
+                  reveals the line + points in step with the turnaround draw. */}
+              <clipPath id="rv-on-wipe">
+                <rect className="rv-on-wipe" x={0} y={0} width={w} height={H} />
+              </clipPath>
+              <g clipPath="url(#rv-on-wipe)">
+                <path className="rv-line rv-line--alt" d={onLine.path} fill="none" />
+                {points.map((d, i) => (
+                  <circle
+                    key={d.key}
+                    className="rv-pt rv-pt--alt"
+                    cx={cx(i)}
+                    cy={onLine.y(d.onTime)}
+                    r={hover === i ? 4.5 : 3}
+                  />
+                ))}
+              </g>
             </>
           )}
 

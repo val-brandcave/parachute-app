@@ -2725,6 +2725,37 @@ textarea {
   white-space: nowrap;
 }
 
+/* New-from-YouConnect row: property · "Review" (the dashboard's intake front
+   door — opens the Order stepper pre-selected on this delivery). */
+.yc-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--md-outline-v);
+}
+.yc-row:last-child {
+  border-bottom: none;
+}
+.yc-main {
+  flex: 1;
+  min-width: 0;
+}
+.yc-main .t {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.yc-main .s {
+  font-size: 12px;
+  color: var(--md-on-surface-v);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 1px;
+}
+
 /* ---- Review volume chart (bespoke SVG combo: bars + line) ---- */
 .rv-head {
   gap: 12px;
@@ -2777,6 +2808,16 @@ textarea {
   stroke-width: 2;
   stroke-dasharray: 5 4;
   animation: none;
+}
+/* Left-to-right reveal for the dashed on-time overlay (line + points), timed to
+   the turnaround draw so both series plot together. transform-box: view-box
+   anchors the scaleX origin to the SVG's left edge. */
+.rv-on-wipe {
+  transform-box: view-box;
+  transform-origin: left center;
+  /* `both` so the hidden scaleX(0) start state also applies during the 0.15s
+     delay — otherwise the line flashes fully visible, vanishes, then animates. */
+  animation: rv-wipe 0.9s cubic-bezier(0.2, 0.7, 0.3, 1) both 0.15s;
 }
 .rv-pt {
   fill: var(--md-primary);
@@ -2972,6 +3013,14 @@ textarea {
 @keyframes rv-draw {
   to {
     stroke-dashoffset: 0;
+  }
+}
+@keyframes rv-wipe {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
   }
 }
 

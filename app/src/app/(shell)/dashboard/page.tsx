@@ -9,7 +9,7 @@ import {
   StatBar,
   type Stat,
   ActionNeeded,
-  RecentReviews,
+  NewFromYouConnect,
   TrendChart,
   DashboardSkeleton,
 } from "@/components/organisms";
@@ -24,7 +24,7 @@ export default function DashboardPage() {
     kpis,
     completed,
     actionNeeded,
-    recent,
+    newFromYc,
     trend,
   } = useDashboard();
 
@@ -114,7 +114,7 @@ export default function DashboardPage() {
 
               <div className="dash-grid">
                 <ActionNeeded reviews={actionNeeded} />
-                <RecentReviews reviews={recent} />
+                <NewFromYouConnect reviews={newFromYc} />
               </div>
             </motion.div>
           )}

@@ -40,9 +40,15 @@ export function useDashboard() {
     [reviews, now],
   );
 
-  // Recent reviews: most recently ordered.
-  const recent = useMemo(
-    () => [...reviews].sort((a, b) => b.orderedAt - a.orderedAt).slice(0, 5),
+  // New from YouConnect: deliveries that have landed (status "intake", source
+  // "yc") but haven't been ordered yet — the dashboard's "front door". Disjoint
+  // from Action needed by construction (that excludes intake), newest first.
+  const newFromYc = useMemo(
+    () =>
+      [...reviews]
+        .filter((r) => r.status === "intake" && r.source === "yc")
+        .sort((a, b) => b.createdAt - a.createdAt)
+        .slice(0, 5),
     [reviews],
   );
 
@@ -137,7 +143,7 @@ export function useDashboard() {
     kpis,
     completed: trend.completed,
     actionNeeded,
-    recent,
+    newFromYc,
     trend,
   };
 }

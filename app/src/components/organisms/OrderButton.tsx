@@ -11,7 +11,7 @@ export function OrderButton({
 }) {
   const openOrder = useOrderStore((s) => s.openOrder);
   return (
-    <Button variant={variant} iconLeft="add" onClick={openOrder}>
+    <Button variant={variant} iconLeft="add" onClick={() => openOrder()}>
       Order a review
     </Button>
   );
