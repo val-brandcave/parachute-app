@@ -27,8 +27,8 @@ controls** (greeting / tabs / search / filter / actions); **command palette** (`
 |---|---|---|
 | `/login` | Auth + SSO pass-through | ✅ built (navy gradient) |
 | `/launch` | YouConnect → Parachute interstitial | ✅ built |
-| `/dashboard` | Overview: greeting, period picker, period-scoped stat bar (+ a live "Pipeline running" tile), Review volume chart, Action needed, Recent reviews | ✅ built (chart/metric data is mock) |
-| `/reviews` | **Reviews** queue (renamed from "My Reviews") — tabs + search + status filter + table, Order button | ✅ built |
+| `/dashboard` | Overview: greeting, period picker, period-scoped stat bar (+ a live "Pipeline running" tile), Review volume chart, Action needed, **New from YouConnect** (intake deliveries → Confirm & run; replaced the redundant "Recent reviews") | ✅ built (chart/metric data is mock) |
+| `/reviews` | **Reviews** queue (team view) — **lifecycle-stage tabs** + Mine-only + severity filter + search; **parties-rich derived-state table** (Property & parties · Type · Pipeline · Findings · Due · Next action · ⋯), Order button | ✅ **rebuilt Jun 2026** — no Status column; state derived via `lib/review-lifecycle`. See early-specs §9 |
 | `/reviews/[id]` | **Review detail** — Technical / Administrative are in-page **tabs** (not routes); Findings / Builder / Workbook are sub-views of the Technical tab | ◑ Technical workspace built (⚠️ old design, focus-mode rebuild pending); Administrative / Builder / Workbook are in-page stubs |
 | `/reviews/[id]/triage` | Intake triage (a distinct intake state — kept as a real route) | ⚠️ old design — functional, pre-redesign styling |
 | `/templates` | Templates hub | 🚧 stub |

@@ -17,11 +17,18 @@ export interface Org extends BaseEntity {
 }
 
 /* ============ Reviews ============ */
+// Honest lifecycle phases (no synthetic "status"). The queue derives its
+// columns/tabs from these via lib/review-lifecycle — it never prints the raw value.
+//   intake       = delivered / new-from-YC, awaiting order ("Confirm & run")
+//   autorejected = failed the quality gate at intake ("Triage")
+//   running      = pipeline S1–S5 in progress
+//   in_review    = pipeline complete, reviewer deciding findings / attesting
+//   returned     = sent back to the fee appraiser, awaiting resubmission
+//   completed    = signed off / filed
 export type ReviewStatus =
   | "intake"
   | "autorejected"
   | "running"
-  | "needs_action"
   | "in_review"
   | "returned"
   | "completed";
@@ -32,7 +39,8 @@ export type ReviewType = "technical" | "administrative";
 export interface Review extends BaseEntity {
   propertyAddress: string;
   propertyType: string; // e.g. "Office (Medical)"
-  bank: string;
+  bank: string; // the lending entity/branch this loan sits under (org = the bank itself)
+  appraisalFirm: string; // the external fee-appraiser firm whose work is under review
   loanNo: string;
   status: ReviewStatus;
   reviewTypes: ReviewType[];
@@ -41,6 +49,7 @@ export interface Review extends BaseEntity {
   riskRating: "low" | "moderate" | "elevated" | null;
   openFindings: number;
   flaggedCount: number;
+  worstSeverity: Severity | null; // drives the queue Outcome chip (crit/fail/flag); null = clean / pre-pipeline
   pipelineStage: number; // 0-5 (0 = not started, 5 = done)
   slaDueAt: number; // epoch ms
   orderedAt: number;

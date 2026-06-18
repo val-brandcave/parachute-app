@@ -183,6 +183,46 @@ Built tabbed; make the display-only parts real (pending the API layer):
 
 ---
 
+## 9. Reviews queue (`/reviews`) — IA & column patterns (settled Jun 2026)
+
+**POC ref:** `#screen-dashboard` review-list (the 7-column team queue) + `REVIEWS[]` data.
+Built first-pass as a thin table; **rebuilt** in this session against the POC + meeting IA.
+
+**Persona / org model (resolved):** the user is a **reviewer / chief appraiser in a
+bank's appraisal-review department** (Ed: *"think about this being an office or
+department… separate the different stages"*). The queue is a **team view**. Model =
+**single bank, multi-branch**: the **org *is* the bank** (org card / header context,
+**not** a row column). The three things that vary per row are:
+- **Reviewer (teammate)** — why you see others' reviews; the team owns the queue. ("Mine only" narrows to you.)
+- **Appraisal firm (fee appraiser)** — the external vendor whose work is under review; the **send-back target**. First-class party (`Review.appraisalFirm`).
+- **Loan / property / program** — the lending entity each appraisal serves (the varying "bank" names in the POC are branches/programs, not separate customers).
+
+**State is derived, never a synthetic status.** The cooked-up `needs_action`/`in_review`
+statuses are gone. `ReviewStatus` = honest phases (`intake · autorejected · running ·
+in_review · returned · completed`). A row's state reads from **Pipeline + Findings + Type**
+together — there is **no Status column**. All derivation lives in `lib/review-lifecycle.ts`:
+- `pipelineView` → the **Pipeline column = the phase carrier**: S1–S5 dots (done/active/idle) for in/post-pipeline, or a word-state (`Awaiting order` · `Blocked at intake` · `Returned · rev 2`).
+- `outcomeView` → **Findings**: worst-severity chip + count (`1 critical` / `5 fail` / `2 flagged` / `clean`); `—` before the pipeline produces findings (needs `Review.worstSeverity`).
+- `nextActionView` → **one derived primary per row** (`Confirm & run`→Order stepper pre-selected · `Triage` · `Review →` · `Sign attestation` · `Compile` · `Download`); quiet text for waits (`Running…`, `With appraiser`).
+- `lifecycleBucket` / `needsMyAction` / `isOverdue` → drive tabs + sort + the dashboard's Action-needed.
+
+**Columns (aligned grid, desktop-first):** `Property & parties` (reviewer `Avatar` +
+address / `appraisalFirm · loan# · propertyType`) · `Type` (TECH/ADMIN pills; `— at order`
+pre-order) · `Pipeline` (`PipelineTracker` molecule) · `Findings` · `Due` (overdue/soon
+color; `SLA paused` for auto-rejected) · `Next action` (outline button / quiet text) · `⋯`
+(`ActionMenu`: Open · Triage · Download). **Risk is NOT a queue column** (it's a
+workbook/finding concept). Row click → review; action/⋯ cells stop propagation.
+
+**Tabs = lifecycle stages** (Ed's "separate the stages"), **not** scope: `All · Needs action
+(in_review) · In pipeline (running) · Sent back (returned) · Completed · Intake (intake +
+auto-rejected)`. **Mine** → a "Mine only" toggle; **Flagged** → folded into a **severity
+filter**. Sort: needs-me → overdue → running → due asc.
+
+**Data/identity added:** `Review.appraisalFirm`, `Review.worstSeverity`; a real **team**
+(`users.seed` + `users.store`); `CURRENT_USER.id = user-001` so "Mine only" resolves.
+
+---
+
 ## Cross-cutting / to add to the data model
 
 New seed/types as these land: `ycEngagements`, `checklistItems`, `checklistTemplates`,

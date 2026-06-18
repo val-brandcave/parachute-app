@@ -5,55 +5,71 @@ import { useReviewQueue } from "./hooks/useReviewQueue";
 import { ReviewTable, ReviewTableSkeleton, OrderButton } from "@/components/organisms";
 import { Tabs } from "@/components/molecules";
 import { Icon } from "@/components/atoms";
+import { cn } from "@/lib/utils";
 
 export default function MyReviewsPage() {
   const {
     isLoading,
     counts,
+    team,
     reviews,
     total,
     tab,
     setTab,
+    mineOnly,
+    setMineOnly,
+    severity,
+    setSeverity,
     query,
     setQuery,
-    status,
-    setStatus,
   } = useReviewQueue();
 
   return (
     <>
-      {/* Header band IS the table toolbar (no redundant title — nav says Reviews) */}
+      {/* Header band IS the table toolbar (no redundant title — nav says Reviews).
+          Tabs partition by lifecycle stage (Ed: "separate the different stages");
+          Mine-only + severity + search are the filter set. */}
       <div className="pagehead">
         <Tabs
           value={tab}
           onChange={setTab}
           tabs={[
             { value: "all", label: "All", count: counts.all },
-            { value: "mine", label: "Mine", count: counts.mine },
-            { value: "flagged", label: "Flagged", count: counts.flagged },
+            { value: "needs_action", label: "Needs action", count: counts.needs_action },
+            { value: "in_pipeline", label: "In pipeline", count: counts.in_pipeline },
+            { value: "sent_back", label: "Sent back", count: counts.sent_back },
+            { value: "completed", label: "Completed", count: counts.completed },
+            { value: "intake", label: "Intake", count: counts.intake },
           ]}
         />
         <div style={{ flex: 1 }} />
+        <button
+          type="button"
+          className={cn("qtoggle", mineOnly && "on")}
+          onClick={() => setMineOnly(!mineOnly)}
+          aria-pressed={mineOnly}
+        >
+          <Icon name={mineOnly ? "check" : "user"} size={14} />
+          Mine only
+        </button>
         <div className="qsearch">
           <Icon name="search" size={15} />
           <input
-            placeholder="Search property, loan #, bank…"
+            placeholder="Search property, loan #, firm…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
         </div>
         <select
           className="qfilter"
-          value={status}
-          onChange={(e) => setStatus(e.target.value as typeof status)}
-          aria-label="Filter by status"
+          value={severity}
+          onChange={(e) => setSeverity(e.target.value as typeof severity)}
+          aria-label="Filter by severity"
         >
-          <option value="any">All statuses</option>
-          <option value="needs_action">Needs action</option>
-          <option value="running">Running</option>
-          <option value="returned">Returned</option>
-          <option value="completed">Completed</option>
-          <option value="autorejected">Auto-rejected</option>
+          <option value="any">Any severity</option>
+          <option value="crit">Critical</option>
+          <option value="fail">Fail</option>
+          <option value="flag">Flagged</option>
         </select>
         <OrderButton />
       </div>
@@ -96,7 +112,7 @@ export default function MyReviewsPage() {
                     No reviews match your filters.
                   </div>
                 ) : (
-                  <ReviewTable reviews={reviews} />
+                  <ReviewTable reviews={reviews} team={team} />
                 )}
 
                 <div

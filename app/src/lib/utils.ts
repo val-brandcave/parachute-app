@@ -52,7 +52,6 @@ export const STATUS_META: Record<
   intake: { label: "Intake", chip: "chip-info" },
   autorejected: { label: "Auto-rejected", chip: "chip-blocked" },
   running: { label: "Running", chip: "chip-info" },
-  needs_action: { label: "Needs action", chip: "chip-flag" },
   in_review: { label: "In review", chip: "chip-info" },
   returned: { label: "Returned", chip: "chip-returned" },
   completed: { label: "Completed", chip: "chip-pass" },

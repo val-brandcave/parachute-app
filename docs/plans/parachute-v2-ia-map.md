@@ -188,3 +188,19 @@ Updated as Phase-3 calls land. `OPEN` = to decide; record the chosen pattern + C
 | 9 | Notifications model + bell panel | **In-app bell panel** (demoable: review ready / returned / assigned / overdue); **email = production channel, engineering-owned** | Panel items deep-link to the review; no standalone primary CTA | ✅ DECIDED Jun 16 |
 
 **All 9 Phase-3 items decided (Jun 16 2026). No open IA items remain.**
+
+---
+
+## 7. Reviews queue — IA & state model (settled Jun 17–18 2026)
+
+Follow-on decisions made while rebuilding `/reviews` from the POC's team queue. Full
+write-up in `parachute-v2-early-specs.md` §9; locked build rules in `app/AGENTS.md`.
+
+| # | Decision | Resolution | Status |
+|---|---|---|---|
+| Q1 | Org / persona model | **Single bank, multi-branch.** User = reviewer/chief appraiser in the bank's review **department** (team view). Org = the bank (org-card context, **not** a row column). Per-row parties = reviewer · external **appraisal firm** (fee appraiser, the send-back target) · loan/property. | ✅ DECIDED Jun 17 |
+| Q2 | Tabs vs filters | **Tabs partition by lifecycle stage** (All · Needs action · In pipeline · Sent back · Completed · Intake) — Ed's "separate the stages." **Mine** → "Mine only" toggle; **Flagged** → severity filter. | ✅ DECIDED Jun 17 |
+| Q3 | Columns | **Parties-rich aligned grid:** Property & parties (reviewer avatar + firm/loan/type) · Type · Pipeline · Findings · Due · Next action · `⋯`. **Risk column dropped** (not a queue signal). | ✅ DECIDED Jun 17 |
+| Q4 | "Cooked-up" statuses | **No Status column.** State is **derived** from Pipeline (phase) + Findings (outcome) + Type (kind) via `lib/review-lifecycle.ts`. `ReviewStatus` = honest phases only (`intake · autorejected · running · in_review · returned · completed`). | ✅ DECIDED Jun 18 |
+| Q5 | Pipeline tracker | **Segmented S1–S5 dots + state label** (`PipelineTracker` molecule); word-states for pre/post-pipeline phases. | ✅ DECIDED Jun 17 |
+| Q6 | Next action / row actions | **One derived primary** per row (outline button; quiet text for waits) + **`⋯` `ActionMenu`** for secondary (Open · Triage · Download). | ✅ DECIDED Jun 17 |

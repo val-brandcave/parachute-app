@@ -137,7 +137,7 @@ const AREAS = [
             desc:'Overview: greeting, period picker, KPI StatBar (+ live "Pipeline running" tile), Review-volume chart, Action-needed, and New from YouConnect (intake deliveries → "Confirm & run" opens the Order stepper pre-selected). Replaced the redundant "Recent reviews" widget, which overlapped Action-needed.' },
 
           { name:'Reviews', status:'built', route:'/reviews',
-            desc:'Operational queue — tabs (All/Mine/Flagged) + search + status filter + table. Order-a-review button.',
+            desc:'Operational TEAM queue (rebuilt Jun 2026). Tabs partition by lifecycle stage (All · Needs action · In pipeline · Sent back · Completed · Intake); Mine-only toggle + severity filter + search. Parties-rich table — Property & parties (reviewer avatar + appraisal firm + loan + type) · Type · Pipeline tracker · Findings · Due · Next action · ⋯. NO Status column: state is derived (Pipeline + Findings + Type) via lib/review-lifecycle. Org = the bank (context, not a column); appraisal firm = the external fee appraiser. Order-a-review button.',
             children:[
               { name:'Review detail', status:'locked', route:'/reviews/[id]', kind:'page',
                 desc:'Single route. Property context bar; Technical / Administrative in-page tabs (redirects to Technical).',

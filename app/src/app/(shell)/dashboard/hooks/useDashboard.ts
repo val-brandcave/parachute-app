@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useReviewsStore } from "@/store";
+import { isOverdue } from "@/lib/review-lifecycle";
 import type { Period, DateRange } from "@/components/molecules";
 
 const DAY = 86400000;
@@ -25,15 +26,16 @@ export function useDashboard() {
 
   const [now] = useState(() => Date.now());
 
-  // Action needed: most urgent items waiting on the reviewer.
+  // Action needed: items waiting on a reviewer decision. Excludes intake
+  // (those live in the "New from YouConnect" widget) to avoid duplication.
   const actionNeeded = useMemo(
     () =>
       [...reviews]
         .filter(
           (r) =>
-            r.status === "needs_action" ||
+            r.status === "in_review" ||
             r.status === "autorejected" ||
-            (r.slaDueAt < now && r.status !== "completed"),
+            isOverdue(r, now),
         )
         .sort((a, b) => a.slaDueAt - b.slaDueAt)
         .slice(0, 5),

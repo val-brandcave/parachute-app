@@ -3,6 +3,7 @@
  * replace this with a session/store lookup.
  */
 export const CURRENT_USER = {
+  id: "user-001", // matches seedUsers — drives "Mine only" in the review queue
   name: "Val Vinnakota",
   firstName: "Val",
   email: "val@brandcave.co",
