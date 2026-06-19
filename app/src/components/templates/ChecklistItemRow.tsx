@@ -10,17 +10,19 @@ export function ChecklistItemRow({
   item,
   index,
   onOpen,
+  readOnly = false,
 }: {
   item: ChecklistTemplateItem;
   index: number;
   onOpen: () => void;
+  readOnly?: boolean;
 }) {
   const flagged = item.map === "warn";
+  const Tag = readOnly ? "div" : "button";
   return (
-    <button
-      type="button"
-      className={`ck-row${flagged ? " warn" : ""}`}
-      onClick={onOpen}
+    <Tag
+      {...(readOnly ? {} : { type: "button" as const, onClick: onOpen })}
+      className={`ck-row${flagged ? " warn" : ""}${readOnly ? " ck-row--ro" : ""}`}
     >
       <span className="ck-row-num">{index}</span>
       <span className="ck-row-main">
@@ -39,6 +41,6 @@ export function ChecklistItemRow({
         </Chip>
         <Chip tone="neutral">{item.type === "binary" ? "Binary" : "Qualitative"}</Chip>
       </span>
-    </button>
+    </Tag>
   );
 }

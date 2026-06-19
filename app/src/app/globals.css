@@ -394,6 +394,41 @@ textarea {
   caret-color: #1a1d21;
 }
 
+/* ---------------------------------------------------------------------------
+   DARK MODE inputs (revised Jun 19 2026). The standing rule kept form inputs
+   white in BOTH themes; on dark cards that read as "focus-hungry" white islands.
+   In dark mode only, the always-white families (.field + .ui-input/.ui-textarea)
+   now follow the theme: an elevated dark fill, near-white ink, and
+   `color-scheme: dark` so the OS-drawn <select> option lists, date pickers and
+   Chrome autofill render dark too. Light mode is intentionally untouched
+   (`background-color`, not the `background` shorthand, so the select chevron
+   image survives). --------------------------------------------------------- */
+:root[data-theme="dark"] .field input,
+:root[data-theme="dark"] .field select,
+:root[data-theme="dark"] .field textarea,
+:root[data-theme="dark"] .ui-input,
+:root[data-theme="dark"] .ui-textarea {
+  background-color: var(--md-surface-2);
+  color: var(--md-on-surface);
+  color-scheme: dark;
+}
+:root[data-theme="dark"] .field input::placeholder,
+:root[data-theme="dark"] .field textarea::placeholder {
+  color: var(--md-on-surface-t);
+}
+/* Lighter select chevron on the dark fill (light mode keeps the fixed grey). */
+:root[data-theme="dark"] .field select {
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='16'%20height='16'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23a0a5ab'%20stroke-width='1.75'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpath%20d='M6%209l6%206%206-6'/%3E%3C/svg%3E");
+}
+:root[data-theme="dark"] .field input:-webkit-autofill,
+:root[data-theme="dark"] .field textarea:-webkit-autofill,
+:root[data-theme="dark"] .ui-input:-webkit-autofill,
+:root[data-theme="dark"] .ui-textarea:-webkit-autofill {
+  -webkit-text-fill-color: var(--md-on-surface);
+  -webkit-box-shadow: 0 0 0 1000px var(--md-surface-2) inset;
+  caret-color: var(--md-on-surface);
+}
+
 /* ============ Segmented buttons ============ */
 .segmented {
   display: inline-flex;
@@ -1721,11 +1756,10 @@ textarea {
   position: relative;
   display: inline-block;
 }
+/* Position (fixed + top/right/bottom) is set inline from the trigger rect by
+   the portaled ActionMenu; this rule owns only appearance + stacking. */
 .ui-menu-pop {
-  position: absolute;
-  top: calc(100% + 6px);
-  right: 0;
-  z-index: 40;
+  z-index: 200;
   background: var(--md-surface);
   border: 1px solid var(--md-outline-v);
   border-radius: 11px;
@@ -3059,6 +3093,74 @@ label.field {
 }
 .ord-inherit {
   color: var(--md-accent-d);
+}
+
+/* per-review template config (Configure step): inherited workbook + checklist picker */
+.ord-tpls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ord-tpl-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--md-outline-v);
+  border-radius: 12px;
+  background: var(--md-surface-1);
+}
+.ord-tpl-ic {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: var(--md-selected);
+  color: var(--md-on-selected);
+  flex: none;
+}
+.ord-tpl-body {
+  flex: 1;
+  min-width: 0;
+}
+.ord-tpl-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--md-on-surface);
+}
+.ord-tpl-ver {
+  font-size: 11.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--md-on-surface-v);
+  background: var(--md-surface-2);
+  border-radius: 6px;
+  padding: 1px 6px;
+}
+.ord-tpl-meta {
+  font-size: 11.5px;
+  color: var(--md-on-surface-v);
+  margin-top: 2px;
+}
+.ord-tpl-field {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+}
+.ord-tpl-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--md-on-surface-v);
+  margin: 10px 0 0;
+}
+.ord-tpl-hint.is-override {
+  color: var(--md-on-surface);
 }
 /* Org defaults: a direct toggle row (no "Override…" disclosure). */
 .ord-switch-row {
@@ -5213,6 +5315,226 @@ select.qfilter {
 .tpl-card:hover .tpl-card-open {
   color: var(--md-accent-d);
   transform: translateX(3px);
+}
+
+/* ---- versioned family cards (checklist + workbook) ---- */
+.fam-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.fam-card {
+  background: var(--md-surface);
+  border: 1px solid var(--md-outline-v);
+  border-radius: 14px;
+  box-shadow: var(--md-elev-1);
+  overflow: hidden;
+  transition: box-shadow 0.16s, border-color 0.16s;
+}
+.fam-card:hover {
+  box-shadow: var(--md-elev-2);
+}
+
+/* hero — no kind-icon (the tab already says the kind); title + version badge +
+   one dotted secondary metadata line + right-aligned actions */
+.fam-hero {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+}
+.fam-hero-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.fam-hero-titles {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+.fam-title {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--md-on-surface);
+  letter-spacing: -0.01em;
+  /* clickable → details/view */
+  background: none;
+  border: none;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  transition: color 0.14s;
+}
+.fam-title:hover {
+  color: var(--md-accent-d);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.fam-title:focus-visible {
+  outline: 2px solid var(--ring-accent, var(--md-accent));
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+.fam-vbadge {
+  display: inline-grid;
+  place-items: center;
+  min-width: 34px;
+  padding: 2px 8px;
+  border-radius: 7px;
+  background: var(--md-surface-2);
+  color: var(--md-on-surface-v);
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.fam-sub {
+  font-size: 12.5px;
+  color: var(--md-on-surface-v);
+  font-variant-numeric: tabular-nums;
+}
+.fam-hero-actions {
+  display: flex;
+  gap: 8px;
+  flex: none;
+}
+
+/* footer disclosure — slim, full-width strip that expands the history inline */
+.fam-disclose {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 20px;
+  border: none;
+  border-top: 1px solid var(--md-hairline, var(--md-outline-v));
+  background: var(--md-surface);
+  color: var(--md-on-surface-v);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: background 0.14s, color 0.14s;
+}
+.fam-disclose:hover {
+  background: var(--md-surface-1);
+  color: var(--md-on-surface);
+}
+.fam-disclose-caret {
+  transition: transform 0.2s ease;
+}
+.fam-disclose-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--md-surface-2);
+  color: var(--md-on-surface-v);
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.fam-history {
+  background: var(--md-surface-1);
+}
+.fam-history-inner {
+  padding: 8px 12px 12px;
+  border-top: 1px solid var(--md-hairline, var(--md-outline-v));
+}
+
+/* ---- version history table — flat hairline rows, real columns ---- */
+.vh-table {
+  display: flex;
+  flex-direction: column;
+}
+.vh-head,
+.vh-row {
+  display: grid;
+  grid-template-columns: 72px minmax(96px, 1.1fr) 132px 1.4fr 40px;
+  align-items: center;
+  gap: 12px;
+}
+.vh-head {
+  padding: 8px 12px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--md-on-surface-t);
+}
+.vh-row {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+}
+.vh-row + .vh-row {
+  border-top: 1px solid var(--md-hairline, var(--md-outline-v));
+}
+.vh-row--active {
+  background: var(--md-selected);
+  border-color: transparent;
+}
+/* Don't draw the hairline directly against the tinted active pill (above or below). */
+.vh-row--active + .vh-row,
+.vh-row + .vh-row--active {
+  border-top-color: transparent;
+}
+.vh-vbadge {
+  display: inline-grid;
+  place-items: center;
+  min-width: 38px;
+  padding: 3px 9px;
+  border-radius: 7px;
+  background: var(--md-surface-2);
+  color: var(--md-on-surface);
+  font-size: 12.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.vh-row--active .vh-vbadge {
+  background: var(--md-surface);
+}
+.vh-contents {
+  font-size: 13px;
+  color: var(--md-on-surface-v);
+  font-variant-numeric: tabular-nums;
+}
+.vh-date {
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--md-on-surface-v);
+}
+.vh-row-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* ---- mapper read-only banner + non-interactive rows ---- */
+.ck-ro-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 1180px;
+  margin-bottom: 16px;
+  padding: 11px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--md-outline-v);
+  background: var(--md-surface-1);
+  color: var(--md-on-surface-v);
+  font-size: 13px;
+}
+.ck-row--ro {
+  cursor: default;
+}
+.ck-row--ro:hover {
+  background: none;
 }
 
 /* ---- response templates: toolbar + master/detail ---- */

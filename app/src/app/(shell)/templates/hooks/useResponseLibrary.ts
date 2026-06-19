@@ -33,7 +33,14 @@ export function useResponseLibrary() {
   const { responses, isLoading, fetchTemplates, saveResponse, deleteResponse } =
     useTemplatesStore();
 
-  const [scope, setScope] = useState<TemplateScope>("org");
+  // Scope is fixed by the card you entered from (?scope=org|mine) — there's no
+  // in-page toggle. Lazy init avoids useSearchParams' Suspense bailout.
+  const [scope, setScope] = useState<TemplateScope>(() => {
+    if (typeof window === "undefined") return "org";
+    return new URLSearchParams(window.location.search).get("scope") === "mine"
+      ? "mine"
+      : "org";
+  });
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editing, setEditing] = useState<ResponseDraft | null>(null);
   // Honour a ?new=1 deep-link from the hub once, at mount (no effect → no

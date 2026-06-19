@@ -10,12 +10,14 @@ export function TemplateHealthRail({
   usedInReviews,
   onReplaceSource,
   onAddItem,
+  readOnly = false,
 }: {
   stats: { items: number; groups: number; mapped: number; warn: number };
   sourceFile: string;
   usedInReviews: number;
   onReplaceSource: () => void;
   onAddItem: () => void;
+  readOnly?: boolean;
 }) {
   return (
     <aside className="ck-rail">
@@ -49,9 +51,11 @@ export function TemplateHealthRail({
       <div className="ck-file">
         <Icon name="document" size={16} />
         <span className="ck-file-name">{sourceFile}</span>
-        <button type="button" className="ck-file-replace" onClick={onReplaceSource}>
-          replace
-        </button>
+        {!readOnly && (
+          <button type="button" className="ck-file-replace" onClick={onReplaceSource}>
+            replace
+          </button>
+        )}
       </div>
 
       <p className="ck-rail-note">
@@ -60,9 +64,11 @@ export function TemplateHealthRail({
         inconsistently — fix the mapping before publishing.
       </p>
 
-      <Button variant="outline" size="sm" iconLeft="add" block onClick={onAddItem}>
-        Add item manually
-      </Button>
+      {!readOnly && (
+        <Button variant="outline" size="sm" iconLeft="add" block onClick={onAddItem}>
+          Add item manually
+        </Button>
+      )}
     </aside>
   );
 }

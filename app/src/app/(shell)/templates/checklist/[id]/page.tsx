@@ -20,9 +20,20 @@ function formatDate(ts?: number): string {
 
 export default function ChecklistMapperPage() {
   const params = useParams();
-  const id = String(params.id);
+  const familyId = String(params.id);
+
+  // The target version is page state seeded from ?v= (lazy init — the codebase
+  // avoids useSearchParams' Suspense bailout). Branching a new draft updates it
+  // in place via history.replaceState, no route remount.
+  const [versionId, setVersionId] = useState<string | undefined>(() => {
+    if (typeof window === "undefined") return undefined;
+    return new URLSearchParams(window.location.search).get("v") ?? undefined;
+  });
+
   const {
-    checklist,
+    family,
+    version,
+    readOnly,
     groups,
     stats,
     drawerItem,
@@ -34,7 +45,9 @@ export default function ChecklistMapperPage() {
     saveItem,
     splitItem,
     publish,
-  } = useChecklistMapper(id);
+    createDraft,
+    promote,
+  } = useChecklistMapper(familyId, versionId);
 
   const [reextracting, setReextracting] = useState(false);
   const reextract = () => {
@@ -42,14 +55,21 @@ export default function ChecklistMapperPage() {
     setTimeout(() => setReextracting(false), 1400);
   };
 
-  if (!checklist) {
+  const onNewVersion = async () => {
+    const draftId = await createDraft();
+    if (!draftId) return;
+    setVersionId(draftId);
+    window.history.replaceState(null, "", `/templates/checklist/${familyId}?v=${draftId}`);
+  };
+
+  if (!family || !version) {
     return (
       <>
-        <PageHeader eyebrow="Templates" title="Checklist" />
+        <PageHeader title="Checklist" />
         <div className="pagebody">
           <Card style={{ padding: "44px", textAlign: "center", color: "var(--md-on-surface-v)" }}>
             <Icon name="checklist" size={36} style={{ margin: "0 auto" }} />
-            <p style={{ marginTop: 12 }}>This checklist template could not be found.</p>
+            <p style={{ marginTop: 12 }}>This checklist version could not be found.</p>
           </Card>
         </div>
       </>
@@ -67,36 +87,73 @@ export default function ChecklistMapperPage() {
     };
   });
 
+  const sub =
+    version.status === "draft"
+      ? "Draft · not yet published — edits go live when you publish"
+      : version.status === "published"
+        ? `v${version.version} · Published ${formatDate(version.publishedAt)}`
+        : `v${version.version} · Archived${
+            version.publishedAt ? ` · was published ${formatDate(version.publishedAt)}` : ""
+          }`;
+
   return (
     <>
       <PageHeader
-        eyebrow="Templates · Administrative checklist"
-        title={checklist.name}
-        sub={`v${checklist.version} · published ${formatDate(checklist.publishedAt)}`}
+        title={family.name}
+        sub={sub}
         actions={
-          <>
-            <Button
-              variant="outline"
-              iconLeft="refresh"
-              onClick={reextract}
-              disabled={reextracting}
-            >
-              {reextracting ? "Re-extracting…" : "Re-extract"}
-            </Button>
-            <Button iconLeft="publish" onClick={publish}>
-              Publish new version
-            </Button>
-          </>
+          readOnly ? (
+            <>
+              {version.status === "archived" && (
+                <Button variant="outline" iconLeft="publish" onClick={promote}>
+                  Promote to published
+                </Button>
+              )}
+              <Button iconLeft="add" onClick={onNewVersion}>
+                New version
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                variant="outline"
+                iconLeft="refresh"
+                onClick={reextract}
+                disabled={reextracting}
+              >
+                {reextracting ? "Re-extracting…" : "Re-extract"}
+              </Button>
+              <Button iconLeft="publish" onClick={publish}>
+                Publish new version
+              </Button>
+            </>
+          )
         }
       />
 
       <div className="pagebody">
+        {readOnly && (
+          <div className="ck-ro-banner">
+            <Icon name="eye" size={16} />
+            <span>
+              You’re viewing a {version.status} version (read-only).{" "}
+              {version.status === "archived"
+                ? "Promote it to make it the published version, or start a new version from it."
+                : "Start a new version to change the items."}
+            </span>
+          </div>
+        )}
+
         <div className="ck-shell">
           <div className="ck-items">
             <div className="ck-items-head">
-              <span className="ck-items-title">Extracted checklist items</span>
+              <span className="ck-items-title">
+                {readOnly ? "Checklist items" : "Extracted checklist items"}
+              </span>
               <span className="ck-items-hint text-tertiary">
-                AI-mapped from your .docx — confirm or adjust each mapping
+                {readOnly
+                  ? `${stats.items} items · ${stats.groups} groups`
+                  : "AI-mapped from your .docx — confirm or adjust each mapping"}
               </span>
             </div>
             {numbered.map(({ group, items }) => (
@@ -107,6 +164,7 @@ export default function ChecklistMapperPage() {
                     key={item.id}
                     item={item}
                     index={num}
+                    readOnly={readOnly}
                     onOpen={() => openItem(item)}
                   />
                 ))}
@@ -116,8 +174,9 @@ export default function ChecklistMapperPage() {
 
           <TemplateHealthRail
             stats={stats}
-            sourceFile={checklist.sourceFile}
-            usedInReviews={checklist.usedInReviews}
+            sourceFile={version.sourceFile}
+            usedInReviews={family.usedInReviews}
+            readOnly={readOnly}
             onReplaceSource={reextract}
             onAddItem={openNew}
           />

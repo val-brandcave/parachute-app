@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useTemplatesStore } from "@/store";
+import { activeVersion } from "@/lib/template-versions";
 import { generateId, type ChecklistTemplateItem } from "@/types";
 
 const NEW_ITEM_GROUP = "Bank Policy & Special Considerations";
@@ -17,58 +19,70 @@ function blankItem(group: string): ChecklistTemplateItem {
 }
 
 /**
- * State for the Compliance Checklist mapper: grouped items, health stats, and
- * the BottomSheet item-edit drawer (the focused sub-task surface). Selection is
- * derived from the route id; editing/adding flows through one drawer.
+ * State for the Compliance Checklist mapper, scoped to ONE version of a family.
+ * The target version is `?v=` (or the family's active draft/published one).
+ * Only a `draft` version is editable — published/archived versions render
+ * read-only with new-version / promote affordances instead.
  */
-export function useChecklistMapper(id: string) {
+export function useChecklistMapper(familyId: string, versionId?: string) {
+  const router = useRouter();
   const {
     checklists,
     isLoading,
     fetchTemplates,
     saveChecklistItem,
-    publishChecklistVersion,
+    ensureChecklistDraft,
+    publishChecklistDraft,
+    promoteChecklistVersion,
   } = useTemplatesStore();
 
   const [drawerItem, setDrawerItem] = useState<ChecklistTemplateItem | null>(null);
   const [drawerIsNew, setDrawerIsNew] = useState(false);
-  // Kept separate from drawerItem so closing animates out (item lingers for the
-  // exit transition) rather than vanishing.
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
     fetchTemplates();
   }, [fetchTemplates]);
 
-  const checklist = checklists.find((c) => c.id === id);
+  const family = checklists.find((c) => c.id === familyId);
+  const version = useMemo(() => {
+    if (!family) return undefined;
+    return versionId
+      ? family.versions.find((v) => v.id === versionId)
+      : activeVersion(family.versions);
+  }, [family, versionId]);
+
+  const readOnly = version?.status !== "draft";
 
   const groups = useMemo(() => {
-    if (!checklist) return [];
+    if (!version) return [];
     const map = new Map<string, ChecklistTemplateItem[]>();
-    for (const it of checklist.items) {
+    for (const it of version.items) {
       if (!map.has(it.group)) map.set(it.group, []);
       map.get(it.group)!.push(it);
     }
     return Array.from(map, ([group, items]) => ({ group, items }));
-  }, [checklist]);
+  }, [version]);
 
   const stats = useMemo(() => {
-    const items = checklist?.items ?? [];
+    const items = version?.items ?? [];
     return {
       items: items.length,
       groups: new Set(items.map((i) => i.group)).size,
       mapped: items.filter((i) => i.map === "ok").length,
       warn: items.filter((i) => i.map === "warn").length,
     };
-  }, [checklist]);
+  }, [version]);
 
   const openItem = (item: ChecklistTemplateItem) => {
+    if (readOnly) return;
     setDrawerIsNew(false);
     setDrawerItem(item);
     setDrawerOpen(true);
   };
 
   const openNew = () => {
+    if (readOnly) return;
     setDrawerIsNew(true);
     setDrawerItem(blankItem(NEW_ITEM_GROUP));
     setDrawerOpen(true);
@@ -77,26 +91,27 @@ export function useChecklistMapper(id: string) {
   const closeDrawer = () => setDrawerOpen(false);
 
   const saveItem = async (item: ChecklistTemplateItem) => {
-    await saveChecklistItem(id, item);
+    if (version) await saveChecklistItem(familyId, version.id, item);
     setDrawerOpen(false);
   };
 
   // Split a double-barrelled row into two mapped items at the first "?".
   const splitItem = async (item: ChecklistTemplateItem) => {
+    if (!version) return;
     const clauses = item.question
       .split("?")
       .map((s) => s.trim())
       .filter(Boolean);
     const first = (clauses[0] ?? item.question).replace(/\?+$/, "") + "?";
     const second = clauses.slice(1).join("? ").trim();
-    await saveChecklistItem(id, {
+    await saveChecklistItem(familyId, version.id, {
       ...item,
       question: first,
       map: "ok",
       hint: undefined,
     });
     if (second) {
-      await saveChecklistItem(id, {
+      await saveChecklistItem(familyId, version.id, {
         id: generateId(),
         group: item.group,
         orig: item.orig,
@@ -109,11 +124,26 @@ export function useChecklistMapper(id: string) {
     setDrawerOpen(false);
   };
 
-  const publish = () => publishChecklistVersion(id);
+  // Publish the draft, then return to the library (now the new published version).
+  const publish = async () => {
+    await publishChecklistDraft(familyId);
+    router.push("/templates");
+  };
+
+  // From a read-only version: branch a fresh draft (based on this version) and
+  // return its id so the page can switch to it in place (no route remount).
+  const createDraft = () => ensureChecklistDraft(familyId, version?.id);
+
+  const promote = async () => {
+    if (version) await promoteChecklistVersion(familyId, version.id);
+    router.push("/templates");
+  };
 
   return {
     isLoading,
-    checklist,
+    family,
+    version,
+    readOnly,
     groups,
     stats,
     drawerItem,
@@ -125,5 +155,7 @@ export function useChecklistMapper(id: string) {
     saveItem,
     splitItem,
     publish,
+    createDraft,
+    promote,
   };
 }

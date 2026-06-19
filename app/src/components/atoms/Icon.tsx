@@ -67,6 +67,8 @@ import {
   IconRefresh,
   IconArrowsSplit2,
   IconCloudUpload,
+  IconCopy,
+  IconHistory,
   type Icon as TablerIcon,
 } from "@tabler/icons-react";
 
@@ -139,6 +141,8 @@ export const ICONS = {
   refresh: IconRefresh,
   split: IconArrowsSplit2,
   publish: IconCloudUpload,
+  copy: IconCopy,
+  history: IconHistory,
 } satisfies Record<string, TablerIcon>;
 
 export type IconName = keyof typeof ICONS;
