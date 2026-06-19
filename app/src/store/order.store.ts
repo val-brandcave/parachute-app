@@ -40,6 +40,9 @@ export interface OrderDraft {
   existingReviewId: string | null;
   uploadParsed: boolean; // standalone mode: has the dropped PDF been parsed?
   reviewTypes: ReviewType[];
+  // Admin checklist for this order. null = use the org default (resolved at
+  // render); a value = a per-order override (the reviewer picked another).
+  checklistId: string | null;
   assigneeId: string;
   inheritedAssignee: boolean; // assignee came from the YC delivery
   dueDate: string; // yyyy-mm-dd, "" = use SLA default
@@ -59,6 +62,7 @@ function emptyDraft(): OrderDraft {
     existingReviewId: null,
     uploadParsed: false,
     reviewTypes: ["technical"],
+    checklistId: null,
     assigneeId: CURRENT_USER.id,
     inheritedAssignee: false,
     dueDate: "",
@@ -87,6 +91,7 @@ interface OrderState {
   setUploadField: (key: keyof OrderProperty, value: string) => void;
 
   toggleType: (t: ReviewType) => void;
+  setChecklist: (id: string) => void;
   setAssignee: (id: string) => void;
   setDue: (date: string) => void;
   setPriority: (p: "normal" | "high") => void;
@@ -238,6 +243,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       },
     })),
 
+  setChecklist: (id) => set((s) => ({ draft: { ...s.draft, checklistId: id } })),
   setAssignee: (id) =>
     set((s) => ({ draft: { ...s.draft, assigneeId: id, inheritedAssignee: false } })),
   setDue: (dueDate) => set((s) => ({ draft: { ...s.draft, dueDate } })),

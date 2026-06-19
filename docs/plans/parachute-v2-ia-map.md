@@ -28,10 +28,10 @@ graph TD
   reviews["/reviews — queue (tabs + search + filter)"]:::built
   rid["/reviews/[id] — review detail (redirects to Technical tab)"]:::locked
   triage["/reviews/[id]/triage — intake triage (only routed sub-page)"]:::undecided
-  templates["/templates — templates hub"]:::undecided
-  tpl_chk["checklist mapper"]:::undecided
-  tpl_resp["response templates (org + mine)"]:::undecided
-  tpl_layout["org workbook layout (= Builder org mode)"]:::locked
+  templates["/templates — tabbed library (Checklist · Response · Workbook)"]:::built
+  tpl_chk["/templates/checklist/[id] — versioned mapper (?v=)"]:::built
+  tpl_resp["/templates/responses — org + personal libraries (?scope=)"]:::built
+  tpl_layout["/templates/workbook-layout — per-profile layout (Builder edits org mode)"]:::built
   settings["/settings — tabbed"]:::built
   components["/components — design-system showcase"]:::temp
   styleguide["/styleguide — remove before handoff"]:::temp
@@ -183,7 +183,7 @@ Updated as Phase-3 calls land. `OPEN` = to decide; record the chosen pattern + C
 | 4 | Administrative workspace chrome | **Shared focus-mode shell** (list rail + focus pane + docked source); attestation items instead of findings | Yes/No/NA as the in-pane primary set; "Confirm routine answers" + "Sign" follow Technical's hierarchy | ✅ DECIDED Jun 16 |
 | 5 | Workbook ↔ Builder customization split | **Builder owns customization**; Workbook = clean compiled doc + lifecycle only | Workbook: "Sign" primary → "Complete"/"Return" follow; no customization CTAs on the doc | ✅ DECIDED Jun 16 |
 | 6 | Builder depth for v2 | **Focused customize panel** (reorder/exclude sections, show-hide, theme, font, risk labels). Full 3-pane builder + appraisal-section import + org section-library publish **deferred** | "Preview workbook" primary; settings are toggles, not CTAs | ✅ DECIDED Jun 16 |
-| 7 | Templates hub shape / checklist home / editor | Hub = **cards → sub-routes**; Checklist Mapper **home = Templates** (Settings→Compliance links in); Response-template editor = **master/detail within its sub-route** | Per sub-route: one primary ("Publish version" / "New template"); rest secondary | ✅ DECIDED Jun 16 |
+| 7 | Templates hub shape / checklist home / editor | ~~Hub = **cards → sub-routes**~~ → **REVISED Jun 19 to tabs of kinds + versioning + a default model — see §9.** Checklist Mapper **home = Templates** (Settings→Compliance links in) and Response-template editor = **master/detail within its sub-route** still hold. | ↳ §9 supersedes the hub-shape + per-sub-route action parts | ✅ DECIDED Jun 16 · 🔄 revised Jun 19 |
 | 8 | Triage placement | **Own route** `/reviews/[id]/triage` (the only routed review sub-page); linked from the Dashboard "Intake triage" tile | "Override & admit" primary (navy, requires audited reason → starts pipeline); "Confirm & return to appraiser" secondary (outline, confirm) | ✅ DECIDED Jun 16 |
 | 9 | Notifications model + bell panel | **In-app bell panel** (demoable: review ready / returned / assigned / overdue); **email = production channel, engineering-owned** | Panel items deep-link to the review; no standalone primary CTA | ✅ DECIDED Jun 16 |
 
@@ -229,3 +229,23 @@ write-up in `parachute-v2-early-specs.md` §1; locked build rules in `app/AGENTS
 | O3 | Standalone upload flow | **Upload-first.** The dropzone is the hero; on parse, property fields (address/type/lender/loan#/firm/due) **AI-autofill** (editable verify-and-correct). Mirrors how YC deliveries arrive pre-filled — both source modes converge on "verify the property." | ✅ DECIDED Jun 18 |
 | O4 | Second review (in-queue YC) | Selecting a YC delivery **already in the queue** is **allowed, with an amber "already in your queue — continue only for an intentional second review" warning** (not blocked; no separate route). | ✅ DECIDED Jun 18 |
 | O5 | Source data | New `YcDelivery` seed (`yc-deliveries.seed.ts`) backs the YouConnect inbox: property, loan#, type, delivered date, bank, doc meta, `status: new \| in_queue` (+ `existingReviewId` for second-review detection). | ✅ DECIDED Jun 18 |
+
+---
+
+## 9. Templates — versioning, defaults & edit-centric cards (settled Jun 19 2026)
+
+Follow-on decisions from iterating on `/templates` (supersedes the hub-shape parts of
+decision #7). Full write-up in `parachute-v2-templates-build-plan.md`; locked build
+rules in `app/AGENTS.md`.
+
+| # | Decision | Resolution | Status |
+|---|---|---|---|
+| T1 | Hub shape | **Tabs of kinds** (Compliance Checklists · Response Templates · Workbook Layout), in the `.pagehead` band — reverses #7's "cards → sub-routes." Each tab = a list of full-width artifact cards; editors stay drill-in routes. | 🔄 REVISED Jun 19 (was #7) |
+| T2 | Versioning (Checklist + Workbook) | Families hold `versions[]` (`status: published \| draft \| archived`); **≤1 published + ≤1 draft**, archived kept (in-flight reviews stay pinned). Resolve via `lib/template-versions`; **no published-pointer**. Card hero = published version; collapsible footer = the version-history table. **Response does NOT version** (live snippet library). | ✅ DECIDED Jun 19 |
+| T3 | Lifecycle | **Draft → Publish; Promote = rollback.** Editing creates/continues the single draft; "Publish new version" freezes it active & archives the prior; "Promote" re-publishes an archived snapshot. A new `.docx` upload lands as a draft. | ✅ DECIDED Jun 19 |
+| T4 | Which template applies (defaults) | **Checklist = a single org default** (`isDefault`, store-enforced; order picker defaults to it + AI-recommends; reviewer overrides per order). **Workbook = one default per review profile** (`profile` + `isDefault`; auto-inherited, tweaked per review in the Builder). Both transferable via the card `⋯` "Set as default" **and** Settings → Review defaults (single source of truth). | ✅ DECIDED Jun 19 |
+| T5 | Edit-centric card actions | **Title → details/view** (link); **one primary write button** (Checklist → Edit/Continue draft · Workbook → Open · Response → Open); **secondary actions in a hero `⋯`** (Set as default / Duplicate / Delete; the default can't delete/re-default itself). Dropped "New version" / "View current" / "New template" buttons (new versions are saved inside the editor; response snippets are created inside the library). | ✅ DECIDED Jun 19 |
+| T6 | Order ↔ Templates wiring | Order **Configure** has a "Templates for this review" sub-section: an **admin checklist picker** (default + "AI-recommended" / "override — audited") and a **read-only inherited workbook-layout** row (profile-derived; editable in the Builder, NOT at order). Summary echoes both. Workbook stays read-only at order (kept inherited — per-review layout edits live in the Builder, decisions #5/#6). | ✅ DECIDED Jun 19 |
+| T7 | Checklist creation | **Deferred** pending client clarity on the `.docx` ingest. The upload wizard + `addChecklist` are kept **dormant** (unmounted); no create entry point in the UI. | ⏸️ DEFERRED Jun 19 |
+| T8 | Dark-mode inputs | **Theme-aware in dark mode** (elevated dark fill, near-white ink, `color-scheme: dark` for native dropdowns/date pickers/autofill); **light mode keeps the client's white inputs**. Reverses the "white in both themes" client rule **in dark only** — flagged for Realwired ([client Q2](parachute-v2-client-questions.md)). | 🟡 CHANGED Jun 19, confirm w/ client |
+| T9 | Overlay portal rule | **Every floating layer portals to `document.body` with fixed positioning** (tooltips, `⋯` menus, dropdowns, date pickers) so ancestor `overflow:hidden` can't clip them. `ActionMenu` migrated to this (was `position:absolute`, got clipped in cards/tables). Canonical impls: `Tooltip.tsx`, `ActionMenu.tsx`. | ✅ DECIDED Jun 19 |

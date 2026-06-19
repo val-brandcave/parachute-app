@@ -9,3 +9,4 @@ export {
   ORDER_STEP_COUNT,
 } from "./order.store";
 export type { OrderDraft, OrderProperty, OrderPrefill } from "./order.store";
+export { useTemplatesStore } from "./templates.store";

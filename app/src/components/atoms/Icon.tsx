@@ -61,6 +61,14 @@ import {
   IconRocket,
   IconGavel,
   IconEye,
+  IconQuote,
+  IconUpload,
+  IconTrash,
+  IconRefresh,
+  IconArrowsSplit2,
+  IconCloudUpload,
+  IconCopy,
+  IconHistory,
   type Icon as TablerIcon,
 } from "@tabler/icons-react";
 
@@ -127,6 +135,14 @@ export const ICONS = {
   rocket: IconRocket,
   gavel: IconGavel,
   eye: IconEye,
+  quote: IconQuote,
+  upload: IconUpload,
+  trash: IconTrash,
+  refresh: IconRefresh,
+  split: IconArrowsSplit2,
+  publish: IconCloudUpload,
+  copy: IconCopy,
+  history: IconHistory,
 } satisfies Record<string, TablerIcon>;
 
 export type IconName = keyof typeof ICONS;

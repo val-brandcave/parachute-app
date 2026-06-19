@@ -1,4 +1,4 @@
-import type { BaseEntity, UUID } from "./common.types";
+import type { BaseEntity, Timestamp, UUID } from "./common.types";
 
 /* ============ Users & Orgs ============ */
 export interface User extends BaseEntity {
@@ -107,6 +107,113 @@ export interface FindingState {
   disposition: Disposition;
   reason?: string;
   comment?: string;
+}
+
+/* ============ Templates ============ */
+// The Templates hub holds three kinds of reusable, AI-configurable artifacts
+// that drive the review pipeline and its output. Only response templates carry
+// a personal/org scope; checklists and workbook layouts are org-owned.
+export type TemplateKind = "checklist" | "response" | "workbook";
+
+/** Response-template ownership: shared org library vs the reviewer's own set. */
+export type TemplateScope = "org" | "mine";
+
+/** Merge-field tokens that fill from the finding when a response is applied. */
+export type MergeField =
+  | "property"
+  | "page"
+  | "topic"
+  | "action"
+  | "condition"
+  | "detail";
+
+// Reviewer disposition boilerplate (Concur / Requires revision / Override / …).
+// Org library + personal; merge fields fill from the finding at apply time.
+// Populates the finding ActionMenu and the workbook response wording.
+export interface ResponseTemplate extends BaseEntity {
+  scope: TemplateScope;
+  group: string; // e.g. "Concur", "Requires revision"
+  name: string;
+  body: string; // prose with {{merge}} tokens
+}
+
+export type ChecklistItemType = "binary" | "qualitative";
+
+// One row of a compliance checklist template.
+export interface ChecklistTemplateItem {
+  id: UUID;
+  group: string;
+  orig: string; // raw source text extracted from the .docx
+  question: string; // AI-normalized question
+  type: ChecklistItemType;
+  map: "ok" | "warn"; // mapping health: ok = mapped, warn = needs attention
+  hint?: string; // why it's flagged (e.g. "two questions detected in one row")
+  requireCitation: boolean;
+}
+
+// Lifecycle of a single template version within its family. At most one
+// `published` (the snapshot new reviews inherit) and at most one `draft` (the
+// editable work-in-progress) exist at a time; superseded versions are `archived`
+// but kept — in-flight reviews stay pinned to the version they were created with.
+export type VersionStatus = "published" | "draft" | "archived";
+
+// One version (snapshot) of a checklist template. Editing happens on a draft;
+// publishing freezes it active and archives the prior published version.
+export interface ChecklistVersion {
+  id: UUID;
+  version: number; // 1, 2, 3 — monotonic per family
+  status: VersionStatus;
+  sourceFile: string; // e.g. "Meridian_Commercial_Review_Form.docx"
+  items: ChecklistTemplateItem[];
+  createdAt: Timestamp;
+  publishedAt?: Timestamp; // when this snapshot became (or last was) published
+}
+
+// A bank's administrative-review form: uploaded as .docx → AI-extracted →
+// mapped → versioned/published. Drives Administrative Review. Org-owned. The
+// family is a container of versions; resolve the active/published one via
+// lib/template-versions. There may be more than one family per kind.
+export interface ChecklistTemplate extends BaseEntity {
+  name: string;
+  usedInReviews: number;
+  // The single org-default admin checklist: the order picker defaults to it and
+  // the AI recommends from there; the reviewer can pick another per order. Only
+  // one family is the default at a time (the store enforces it). Set in Settings
+  // or via the Templates card ⋯ "Set as default".
+  isDefault?: boolean;
+  versions: ChecklistVersion[];
+}
+
+// One section of an org-default workbook layout.
+export interface WorkbookLayoutSection {
+  id: UUID;
+  title: string;
+  type: string; // findings | summary | exhibits | conclusion | ...
+  enabled: boolean;
+}
+
+// One version (snapshot) of an org workbook layout.
+export interface WorkbookVersion {
+  id: UUID;
+  version: number;
+  status: VersionStatus;
+  theme: string; // e.g. "Navy"
+  sections: WorkbookLayoutSection[];
+  createdAt: Timestamp;
+  publishedAt?: Timestamp;
+}
+
+// Org-default workbook section layout (= Builder in org mode). Light for v2:
+// editing deep-links into the existing Builder; we model shape + versions only.
+export interface WorkbookLayout extends BaseEntity {
+  orgId: UUID;
+  name: string;
+  // Workbook layouts are scoped per review profile (Commercial / Residential).
+  // A review inherits the default layout for its profile automatically. One
+  // default per profile (the store enforces it within a profile).
+  profile: string;
+  isDefault?: boolean;
+  versions: WorkbookVersion[];
 }
 
 /* ============ A page of the source appraisal PDF (for side-by-side) ============ */

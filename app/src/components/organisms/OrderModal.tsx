@@ -5,17 +5,29 @@ import { useRouter } from "next/navigation";
 import { Avatar, Chip, Icon, YouConnectGlyph } from "@/components/atoms";
 import { SegmentedControl } from "@/components/molecules";
 import { cn, formatShortDate } from "@/lib/utils";
+import { publishedVersion } from "@/lib/template-versions";
 import { StepperModal, type Step } from "./StepperModal";
 import {
   useOrderStore,
   useUsersStore,
   useReviewsStore,
+  useTemplatesStore,
   ORDER_STEP,
   type OrderDraft,
 } from "@/store";
 import type { ReviewType, YcDelivery } from "@/types";
 
 const DAY = 86400000;
+
+// Property-type → review profile heuristic (drives which workbook layout a
+// Technical review inherits). Most commercial appraisals fall through to
+// Commercial; obvious residential markers map to Residential.
+function profileForType(propertyType?: string): string {
+  const t = (propertyType ?? "").toLowerCase();
+  return /resid|1-4|1–4|sfr|condo|duplex|single.?family|townhom/.test(t)
+    ? "Residential"
+    : "Commercial";
+}
 
 const STEPS: Step[] = [
   { key: "source", label: "Source", icon: "connect" },
@@ -400,11 +412,42 @@ function UploadPane() {
 /* ========================== Step 2 — Configure ========================== */
 
 function ConfigureStep() {
-  const { draft, toggleType, setAssignee, setDue, setPriority, toggleAutoReject } =
-    useOrderStore();
+  const {
+    draft,
+    toggleType,
+    setChecklist,
+    setAssignee,
+    setDue,
+    setPriority,
+    toggleAutoReject,
+  } = useOrderStore();
   const { users } = useUsersStore();
+  const { checklists, layouts, fetchTemplates } = useTemplatesStore();
+  useEffect(() => {
+    fetchTemplates();
+  }, [fetchTemplates]);
+
   // Org default for auto-reject is ON; turning it off = a per-order override.
   const overridden = !draft.autoReject;
+
+  const hasTech = draft.reviewTypes.includes("technical");
+  const hasAdmin = draft.reviewTypes.includes("administrative");
+
+  // Admin checklist: default to the org default; an explicit pick is an override.
+  const orgDefaultChecklist = checklists.find((c) => c.isDefault);
+  const selectedChecklistId = draft.checklistId ?? orgDefaultChecklist?.id ?? "";
+  const isDefaultChecklist =
+    !draft.checklistId || draft.checklistId === orgDefaultChecklist?.id;
+
+  // Workbook layout a Technical review inherits, from the property's profile.
+  const profile = profileForType(draft.property?.propertyType);
+  const inheritedLayout =
+    layouts.find((l) => l.isDefault && l.profile === profile) ??
+    layouts.find((l) => l.profile === profile) ??
+    layouts.find((l) => l.isDefault);
+  const inheritedLayoutPub = inheritedLayout
+    ? publishedVersion(inheritedLayout.versions)
+    : undefined;
 
   return (
     <div className="ord-card ord-config">
@@ -435,13 +478,73 @@ function ConfigureStep() {
             );
           })}
         </div>
-        {draft.reviewTypes.includes("administrative") && (
-          <p className="ord-tpl-note">
-            <Icon name="checklist" size={13} /> Meridian Trust — Commercial
-            Review Form · 22 items
-          </p>
-        )}
       </section>
+
+      {(hasTech || hasAdmin) && (
+        <section className="ord-sec">
+          <h3 className="ord-h">Templates for this review</h3>
+          <div className="ord-tpls">
+            {hasTech && (
+              <div className="ord-tpl-item">
+                <span className="ord-tpl-ic">
+                  <Icon name="book" size={16} />
+                </span>
+                <div className="ord-tpl-body">
+                  <div className="ord-tpl-name">
+                    {inheritedLayout?.name ?? "Org workbook layout"}
+                    {inheritedLayoutPub && (
+                      <span className="ord-tpl-ver">v{inheritedLayoutPub.version}</span>
+                    )}
+                  </div>
+                  <div className="ord-tpl-meta">
+                    Inherited from the {profile} org layout — editable per review in
+                    the Builder
+                  </div>
+                </div>
+                <Chip tone="neutral">Inherited</Chip>
+              </div>
+            )}
+
+            {hasAdmin && (
+              <div className="ord-tpl-item">
+                <span className="ord-tpl-ic">
+                  <Icon name="checklist" size={16} />
+                </span>
+                <label className="field ord-tpl-field">
+                  <span>Administrative checklist</span>
+                  <select
+                    value={selectedChecklistId}
+                    onChange={(e) => setChecklist(e.target.value)}
+                  >
+                    {checklists.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                        {c.isDefault ? " — org default" : ""}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            )}
+          </div>
+
+          {hasAdmin && (
+            <p className={cn("ord-tpl-hint", !isDefaultChecklist && "is-override")}>
+              {isDefaultChecklist ? (
+                <>
+                  <Icon name="ai" size={13} /> AI-recommended — your org default
+                  checklist. Change it only if this property needs a different form.
+                </>
+              ) : (
+                <>
+                  <Icon name="info" size={13} /> Per-order override — the org default
+                  is unchanged (audited, this order only).
+                </>
+              )}
+            </p>
+          )}
+        </section>
+      )}
 
       <section className="ord-sec">
         <h3 className="ord-h">Reviewer &amp; schedule</h3>
@@ -550,6 +653,17 @@ function SummaryReview({
   const p = draft.property;
   const dueAt = draft.dueDate ? new Date(draft.dueDate).getTime() : draft.slaDueAt;
 
+  const { checklists, layouts } = useTemplatesStore();
+  const orgDefaultChecklist = checklists.find((c) => c.isDefault);
+  const selectedChecklist =
+    checklists.find((c) => c.id === draft.checklistId) ?? orgDefaultChecklist;
+  const checklistIsDefault =
+    !draft.checklistId || draft.checklistId === orgDefaultChecklist?.id;
+  const profile = profileForType(p?.propertyType);
+  const inheritedLayout =
+    layouts.find((l) => l.isDefault && l.profile === profile) ??
+    layouts.find((l) => l.isDefault);
+
   return (
     <div className="ord-card ord-summary">
       <SumSection title="Appraisal" onEdit={() => onEdit(ORDER_STEP.source)}>
@@ -608,6 +722,23 @@ function SummaryReview({
           </div>
         ) : (
           <p className="ord-sum-muted">Choose at least one</p>
+        )}
+        {draft.reviewTypes.includes("technical") && inheritedLayout && (
+          <div className="ord-sum-row" style={{ marginTop: 8 }}>
+            <Icon name="book" size={15} />
+            <span>Workbook</span>
+            <span className="ord-sum-val">{inheritedLayout.name}</span>
+          </div>
+        )}
+        {draft.reviewTypes.includes("administrative") && selectedChecklist && (
+          <div className="ord-sum-row">
+            <Icon name="checklist" size={15} />
+            <span>Checklist</span>
+            <span className="ord-sum-val">
+              {selectedChecklist.name}
+              {!checklistIsDefault && " (override)"}
+            </span>
+          </div>
         )}
 
         <div className="ord-sum-sec">Reviewer &amp; schedule</div>
