@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Tabs, SegmentedControl, AvatarUpload } from "@/components/molecules";
 import { Card, Input, Label, Chip, Divider, Button, Icon } from "@/components/atoms";
-import { usePrefsStore } from "@/store";
+import { usePrefsStore, useTemplatesStore } from "@/store";
+import { publishedVersion } from "@/lib/template-versions";
 import { CURRENT_USER, CURRENT_ORG } from "@/lib/current-user";
 
 type TabKey = "org" | "defaults" | "compliance" | "profile" | "prefs";
@@ -44,6 +45,18 @@ export default function SettingsPage() {
   const router = useRouter();
   const [tab, setTab] = useState<TabKey>("org");
   const { density, setDensity, theme, setTheme } = usePrefsStore();
+
+  // The org-default admin checklist is owned by Templates — Settings reads/sets
+  // the same flag (single source of truth), so this select mirrors the
+  // Templates card's "Set as default".
+  const { checklists, fetchTemplates, setDefaultChecklist } = useTemplatesStore();
+  useEffect(() => {
+    fetchTemplates();
+  }, [fetchTemplates]);
+  const defaultChecklist = checklists.find((c) => c.isDefault) ?? checklists[0];
+  const defaultPub = defaultChecklist
+    ? publishedVersion(defaultChecklist.versions)
+    : undefined;
 
   return (
     <>
@@ -116,9 +129,17 @@ export default function SettingsPage() {
                 </div>
                 <div>
                   <Label>Default administrative checklist</Label>
-                  <select className="qfilter" defaultValue="mt-commercial" style={{ width: "100%", height: 42 }}>
-                    <option value="mt-commercial">Meridian Trust — Commercial Review</option>
-                    <option value="mt-sba">Meridian Trust — SBA 7(a)/504</option>
+                  <select
+                    className="qfilter"
+                    value={defaultChecklist?.id ?? ""}
+                    onChange={(e) => setDefaultChecklist(e.target.value)}
+                    style={{ width: "100%", height: 42 }}
+                  >
+                    {checklists.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -145,17 +166,28 @@ export default function SettingsPage() {
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <Icon name="checklist" size={18} />
                   <div>
-                    <div style={{ fontWeight: 600 }}>Meridian Trust — Commercial Review</div>
+                    <div style={{ fontWeight: 600, display: "flex", alignItems: "center", gap: 8 }}>
+                      <span>{defaultChecklist?.name ?? "No checklist configured"}</span>
+                      {defaultChecklist && (
+                        <Chip tone="accent" dot>
+                          Default
+                        </Chip>
+                      )}
+                    </div>
                     <div style={{ fontSize: 12, color: "var(--md-on-surface-v)" }}>
-                      22 items · v3 · updated last month
+                      {defaultPub
+                        ? `${defaultPub.items.length} items · v${defaultPub.version}`
+                        : "Not yet published"}
                     </div>
                   </div>
                 </div>
                 <Button
                   variant="outline"
                   size="sm"
+                  disabled={!defaultChecklist}
                   onClick={() =>
-                    router.push("/templates/checklist/checklist-demo-commercial")
+                    defaultChecklist &&
+                    router.push(`/templates/checklist/${defaultChecklist.id}`)
                   }
                 >
                   Manage
