@@ -27,10 +27,10 @@ The prototype builds ONE app and simulates the YouConnect entry via the launch/i
 /reviews/[id]/workbook              Compiled Workbook doc (DRAFT → sign → complete/return)
 /reviews/[id]/triage                Intake Triage (auto-rejected appraisals)
 
-/templates                          Templates hub
-/templates/checklist                Checklist Template Mapper (extract bank checklist from .docx)
-/templates/responses                Response Templates (org + personal)
-/templates/workbook-layout          Org Workbook Layout (builder in org/default mode)
+/templates                          Tabbed library — Checklist · Response · Workbook (?tab=, in-page state)
+/templates/checklist/[id]           Versioned checklist mapper (?v=<versionId>; draft = editable, else read-only)
+/templates/responses                Response Templates — org + personal (?scope=org|mine; no in-page toggle)
+/templates/workbook-layout          Org Workbook Layout — per-profile, read-only view (?v=); Builder edits org mode
 
 /settings                           Org defaults, compliance checklist, bank policy, reviewer profile
 ```

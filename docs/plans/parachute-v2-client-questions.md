@@ -11,8 +11,32 @@ to act on the answer.
 | # | Question | Status | Raised |
 |---|----------|--------|--------|
 | Q1 | Should **sent-back / returned** appraisals appear in the Reviews queue? | 🔴 Open | 2026-06-18 |
+| Q2 | **Dark-mode inputs** — keep white (your standing rule) or allow dark fields? | 🟡 Changed, confirm | 2026-06-19 |
 
 ---
+
+## Q2 — Should form inputs stay white in dark mode?
+
+**Status:** 🟡 Changed in prototype — please confirm
+**Raised:** 2026-06-19
+
+**Question.** Realwired's standing rule was *"inputs have white backgrounds in BOTH
+themes."* In dark mode that makes every form field a bright white island on a dark
+card (high glare, "focus-hungry"), which is unusual for dark UIs.
+
+**What we did in the prototype.** Kept **light mode exactly as specified** (white
+inputs). In **dark mode only**, inputs now follow the theme — an elevated dark fill
+(`--md-surface-2`), near-white ink, and `color-scheme: dark` so native `<select>`
+option lists, date pickers and Chrome autofill render dark too. This is the
+conventional, accessible dark-mode input pattern.
+
+**Where the code lives.** `app/src/app/globals.css` — the base `.field`/`.ui-input`
+white rules are unchanged; a `:root[data-theme="dark"]` override block (just below
+the autofill rules) flips the always-white families. Rule documented in
+`app/AGENTS.md` (Styling → inputs).
+
+**To revert if the client insists on white-both-themes.** Delete the
+`:root[data-theme="dark"]` input override block in `globals.css` — no other changes.
 
 ## Q1 — Do sent-back (returned) appraisals belong in the Reviews queue?
 

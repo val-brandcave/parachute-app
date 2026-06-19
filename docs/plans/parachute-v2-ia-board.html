@@ -147,15 +147,15 @@ const AREAS = [
                 ]}
             ]},
 
-          { name:'Templates', status:'locked', route:'/templates',
-            desc:'A home for reusable pieces — checklists, saved responses, and report layouts.',
+          { name:'Templates', status:'built', route:'/templates',
+            desc:'A tabbed library of reusable pieces — Compliance Checklists, Response Templates, and Workbook Layout. Checklists & layouts are versioned (published / draft / archived); each card shows the live version with a collapsible version history.',
             children:[
-              { name:'Checklist Mapper', status:'locked', route:'/templates/checklist',
-                desc:'Turn a bank\'s checklist document into the questions used in administrative reviews.' },
-              { name:'Response Templates', status:'locked', route:'/templates/responses',
-                desc:'Saved wording you can drop into findings and reports.' },
-              { name:'Org Workbook Layout', status:'locked', route:'/templates/workbook-layout',
-                desc:'Set the organization\'s default report layout.' }
+              { name:'Compliance Checklists', status:'built', route:'/templates/checklist/[id]',
+                desc:'Versioned admin-review forms (AI-mapped from a .docx). One is the org default; others are alternates picked per order. Edit creates a draft → publish a new version. (Creating new checklists is deferred pending client input on the upload flow.)' },
+              { name:'Response Templates', status:'built', route:'/templates/responses',
+                desc:'Org + personal libraries of canned wording (merge fields) dropped into findings and reports. Not versioned — a live snippet library; scope is chosen by the card you open.' },
+              { name:'Workbook Layout', status:'built', route:'/templates/workbook-layout',
+                desc:'The org-default Technical workbook structure, one default per review profile (Commercial / Residential). New reviews inherit it; reviewers tweak per review in the Builder.' }
             ]},
 
           { name:'Settings', status:'built', route:'/settings',

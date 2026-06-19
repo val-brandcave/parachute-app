@@ -31,11 +31,11 @@ controls** (greeting / tabs / search / filter / actions); **command palette** (`
 | `/reviews` | **Reviews** queue (team view) — **lifecycle-stage tabs** + Mine-only + severity filter + search; **parties-rich derived-state table** (Property & parties · Type · Pipeline · Findings · Due · Next action · ⋯), Order button | ✅ **rebuilt Jun 2026** — no Status column; state derived via `lib/review-lifecycle`. See early-specs §9 |
 | `/reviews/[id]` | **Review detail** — Technical / Administrative are in-page **tabs** (not routes); Findings / Builder / Workbook are sub-views of the Technical tab | ◑ Technical workspace built (⚠️ old design, focus-mode rebuild pending); Administrative / Builder / Workbook are in-page stubs |
 | `/reviews/[id]/triage` | Intake triage (a distinct intake state — kept as a real route) | ⚠️ old design — functional, pre-redesign styling |
-| `/templates` | Templates hub | 🚧 stub |
-| `/settings` | Tabbed: Organization · Review defaults · Compliance · My profile · Preferences | ✅ built (see partial sections below) |
+| `/templates` | **Tabbed library** — Compliance Checklists · Response Templates · Workbook Layout; checklists/layouts **versioned** (published/draft/archived) with edit-centric cards + a single org-default checklist / per-profile workbook defaults | ✅ **built Jun 2026** (IA §9). Checklist *creation* (.docx wizard) deferred; no review-side version pinning. See `parachute-v2-templates-build-plan.md` |
+| `/settings` | Tabbed: Organization · Review defaults · Compliance · My profile · Preferences | ✅ built; **Review-defaults checklist select + Compliance card now wired to the Templates org default** (single source of truth) |
 | `/components` | Design-system showcase | 🛠️ dev tool (keep, not a product page) |
 | `/styleguide` | Palette decision surface | 🗑️ **temporary** — remove before handoff |
-| Order a review | Full-page **stepper modal** (global) | ◑ shell + nav built; **step content is placeholder** |
+| Order a review | Full-page **stepper modal** (global) | ✅ built (3-step Source · Configure · Summary). Configure has the **checklist picker + inherited-workbook** templates wiring (IA §9 T6) |
 
 Legend: ✅ built · ◑ partial · 🚧 stub · ⚠️ old design (rework) · 🛠️ dev tool · 🗑️ temporary.
 
@@ -50,17 +50,17 @@ How each POC screen translates under our current patterns (changes from the POC 
 - **Administrative Review** → `/reviews/[id]/administrative` (stub). To build: AI-prefilled checklist attestation (Yes/No/NA + page cites), reviewer attest with audited reason on change, sign attestation.
 - **Workbook** → `/reviews/[id]/workbook` (stub). To build: compiled branded document, DRAFT watermark → sign → Complete / Return-to-appraiser, plus customization (show/hide, theme, fonts, risk labels — some as org defaults).
 - **Builder** → `/reviews/[id]/builder` (stub). To build: section assemble/reorder, exclude, drag-in appraisal sections, document settings; per-review and org-default modes.
-- **Templates hub + Checklist Mapper + Response Templates** → `/templates` (stub). To build: checklist template mapper (extract from .docx), response templates (org + personal), org workbook layout (= Builder org mode).
+- **Templates** → `/templates` ✅ **built** as a tabbed library (Compliance Checklists · Response Templates · Workbook Layout). Versioned checklists/layouts (publish/draft/archive/promote), edit-centric cards, single org-default checklist + per-profile workbook defaults, wired into Settings + the Order Configure step. Checklist *creation* (.docx wizard) is **deferred** (kept dormant) pending client input; no review-side version pinning yet. Full write-up: `parachute-v2-templates-build-plan.md`; decisions: IA map §9.
 - **Intake Triage** → `/reviews/[id]/triage`. Exists (old design); confirm-return vs audited override. Needs restyle to current patterns.
 - **Settings** → `/settings` (built, tabbed). See partial sections below.
 
 ## Stubbed / placeholder — needs real content
 
-- **Pages (Stub component):** `/templates`, `/reviews/[id]/{administrative,builder,workbook}` — show a "coming in Sprint X" card.
+- **Pages (Stub component):** `/reviews/[id]/{administrative,builder,workbook}` — show a "coming in Sprint X" card. *(`/templates` is no longer a stub — built as a tabbed versioned library.)*
 - **Order stepper:** shell + step navigation are real; **each step's body is a placeholder** describing what goes there.
 - **Settings — partial:**
   - *Organization:* logo upload works (live preview, not persisted); name/short-name are static inputs (no save).
-  - *Review defaults:* quality-gate chips, SLA-start, default profile, default checklist — **static** (display only).
+  - *Review defaults:* quality-gate chips, SLA-start, default profile are **static** (display only); the **default administrative checklist select is wired** to the Templates store (sets the org-default `isDefault` — single source of truth).
   - *Compliance:* checklist "Manage" button and bank-policy "Upload" are **placeholders** (no flow). **✅ Resolved (decision #7):** checklist management lives in **Templates**; Settings → Compliance "Manage" links to the Templates checklist mapper.
   - *My profile:* static inputs.
   - *Preferences:* theme + density are **fully wired/live**.
@@ -81,7 +81,7 @@ How each POC screen translates under our current patterns (changes from the POC 
 2. **Order stepper — real step content.** "Run pipeline" lands in the new review (#1).
 3. **Workbook + customize panel** (the v2 output-control differentiator) — per **#6**, build the **customize panel** (Builder owns customization, #5), *not* the full 3-pane builder/import (deferred).
 4. **Administrative Review** (checklist attestation) — **reuses the Technical focus-mode shell** (#4).
-5. **Templates hub** — cards → sub-routes (#7): checklist mapper (home here), response templates, org workbook layout.
+5. ✅ **Templates** — DONE (revised #7 → tabbed library + versioning + defaults; IA §9). Remaining: checklist `.docx` creation wizard (deferred) + review-side version pinning.
 6. **Triage restyle** (own route, #8), Settings deepening (compliance "Manage" → Templates, #7), notifications (in-app bell panel, #9).
 7. Cleanup: remove `/styleguide`, prune unused v1 CSS, finalize responsive.
 
