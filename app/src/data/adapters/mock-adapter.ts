@@ -20,8 +20,9 @@ function writeCollection<T>(collection: string, items: T[]): void {
 const SEEDED_KEY = `${STORAGE_PREFIX}:__seeded__`;
 // Bump this whenever seed data changes so existing browsers re-seed on next
 // load (v7: dropped the sent-back/returned example pending client Q1;
-// v8: added the yc_deliveries collection for the Order stepper inbox).
-const SEED_VERSION = "v8";
+// v8: added the yc_deliveries collection for the Order stepper inbox;
+// v9: added Templates — response, checklist & workbook-layout collections).
+const SEED_VERSION = "v9";
 
 export const mockAdapter: DataAdapter = {
   async getAll<T>(collection: string): Promise<T[]> {

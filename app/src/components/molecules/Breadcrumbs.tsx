@@ -22,6 +22,13 @@ const SUB_LABELS: Record<string, string> = {
   triage: "Intake Triage",
 };
 
+// Templates sub-routes (the leaf page header carries the specific instance name).
+const TEMPLATE_SUB_LABELS: Record<string, string> = {
+  responses: "Response templates",
+  checklist: "Administrative checklist",
+  "workbook-layout": "Org workbook layout",
+};
+
 export function Breadcrumbs() {
   const pathname = usePathname();
   const reviews = useReviewsStore((s) => s.reviews);
@@ -37,6 +44,9 @@ export function Breadcrumbs() {
       href: `/reviews/${segs[1]}`,
     });
     if (segs[2] && SUB_LABELS[segs[2]]) crumbs.push({ label: SUB_LABELS[segs[2]] });
+  } else if (segs[0] === "templates" && segs[1]) {
+    crumbs.push({ label: "Templates", href: "/templates" });
+    crumbs.push({ label: TEMPLATE_SUB_LABELS[segs[1]] ?? "Template" });
   } else if (segs[0]) {
     crumbs.push({ label: TOP_LABELS[segs[0]] ?? segs[0] });
   }

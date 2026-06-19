@@ -1,4 +1,4 @@
-import type { BaseEntity, UUID } from "./common.types";
+import type { BaseEntity, Timestamp, UUID } from "./common.types";
 
 /* ============ Users & Orgs ============ */
 export interface User extends BaseEntity {
@@ -107,6 +107,77 @@ export interface FindingState {
   disposition: Disposition;
   reason?: string;
   comment?: string;
+}
+
+/* ============ Templates ============ */
+// The Templates hub holds three kinds of reusable, AI-configurable artifacts
+// that drive the review pipeline and its output. Only response templates carry
+// a personal/org scope; checklists and workbook layouts are org-owned.
+export type TemplateKind = "checklist" | "response" | "workbook";
+
+/** Response-template ownership: shared org library vs the reviewer's own set. */
+export type TemplateScope = "org" | "mine";
+
+/** Merge-field tokens that fill from the finding when a response is applied. */
+export type MergeField =
+  | "property"
+  | "page"
+  | "topic"
+  | "action"
+  | "condition"
+  | "detail";
+
+// Reviewer disposition boilerplate (Concur / Requires revision / Override / …).
+// Org library + personal; merge fields fill from the finding at apply time.
+// Populates the finding ActionMenu and the workbook response wording.
+export interface ResponseTemplate extends BaseEntity {
+  scope: TemplateScope;
+  group: string; // e.g. "Concur", "Requires revision"
+  name: string;
+  body: string; // prose with {{merge}} tokens
+}
+
+export type ChecklistItemType = "binary" | "qualitative";
+
+// One row of a compliance checklist template.
+export interface ChecklistTemplateItem {
+  id: UUID;
+  group: string;
+  orig: string; // raw source text extracted from the .docx
+  question: string; // AI-normalized question
+  type: ChecklistItemType;
+  map: "ok" | "warn"; // mapping health: ok = mapped, warn = needs attention
+  hint?: string; // why it's flagged (e.g. "two questions detected in one row")
+  requireCitation: boolean;
+}
+
+// A bank's administrative-review form: uploaded as .docx → AI-extracted →
+// mapped → versioned/published. Drives Administrative Review. Org-owned.
+export interface ChecklistTemplate extends BaseEntity {
+  name: string;
+  sourceFile: string; // e.g. "Meridian_Commercial_Review_Form.docx"
+  version: number;
+  publishedAt?: Timestamp;
+  usedInReviews: number;
+  items: ChecklistTemplateItem[];
+}
+
+// One section of an org-default workbook layout.
+export interface WorkbookLayoutSection {
+  id: UUID;
+  title: string;
+  type: string; // findings | summary | exhibits | conclusion | ...
+  enabled: boolean;
+}
+
+// Org-default workbook section layout (= Builder in org mode). Light for v2:
+// editing deep-links into the existing Builder; we model shape + version only.
+export interface WorkbookLayout extends BaseEntity {
+  orgId: UUID;
+  name: string;
+  theme: string; // e.g. "Navy"
+  version: number;
+  sections: WorkbookLayoutSection[];
 }
 
 /* ============ A page of the source appraisal PDF (for side-by-side) ============ */

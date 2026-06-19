@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Tabs, SegmentedControl, AvatarUpload } from "@/components/molecules";
 import { Card, Input, Label, Chip, Divider, Button, Icon } from "@/components/atoms";
 import { usePrefsStore } from "@/store";
@@ -40,6 +41,7 @@ const grid2: React.CSSProperties = {
 };
 
 export default function SettingsPage() {
+  const router = useRouter();
   const [tab, setTab] = useState<TabKey>("org");
   const { density, setDensity, theme, setTheme } = usePrefsStore();
 
@@ -149,7 +151,15 @@ export default function SettingsPage() {
                     </div>
                   </div>
                 </div>
-                <Button variant="outline" size="sm">Manage</Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    router.push("/templates/checklist/checklist-demo-commercial")
+                  }
+                >
+                  Manage
+                </Button>
               </div>
             </Section>
             <Section

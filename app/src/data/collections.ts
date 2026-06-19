@@ -8,6 +8,9 @@ export const Collections = {
   REVIEWS: "reviews",
   FINDINGS: "findings",
   YC_DELIVERIES: "yc_deliveries",
+  RESPONSE_TEMPLATES: "responseTemplates",
+  CHECKLIST_TEMPLATES: "checklistTemplates",
+  WORKBOOK_LAYOUTS: "workbookLayouts",
 } as const;
 
 export type CollectionName = (typeof Collections)[keyof typeof Collections];
