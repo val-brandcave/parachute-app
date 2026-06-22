@@ -29,20 +29,16 @@ const blank = (scope: TemplateScope): ResponseDraft => ({
  * holds the in-flight draft and falls back to the selected template unchanged.
  * Editing IS the page — "New" just shows a blank draft (create == edit).
  */
-export function useResponseLibrary() {
+export function useResponseLibrary(scope: TemplateScope) {
   const { responses, isLoading, fetchTemplates, saveResponse, deleteResponse } =
     useTemplatesStore();
 
-  // Scope is fixed by the card you entered from (?scope=org|mine) — there's no
-  // in-page toggle. Lazy init avoids useSearchParams' Suspense bailout.
-  const [scope, setScope] = useState<TemplateScope>(() => {
-    if (typeof window === "undefined") return "org";
-    return new URLSearchParams(window.location.search).get("scope") === "mine"
-      ? "mine"
-      : "org";
-  });
+  // Scope is fixed by the route (/templates/responses/org|mine) — each library
+  // is its own page, so there's no in-page toggle or scope state to track.
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editing, setEditing] = useState<ResponseDraft | null>(null);
+  // Bumped on every successful save so the list can scroll-to + pulse the row.
+  const [savedTick, setSavedTick] = useState(0);
   // Honour a ?new=1 deep-link from the hub once, at mount (no effect → no
   // cascading-render lint, and the shell only renders client-side anyway).
   const [creating, setCreating] = useState<boolean>(() => {
@@ -94,16 +90,8 @@ export function useResponseLibrary() {
     setSelectedId(id);
   };
 
-  const startNew = (s: TemplateScope = scope) => {
-    setScope(s);
+  const startNew = () => {
     setCreating(true);
-    setEditing(null);
-    setSelectedId(null);
-  };
-
-  const changeScope = (s: TemplateScope) => {
-    setScope(s);
-    setCreating(false);
     setEditing(null);
     setSelectedId(null);
   };
@@ -129,6 +117,7 @@ export function useResponseLibrary() {
     setCreating(false);
     setEditing(null);
     setSelectedId(saved.id);
+    setSavedTick((n) => n + 1);
   };
 
   const remove = async () => {
@@ -141,7 +130,7 @@ export function useResponseLibrary() {
   return {
     isLoading,
     scope,
-    changeScope,
+    savedTick,
     groups,
     selectedId: effectiveId,
     draft,

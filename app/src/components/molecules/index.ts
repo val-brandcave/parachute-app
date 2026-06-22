@@ -15,5 +15,6 @@ export {
 export { DateRangeCalendar, formatRange } from "./DateRangeCalendar";
 export { Tabs } from "./Tabs";
 export { AvatarUpload } from "./AvatarUpload";
+export { AvatarCropper } from "./AvatarCropper";
 export { PipelineTracker } from "./PipelineTracker";
 export { QueueFilters, ActiveFilters } from "./QueueFilters";

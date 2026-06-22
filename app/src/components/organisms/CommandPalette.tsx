@@ -21,7 +21,7 @@ const NAV: { label: string; href: string; icon: IconName }[] = [
   { label: "Dashboard", href: "/dashboard", icon: "dashboard" },
   { label: "Reviews", href: "/reviews", icon: "reviews" },
   { label: "Templates", href: "/templates", icon: "templates" },
-  { label: "Response templates", href: "/templates/responses", icon: "quote" },
+  { label: "Response templates", href: "/templates?tab=response", icon: "quote" },
   { label: "Org workbook layout", href: "/templates/workbook-layout", icon: "book" },
   { label: "Settings", href: "/settings", icon: "settings" },
 ];

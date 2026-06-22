@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useMemo } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTemplatesStore } from "@/store";
 import {
   draftVersion,
@@ -64,18 +64,18 @@ export function useTemplateHub() {
     setDefaultLayout,
   } = useTemplatesStore();
 
-  const [tab, setTabState] = useState<TemplateTab>(() => {
-    if (typeof window === "undefined") return "checklist";
-    const t = new URLSearchParams(window.location.search).get("tab");
-    return t === "response" || t === "workbook" ? t : "checklist";
-  });
+  // Tab is DERIVED from the URL (?tab=) so it stays correct on full load,
+  // client-side <Link> navigation, and back/forward — not just first mount.
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get("tab");
+  const tab: TemplateTab =
+    tabParam === "response" || tabParam === "workbook" ? tabParam : "checklist";
 
   useEffect(() => {
     fetchTemplates();
   }, [fetchTemplates]);
 
   const setTab = (t: TemplateTab) => {
-    setTabState(t);
     const url = t === "checklist" ? "/templates" : `/templates?tab=${t}`;
     router.replace(url, { scroll: false });
   };
@@ -181,8 +181,8 @@ export function useTemplateHub() {
     setDefaultLayout,
     // responses
     openResponses: (scope: TemplateScope) =>
-      router.push(`/templates/responses?scope=${scope}`),
+      router.push(`/templates/responses/${scope}`),
     newResponse: (scope: TemplateScope) =>
-      router.push(`/templates/responses?scope=${scope}&new=1`),
+      router.push(`/templates/responses/${scope}?new=1`),
   };
 }

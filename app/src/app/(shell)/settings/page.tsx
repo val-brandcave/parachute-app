@@ -2,13 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Tabs, SegmentedControl, AvatarUpload } from "@/components/molecules";
+import { Tabs, AvatarUpload } from "@/components/molecules";
 import { Card, Input, Label, Chip, Divider, Button, Icon } from "@/components/atoms";
-import { usePrefsStore, useTemplatesStore } from "@/store";
+import { useIdentityStore, useTemplatesStore } from "@/store";
 import { publishedVersion } from "@/lib/template-versions";
-import { CURRENT_USER, CURRENT_ORG } from "@/lib/current-user";
+import { CURRENT_ORG } from "@/lib/current-user";
 
-type TabKey = "org" | "defaults" | "compliance" | "profile" | "prefs";
+type TabKey = "org" | "defaults" | "compliance";
 
 function Section({
   title,
@@ -44,7 +44,7 @@ const grid2: React.CSSProperties = {
 export default function SettingsPage() {
   const router = useRouter();
   const [tab, setTab] = useState<TabKey>("org");
-  const { density, setDensity, theme, setTheme } = usePrefsStore();
+  const { orgAvatar, setOrgAvatar } = useIdentityStore();
 
   // The org-default admin checklist is owned by Templates — Settings reads/sets
   // the same flag (single source of truth), so this select mirrors the
@@ -68,8 +68,6 @@ export default function SettingsPage() {
             { value: "org", label: "Organization" },
             { value: "defaults", label: "Review defaults" },
             { value: "compliance", label: "Compliance" },
-            { value: "profile", label: "My profile" },
-            { value: "prefs", label: "Preferences" },
           ]}
         />
         <div style={{ flex: 1 }} />
@@ -79,7 +77,12 @@ export default function SettingsPage() {
         {tab === "org" && (
           <>
             <Section title="Organization logo" desc="Shown in the sidebar and on exported workbooks.">
-              <AvatarUpload initials={CURRENT_ORG.initials} hint="PNG or SVG, square, up to 1 MB." />
+              <AvatarUpload
+                value={orgAvatar}
+                onChange={setOrgAvatar}
+                initials={CURRENT_ORG.initials}
+                hint="PNG or SVG, square, up to 1 MB."
+              />
             </Section>
             <Section title="Organization details">
               <div style={grid2}>
@@ -203,53 +206,6 @@ export default function SettingsPage() {
           </>
         )}
 
-        {tab === "profile" && (
-          <Section title="Reviewer profile" desc="Shown on signed workbooks and attestations.">
-            <div style={grid2}>
-              <div>
-                <Label>Name</Label>
-                <Input defaultValue={CURRENT_USER.name} />
-              </div>
-              <div>
-                <Label>Designation</Label>
-                <Input defaultValue={CURRENT_USER.designation} />
-              </div>
-              <div style={{ gridColumn: "1 / -1" }}>
-                <Label>Signature name</Label>
-                <Input defaultValue={CURRENT_USER.signatureName} />
-              </div>
-            </div>
-          </Section>
-        )}
-
-        {tab === "prefs" && (
-          <>
-            <Section title="Theme" desc="Choose how Parachute looks. System follows your device.">
-              <SegmentedControl
-                value={theme}
-                onChange={setTheme}
-                options={[
-                  { value: "light", label: "Light" },
-                  { value: "dark", label: "Dark" },
-                  { value: "system", label: "System" },
-                ]}
-              />
-            </Section>
-            <Section
-              title="Display density"
-              desc="How much information is shown per screen. Affects spacing and type scale, not layout."
-            >
-              <SegmentedControl
-                value={density}
-                onChange={setDensity}
-                options={[
-                  { value: "comfortable", label: "Comfortable" },
-                  { value: "compact", label: "Compact" },
-                ]}
-              />
-            </Section>
-          </>
-        )}
       </div>
     </>
   );

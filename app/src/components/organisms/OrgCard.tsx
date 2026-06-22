@@ -1,9 +1,11 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Icon, Tooltip } from "@/components/atoms";
+import { useIdentityStore } from "@/store";
 import { CURRENT_ORG } from "@/lib/current-user";
 
 /** Organization card pinned to the bottom of the sidebar → org settings. The
@@ -21,6 +23,7 @@ export function OrgCard({
   initials?: string;
 }) {
   const pathname = usePathname();
+  const orgAvatar = useIdentityStore((s) => s.orgAvatar);
   const active = pathname.startsWith("/settings");
 
   const card = (
@@ -28,7 +31,11 @@ export function OrgCard({
       href="/settings"
       className={cn("org-card", active && "active", collapsed && "collapsed")}
     >
-      <span className="org-av">{initials}</span>
+      {orgAvatar ? (
+        <img src={orgAvatar} alt="" className="org-av" style={{ objectFit: "cover" }} />
+      ) : (
+        <span className="org-av">{initials}</span>
+      )}
       {!collapsed && (
         <>
           <span className="org-main">
