@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { Avatar, Icon, type IconName } from "@/components/atoms";
 import { cn } from "@/lib/utils";
-import { usePrefsStore, type ThemePref } from "@/store";
+import { useIdentityStore, usePrefsStore, type ThemePref } from "@/store";
 import { CURRENT_USER } from "@/lib/current-user";
 
 const THEME_OPTS: { value: ThemePref; icon: IconName; label: string }[] = [
@@ -25,6 +25,7 @@ export function UserMenu({
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const { theme, setTheme } = usePrefsStore();
+  const userAvatar = useIdentityStore((s) => s.userAvatar);
 
   useEffect(() => {
     if (!open) return;
@@ -49,7 +50,7 @@ export function UserMenu({
   return (
     <div className="usermenu" ref={ref}>
       <button className="usermenu-trigger" onClick={() => setOpen((o) => !o)}>
-        <Avatar initials={initials} />
+        <Avatar initials={initials} src={userAvatar} />
         <Icon name="chevron-down" size={16} className="um-caret" />
       </button>
 
@@ -67,8 +68,8 @@ export function UserMenu({
               <div className="um-email">{email}</div>
             </div>
             <div className="um-sep" />
-            <button className="um-item" onClick={() => go("/settings")}>
-              <Icon name="user" size={17} /> Profile settings
+            <button className="um-item" onClick={() => go("/profile")}>
+              <Icon name="user" size={17} /> Profile
             </button>
             <button className="um-item" onClick={() => setOpen(false)}>
               <Icon name="support" size={17} /> Support

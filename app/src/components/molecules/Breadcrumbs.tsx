@@ -12,6 +12,7 @@ const TOP_LABELS: Record<string, string> = {
   reviews: "Reviews",
   templates: "Templates",
   settings: "Settings",
+  profile: "Profile",
   components: "Components",
   styleguide: "Style Guide",
 };
@@ -44,6 +45,11 @@ export function Breadcrumbs() {
       href: `/reviews/${segs[1]}`,
     });
     if (segs[2] && SUB_LABELS[segs[2]]) crumbs.push({ label: SUB_LABELS[segs[2]] });
+  } else if (segs[0] === "templates" && segs[1] === "responses" && segs[2]) {
+    // Scoped response libraries: keep a linked parent crumb back to the hub.
+    crumbs.push({ label: "Templates", href: "/templates" });
+    crumbs.push({ label: "Response templates", href: "/templates?tab=response" });
+    crumbs.push({ label: segs[2] === "mine" ? "Personal library" : "Org library" });
   } else if (segs[0] === "templates" && segs[1]) {
     crumbs.push({ label: "Templates", href: "/templates" });
     crumbs.push({ label: TEMPLATE_SUB_LABELS[segs[1]] ?? "Template" });

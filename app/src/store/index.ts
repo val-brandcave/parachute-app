@@ -10,3 +10,4 @@ export {
 } from "./order.store";
 export type { OrderDraft, OrderProperty, OrderPrefill } from "./order.store";
 export { useTemplatesStore } from "./templates.store";
+export { useIdentityStore } from "./identity.store";

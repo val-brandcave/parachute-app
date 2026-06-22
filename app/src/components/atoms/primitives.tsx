@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 import { cn } from "@/lib/utils";
 
 export function Avatar({
@@ -5,12 +6,25 @@ export function Avatar({
   size = 34,
   tone = "accent",
   className,
+  src,
 }: {
   initials: string;
   size?: number;
   tone?: "accent" | "soft" | "navy" | "muted";
   className?: string;
+  /** When set, shows this image (cover-cropped, round) instead of initials. */
+  src?: string | null;
 }) {
+  if (src) {
+    return (
+      <img
+        src={src}
+        alt=""
+        className={cn("ui-avatar", className)}
+        style={{ width: size, height: size, objectFit: "cover" }}
+      />
+    );
+  }
   return (
     <span
       className={cn("ui-avatar", `ui-avatar--${tone}`, className)}

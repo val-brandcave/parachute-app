@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { Tabs, type ActionItem } from "@/components/molecules";
 import { TemplateFamilyCard } from "@/components/templates/TemplateFamilyCard";
 import { ResponseScopeCard } from "@/components/templates/ResponseScopeCard";
@@ -11,7 +12,17 @@ const TABS: { value: TemplateTab; label: string }[] = [
   { value: "workbook", label: "Workbook Layout" },
 ];
 
+// useTemplateHub reads useSearchParams(), which Next requires to sit under a
+// Suspense boundary.
 export default function TemplatesPage() {
+  return (
+    <Suspense>
+      <TemplatesHub />
+    </Suspense>
+  );
+}
+
+function TemplatesHub() {
   const {
     tab,
     setTab,
