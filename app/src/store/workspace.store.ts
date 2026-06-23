@@ -2,7 +2,16 @@ import { create } from "zustand";
 import { adapter } from "@/data/adapters";
 import { Collections } from "@/data/collections";
 import { generateId } from "@/types";
-import type { Finding, FindingState, Disposition } from "@/types";
+import type { Finding, FindingState, Disposition, Severity } from "@/types";
+
+/** Short status code shown on a finding pill, derived from its severity. */
+const SEV_STATUS: Record<Severity, string> = {
+  crit: "CRITICAL",
+  fail: "FAIL",
+  flag: "FLAG",
+  pass: "PASS",
+  na: "N/A",
+};
 
 interface WorkspaceState {
   reviewId: string | null;
@@ -11,14 +20,22 @@ interface WorkspaceState {
   isLoading: boolean;
 
   loadReview: (reviewId: string) => Promise<void>;
-  setDisposition: (findingId: string, disp: Disposition, reason?: string) => void;
+  setDisposition: (
+    findingId: string,
+    disp: Disposition,
+    reason?: string,
+    templateId?: string,
+  ) => void;
   setComment: (findingId: string, comment: string) => void;
+  toggleCondition: (findingId: string) => void;
+  toggleFlag: (findingId: string) => void;
   acceptAllPasses: () => void;
   addReviewerFinding: (input: {
     category: string;
     question: string;
     analysis: string;
     page: number;
+    severity?: Severity;
   }) => void;
 }
 
@@ -42,11 +59,11 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     set({ reviewId, findings, states, isLoading: false });
   },
 
-  setDisposition: (findingId, disp, reason) =>
+  setDisposition: (findingId, disp, reason, templateId) =>
     set((s) => ({
       states: {
         ...s.states,
-        [findingId]: { ...s.states[findingId], disposition: disp, reason },
+        [findingId]: { ...s.states[findingId], disposition: disp, reason, templateId },
       },
     })),
 
@@ -55,6 +72,28 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       states: {
         ...s.states,
         [findingId]: { ...s.states[findingId], comment },
+      },
+    })),
+
+  toggleCondition: (findingId) =>
+    set((s) => ({
+      states: {
+        ...s.states,
+        [findingId]: {
+          ...s.states[findingId],
+          condition: !s.states[findingId]?.condition,
+        },
+      },
+    })),
+
+  toggleFlag: (findingId) =>
+    set((s) => ({
+      states: {
+        ...s.states,
+        [findingId]: {
+          ...s.states[findingId],
+          flagged: !s.states[findingId]?.flagged,
+        },
       },
     })),
 
@@ -72,12 +111,13 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
 
   addReviewerFinding: (input) =>
     set((s) => {
+      const severity = input.severity ?? "flag";
       const f: Finding = {
         id: generateId(),
         reviewId: s.reviewId ?? "",
         category: input.category,
-        severity: "flag",
-        status: "FLAG",
+        severity,
+        status: SEV_STATUS[severity],
         confidence: 1,
         page: input.page,
         question: input.question,

@@ -107,6 +107,13 @@ export interface FindingState {
   disposition: Disposition;
   reason?: string;
   comment?: string;
+  /** Secondary, disposition-independent flags from the ⋯ overflow (decision #4):
+   *  `condition` rolls the finding into the workbook's batched conditions list;
+   *  `flagged` marks it for personal follow-up. */
+  condition?: boolean;
+  flagged?: boolean;
+  /** Response template last applied to the composer (for the "applied" hint). */
+  templateId?: string;
 }
 
 /* ============ Templates ============ */

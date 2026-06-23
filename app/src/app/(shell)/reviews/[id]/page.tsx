@@ -59,17 +59,12 @@ export default function ReviewDetailPage() {
       {tab === "administrative" ? (
         <DetailStub
           title="Administrative Review"
-          note="AI pre-fills the bank's compliance checklist (Yes / No / N-A with page citations); the reviewer attests and signs. Coming in a later sprint."
-        />
-      ) : view === "builder" ? (
-        <DetailStub
-          title="Workbook Builder"
-          note="Assemble and reorder sections, customize themes/fonts/risk labels, and set the org default layout. Coming in a later sprint."
+          note="AI pre-fills the bank's compliance checklist (Yes / No / N-A with page citations); the reviewer attests and signs. Coming next."
         />
       ) : view === "workbook" ? (
         <DetailStub
           title="Reviewer Workbook"
-          note="The compiled, branded output document — DRAFT → sign → complete or return to appraiser. Coming in a later sprint."
+          note="The compiled, branded output — Preview the document, flip to Edit layout to customize sections, theme and risk labels, then sign → complete or return to the appraiser. Coming next."
         />
       ) : (
         <TechnicalWorkspace reviewId={id} onOpenWorkbook={() => setView("workbook")} />

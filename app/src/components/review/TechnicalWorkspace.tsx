@@ -1,20 +1,28 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { cn, SEV_META } from "@/lib/utils";
-import { Icon } from "@/components/atoms";
-import { useWorkspaceStore } from "@/store";
-import { FindingCard } from "@/components/review/FindingCard";
-import { WorkbookRail } from "@/components/review/WorkbookRail";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { SEV_META } from "@/lib/utils";
+import { pipelineView } from "@/lib/review-lifecycle";
+import { Button, Icon } from "@/components/atoms";
+import { ActionMenu, PipelineTracker } from "@/components/molecules";
+import { useWorkspaceStore, useTemplatesStore } from "@/store";
+import { useReview } from "@/store/useReview";
+import { CoveragePanel } from "@/components/review/CoveragePanel";
+import { FilterSortPopover, type Sort, type SevFilter } from "@/components/review/FilterSortPopover";
+import { FindingList } from "@/components/review/FindingList";
+import { FindingFocus } from "@/components/review/FindingFocus";
 import { PdfPane } from "@/components/review/PdfPane";
-import type { Severity } from "@/types";
-
-type Sort = "severity" | "page";
+import { AddFindingModal } from "@/components/review/AddFindingModal";
 
 /**
- * Technical Review workspace (first-pass design — slated for focus-mode rebuild,
- * see docs/plans/parachute-v2-early-specs.md). Rendered as the Technical tab of
- * the review detail page, not a route.
+ * Technical Review — Findings focus-mode workspace. Three coordinated surfaces:
+ * a navigable list rail, a single-finding focus pane, and an on-demand docked
+ * source PDF (the third pane appears only when a page is cited / Source is
+ * toggled). A collapsible coverage panel proves the pipeline's reach; the
+ * toolbar is consolidated to a Filter-&-sort popover + Source toggle + Add +
+ * overflow. Keyboard: j/k move the selection, a/o/r/c disposition the focused
+ * finding (handled in `FindingFocus`). Rendered as the Technical tab's default
+ * sub-view, not a route.
  */
 export function TechnicalWorkspace({
   reviewId,
@@ -25,21 +33,22 @@ export function TechnicalWorkspace({
 }) {
   const { findings, states, isLoading, loadReview, acceptAllPasses, addReviewerFinding } =
     useWorkspaceStore();
+  const fetchTemplates = useTemplatesStore((s) => s.fetchTemplates);
+  const review = useReview(reviewId);
 
   const [sort, setSort] = useState<Sort>("severity");
-  const [sevFilter, setSevFilter] = useState<Severity | "all">("all");
+  const [sevFilter, setSevFilter] = useState<SevFilter>("all");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [pdfPage, setPdfPage] = useState<number | null>(null);
-  const [adding, setAdding] = useState(false);
-  const [newFinding, setNewFinding] = useState({
-    category: "Reviewer Note",
-    question: "",
-    analysis: "",
-    page: 1,
-  });
+  const [addOpen, setAddOpen] = useState(false);
 
   useEffect(() => {
     if (reviewId) loadReview(reviewId);
   }, [reviewId, loadReview]);
+
+  useEffect(() => {
+    fetchTemplates();
+  }, [fetchTemplates]);
 
   const sorted = useMemo(() => {
     let list = [...findings];
@@ -58,154 +67,176 @@ export function TechnicalWorkspace({
     return c;
   }, [findings]);
 
-  const decided = Object.values(states).filter((s) => s.disposition !== "pending").length;
-  const pct = findings.length ? Math.round((decided / findings.length) * 100) : 0;
+  // The effective selection is derived, never effect-synced: honour the user's
+  // pick while it's still in the visible list, otherwise fall back to the top.
+  const effectiveId = sorted.some((f) => f.id === selectedId)
+    ? selectedId
+    : sorted[0]?.id ?? null;
+  const selected = sorted.find((f) => f.id === effectiveId) ?? null;
 
-  const saveNew = () => {
-    if (!newFinding.question.trim()) return;
-    addReviewerFinding(newFinding);
-    setNewFinding({ category: "Reviewer Note", question: "", analysis: "", page: 1 });
-    setAdding(false);
-  };
+  // Selecting a finding; if the source dock is open, follow it to that finding's page.
+  const select = useCallback(
+    (id: string) => {
+      setSelectedId(id);
+      const f = findings.find((x) => x.id === id);
+      if (f) setPdfPage((p) => (p !== null ? f.page : p));
+    },
+    [findings],
+  );
 
-  if (isLoading && !findings.length) {
+  // j / k move the selection through the visible list.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement;
+      const tag = el?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || el?.isContentEditable)
+        return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const key = e.key.toLowerCase();
+      if (key !== "j" && key !== "k") return;
+      e.preventDefault();
+      const idx = sorted.findIndex((f) => f.id === effectiveId);
+      if (idx === -1) return;
+      const next = key === "j" ? Math.min(sorted.length - 1, idx + 1) : Math.max(0, idx - 1);
+      select(sorted[next].id);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [sorted, effectiveId, select]);
+
+  const toggleSource = () =>
+    setPdfPage((p) => (p !== null ? null : selected?.page ?? findings[0]?.page ?? 1));
+
+  if ((isLoading && !findings.length) || !review) {
+    return <div className="fm-state text-secondary">Loading findings…</div>;
+  }
+
+  // State-adaptive body: running pipeline / empty intake / clean / active.
+  if (review.status === "running") {
     return (
-      <div className="pagebody" style={{ color: "var(--md-on-surface-v)" }}>
-        Loading findings…
+      <div className="fm-state">
+        <div className="fm-state-card">
+          <div className="fm-state-icon fm-state-icon--run">
+            <Icon name="ai" size={26} />
+          </div>
+          <h3>Running the review pipeline</h3>
+          <p>
+            Parachute is working through the five-stage technical pipeline. Findings appear here
+            the moment it finishes.
+          </p>
+          <div className="fm-state-pipe">
+            <PipelineTracker view={pipelineView(review)} seed={review.id} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (review.status === "intake" || review.status === "autorejected") {
+    return (
+      <div className="fm-state">
+        <div className="fm-state-card">
+          <div className="fm-state-icon">
+            <Icon name="rocket" size={24} />
+          </div>
+          <h3>Technical review not started</h3>
+          <p>
+            This appraisal hasn’t been run through the technical pipeline yet. Order it to generate
+            findings for disposition.
+          </p>
+          <Button variant="primary" iconLeft="rocket">
+            Order Technical Review
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!findings.length) {
+    return (
+      <div className="fm-state">
+        <div className="fm-state-card">
+          <div className="fm-state-icon fm-state-icon--ok">
+            <Icon name="check-circle" size={26} />
+          </div>
+          <h3>No technical findings</h3>
+          <p>The pipeline completed without raising any findings on this report — a clean pass.</p>
+          <Button variant="outline" iconLeft="document" onClick={onOpenWorkbook}>
+            Go to Workbook
+          </Button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="pagebody">
-      <div className="ws-toolbar" style={{ justifyContent: "flex-end" }}>
-        <div style={{ flex: 1 }} />
-        <button className="btn btn-outline btn-sm" onClick={() => setAdding((a) => !a)}>
-          <Icon name="add" size={16} />
-          Add finding
-        </button>
-        <button className="btn btn-outline btn-sm" onClick={acceptAllPasses}>
-          <Icon name="check-all" size={16} />
-          Accept all passes
-        </button>
-        <button
-          className={cn("btn btn-sm", pdfPage ? "btn-filled" : "btn-tonal")}
-          onClick={() => setPdfPage((p) => (p ? null : 47))}
-        >
-          <Icon name="pdf" size={16} />
-          Source PDF
-        </button>
-      </div>
-
-      <div className="coverage">
-        <div
-          className="cov-ring"
-          style={{
-            background: `conic-gradient(var(--md-success) 0 ${pct}%, var(--md-surface-2) ${pct}% 100%)`,
-          }}
-        >
-          <span>{pct}%</span>
-        </div>
-        <div>
-          <div style={{ fontWeight: 600 }}>
-            {findings.length} findings across {Object.keys(counts).length} categories
-          </div>
-          <div style={{ fontSize: 12, color: "var(--md-on-surface-v)", marginTop: 2 }}>
-            Accept, disagree, or reject each one. Reject sends batched corrections back to the
-            appraiser.
-          </div>
-          <div className="cov-cats">
-            {(["crit", "fail", "flag", "pass"] as Severity[]).map((s) =>
-              counts[s] ? (
-                <span key={s} className="cov-cat">
-                  <b>{counts[s]}</b> {SEV_META[s].label}
-                </span>
-              ) : null,
-            )}
-          </div>
-        </div>
-      </div>
-
-      {adding && (
-        <div className="card" style={{ padding: 16, marginBottom: 16 }}>
-          <div className="field">
-            <label>Issue / question</label>
-            <input
-              value={newFinding.question}
-              onChange={(e) => setNewFinding({ ...newFinding, question: e.target.value })}
-              placeholder="e.g. Comparable 3 lacks a condition adjustment"
-            />
-          </div>
-          <div className="field" style={{ marginBottom: 12 }}>
-            <label>Detail</label>
-            <textarea
-              value={newFinding.analysis}
-              onChange={(e) => setNewFinding({ ...newFinding, analysis: e.target.value })}
-            />
-          </div>
-          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-            <button className="btn btn-text btn-sm" onClick={() => setAdding(false)}>
-              Cancel
-            </button>
-            <button className="btn btn-filled btn-sm" onClick={saveNew}>
-              Add finding
-            </button>
-          </div>
-        </div>
-      )}
-
-      <div className="ws-toolbar">
-        <div className="segmented">
-          <button className={cn(sort === "severity" && "on")} onClick={() => setSort("severity")}>
-            By severity
-          </button>
-          <button className={cn(sort === "page" && "on")} onClick={() => setSort("page")}>
-            By page
-          </button>
-        </div>
-        <div className="segmented">
-          <button className={cn(sevFilter === "all" && "on")} onClick={() => setSevFilter("all")}>
-            All
-          </button>
-          {(["crit", "fail", "flag", "pass"] as Severity[]).map((s) => (
-            <button key={s} className={cn(sevFilter === s && "on")} onClick={() => setSevFilter(s)}>
-              {SEV_META[s].label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className={cn("ws", pdfPage !== null && "with-pdf")}>
-        <div>
-          {sorted.map((f, i) => (
-            <FindingCard
-              key={f.id}
-              finding={f}
-              state={states[f.id] ?? { disposition: "pending" }}
-              onCite={(p) => setPdfPage(p)}
-              defaultOpen={i === 0 && sort === "severity"}
-            />
-          ))}
-          {sorted.length === 0 && (
-            <div
-              className="card"
-              style={{ padding: 32, textAlign: "center", color: "var(--md-on-surface-v)" }}
-            >
-              No findings match this filter.
-            </div>
-          )}
-        </div>
-
-        {pdfPage ? (
-          <PdfPane page={pdfPage} onClose={() => setPdfPage(null)} />
-        ) : (
-          <WorkbookRail
-            states={states}
-            total={findings.length}
-            onCompile={onOpenWorkbook}
+    <div className="fm">
+      <div className="fm-head">
+        <CoveragePanel findings={findings} states={states} />
+        <div className="fm-tools">
+          <FilterSortPopover
+            sort={sort}
+            setSort={setSort}
+            sevFilter={sevFilter}
+            setSevFilter={setSevFilter}
+            counts={counts}
           />
-        )}
+          <Button
+            variant={pdfPage !== null ? "primary" : "outline"}
+            size="sm"
+            iconLeft="pdf"
+            onClick={toggleSource}
+          >
+            Source
+          </Button>
+          <Button variant="outline" size="sm" iconLeft="add" onClick={() => setAddOpen(true)}>
+            Add finding
+          </Button>
+          <ActionMenu
+            tooltip="More actions"
+            items={[
+              { header: true, label: "Bulk" },
+              { label: "Accept all passing checks", icon: "check-all", onClick: acceptAllPasses },
+            ]}
+          />
+        </div>
       </div>
+
+      <div className={`fm-panes${pdfPage !== null ? " with-source" : ""}`}>
+        <FindingList
+          findings={sorted}
+          states={states}
+          selectedId={effectiveId}
+          onSelect={select}
+          total={findings.length}
+          onCompile={onOpenWorkbook}
+        />
+
+        {selected ? (
+          <FindingFocus
+            key={selected.id}
+            finding={selected}
+            state={states[selected.id] ?? { disposition: "pending" }}
+            property={review.propertyAddress}
+            onCite={(p) => setPdfPage(p)}
+          />
+        ) : (
+          <div className="fm-focus fm-focus--empty text-secondary">
+            Select a finding to review it.
+          </div>
+        )}
+
+        {pdfPage !== null && <PdfPane page={pdfPage} onClose={() => setPdfPage(null)} />}
+      </div>
+
+      <AddFindingModal
+        open={addOpen}
+        onClose={() => setAddOpen(false)}
+        onSave={(f) => {
+          addReviewerFinding(f);
+          setAddOpen(false);
+        }}
+      />
     </div>
   );
 }
