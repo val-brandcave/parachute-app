@@ -154,6 +154,10 @@ export function defaultSettings(theme: string): WbDocSettings {
 export interface WorkbookConfig {
   settings: WbDocSettings;
   sections: WbSection[];
+  /** The org `WorkbookLayout` this config was derived from — the "current base"
+   *  the Builder's Templates pane marks, and what "Reset to inherited" reverts to
+   *  (undefined when no org layout resolved for the property profile). */
+  baseLayoutId?: string;
 }
 
 /* ---------- Default config (inherits the org layout) ---------- */
@@ -259,7 +263,53 @@ export function defaultWorkbookConfig(
   });
 
   const theme = (layout && publishedVersion(layout.versions)?.theme) || "Navy";
-  return { settings: defaultSettings(theme), sections };
+  return { settings: defaultSettings(theme), sections, baseLayoutId: layout?.id };
+}
+
+/* ---------- Section numbering (mirrors the compiled doc) ---------- */
+
+/** Whether a section actually renders in the compiled doc — the same predicate
+ *  the Workbook applies (disabled hide; exhibits/sensitivity/SWOT need exhibit
+ *  data; conditions/returns hide when empty). Everything else always renders. */
+export function sectionRenders(
+  s: WbSection,
+  ctx: { hasExhibits: boolean; conditionsCount: number; returnedCount: number },
+): boolean {
+  if (!s.enabled) return false;
+  switch (s.type) {
+    case "exhibits":
+    case "sensitivity":
+    case "swot":
+      return ctx.hasExhibits;
+    case "conditions":
+      return ctx.conditionsCount > 0;
+    case "returns":
+      return ctx.returnedCount > 0;
+    default:
+      return true;
+  }
+}
+
+/** Short list labels mirroring the doc's numbering: body sections 1,2,3…,
+ *  appendix sections A,B…, and sections that won't render → null (shown as a
+ *  muted dash in the Builder list). Same order/algorithm as `WorkbookPreview`. */
+export function sectionListLabels(
+  sections: WbSection[],
+  ctx: { hasExhibits: boolean; conditionsCount: number; returnedCount: number },
+): Record<string, string | null> {
+  let num = 0;
+  let appx = 0;
+  const out: Record<string, string | null> = {};
+  for (const s of sections) {
+    if (!sectionRenders(s, ctx)) {
+      out[s.id] = null;
+    } else if (s.appendix) {
+      out[s.id] = String.fromCharCode(65 + appx++);
+    } else {
+      out[s.id] = String(++num);
+    }
+  }
+  return out;
 }
 
 /* ---------- Helpers shared by the Builder + the doc ---------- */

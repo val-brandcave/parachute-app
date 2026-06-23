@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Button, Icon, Modal } from "@/components/atoms";
+import { ActionMenu } from "@/components/molecules";
+import { ReviewActions } from "@/components/review/ReviewChrome";
 import { useWorkspaceStore, useTemplatesStore, useUsersStore } from "@/store";
 import { useReview } from "@/store/useReview";
 import { CURRENT_USER } from "@/lib/current-user";
@@ -24,13 +26,7 @@ import { WorkbookPreview } from "./WorkbookPreview";
  * surface is read + sign + file only. Everything the doc shows derives from the
  * workspace store, themed from the inherited org WorkbookLayout.
  */
-export function Workbook({
-  reviewId,
-  onCustomize,
-}: {
-  reviewId: string;
-  onCustomize?: () => void;
-}) {
+export function Workbook({ reviewId }: { reviewId: string }) {
   const {
     findings,
     states,
@@ -137,13 +133,7 @@ export function Workbook({
 
   return (
     <div className="wb">
-      <div className="wb-bar">
-        <Button variant="outline" size="sm" iconLeft="filter" onClick={onCustomize}>
-          Customize layout
-        </Button>
-
-        <div className="wb-bar-spacer" />
-
+      <ReviewActions>
         {!signed ? (
           <>
             {!canSign && (
@@ -169,22 +159,23 @@ export function Workbook({
               <Icon name="check-circle" size={14} />
               Signed — choose how to file
             </span>
-            <Button variant="ghost" size="sm" iconLeft="undo" onClick={reopenWorkbook}>
-              Reopen draft
-            </Button>
             <Button variant="outline" size="sm" iconLeft="undo" onClick={returnWorkbook}>
               Return to appraiser
             </Button>
             <Button variant="primary" size="sm" iconLeft="check-circle" onClick={fileWorkbook}>
               Complete &amp; file
             </Button>
+            <ActionMenu
+              tooltip="More actions"
+              items={[{ label: "Reopen draft", icon: "undo", onClick: reopenWorkbook }]}
+            />
           </>
         ) : (
           <Button variant="ghost" size="sm" iconLeft="undo" onClick={reopenWorkbook}>
             Reopen draft
           </Button>
         )}
-      </div>
+      </ReviewActions>
 
       <div className="wb-stage scroll">
         {workbook && (

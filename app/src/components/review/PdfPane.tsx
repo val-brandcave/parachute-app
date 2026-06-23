@@ -36,12 +36,8 @@ export function PdfPane({
       transition={{ duration: 0.25, ease: "easeOut" }}
     >
       <div className="pdfpane-h">
-        <span>
-          <Icon
-            name="pdf"
-            size={16}
-            style={{ color: "var(--md-primary)", marginRight: 6 }}
-          />
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+          <Icon name="pdf" size={16} style={{ color: "var(--md-primary)" }} />
           Source appraisal — page {page}
         </span>
         <button className="appbar-icon" onClick={onClose} aria-label="Close" style={{ color: "var(--md-on-surface-v)" }}>

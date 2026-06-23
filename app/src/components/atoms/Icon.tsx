@@ -69,6 +69,7 @@ import {
   IconCloudUpload,
   IconCopy,
   IconHistory,
+  IconGripVertical,
   type Icon as TablerIcon,
 } from "@tabler/icons-react";
 
@@ -143,6 +144,7 @@ export const ICONS = {
   publish: IconCloudUpload,
   copy: IconCopy,
   history: IconHistory,
+  grip: IconGripVertical,
 } satisfies Record<string, TablerIcon>;
 
 export type IconName = keyof typeof ICONS;

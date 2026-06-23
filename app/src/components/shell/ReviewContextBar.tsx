@@ -8,6 +8,7 @@ import { useUsersStore } from "@/store";
 import { Chip, Icon, type ChipTone } from "@/components/atoms";
 import { SegmentedControl, Tabs } from "@/components/molecules";
 import { ReviewSummaryModal } from "@/components/review/ReviewSummaryModal";
+import { ReviewActionsOutlet } from "@/components/review/ReviewChrome";
 
 export type ReviewTab = "technical" | "administrative";
 /** The three Technical sub-views (decision 2026-06-22, revised): **Findings ·
@@ -150,10 +151,13 @@ export function ReviewContextBar({
         )}
       </div>
 
-      {/* (2) Technical sub-views — pill tabs (the house in-page pattern) */}
+      {/* (2) control row — sub-view pill tabs LEFT, the active view's action
+          cluster RIGHT (projected in by each view via `ReviewActions`). One
+          header skeleton for all three views; no per-view toolbar band below. */}
       {tab === "technical" && (
         <div className="revsub">
           <Tabs tabs={subTabs} value={view} onChange={setView} />
+          <ReviewActionsOutlet />
         </div>
       )}
 

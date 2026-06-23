@@ -1,25 +1,29 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Icon } from "@/components/atoms";
 import { SEV_META } from "@/lib/utils";
 import type { Finding, FindingState, Severity } from "@/types";
 
 /**
- * Coverage / anti-miss panel — the "we didn't miss a material mistake" moment.
- * A progress ring over the disposition rate, plus the checks-run / categories /
- * skipped / needs-judgment tally that proves the pipeline's reach. Collapsible:
- * the ring + headline stay; the category breakdown + scope note tuck away.
+ * Coverage / anti-miss panel — the "we didn't miss a material mistake" moment,
+ * as a slim header band over the finding-focus column. Collapsed by default and
+ * controlled by the parent (so opening the Source PDF can auto-collapse it):
+ * collapsed shows only the donut ring + a one-line headline + the expand
+ * chevron; expanding reveals the checks/categories tally, the severity
+ * breakdown, and the out-of-scope assurance.
  */
 export function CoveragePanel({
   findings,
   states,
+  open,
+  onToggle,
 }: {
   findings: Finding[];
   states: Record<string, FindingState>;
+  open: boolean;
+  onToggle: () => void;
 }) {
-  const [open, setOpen] = useState(true);
-
   const stats = useMemo(() => {
     const total = findings.length;
     const decided = findings.filter((f) => (states[f.id]?.disposition ?? "pending") !== "pending")
@@ -39,25 +43,35 @@ export function CoveragePanel({
 
   return (
     <section className={`fm-cov${open ? " open" : ""}`}>
-      <div className="fm-cov-main">
-        <div
+      <button
+        className="fm-cov-main"
+        onClick={onToggle}
+        aria-expanded={open}
+        aria-label={open ? "Collapse coverage" : "Expand coverage"}
+      >
+        <span
           className="fm-cov-ring"
           style={{
             background: `conic-gradient(var(--md-success) 0 ${stats.pct}%, var(--md-surface-2) ${stats.pct}% 100%)`,
           }}
         >
           <span>{stats.pct}%</span>
-        </div>
+        </span>
 
-        <div className="fm-cov-body">
-          <div className="fm-cov-headline">
-            {stats.decided} of {stats.total} findings dispositioned
-            {stats.needJudgment > 0 && (
-              <span className="fm-cov-judge">
-                · {stats.needJudgment} need{stats.needJudgment === 1 ? "s" : ""} your judgment
-              </span>
-            )}
-          </div>
+        <span className="fm-cov-headline">
+          {stats.decided} of {stats.total} dispositioned
+          {stats.needJudgment > 0 && (
+            <span className="fm-cov-judge">
+              · {stats.needJudgment} need{stats.needJudgment === 1 ? "s" : ""} your judgment
+            </span>
+          )}
+        </span>
+
+        <Icon name="chevron-down" size={17} className="fm-cov-chev" />
+      </button>
+
+      {open && (
+        <div className="fm-cov-detail">
           <div className="fm-cov-line">
             <span>
               <b>{stats.total}</b> checks across <b>{stats.categories}</b> categories
@@ -69,20 +83,6 @@ export function CoveragePanel({
             <span className="fm-cov-dot">·</span>
             <span>full pipeline S1–S5</span>
           </div>
-        </div>
-
-        <button
-          className="fm-cov-toggle"
-          onClick={() => setOpen((o) => !o)}
-          aria-expanded={open}
-          aria-label={open ? "Collapse coverage" : "Expand coverage"}
-        >
-          <Icon name="chevron-down" size={18} />
-        </button>
-      </div>
-
-      {open && (
-        <div className="fm-cov-detail">
           <div className="fm-cov-cats">
             {(["crit", "fail", "flag", "pass"] as Severity[]).map((s) =>
               stats.bySev[s] ? (

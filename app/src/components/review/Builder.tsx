@@ -1,18 +1,20 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Reorder, useDragControls } from "framer-motion";
 import {
   Button,
-  IconButton,
   Icon,
   Switch,
   Input,
   Textarea,
   Label,
   Chip,
+  Tooltip,
   type IconName,
 } from "@/components/atoms";
-import { SegmentedControl } from "@/components/molecules";
+import { SegmentedControl, ActionMenu } from "@/components/molecules";
+import { ReviewActions } from "@/components/review/ReviewChrome";
 import { useWorkspaceStore, useTemplatesStore, useUsersStore } from "@/store";
 import { useReview } from "@/store/useReview";
 import { CURRENT_USER } from "@/lib/current-user";
@@ -29,10 +31,10 @@ import {
   PALETTE_TYPES,
   SINGLETON_TYPES,
   SECTION_TYPE_LABEL,
-  SECTION_TYPE_TAG,
   availableCategories,
   defaultWorkbookConfig,
   newSection,
+  sectionListLabels,
   type WbSection,
   type WbSectionType,
   type WbDocSettings,
@@ -76,13 +78,7 @@ const MERGE_FIELDS: { token: MergeField; desc: string }[] = [
   { token: "detail", desc: "Finding analysis detail" },
 ];
 
-export function Builder({
-  reviewId,
-  onPreview,
-}: {
-  reviewId: string;
-  onPreview?: () => void;
-}) {
+export function Builder({ reviewId }: { reviewId: string }) {
   const {
     findings,
     states,
@@ -93,7 +89,7 @@ export function Builder({
     loadReview,
     ensureWorkbook,
     resetWorkbook,
-    moveSection,
+    reorderSections,
     toggleSection,
     deleteSection,
     addSection,
@@ -108,6 +104,8 @@ export function Builder({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [rightMode, setRightMode] = useState<"preview" | "templates">("preview");
   const [editing, setEditing] = useState(true);
+  // "From the appraisal" source tray — collapsed by default (occasional action).
+  const [importsOpen, setImportsOpen] = useState(false);
 
   useEffect(() => {
     if (reviewId) loadReview(reviewId);
@@ -137,6 +135,16 @@ export function Builder({
   const sections = workbook.sections;
   const selected = selectedId ? sections.find((s) => s.id === selectedId) ?? null : null;
   const presentTypes = new Set(sections.map((s) => s.type));
+
+  // Section numbers mirroring the compiled doc (body 1,2,3…; appendix A,B…;
+  // hidden / empty-auto → null shown as a muted dash).
+  const sectionLabels = sectionListLabels(sections, {
+    hasExhibits: !!exhibits,
+    conditionsCount: findings.filter((f) => states[f.id]?.condition).length,
+    returnedCount: workbook.settings.hideRejected
+      ? 0
+      : findings.filter((f) => (states[f.id]?.disposition ?? "pending") === "rejected").length,
+  });
 
   const risk: RiskRating = review.riskRating ?? "moderate";
   const recommendation = deriveRecommendation(findings, states);
@@ -170,60 +178,23 @@ export function Builder({
     setRightMode("preview");
   };
 
+  const resetToInherited = () => {
+    resetWorkbook(defaultWorkbookConfig(layout, findings, exhibits));
+    setSelectedId(null);
+  };
+
   return (
     <div className="bld">
-      {/* ---- top bar + import-from-appraisal band ---- */}
-      <div className="bld-bar">
-        <div className="bld-inherit">
-          <Icon name="templates" size={15} />
-          Inherits <b>{layoutLabel(layout)}</b>
-        </div>
-        <div className="wb-bar-spacer" />
+      {/* view actions → projected into the shared control row (tabs · actions).
+          The inherited-layout context + Reset now live in the Document Settings
+          panel header (no standalone band); the Templates pane marks the base. */}
+      <ReviewActions>
         <span className={cn("bld-role", editing ? "is-on" : "is-off")}>
           <Icon name={editing ? "edit" : "eye"} size={13} />
           {editing ? "Reviewer editing" : "Read-only"}
         </span>
         <Switch checked={editing} onChange={setEditing} label="Reviewer editing mode" />
-        <Button
-          variant="ghost"
-          size="sm"
-          iconLeft="undo"
-          disabled={!editing}
-          onClick={() => {
-            resetWorkbook(defaultWorkbookConfig(layout, findings, exhibits));
-            setSelectedId(null);
-          }}
-        >
-          Reset to inherited
-        </Button>
-        <Button variant="outline" size="sm" iconLeft="eye" onClick={onPreview}>
-          Open workbook
-        </Button>
-      </div>
-
-      {importSources.length > 0 && (
-        <div className="bld-importbar">
-          <span className="bld-importbar-h">
-            <Icon name="download" size={14} /> Import from the appraisal report
-          </span>
-          <div className="bld-imports">
-            {importSources.map((s) => {
-              const added = importedTitles.has(s.title);
-              return (
-                <button
-                  key={s.id}
-                  className={cn("bld-import", added && "is-added")}
-                  disabled={!editing || added}
-                  onClick={() => addImport(s.title, s.body)}
-                >
-                  <Icon name={added ? "check" : "add"} size={13} />
-                  {s.title}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
+      </ReviewActions>
 
       {/* ---- 3-pane authoring grid ---- */}
       <div className={cn("bld-3", !editing && "is-readonly")}>
@@ -243,64 +214,27 @@ export function Builder({
             <span className="bld-count">{sections.length}</span>
           </div>
 
-          <ol className="bld-seclist">
-            {sections.map((s, i) => (
-              <li
+          <Reorder.Group
+            as="ol"
+            axis="y"
+            values={sections}
+            onReorder={reorderSections}
+            className="bld-seclist"
+          >
+            {sections.map((s) => (
+              <SectionRow
                 key={s.id}
-                className={cn(
-                  "bld-secrow",
-                  selectedId === s.id && "on",
-                  !s.enabled && "is-off",
-                )}
-                onClick={() => setSelectedId(s.id)}
-              >
-                <span className="bld-reorder">
-                  <button
-                    aria-label="Move up"
-                    disabled={!editing || i === 0}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      moveSection(s.id, -1);
-                    }}
-                  >
-                    <Icon name="arrow-up" size={13} />
-                  </button>
-                  <button
-                    aria-label="Move down"
-                    disabled={!editing || i === sections.length - 1}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      moveSection(s.id, 1);
-                    }}
-                  >
-                    <Icon name="arrow-down" size={13} />
-                  </button>
-                </span>
-                <Icon name={TYPE_ICON[s.type]} size={15} className="bld-secrow-i" />
-                <span className="bld-secrow-title">
-                  {s.title}
-                  {s.appendix && <span className="bld-secrow-appx">appendix</span>}
-                </span>
-                <span className="bld-secrow-tag">{SECTION_TYPE_TAG[s.type]}</span>
-                <span className="bld-secrow-actions" onClick={(e) => e.stopPropagation()}>
-                  <Switch
-                    checked={s.enabled}
-                    onChange={() => toggleSection(s.id)}
-                    label={`Toggle ${s.title}`}
-                    disabled={!editing}
-                  />
-                  <IconButton
-                    name="trash"
-                    size={15}
-                    aria-label="Delete section"
-                    className="bld-del"
-                    disabled={!editing}
-                    onClick={() => removeSection(s.id)}
-                  />
-                </span>
-              </li>
+                section={s}
+                label={sectionLabels[s.id]}
+                selected={selectedId === s.id}
+                editing={editing}
+                onSelect={() => setSelectedId(s.id)}
+                onToggle={() => toggleSection(s.id)}
+                onDelete={() => removeSection(s.id)}
+                onToggleAppendix={() => updateSection(s.id, { appendix: !s.appendix })}
+              />
             ))}
-          </ol>
+          </Reorder.Group>
 
           <div className="bld-pane-h">
             <Icon name="add" size={14} /> Add section
@@ -322,6 +256,50 @@ export function Builder({
               );
             })}
           </div>
+
+          {/* import-from-appraisal source tray — pull appraisal narrative into the
+              document as appendix sections (replaces the old standalone band) */}
+          {importSources.length > 0 && (
+            <div className="bld-srcgroup">
+              <button
+                className="bld-srcgroup-h"
+                onClick={() => setImportsOpen((o) => !o)}
+                aria-expanded={importsOpen}
+              >
+                <Icon name="download" size={14} />
+                From the appraisal
+                <span className="bld-count">{importSources.length}</span>
+                <Icon name="chevron-down" size={15} className="bld-srcgroup-chev" />
+              </button>
+
+              {importsOpen && (
+                <div className="bld-srclist">
+                  {importSources.map((s) => {
+                    const added = importedTitles.has(s.title);
+                    return (
+                      <div key={s.id} className={cn("bld-src", added && "is-added")}>
+                        <span className="bld-src-title">{s.title}</span>
+                        {added ? (
+                          <span className="bld-src-added">
+                            <Icon name="check" size={13} /> Added
+                          </span>
+                        ) : (
+                          <button
+                            className="bld-src-add"
+                            aria-label={`Add ${s.title}`}
+                            disabled={!editing}
+                            onClick={() => addImport(s.title, s.body)}
+                          >
+                            <Icon name="add" size={15} />
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
         </aside>
 
         {/* CENTER — editor */}
@@ -339,6 +317,8 @@ export function Builder({
             <DocumentSettings
               settings={workbook.settings}
               update={updateSettings}
+              baseLabel={layoutLabel(layout)}
+              onReset={editing ? resetToInherited : undefined}
             />
           )}
         </section>
@@ -376,34 +356,58 @@ export function Builder({
             </div>
           ) : (
             <div className="bld-templates scroll">
-              <div className="bld-tpl-h">Workbook layout templates</div>
+              <div className="bld-tpl-h">Current base</div>
               <p className="bld-tpl-note">
-                Start from an org-published layout. Applying one replaces the current section
-                set — your per-review edits are re-derived from that template.
+                This review&rsquo;s layout derives from the base below. Applying another replaces
+                the section set — your per-review edits are re-derived from it.
               </p>
-              {layouts.map((l) => (
-                <div key={l.id} className="bld-tpl">
-                  <div className="bld-tpl-main">
-                    <span className="bld-tpl-name">{l.name}</span>
-                    <span className="bld-tpl-meta">
-                      {l.profile}
-                      {l.isDefault && <Chip tone="accent">Default</Chip>}
-                    </span>
+              {(() => {
+                const baseId = workbook.baseLayoutId;
+                const base = layouts.find((l) => l.id === baseId);
+                const others = layouts.filter((l) => l.id !== baseId);
+                const card = (l: (typeof layouts)[number], isBase: boolean) => (
+                  <div key={l.id} className={cn("bld-tpl", isBase && "is-base")}>
+                    <div className="bld-tpl-main">
+                      <span className="bld-tpl-name">{l.name}</span>
+                      <span className="bld-tpl-meta">
+                        {l.profile}
+                        {l.isDefault && <Chip tone="accent">Default</Chip>}
+                      </span>
+                    </div>
+                    {isBase ? (
+                      <span className="bld-tpl-inuse">
+                        <Icon name="check" size={14} /> In use
+                      </span>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={!editing}
+                        onClick={() => {
+                          resetWorkbook(defaultWorkbookConfig(l, findings, exhibits));
+                          setSelectedId(null);
+                          setRightMode("preview");
+                        }}
+                      >
+                        Use as base
+                      </Button>
+                    )}
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={!editing}
-                    onClick={() => {
-                      resetWorkbook(defaultWorkbookConfig(l, findings, exhibits));
-                      setSelectedId(null);
-                      setRightMode("preview");
-                    }}
-                  >
-                    Use as base
-                  </Button>
-                </div>
-              ))}
+                );
+                return (
+                  <>
+                    {base && card(base, true)}
+                    {others.length > 0 && (
+                      <>
+                        <div className="bld-tpl-h" style={{ marginTop: 16 }}>
+                          Other org layouts
+                        </div>
+                        {others.map((l) => card(l, false))}
+                      </>
+                    )}
+                  </>
+                );
+              })()}
 
               <div className="bld-tpl-h" style={{ marginTop: 18 }}>
                 Merge fields
@@ -428,14 +432,124 @@ export function Builder({
   );
 }
 
+/* ---------- Section list row (drag-to-reorder via a grip handle) ---------- */
+
+function SectionRow({
+  section,
+  label,
+  selected,
+  editing,
+  onSelect,
+  onToggle,
+  onDelete,
+  onToggleAppendix,
+}: {
+  section: WbSection;
+  label: string | null;
+  selected: boolean;
+  editing: boolean;
+  onSelect: () => void;
+  onToggle: () => void;
+  onDelete: () => void;
+  onToggleAppendix: () => void;
+}) {
+  const controls = useDragControls();
+  // Single-line row: grip · number · title (ellipsis+tooltip) · small switch · ⋯.
+  // Type & appendix badges are gone — the letter label signals appendix, the title
+  // names the section; Delete (+ move-to-appendix) lives in the ⋯ menu.
+  const canAppendix = section.type === "swot" || section.type === "freeText";
+  return (
+    <Reorder.Item
+      value={section}
+      dragListener={false}
+      dragControls={controls}
+      className={cn("bld-secrow", selected && "on", !section.enabled && "is-off")}
+      onClick={onSelect}
+    >
+      <button
+        type="button"
+        className="bld-grip"
+        aria-label="Drag to reorder"
+        disabled={!editing}
+        onPointerDown={(e) => {
+          if (editing) controls.start(e);
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <Icon name="grip" size={16} />
+      </button>
+
+      <span className={cn("bld-secnum", label === null && "is-off")}>{label ?? "–"}</span>
+
+      <TruncTitle text={section.title} />
+
+      <span className="bld-secrow-actions" onClick={(e) => e.stopPropagation()}>
+        <Switch
+          size="sm"
+          checked={section.enabled}
+          onChange={onToggle}
+          label={`Toggle ${section.title}`}
+          disabled={!editing}
+        />
+        {editing && (
+          <ActionMenu
+            tooltip="More actions"
+            items={[
+              ...(canAppendix
+                ? [
+                    {
+                      label: section.appendix ? "Move to body" : "Move to appendix",
+                      icon: "book" as IconName,
+                      onClick: onToggleAppendix,
+                    },
+                    { divider: true },
+                  ]
+                : []),
+              { label: "Delete section", icon: "trash" as IconName, danger: true, onClick: onDelete },
+            ]}
+          />
+        )}
+      </span>
+    </Reorder.Item>
+  );
+}
+
+/** Section title that ellipsises and shows a tooltip ONLY when actually clipped. */
+function TruncTitle({ text }: { text: string }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const [trunc, setTrunc] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const check = () => setTrunc(el.scrollWidth > el.clientWidth + 1);
+    check();
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [text]);
+  return (
+    <Tooltip content={text} block disabled={!trunc}>
+      <span ref={ref} className="bld-secrow-title">
+        {text}
+      </span>
+    </Tooltip>
+  );
+}
+
 /* ---------- Document settings editor (center, no section selected) ---------- */
 
 function DocumentSettings({
   settings,
   update,
+  baseLabel,
+  onReset,
 }: {
   settings: WbDocSettings;
   update: (patch: Partial<WbDocSettings>) => void;
+  /** The org layout this doc inherits from — shown as the panel's base caption. */
+  baseLabel: string;
+  /** Revert the whole config to the inherited layout's default; omit to disable. */
+  onReset?: () => void;
 }) {
   return (
     <div className="bld-editor">
@@ -445,6 +559,19 @@ function DocumentSettings({
           <h3>Document settings</h3>
           <p>Branding, what each finding shows, and the risk wording — applied to the whole doc.</p>
         </div>
+      </div>
+
+      {/* inherited-layout context (replaces the old standalone band) + reset */}
+      <div className="bld-base">
+        <span className="bld-base-l">
+          <Icon name="templates" size={14} />
+          Based on <b>{baseLabel}</b>
+        </span>
+        {onReset && (
+          <Button variant="ghost" size="sm" iconLeft="undo" onClick={onReset}>
+            Reset to inherited
+          </Button>
+        )}
       </div>
 
       <FieldGroup label="Theme accent">

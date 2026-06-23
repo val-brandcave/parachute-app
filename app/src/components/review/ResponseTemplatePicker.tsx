@@ -90,7 +90,6 @@ export function ResponseTemplatePicker({
         aria-haspopup="menu"
         aria-expanded={open}
       >
-        <Icon name="ai" size={15} />
         Insert response template
         <Icon name="chevron-down" size={15} />
       </button>
