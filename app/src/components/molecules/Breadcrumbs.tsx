@@ -40,8 +40,10 @@ export function Breadcrumbs() {
   if (segs[0] === "reviews" && segs[1]) {
     const review = reviews.find((r) => r.id === segs[1]);
     crumbs.push({ label: "Reviews", href: "/reviews" });
+    // Leaf = the loan number (the canonical record id), not the address — the
+    // full property identity lives prominently in the ReviewContextBar instead.
     crumbs.push({
-      label: review?.propertyAddress ?? "Review",
+      label: review ? `Loan #${review.loanNo}` : "Review",
       href: `/reviews/${segs[1]}`,
     });
     if (segs[2] && SUB_LABELS[segs[2]]) crumbs.push({ label: SUB_LABELS[segs[2]] });

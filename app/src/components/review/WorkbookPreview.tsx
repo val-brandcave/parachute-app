@@ -6,6 +6,8 @@ import { SeverityChip } from "@/components/molecules";
 import {
   RECOMMENDATION_META,
   RISK_META,
+  WB_THEMES,
+  WB_FONTS,
   type Recommendation,
   type RiskRating,
   valueSummary,
@@ -13,12 +15,16 @@ import {
   formatLongDate,
   dispTag,
   dispositionLine,
-  findingsSections,
   aiBasisLine,
   actionItems,
   workbookHeader,
   WORKBOOK_FOOTER,
 } from "@/lib/workbook";
+import {
+  visibleSensitivityCols,
+  type WorkbookConfig,
+  type WbSection,
+} from "@/lib/workbook-config";
 import {
   AdjustmentTable,
   PsfBarChart,
@@ -29,26 +35,23 @@ import {
 import type { WorkbookSignature, WorkbookFiling } from "@/store/workspace.store";
 import type { Finding, FindingState, Review, WorkbookExhibits } from "@/types";
 
-const BODY_DISPS = ["accepted", "override", "commented", "pending"];
-
 /**
  * The compiled, branded, auditor-facing workbook document (§4.4) — the reviewer's
- * deliverable. Everything DERIVES from the live workspace store: findings grouped
- * into approach sections with their disposition + AI-basis footnote, conditions,
- * a batched return letter, analytical exhibits (tables/charts), sensitivity, SWOT,
- * imported appraisal narrative, and the conclusion's action items. A DRAFT ribbon
- * + watermark sit over the page until signed; the certification block then carries
- * the name / timestamp / SHA-256 seal.
+ * deliverable. Its CONTENT derives from the live workspace store (findings,
+ * dispositions, conditions, returns, action items); its ORDER, VISIBILITY,
+ * GROUPING, and PRESENTATION come from the per-review Builder config
+ * (`WorkbookConfig`) — so the Workbook sub-view and the Builder's live mini-
+ * preview render the exact same paper. A DRAFT ribbon + watermark sit over the
+ * page until signed; the certification block then carries the SHA-256 seal.
  */
 export function WorkbookPreview({
   review,
   findings,
   states,
   exhibits,
+  config,
   recommendation,
   risk,
-  accent,
-  headingFont,
   reviewerName,
   reviewedAt,
   signature,
@@ -58,10 +61,9 @@ export function WorkbookPreview({
   findings: Finding[];
   states: Record<string, FindingState>;
   exhibits: WorkbookExhibits | null;
+  config: WorkbookConfig;
   recommendation: Recommendation;
   risk: RiskRating;
-  accent: string;
-  headingFont: string;
   reviewerName: string;
   reviewedAt: number;
   signature: WorkbookSignature | null;
@@ -71,240 +73,274 @@ export function WorkbookPreview({
   const rec = RECOMMENDATION_META[recommendation];
   const riskMeta = RISK_META[risk];
 
+  const { settings } = config;
+  const accent = WB_THEMES[settings.theme]?.accent ?? WB_THEMES.Navy.accent;
+  const headingFont = WB_FONTS[settings.headingFont]?.stack ?? WB_FONTS.display.stack;
+  const riskWording = settings.riskWording[risk] || riskMeta.wording;
+
   const disp = (id: string) => states[id]?.disposition ?? "pending";
   const conditions = findings.filter((f) => states[f.id]?.condition);
-  const returned = findings.filter((f) => disp(f.id) === "rejected");
+  const returned = settings.hideRejected
+    ? []
+    : findings.filter((f) => disp(f.id) === "rejected");
   const actions = actionItems(findings, states);
-  const bodySections = useMemo(
-    () => findingsSections(findings, (f) => BODY_DISPS.includes(disp(f.id))),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [findings, states],
-  );
 
-  // Assemble the ordered list of visible sections, then number them (numeric for
-  // the body, letters for appendices) so the doc reads like a real workbook.
-  const sections: { title: string; appendix?: boolean; node: React.ReactNode }[] = [];
+  // Which dispositions belong in the findings body (rejected go to "Returned";
+  // overridden can be hidden via settings).
+  const bodyDisps = settings.hideOverridden
+    ? ["accepted", "commented", "pending"]
+    : ["accepted", "override", "commented", "pending"];
 
-  sections.push({
-    title: "Property & Value Summary",
-    node: (
-      <>
-        <div className="wb-facts">
-          <Fact label="Concluded Market Value" value={formatMoney(value.concludedValue)} big />
-          <Fact label="Effective Date" value={formatLongDate(value.effectiveDate)} />
-          <Fact label="Loan Amount" value={formatMoney(value.loanAmount)} />
-          <Fact label="Loan-to-Value" value={`${Math.round(value.ltv * 100)}%`} />
-          <Fact label="Property Rights" value={value.rights} />
-          <Fact label="Property Type" value={review.propertyType} />
-        </div>
-        <div className="wb-approaches">
-          <span className="wb-mini-label">Approaches developed</span>
-          <div className="wb-tags">
-            {value.approaches.map((a) => (
-              <span key={a} className="wb-tag">
-                {a}
-              </span>
-            ))}
-          </div>
-        </div>
-      </>
-    ),
-  });
+  // Build each enabled section to a node (null = auto section with no content,
+  // skipped without consuming a number).
+  const built = config.sections
+    .filter((s) => s.enabled)
+    .map((s) => ({ s, node: buildNode(s) }))
+    .filter((b): b is { s: WbSection; node: React.ReactNode } => b.node !== null);
 
-  bodySections.forEach((sec) => {
-    sections.push({
-      title: sec.title,
-      node: (
-        <>
-          {sec.findings.map((f) =>
-            disp(f.id) === "pending" ? (
-              <OpenPlaceholder key={f.id} f={f} />
-            ) : (
-              <FindingEntry key={f.id} f={f} state={states[f.id]} />
-            ),
-          )}
-        </>
-      ),
-    });
-  });
-
-  if (exhibits) {
-    sections.push({
-      title: "Analytical Exhibits",
-      node: (
-        <>
-          <div className="wb-exh-h">Sales comparison adjustment grid</div>
-          <AdjustmentTable rows={exhibits.adjustmentGrid} />
-          <p className="wb-exh-note" style={{ marginBottom: 14 }}>
-            Abbreviated grid — the full grid appears in the appraisal (p.47).
-          </p>
-          <PsfBarChart psf={exhibits.psf} />
-          <CapRateScale cap={exhibits.capRate} />
-        </>
-      ),
-    });
-    sections.push({
-      title: "Sensitivity Analysis",
-      node: <SensitivityHeat sens={exhibits.sensitivity} />,
-    });
-  }
-
-  if (conditions.length) {
-    sections.push({
-      title: "Conditions of Approval",
-      node: (
-        <>
-          <p className="wb-prose">
-            Approval is recommended subject to the following condition
-            {conditions.length === 1 ? "" : "s"} being satisfied prior to funding:
-          </p>
-          <ol className="wb-conditions">
-            {conditions.map((f, i) => (
-              <li key={f.id}>
-                <span className="wb-cond-id">C{i + 1}</span>
-                <div>
-                  <div className="wb-cond-text">
-                    {states[f.id]?.reason || states[f.id]?.comment || f.question}
-                  </div>
-                  <div className="wb-cond-src">
-                    {f.category} · p.{f.page}
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ol>
-        </>
-      ),
-    });
-  }
-
-  if (returned.length) {
-    sections.push({
-      title: "Returned to Appraiser",
-      node: (
-        <>
-          <p className="wb-prose">
-            The following {returned.length === 1 ? "item is" : `${returned.length} items are`}{" "}
-            returned to {review.appraisalFirm} for revision and resubmission:
-          </p>
-          <ol className="wb-returns">
-            {returned.map((f, i) => (
-              <li key={f.id}>
-                <div className="wb-ret-top">
-                  <span className="wb-ret-n">Item {i + 1}</span>
-                  <SeverityChip severity={f.severity} />
-                  <span className="wb-ret-page">p.{f.page}</span>
-                </div>
-                <div className="wb-ret-q">{f.question}</div>
-                <div className="wb-ret-reason">{dispositionLine(states[f.id])}</div>
-              </li>
-            ))}
-          </ol>
-        </>
-      ),
-    });
-  }
-
-  sections.push({
-    title: "Conclusion & Action Items",
-    node: (
-      <>
-        <p className="wb-prose">
-          Based on the technical review of the appraisal of <b>{review.propertyAddress}</b>{" "}
-          prepared by {review.appraisalFirm}, the reviewer&rsquo;s recommendation is{" "}
-          <b>{rec.label.toLowerCase()}</b>. {riskMeta.wording}
-        </p>
-        {actions.length > 0 ? (
-          <ol className="wb-actions-list">
-            {actions.map((a) => (
-              <li key={a.id}>
-                <span className="wb-act-id">{a.id}</span>
-                <span className="wb-act-text">{a.text}</span>
-                <span className="wb-act-due">{a.deadline}</span>
-              </li>
-            ))}
-          </ol>
-        ) : (
-          <p className="wb-prose wb-muted">
-            No outstanding action items — all findings were reconciled without conditions.
-          </p>
-        )}
-      </>
-    ),
-  });
-
-  if (exhibits) {
-    sections.push({
-      title: "SWOT Analysis",
-      appendix: true,
-      node: <SwotGrid swot={exhibits.swot} />,
-    });
-    if (exhibits.imported.length) {
-      sections.push({
-        title: "Imported Appraisal Sections",
-        appendix: true,
-        node: (
+  function buildNode(s: WbSection): React.ReactNode {
+    switch (s.type) {
+      case "summary":
+        return (
           <>
-            {exhibits.imported.map((s) => (
-              <div key={s.id} className="wb-import">
-                <h4 className="wb-import-h">{s.title}</h4>
-                <p className="wb-prose">{s.body}</p>
+            <div className="wb-facts">
+              <Fact label="Concluded Market Value" value={formatMoney(value.concludedValue)} big />
+              <Fact label="Effective Date" value={formatLongDate(value.effectiveDate)} />
+              <Fact label="Loan Amount" value={formatMoney(value.loanAmount)} />
+              <Fact label="Loan-to-Value" value={`${Math.round(value.ltv * 100)}%`} />
+              <Fact label="Property Rights" value={value.rights} />
+              <Fact label="Property Type" value={review.propertyType} />
+            </div>
+            <div className="wb-approaches">
+              <span className="wb-mini-label">Approaches developed</span>
+              <div className="wb-tags">
+                {value.approaches.map((a) => (
+                  <span key={a} className="wb-tag">
+                    {a}
+                  </span>
+                ))}
               </div>
-            ))}
+            </div>
           </>
-        ),
-      });
+        );
+
+      case "findings": {
+        const cats = s.categories ?? [];
+        const items = findings.filter(
+          (f) => cats.includes(f.category) && bodyDisps.includes(disp(f.id)),
+        );
+        if (!items.length)
+          return (
+            <p className="wb-prose wb-muted">No findings fall under this section.</p>
+          );
+        return (
+          <>
+            {items.map((f) =>
+              disp(f.id) === "pending" ? (
+                <OpenPlaceholder key={f.id} f={f} />
+              ) : (
+                <FindingEntry
+                  key={f.id}
+                  f={f}
+                  state={states[f.id]}
+                  showStatus={settings.showStatus}
+                  showConfidence={settings.showConfidence}
+                  coded={settings.colorCoding}
+                />
+              ),
+            )}
+          </>
+        );
+      }
+
+      case "exhibits": {
+        if (!exhibits) return null;
+        const series = s.series ?? { adjustmentGrid: true, psf: true, capRate: true };
+        const mode = s.exhibitMode ?? "both";
+        const showTable = series.adjustmentGrid && mode !== "chart";
+        const showPsf = series.psf && mode !== "table";
+        const showCap = series.capRate && mode !== "table";
+        if (!showTable && !showPsf && !showCap)
+          return <p className="wb-prose wb-muted">All exhibit series are hidden.</p>;
+        return (
+          <>
+            {showTable && (
+              <>
+                <div className="wb-exh-h">Sales comparison adjustment grid</div>
+                <AdjustmentTable rows={exhibits.adjustmentGrid} />
+                <p className="wb-exh-note" style={{ marginBottom: 14 }}>
+                  Abbreviated grid — the full grid appears in the appraisal (p.47).
+                </p>
+              </>
+            )}
+            {showPsf && <PsfBarChart psf={exhibits.psf} />}
+            {showCap && <CapRateScale cap={exhibits.capRate} />}
+          </>
+        );
+      }
+
+      case "sensitivity": {
+        if (!exhibits) return null;
+        const n = s.sensitivityCols ?? exhibits.sensitivity.cols.length;
+        const cols = visibleSensitivityCols(exhibits.sensitivity.cols, n);
+        return <SensitivityHeat sens={{ ...exhibits.sensitivity, cols }} />;
+      }
+
+      case "conditions":
+        if (!conditions.length) return null;
+        return (
+          <>
+            <p className="wb-prose">
+              Approval is recommended subject to the following condition
+              {conditions.length === 1 ? "" : "s"} being satisfied prior to funding:
+            </p>
+            <ol className="wb-conditions">
+              {conditions.map((f, i) => (
+                <li key={f.id}>
+                  <span className="wb-cond-id">C{i + 1}</span>
+                  <div>
+                    <div className="wb-cond-text">
+                      {states[f.id]?.reason || states[f.id]?.comment || f.question}
+                    </div>
+                    <div className="wb-cond-src">
+                      {f.category} · p.{f.page}
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </>
+        );
+
+      case "returns":
+        if (!returned.length) return null;
+        return (
+          <>
+            <p className="wb-prose">
+              The following {returned.length === 1 ? "item is" : `${returned.length} items are`}{" "}
+              returned to {review.appraisalFirm} for revision and resubmission:
+            </p>
+            <ol className="wb-returns">
+              {returned.map((f, i) => (
+                <li key={f.id}>
+                  <div className="wb-ret-top">
+                    <span className="wb-ret-n">Item {i + 1}</span>
+                    <SeverityChip severity={f.severity} />
+                    <span className="wb-ret-page">p.{f.page}</span>
+                  </div>
+                  <div className="wb-ret-q">{f.question}</div>
+                  <div className="wb-ret-reason">{dispositionLine(states[f.id])}</div>
+                </li>
+              ))}
+            </ol>
+          </>
+        );
+
+      case "conclusion":
+        return (
+          <>
+            <p className="wb-prose">
+              Based on the technical review of the appraisal of <b>{review.propertyAddress}</b>{" "}
+              prepared by {review.appraisalFirm}, the reviewer&rsquo;s recommendation is{" "}
+              <b>{rec.label.toLowerCase()}</b>. {riskWording}
+            </p>
+            {actions.length > 0 ? (
+              <ol className="wb-actions-list">
+                {actions.map((a) => (
+                  <li key={a.id}>
+                    <span className="wb-act-id">{a.id}</span>
+                    <span className="wb-act-text">{a.text}</span>
+                    <span className="wb-act-due">{a.deadline}</span>
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <p className="wb-prose wb-muted">
+                No outstanding action items — all findings were reconciled without conditions.
+              </p>
+            )}
+          </>
+        );
+
+      case "swot":
+        if (!exhibits) return null;
+        return <SwotGrid swot={exhibits.swot} />;
+
+      case "freeText":
+        return (
+          <>
+            {s.imported && (
+              <div className="wb-import-tag">
+                <Icon name="download" size={12} /> Imported from the appraisal report
+              </div>
+            )}
+            {s.body ? (
+              <p className="wb-prose">{s.body}</p>
+            ) : (
+              <p className="wb-prose wb-muted">
+                Empty narrative — add body text in the Builder.
+              </p>
+            )}
+          </>
+        );
+
+      case "certification":
+        return (
+          <>
+            <p className="wb-prose wb-cert-stmt">
+              I certify that I have reviewed the referenced appraisal in accordance with USPAP
+              Standard 3 and the policies of {review.bank}, and that the analysis, opinions, and
+              conclusions expressed in this review are my own professional judgment.
+            </p>
+            {signature ? (
+              <div className="wb-sig">
+                <div className="wb-sig-mark" style={{ fontFamily: headingFont }}>
+                  {signature.name}
+                </div>
+                <div className="wb-sig-name">
+                  {signature.name}
+                  <span>{signature.designation}</span>
+                </div>
+                <div className="wb-sig-meta">
+                  <span>
+                    <Icon name="check-circle" size={13} /> Signed {formatLongDate(signature.at)}
+                  </span>
+                  <span className="wb-sig-sha" title={signature.sha}>
+                    <Icon name="sso" size={13} /> SHA-256 {signature.sha.slice(0, 16)}…
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="wb-sig wb-sig--empty">
+                <div className="wb-sig-line" />
+                <div className="wb-sig-pending">
+                  <Icon name="clock" size={14} /> Awaiting reviewer signature
+                </div>
+              </div>
+            )}
+          </>
+        );
+
+      default:
+        return null;
     }
   }
-
-  sections.push({
-    title: "Reviewer Certification",
-    node: (
-      <>
-        <p className="wb-prose wb-cert-stmt">
-          I certify that I have reviewed the referenced appraisal in accordance with USPAP
-          Standard 3 and the policies of {review.bank}, and that the analysis, opinions, and
-          conclusions expressed in this review are my own professional judgment.
-        </p>
-        {signature ? (
-          <div className="wb-sig">
-            <div className="wb-sig-mark" style={{ fontFamily: headingFont }}>
-              {signature.name}
-            </div>
-            <div className="wb-sig-name">
-              {signature.name}
-              <span>{signature.designation}</span>
-            </div>
-            <div className="wb-sig-meta">
-              <span>
-                <Icon name="check-circle" size={13} /> Signed {formatLongDate(signature.at)}
-              </span>
-              <span className="wb-sig-sha" title={signature.sha}>
-                <Icon name="sso" size={13} /> SHA-256 {signature.sha.slice(0, 16)}…
-              </span>
-            </div>
-          </div>
-        ) : (
-          <div className="wb-sig wb-sig--empty">
-            <div className="wb-sig-line" />
-            <div className="wb-sig-pending">
-              <Icon name="clock" size={14} /> Awaiting reviewer signature
-            </div>
-          </div>
-        )}
-      </>
-    ),
-  });
 
   // Number: body sections 1..N, appendices A, B, …
   let num = 0;
   let appx = 0;
 
   const draft = !signature;
+  const scaleClass =
+    settings.scale === "compact"
+      ? " wb-doc--compact"
+      : settings.scale === "spacious"
+        ? " wb-doc--spacious"
+        : "";
 
   return (
     <article
-      className={`wb-doc${draft ? " is-draft" : ""}`}
+      className={`wb-doc${draft ? " is-draft" : ""}${scaleClass}`}
       style={{ "--wb-accent": accent, "--wb-head": headingFont } as React.CSSProperties}
     >
       {draft && <div className="wb-ribbon">Draft</div>}
@@ -318,13 +354,15 @@ export function WorkbookPreview({
       )}
 
       {/* running header strip (the org/document header) */}
-      <div className="wb-runhead">
-        <span className="wb-runhead-org">
-          <Icon name="org" size={14} />
-          {workbookHeader(review.bank)}
-        </span>
-        <span className="wb-runhead-doc">Technical Review Workbook</span>
-      </div>
+      {settings.showHeader && (
+        <div className="wb-runhead">
+          <span className="wb-runhead-org">
+            {settings.showLogo && <Icon name="org" size={14} />}
+            {workbookHeader(review.bank)}
+          </span>
+          <span className="wb-runhead-doc">Technical Review Workbook</span>
+        </div>
+      )}
 
       <header className="wb-band">
         <div className="wb-band-eyebrow">Technical Review Workbook</div>
@@ -351,7 +389,7 @@ export function WorkbookPreview({
           <div className="wb-risk-pill" style={{ background: riskMeta.bg, color: riskMeta.color }}>
             <Icon name="info" size={15} />
             <b>Risk: {riskMeta.label.replace(" Risk", "")}</b>
-            <span className="wb-risk-word">{riskMeta.wording}</span>
+            <span className="wb-risk-word">{riskWording}</span>
           </div>
         </div>
 
@@ -363,18 +401,18 @@ export function WorkbookPreview({
         </div>
       </header>
 
-      {sections.map((s) => {
+      {built.map(({ s, node }) => {
         const label = s.appendix
           ? `Appendix ${String.fromCharCode(65 + appx++)}`
           : String(++num);
         return (
-          <Section key={s.title} id={s.title} label={label} title={s.title}>
-            {s.node}
+          <Section key={s.id} id={s.id} label={label} title={s.title}>
+            {node}
           </Section>
         );
       })}
 
-      <footer className="wb-foot">{WORKBOOK_FOOTER}</footer>
+      {settings.showFooter && <footer className="wb-foot">{WORKBOOK_FOOTER}</footer>}
     </article>
   );
 }
@@ -393,7 +431,7 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="wb-sec" id={`wb-sec-${id.replace(/\s+/g, "-").toLowerCase()}`}>
+    <section className="wb-sec" id={`wb-sec-${id}`}>
       <h3 className="wb-sec-h" style={{ fontFamily: "var(--wb-head)" }}>
         <span className="wb-sec-n">{label}</span>
         {title}
@@ -421,22 +459,36 @@ function Meta({ label, value }: { label: string; value: string }) {
   );
 }
 
-function FindingEntry({ f, state }: { f: Finding; state: FindingState }) {
+function FindingEntry({
+  f,
+  state,
+  showStatus,
+  showConfidence,
+  coded,
+}: {
+  f: Finding;
+  state: FindingState;
+  showStatus: boolean;
+  showConfidence: boolean;
+  coded: boolean;
+}) {
   const tag = dispTag(state.disposition);
   return (
-    <div className="wb-find">
+    <div className={`wb-find${coded ? ` wb-find--${f.severity}` : ""}`}>
       <div className="wb-find-top">
         <span className="wb-find-q">{f.question}</span>
-        <span className={`wb-tag-disp wb-tag-disp--${tag.tone}`}>
-          <Icon
-            name={tag.tone === "pass" ? "check-circle" : tag.tone === "fail" ? "x-circle" : "edit"}
-            size={12}
-          />
-          {tag.label}
-        </span>
+        {showStatus && (
+          <span className={`wb-tag-disp wb-tag-disp--${tag.tone}`}>
+            <Icon
+              name={tag.tone === "pass" ? "check-circle" : tag.tone === "fail" ? "x-circle" : "edit"}
+              size={12}
+            />
+            {tag.label}
+          </span>
+        )}
       </div>
       <p className="wb-find-resp">{dispositionLine(state)}</p>
-      <div className="wb-find-ai">{aiBasisLine(f)}</div>
+      {showConfidence && <div className="wb-find-ai">{aiBasisLine(f)}</div>}
     </div>
   );
 }

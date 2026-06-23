@@ -5,18 +5,16 @@ import { Button, Icon, Modal } from "@/components/atoms";
 import { useWorkspaceStore, useTemplatesStore, useUsersStore } from "@/store";
 import { useReview } from "@/store/useReview";
 import { CURRENT_USER } from "@/lib/current-user";
-import { publishedVersion } from "@/lib/template-versions";
 import {
   RECOMMENDATION_META,
   RISK_META,
-  WB_THEMES,
-  WB_FONTS,
   type RiskRating,
   recommendation as deriveRecommendation,
   inheritedLayout,
   profileFor,
   sha256Hex,
 } from "@/lib/workbook";
+import { defaultWorkbookConfig } from "@/lib/workbook-config";
 import { WorkbookPreview } from "./WorkbookPreview";
 
 /**
@@ -45,6 +43,8 @@ export function Workbook({
     fileWorkbook,
     returnWorkbook,
     reopenWorkbook,
+    workbook,
+    ensureWorkbook,
   } = useWorkspaceStore();
   const layouts = useTemplatesStore((s) => s.layouts);
   const fetchTemplates = useTemplatesStore((s) => s.fetchTemplates);
@@ -68,10 +68,15 @@ export function Workbook({
     () => (review ? inheritedLayout(layouts, profileFor(review.propertyType)) : undefined),
     [layouts, review],
   );
-  const layoutTheme = layout ? publishedVersion(layout.versions)?.theme : undefined;
-  const theme = layoutTheme && WB_THEMES[layoutTheme] ? layoutTheme : "Navy";
-  const accent = WB_THEMES[theme].accent;
-  const headingFont = WB_FONTS.display.stack;
+
+  // Seed the per-review Builder config from the inherited org layout once the
+  // review + its findings are loaded; the Workbook then renders from it (the
+  // same config the Builder edits and previews).
+  useEffect(() => {
+    if (review && findings.length) {
+      ensureWorkbook(defaultWorkbookConfig(layout, findings, exhibits));
+    }
+  }, [review, findings, exhibits, layout, ensureWorkbook]);
 
   const risk: RiskRating = review?.riskRating ?? "moderate";
   const recommendation = deriveRecommendation(findings, states);
@@ -182,20 +187,21 @@ export function Workbook({
       </div>
 
       <div className="wb-stage scroll">
-        <WorkbookPreview
-          review={review}
-          findings={findings}
-          states={states}
-          exhibits={exhibits}
-          recommendation={recommendation}
-          risk={risk}
-          accent={accent}
-          headingFont={headingFont}
-          reviewerName={reviewerName}
-          reviewedAt={review.orderedAt}
-          signature={signature}
-          filing={filing}
-        />
+        {workbook && (
+          <WorkbookPreview
+            review={review}
+            findings={findings}
+            states={states}
+            exhibits={exhibits}
+            config={workbook}
+            recommendation={recommendation}
+            risk={risk}
+            reviewerName={reviewerName}
+            reviewedAt={review.orderedAt}
+            signature={signature}
+            filing={filing}
+          />
+        )}
       </div>
 
       <Modal open={signOpen} onClose={() => setSignOpen(false)} title="Sign & certify workbook" size="sm">
