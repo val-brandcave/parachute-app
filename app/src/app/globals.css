@@ -1727,36 +1727,16 @@ textarea {
 }
 
 /* ============ Technical sub-nav (Findings · Builder · Workbook) ============ */
-/* Underline tabs — deliberately a DIFFERENT shape from the top track pills so the
-   two nav levels don't read as a stack of identical controls. */
+/* Sub-views band — the `Tabs` molecule (sliding-pill, the app's house in-page
+   tab pattern). The track now lives as a `SegmentedControl` up on the identity
+   row, so the two nav levels read as clearly different controls (enclosed
+   segmented switch vs. free-standing pills) in different places — no longer a
+   stack of look-alike pill bands. */
 .revsub {
   display: flex;
-  gap: 4px;
-  padding: 0 24px;
+  padding: 7px 22px;
   border-top: 1px solid var(--md-outline-v);
-  background: var(--md-surface-1);
-}
-.revsub-tab {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 10px 4px;
-  margin-right: 14px;
-  border: none;
-  background: none;
-  border-bottom: 2px solid transparent;
-  color: var(--md-on-surface-v);
-  font: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-}
-.revsub-tab:hover {
-  color: var(--md-on-surface);
-}
-.revsub-tab.on {
-  color: var(--md-accent-d);
-  border-bottom-color: var(--md-accent);
+  background: var(--md-surface);
 }
 
 /* ============ Workbook (Technical → Workbook sub-view) ============ */
@@ -6314,16 +6294,25 @@ select.qfilter {
   top: 0;
   z-index: 5;
 }
-/* (1) property identity row — title + meta line on the left, status chips right */
+/* (1) identity row — title + status chips + meta line on the left, the
+   Technical/Administrative track switch right-aligned (when both tracks exist) */
 .revhead {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 18px;
-  padding: 13px 24px 11px;
+  padding: 13px 24px 12px;
 }
 .revid {
   min-width: 0;
+}
+/* title and its derived status chips share one line; chips sit right beside the
+   address (Linear/GitHub/Stripe convention) and wrap below only if cramped */
+.revid-titlerow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 .revid-title {
   font-family: var(--font-display);
@@ -6331,9 +6320,15 @@ select.qfilter {
   font-weight: 600;
   line-height: 1.2;
   color: var(--md-on-surface);
+  min-width: 0;
+  flex: 0 1 auto;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+/* segmented track switch wrapper — never shrinks against a long address */
+.revtrack {
+  flex-shrink: 0;
 }
 .revid-meta {
   display: flex;
@@ -6350,68 +6345,99 @@ select.qfilter {
 .revid-dot {
   color: var(--md-on-surface-t);
 }
-.revid-info {
-  display: inline-grid;
-  place-items: center;
-  width: 20px;
-  height: 20px;
-  margin-left: 1px;
+/* "View details" link — opens the property-details modal (replaced the ⓘ hover) */
+.revid-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  margin-left: 4px;
+  padding: 1px 2px;
   border: none;
   background: none;
-  border-radius: 6px;
-  color: var(--md-on-surface-t);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--md-accent-d);
   cursor: pointer;
 }
-.revid-info:hover {
-  background: var(--md-surface-1);
-  color: var(--md-accent-d);
+.revid-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.revid-link svg {
+  transition: transform 0.12s ease;
+}
+.revid-link:hover svg {
+  transform: translateX(1px);
 }
 .revhead-chips {
   display: flex;
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
-  padding-top: 2px;
 }
-/* ⓘ popover (panel tooltip) contents */
-.revid-pop {
-  min-width: 224px;
-}
-.revid-pop-h {
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.4px;
-  text-transform: uppercase;
-  color: var(--md-on-surface-t);
-  margin-bottom: 9px;
-}
-.revid-pop-row {
+/* review-summary modal contents */
+.rs {
   display: flex;
-  justify-content: space-between;
-  gap: 20px;
-  font-size: 12.5px;
-  padding: 3px 0;
+  flex-direction: column;
+  gap: 18px;
 }
-.revid-pop-row dt {
+.rs-id {
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--md-outline-v);
+}
+.rs-id-title {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--md-on-surface);
+  line-height: 1.25;
+}
+.rs-id-sub {
+  margin-top: 3px;
+  font-size: 12.5px;
   color: var(--md-on-surface-v);
 }
-.revid-pop-row dd {
+.rs-group-h {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--md-accent-d);
+  margin-bottom: 7px;
+}
+.rs-rows {
+  display: flex;
+  flex-direction: column;
+}
+.rs-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 18px;
+  padding: 6px 0;
+  font-size: 13px;
+  border-bottom: 1px solid var(--md-hairline, var(--md-outline-v));
+}
+.rs-row:last-child {
+  border-bottom: none;
+}
+.rs-row dt {
+  color: var(--md-on-surface-v);
+  flex-shrink: 0;
+}
+.rs-row dd {
   color: var(--md-on-surface);
   font-weight: 600;
   text-align: right;
 }
-/* (2) track tabs row — matches the .pagehead vertical rhythm (≈11px) so the
-   sliding pills aren't cramped against the sub-views row below */
-.revbar-tabs {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 24px 11px;
+.rs-row dd.is-strong {
+  font-size: 15px;
+  font-family: var(--font-display);
 }
-/* (legacy hand-rolled .revtab / .revbar-sub / .revsub-button rules removed
-   2026-06-22 — they conflicted with the active `Tabs` molecule + the .revsub
-   container/.revsub-tab rules in the "Technical sub-nav" block above, floating
-   the active underline ~11px off the section divider.) */
+/* (legacy hand-rolled .revtab / .revbar-sub / .revsub-button + the old
+   .revbar-tabs track-pill row removed — the track moved into the identity row
+   as a SegmentedControl 2026-06-23; sub-views are the .revsub `Tabs` pills.) */
 
 /* ---- dashboard v2 ---- */
 .stat-grid {

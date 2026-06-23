@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { relativeDue } from "@/lib/utils";
 import { pipelineView, outcomeView } from "@/lib/review-lifecycle";
 import { useReview } from "@/store/useReview";
 import { useUsersStore } from "@/store";
-import { Chip, Icon, Tooltip, type ChipTone, type IconName } from "@/components/atoms";
-import { Tabs } from "@/components/molecules";
+import { Chip, Icon, type ChipTone } from "@/components/atoms";
+import { SegmentedControl, Tabs } from "@/components/molecules";
+import { ReviewSummaryModal } from "@/components/review/ReviewSummaryModal";
 
 export type ReviewTab = "technical" | "administrative";
 /** The three Technical sub-views (decision 2026-06-22, revised): **Findings ·
@@ -16,11 +17,16 @@ export type ReviewTab = "technical" | "administrative";
  *  not a rail toggle; full record in parachute-v2-review-details-spec.md §2/§4.5.) */
 export type TechView = "findings" | "builder" | "workbook";
 
-const SUB_VIEWS: { value: TechView; label: string; icon: IconName }[] = [
-  { value: "findings", label: "Findings", icon: "reviews" },
-  { value: "builder", label: "Builder", icon: "filter" },
-  { value: "workbook", label: "Workbook", icon: "book" },
+const SUB_VIEWS: { value: TechView; label: string }[] = [
+  { value: "findings", label: "Findings" },
+  { value: "builder", label: "Builder" },
+  { value: "workbook", label: "Workbook" },
 ];
+
+const TRACK_LABELS: Record<ReviewTab, string> = {
+  technical: "Technical",
+  administrative: "Administrative",
+};
 
 /** A review's pipeline phase → a single status chip tone (derived, never the raw
  *  `status`). Mirrors lib/review-lifecycle so the bar agrees with the queue. */
@@ -38,14 +44,18 @@ function pipeTone(r: NonNullable<ReturnType<typeof useReview>>): ChipTone {
 }
 
 /**
- * Review-detail context bar. THREE stacked zones, so identity and navigation
- * never crowd one row (the convention rich object-detail headers follow —
- * GitHub / Linear / Stripe): (1) the property IDENTITY (address title + a
- * compact `type · bank · loan#` line + an ⓘ popover for engagement detail),
- * with derived status chips right-aligned; (2) the Technical / Administrative
- * TRACK TABS (`Tabs` molecule, sliding pill); (3) the Findings · Builder ·
- * Workbook SUB-VIEWS (underline tabs, deliberately a different shape). All chips
- * read DERIVED state (`pipelineView` / `outcomeView`), never the raw status.
+ * Review-detail context bar. TWO stacked zones, collapsed from three so the
+ * header stops eating vertical real estate (the convention rich object-detail
+ * headers follow — GitHub / Linear / Stripe place state + scope on the identity
+ * line): (1) the IDENTITY row — address title with derived status chips right
+ * beside it, a compact `type · bank · loan#` line, and the Technical /
+ * Administrative TRACK as a right-aligned `SegmentedControl` (rendered ONLY when
+ * the review actually has both tracks — a lone track would be a redundant
+ * switch); (2) the Findings · Builder · Workbook SUB-VIEWS as the `Tabs`
+ * molecule (sliding pill, the app's house in-page tab pattern — replaces the
+ * old underline shape now that the track no longer occupies its own pill band).
+ * All chips read DERIVED state (`pipelineView` / `outcomeView`), never the raw
+ * status.
  */
 export function ReviewContextBar({
   reviewId,
@@ -64,6 +74,7 @@ export function ReviewContextBar({
   const byId = useUsersStore((s) => s.byId);
   const users = useUsersStore((s) => s.users);
   const fetchUsers = useUsersStore((s) => s.fetchUsers);
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
   // The identity block names the reviewer, so ensure users are loaded here (the
   // Findings view doesn't fetch them; only Workbook/Builder did).
@@ -71,14 +82,21 @@ export function ReviewContextBar({
     if (!users.length) fetchUsers();
   }, [users.length, fetchUsers]);
 
-  const tabs: { value: ReviewTab; label: string; count?: number }[] = [
-    {
-      value: "technical",
-      label: "Technical",
-      count: review && review.openFindings > 0 ? review.openFindings : undefined,
-    },
-    { value: "administrative", label: "Administrative" },
-  ];
+  // Which deliverables this review actually has → whether the track switch is
+  // even meaningful. A review with only a Technical track shows no switch.
+  const tracks: ReviewTab[] = review?.reviewTypes ?? ["technical"];
+  const showTrackSwitch = tracks.length > 1;
+  const trackOptions = tracks.map((t) => ({ value: t, label: TRACK_LABELS[t] }));
+
+  // Sub-views as the house pill tabs; Findings carries its open-count.
+  const subTabs = SUB_VIEWS.map((s) => ({
+    value: s.value,
+    label: s.label,
+    count:
+      s.value === "findings" && review && review.openFindings > 0
+        ? review.openFindings
+        : undefined,
+  }));
 
   const pipe = review ? pipelineView(review) : null;
   const outcome = review ? outcomeView(review) : null;
@@ -87,10 +105,25 @@ export function ReviewContextBar({
 
   return (
     <div className="revbar">
-      {/* (1) property identity + status */}
+      {/* (1) identity row — title + status chips · meta line · track switch */}
       <div className="revhead">
         <div className="revid">
-          <h1 className="revid-title">{review?.propertyAddress ?? "Review"}</h1>
+          <div className="revid-titlerow">
+            <h1 className="revid-title">{review?.propertyAddress ?? "Review"}</h1>
+            <div className="revhead-chips">
+              {pipe && (
+                <Chip tone={pipeTone(review!)} dot>
+                  {pipe.label}
+                </Chip>
+              )}
+              {outcome && <Chip tone={outcome.tone}>{outcome.label}</Chip>}
+              {due && review?.status !== "completed" && (
+                <Chip tone={due.tone === "overdue" ? "fail" : "neutral"}>
+                  {due.label}
+                </Chip>
+              )}
+            </div>
+          </div>
           {review && (
             <div className="revid-meta">
               <span>{review.propertyType}</span>
@@ -102,73 +135,36 @@ export function ReviewContextBar({
                 ·
               </span>
               <span className="revid-loan">Loan #{review.loanNo}</span>
-              <Tooltip
-                side="right"
-                panel
-                content={
-                  <dl className="revid-pop">
-                    <div className="revid-pop-h">Property &amp; engagement</div>
-                    <PopRow label="Appraisal firm" value={review.appraisalFirm} />
-                    <PopRow label="Reviewer" value={reviewerName ?? "Unassigned"} />
-                    <PopRow
-                      label="Order source"
-                      value={review.source === "yc" ? "YouConnect" : "Manual upload"}
-                    />
-                    {due && <PopRow label="SLA" value={due.label} />}
-                  </dl>
-                }
-              >
-                <button className="revid-info" aria-label="Property and engagement details">
-                  <Icon name="info" size={14} />
-                </button>
-              </Tooltip>
+              <button className="revid-link" onClick={() => setDetailsOpen(true)}>
+                View details
+                <Icon name="chevron-right" size={13} />
+              </button>
             </div>
           )}
         </div>
 
-        <div className="revhead-chips">
-          {pipe && (
-            <Chip tone={pipeTone(review!)} dot>
-              {pipe.label}
-            </Chip>
-          )}
-          {outcome && <Chip tone={outcome.tone}>{outcome.label}</Chip>}
-          {due && review?.status !== "completed" && (
-            <Chip tone={due.tone === "overdue" ? "fail" : "neutral"}>{due.label}</Chip>
-          )}
-        </div>
+        {showTrackSwitch && (
+          <div className="revtrack">
+            <SegmentedControl options={trackOptions} value={tab} onChange={setTab} />
+          </div>
+        )}
       </div>
 
-      {/* (2) track tabs */}
-      <div className="revbar-tabs">
-        <Tabs tabs={tabs} value={tab} onChange={setTab} />
-      </div>
-
-      {/* (3) Technical sub-views */}
+      {/* (2) Technical sub-views — pill tabs (the house in-page pattern) */}
       {tab === "technical" && (
         <div className="revsub">
-          {SUB_VIEWS.map((s) => (
-            <button
-              key={s.value}
-              className={`revsub-tab${view === s.value ? " on" : ""}`}
-              onClick={() => setView(s.value)}
-              aria-current={view === s.value}
-            >
-              <Icon name={s.icon} size={15} />
-              {s.label}
-            </button>
-          ))}
+          <Tabs tabs={subTabs} value={view} onChange={setView} />
         </div>
       )}
-    </div>
-  );
-}
 
-function PopRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="revid-pop-row">
-      <dt>{label}</dt>
-      <dd>{value}</dd>
+      {review && (
+        <ReviewSummaryModal
+          open={detailsOpen}
+          onClose={() => setDetailsOpen(false)}
+          review={review}
+          reviewerName={reviewerName ?? "Unassigned"}
+        />
+      )}
     </div>
   );
 }

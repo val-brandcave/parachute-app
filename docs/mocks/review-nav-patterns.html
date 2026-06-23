@@ -1,0 +1,559 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Review-detail nav patterns — exploration</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Schibsted+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --md-primary:#10344c; --md-primary-c:#1b4f73;
+    --md-accent:#2a6f7f; --md-accent-d:#14505e; --md-accent-c:#deebee;
+    --md-selected:#d6e3ee; --md-on-selected:#10344c;
+    --md-surface:#fff; --md-surface-1:#f1f2f4; --md-surface-2:#e9ebee; --md-surface-3:#dfe2e6;
+    --md-bg:#f6f7f8; --md-outline:#e2e4e8; --md-outline-v:#edeef1;
+    --md-on-surface:#1a1d21; --md-on-surface-v:#565c64; --md-on-surface-t:#868d96; --md-on-surface-dis:#aeb4bc;
+    --md-success:#15834a; --md-success-c:#e3f5ea; --md-warning:#c98a12; --md-error:#d23f34; --md-info:#2d6ca6; --md-info-c:#e4eef7;
+    --r:10px; --ring:0 0 0 3px rgba(42,111,127,.25);
+    --shadow:0 1px 2px rgba(16,52,76,.06), 0 6px 20px rgba(16,52,76,.06);
+  }
+  :root[data-theme="dark"]{
+    --md-primary:#1b4f73; --md-primary-c:#23618c;
+    --md-accent:#4a93a4; --md-accent-d:#9fd3de; --md-accent-c:#11272d;
+    --md-selected:#1c3850; --md-on-selected:#cfe0f1;
+    --md-surface:#17181b; --md-surface-1:#1e2023; --md-surface-2:#26282c; --md-surface-3:#2e3034;
+    --md-bg:#0f1012; --md-outline:#2e3034; --md-outline-v:#26282c;
+    --md-on-surface:#e9eaec; --md-on-surface-v:#a9aeb5; --md-on-surface-t:#7a818a; --md-on-surface-dis:#565c64;
+    --md-success:#5fcb8e; --md-success-c:#11301e; --md-warning:#e0b15a; --md-error:#f0897e; --md-info:#7cb7de; --md-info-c:#142a3a;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 6px 20px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;}
+  body{
+    font-family:Inter,system-ui,sans-serif; background:var(--md-bg); color:var(--md-on-surface);
+    -webkit-font-smoothing:antialiased; line-height:1.5;
+  }
+  .wrap{max-width:1080px; margin:0 auto; padding:40px 28px 96px;}
+  h1{font-family:'Schibsted Grotesk',sans-serif; font-weight:700; font-size:30px; letter-spacing:-.02em; margin:0 0 6px;}
+  .lede{color:var(--md-on-surface-v); font-size:15px; max-width:62ch; margin:0 0 28px;}
+  h2{font-family:'Schibsted Grotesk',sans-serif; font-weight:600; font-size:19px; letter-spacing:-.01em; margin:0;}
+  .tag{font-size:11px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--md-accent-d); }
+  :root[data-theme="dark"] .tag{color:var(--md-accent-d);}
+
+  /* sticky control bar */
+  .controls{
+    position:sticky; top:0; z-index:50; display:flex; flex-wrap:wrap; gap:18px; align-items:center;
+    padding:14px 18px; margin:0 0 30px; background:var(--md-surface); border:1px solid var(--md-outline);
+    border-radius:var(--r); box-shadow:var(--shadow);
+  }
+  .controls .grp{display:flex; align-items:center; gap:8px;}
+  .controls label{font-size:12px; font-weight:600; color:var(--md-on-surface-t); text-transform:uppercase; letter-spacing:.04em;}
+  .seg{display:inline-flex; background:var(--md-surface-1); border:1px solid var(--md-outline); border-radius:8px; padding:3px; gap:2px;}
+  .seg button{
+    font:inherit; font-size:13px; font-weight:600; border:0; background:transparent; color:var(--md-on-surface-v);
+    padding:5px 12px; border-radius:6px; cursor:pointer; transition:.15s;
+  }
+  .seg button.on{background:var(--md-selected); color:var(--md-on-selected); box-shadow:0 1px 2px rgba(16,52,76,.12);}
+
+  /* pattern card */
+  .pat{margin:0 0 34px;}
+  .pat-head{display:flex; align-items:baseline; gap:12px; margin:0 0 4px;}
+  .pat-head .n{font-family:'Schibsted Grotesk',sans-serif; font-weight:700; font-size:14px; color:var(--md-on-surface-t);}
+  .note{font-size:13.5px; color:var(--md-on-surface-v); margin:8px 2px 14px; max-width:74ch;}
+  .note b{color:var(--md-on-surface);}
+  .pros{display:flex; flex-wrap:wrap; gap:8px; margin:10px 2px 0;}
+  .pill{font-size:12px; font-weight:500; padding:4px 10px; border-radius:999px; border:1px solid var(--md-outline); background:var(--md-surface);}
+  .pill.good{color:var(--md-success); border-color:color-mix(in srgb,var(--md-success) 30%, var(--md-outline)); background:var(--md-success-c);}
+  .pill.bad{color:var(--md-error); border-color:color-mix(in srgb,var(--md-error) 30%, var(--md-outline)); background:color-mix(in srgb,var(--md-error) 10%, var(--md-surface));}
+
+  /* ===== the mock surface (mimics the app content area) ===== */
+  .stage{background:var(--md-bg); border:1px solid var(--md-outline); border-radius:14px; overflow:hidden; box-shadow:var(--shadow);}
+  .ctxbar{background:var(--md-surface); border-bottom:1px solid var(--md-outline-v);}
+  .crumb{display:flex; align-items:center; gap:7px; padding:13px 22px 0; font-size:13px; color:var(--md-on-surface-t);}
+  .crumb a{color:var(--md-on-surface-t); text-decoration:none;}
+  .crumb .here{color:var(--md-on-surface); font-weight:600;}
+  .crumb .chev{opacity:.5;}
+  .ident{padding:7px 22px 0;}
+  .ttl{font-family:'Schibsted Grotesk',sans-serif; font-weight:700; font-size:21px; letter-spacing:-.01em; margin:0;}
+  .meta{display:flex; align-items:center; gap:9px; flex-wrap:wrap; font-size:13px; color:var(--md-on-surface-v); margin:3px 0 0;}
+  .meta .dot{color:var(--md-on-surface-dis);}
+  .meta .i{display:inline-grid; place-items:center; width:16px; height:16px; border:1px solid var(--md-outline); border-radius:50%; font-size:10px; color:var(--md-on-surface-t);}
+
+  /* TRACK as pills (current) */
+  .track-pills{display:inline-flex; gap:4px; padding:4px; }
+  .tp{font:inherit; font-size:14px; font-weight:600; border:0; background:transparent; color:var(--md-on-surface-v); padding:7px 14px; border-radius:8px; cursor:pointer; display:inline-flex; align-items:center; gap:8px; transition:.15s;}
+  .tp.on{background:var(--md-selected); color:var(--md-on-selected);}
+  .tp .b{font-size:12px; font-weight:700; min-width:18px; height:18px; padding:0 5px; border-radius:9px; display:inline-grid; place-items:center; background:var(--md-surface-2); color:var(--md-on-surface-v);}
+  .tp.on .b{background:var(--md-primary); color:#fff;}
+  .row-pills{padding:6px 18px 8px;}
+
+  /* STAGES underline */
+  .stages{display:flex; gap:4px; padding:0 22px; background:var(--md-surface); border-bottom:1px solid var(--md-outline-v);}
+  .st{font:inherit; font-size:14px; font-weight:600; border:0; background:transparent; color:var(--md-on-surface-v); padding:13px 6px; margin-right:18px; cursor:pointer; position:relative; display:inline-flex; align-items:center; gap:8px;}
+  .st:hover{color:var(--md-on-surface);}
+  .st.on{color:var(--md-primary);}
+  :root[data-theme="dark"] .st.on{color:var(--md-on-selected);}
+  .st.on::after{content:""; position:absolute; left:0; right:0; bottom:-1px; height:2.5px; background:var(--md-primary); border-radius:2px;}
+  :root[data-theme="dark"] .st.on::after{background:var(--md-on-selected);}
+  .st .ico{width:16px;height:16px;opacity:.75;}
+  .st .scount{font-size:11px; font-weight:700; color:var(--md-on-surface-t);}
+  .st.on .scount{color:var(--md-accent-d);}
+
+  /* STAGES as free-standing pills (no icon, no underline) */
+  .stages.pillmode{padding:9px 18px; gap:4px; align-items:center;}
+  .st--pill{padding:7px 15px; margin:0 2px 0 0; border-radius:999px; font-size:14px; font-weight:600; color:var(--md-on-surface-v); transition:.15s;}
+  .st--pill:hover:not(.on){background:var(--md-surface-1); color:var(--md-on-surface);}
+  .st--pill.on{background:var(--md-selected); color:var(--md-on-selected);}
+  .st--pill.on::after{display:none;}      /* no underline */
+  .st--pill .scount{font-size:11px; font-weight:700; padding:0 5px; height:16px; min-width:16px; border-radius:8px; display:inline-grid; place-items:center; background:var(--md-surface-2); color:var(--md-on-surface-v);}
+  .st--pill.on .scount{background:var(--md-primary); color:#fff;}
+
+  /* track as inline segmented (Option 1 / 1b) */
+  .track-seg{display:inline-flex; background:var(--md-surface-1); border:1px solid var(--md-outline); border-radius:999px; padding:3px;}
+  .ts{font:inherit; font-size:13px; font-weight:600; border:0; background:transparent; color:var(--md-on-surface-v); padding:5px 13px; border-radius:999px; cursor:pointer; display:inline-flex; align-items:center; gap:7px; transition:.15s;}
+  .ts.on{background:var(--md-surface); color:var(--md-on-selected); box-shadow:0 1px 2px rgba(16,52,76,.14);}
+  .ts .b{font-size:11px; font-weight:700; min-width:16px; height:16px; padding:0 4px; border-radius:8px; display:inline-grid; place-items:center; background:var(--md-surface-2); color:var(--md-on-surface-v);}
+  .ts.on .b{background:var(--md-primary); color:#fff;}
+
+  /* breadcrumb switcher (Option 2) */
+  .crumb-switch{display:inline-flex; align-items:center; gap:5px; font-weight:600; color:var(--md-on-surface); background:transparent; border:0; font:inherit; font-size:13px; cursor:pointer; padding:2px 6px; border-radius:6px;}
+  .crumb-switch:hover{background:var(--md-surface-1);}
+  .crumb-switch .b{font-size:10px; font-weight:700; padding:0 5px; height:15px; border-radius:8px; background:var(--md-accent-c); color:var(--md-accent-d); display:inline-grid; place-items:center;}
+  .caret{font-size:10px; opacity:.6;}
+  .popover{position:absolute; margin-top:6px; background:var(--md-surface); border:1px solid var(--md-outline); border-radius:10px; box-shadow:var(--shadow); padding:5px; min-width:210px; z-index:20;}
+  .popover button{display:flex; width:100%; align-items:center; justify-content:space-between; gap:10px; font:inherit; font-size:13px; font-weight:500; border:0; background:transparent; color:var(--md-on-surface); padding:8px 10px; border-radius:7px; cursor:pointer; text-align:left;}
+  .popover button:hover{background:var(--md-surface-1);}
+  .popover button.on{background:var(--md-selected); color:var(--md-on-selected); font-weight:600;}
+  .popover .sub{font-size:11px; color:var(--md-on-surface-t); font-weight:400;}
+  .popover button.on .sub{color:var(--md-on-selected); opacity:.8;}
+
+  /* left rail (Option 3) */
+  .split{display:flex; min-height:230px; background:var(--md-surface);}
+  .rail{width:188px; flex:none; border-right:1px solid var(--md-outline-v); padding:12px 10px; background:var(--md-bg);}
+  .rail .rlabel{font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--md-on-surface-t); padding:4px 10px 8px;}
+  .rl{display:flex; align-items:center; gap:10px; width:100%; font:inherit; font-size:13.5px; font-weight:500; border:0; background:transparent; color:var(--md-on-surface-v); padding:9px 10px; border-radius:8px; cursor:pointer; text-align:left; position:relative;}
+  .rl:hover{background:var(--md-surface-1);}
+  .rl.on{background:var(--md-selected); color:var(--md-on-selected); font-weight:600;}
+  .rl .ico{width:17px;height:17px;opacity:.8;}
+  .rl .scount{margin-left:auto; font-size:11px; font-weight:700; color:var(--md-on-surface-t);}
+  .rl.on .scount{color:var(--md-on-selected);}
+
+  /* status pipeline (Option 4) */
+  .pipe{display:flex; gap:0; padding:10px 22px 0; background:var(--md-surface); border-bottom:1px solid var(--md-outline-v); align-items:stretch;}
+  .pp{flex:1; max-width:230px; border:0; background:transparent; font:inherit; cursor:pointer; text-align:left; padding:10px 14px 14px; position:relative; border-bottom:2.5px solid transparent;}
+  .pp:hover{background:var(--md-surface-1);}
+  .pp.on{border-bottom-color:var(--md-primary);}
+  :root[data-theme="dark"] .pp.on{border-bottom-color:var(--md-on-selected);}
+  .pp .pl{display:flex; align-items:center; gap:8px; font-size:14px; font-weight:600; color:var(--md-on-surface-v);}
+  .pp.on .pl{color:var(--md-primary);}
+  :root[data-theme="dark"] .pp.on .pl{color:var(--md-on-selected);}
+  .pp .ps{display:block; font-size:12px; color:var(--md-on-surface-t); margin-top:2px;}
+  .pp .pnum{display:inline-grid; place-items:center; width:18px; height:18px; border-radius:50%; font-size:11px; font-weight:700; background:var(--md-surface-2); color:var(--md-on-surface-v);}
+  .pp.on .pnum{background:var(--md-primary); color:#fff;}
+  .pp .arrow{position:absolute; right:-1px; top:50%; transform:translateY(-50%); color:var(--md-on-surface-dis); font-size:14px;}
+  .pp:last-child .arrow{display:none;}
+
+  /* fake content body */
+  .body{padding:22px; min-height:130px;}
+  .ph{height:11px; background:var(--md-surface-1); border-radius:5px; margin:0 0 11px;}
+  .ph.t{height:15px; width:42%; background:var(--md-surface-2); margin-bottom:16px;}
+  .ph.w1{width:88%;} .ph.w2{width:76%;} .ph.w3{width:64%;}
+  .body-label{font-size:12px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--md-on-surface-t); margin:0 0 14px; display:flex; align-items:center; gap:8px;}
+  .body-label .k{font-weight:700; color:var(--md-accent-d);}
+
+  .hr{height:1px; background:var(--md-outline-v); border:0; margin:46px 0;}
+  .verdict{background:var(--md-surface); border:1px solid var(--md-outline); border-left:3px solid var(--md-accent); border-radius:var(--r); padding:18px 20px; margin:8px 0 0;}
+  .verdict h3{font-family:'Schibsted Grotesk',sans-serif; font-size:16px; margin:0 0 8px;}
+  .verdict p{margin:0 0 8px; font-size:14px; color:var(--md-on-surface-v);}
+  .footnote{font-size:12px; color:var(--md-on-surface-t); margin-top:26px;}
+  .ico{display:inline-block; vertical-align:-2px;}
+  .ghost{opacity:.42; filter:grayscale(.4);} /* used to show a redundant/empty band */
+
+  /* derived-state badges beside the title */
+  .ttl-row{display:flex; align-items:center; gap:11px; flex-wrap:wrap;}
+  .badges{display:inline-flex; gap:6px; flex-wrap:wrap;}
+  .sbadge{font-size:12px; font-weight:600; padding:3px 9px 3px 8px; border-radius:999px; display:inline-flex; align-items:center; gap:6px; line-height:1.35;}
+  .sbadge .d{width:7px; height:7px; border-radius:50%; background:currentColor;}
+  .sbadge--ready{color:var(--md-success); background:var(--md-success-c);}
+  .sbadge--flag{color:var(--md-warning); background:color-mix(in srgb,var(--md-warning) 16%, var(--md-surface));}
+  .sbadge--over{color:var(--md-error); background:var(--md-error-c);}
+  .sbadge--info{color:var(--md-info); background:var(--md-info-c);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Review-detail navigation — pattern exploration</h1>
+  <p class="lede">Same screen (<code>/reviews/[id]</code>), six ways to handle the two dimensions:
+    the <b>track</b> (Technical / Administrative — two parallel deliverables) and the Technical
+    <b>stages</b> (Findings · Builder · Workbook). Toggle the controls to watch each pattern behave when a loan has only one track.
+    Real app tokens, light + dark.</p>
+
+  <div class="controls">
+    <div class="grp">
+      <label>Loan has</label>
+      <div class="seg" id="trackSet">
+        <button data-tracks="both" class="on">Both reviews</button>
+        <button data-tracks="tech">Technical only</button>
+      </div>
+    </div>
+    <div class="grp">
+      <label>Stage tabs</label>
+      <div class="seg" id="styleSet">
+        <button data-style="pill" class="on">Pills</button>
+        <button data-style="underline">Underline</button>
+      </div>
+    </div>
+    <div class="grp">
+      <label>Theme</label>
+      <div class="seg" id="themeSet">
+        <button data-theme-set="light" class="on">Light</button>
+        <button data-theme-set="dark">Dark</button>
+      </div>
+    </div>
+    <div class="grp" style="margin-left:auto; color:var(--md-on-surface-t); font-size:12px;">↓ scroll through patterns</div>
+  </div>
+
+  <!-- ============ CURRENT (baseline) ============ -->
+  <section class="pat">
+    <div class="pat-head"><span class="n">CURRENT</span><h2>Two stacked tab bands (pills + underline)</h2></div>
+    <p class="note">What's live today. Track = sliding pills; stages = underline tabs below. The shape difference is a real disambiguation,
+      but it's still <b>two full horizontal bands</b> stacked on top of the breadcrumb + title + meta — and the track band looks orphaned with one review.</p>
+    <div class="stage" data-pat="current">
+      <div class="ctxbar">
+        <div class="crumb"><a href="#">Reviews</a><span class="chev">›</span><span class="here">Loan&nbsp;#LN-4471</span></div>
+        <div class="ident">
+          <h2 class="ttl">1450 Corporate Center Dr</h2>
+          <div class="meta">Office (Medical) <span class="dot">·</span> Meridian Trust Bank, N.A. <span class="dot">·</span> Loan&nbsp;#LN-4471 <span class="i">i</span></div>
+        </div>
+        <div class="row-pills">
+          <div class="track-pills" data-role="track"></div>
+        </div>
+      </div>
+      <div class="stages" data-role="stages"></div>
+      <div class="body" data-role="body"></div>
+    </div>
+    <div class="pros">
+      <span class="pill bad">5 stacked bands before content</span>
+      <span class="pill bad">orphaned 1-pill band when single track</span>
+      <span class="pill good">shape difference disambiguates levels</span>
+    </div>
+  </section>
+
+  <!-- ============ OPTION 1 ============ -->
+  <section class="pat">
+    <div class="pat-head"><span class="n">OPTION 1 · recommended</span><h2>Track switch on the identity row</h2></div>
+    <p class="note">Demote the track from its own band onto the meta line (right-aligned segmented switch). <b>Only the stage tabs remain as a band.</b>
+      When a loan has one track, the switch simply doesn't render — no orphan. Stages get their vertical space back.</p>
+    <div class="stage" data-pat="opt1">
+      <div class="ctxbar">
+        <div class="crumb"><a href="#">Reviews</a><span class="chev">›</span><span class="here">Loan&nbsp;#LN-4471</span></div>
+        <div class="ident">
+          <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap; padding-bottom:12px;">
+            <div>
+              <div class="ttl-row">
+                <h2 class="ttl">1450 Corporate Center Dr</h2>
+                <span class="badges" data-role="badges"></span>
+              </div>
+              <div class="meta">Office (Medical) <span class="dot">·</span> Meridian Trust Bank, N.A. <span class="dot">·</span> Loan&nbsp;#LN-4471 <span class="i">i</span></div>
+            </div>
+            <div class="track-seg" data-role="track"></div>
+          </div>
+        </div>
+      </div>
+      <div class="stages" data-role="stages"></div>
+      <div class="body" data-role="body"></div>
+    </div>
+    <div class="pros">
+      <span class="pill good">status visible at a glance, by the title</span>
+      <span class="pill good">one tab band only</span>
+      <span class="pill good">degrades cleanly to single track</span>
+      <span class="pill good">both tracks stay visible + counted</span>
+      <span class="pill good">keeps the approved 3 stage tabs</span>
+    </div>
+  </section>
+
+  <!-- ============ OPTION 1b ============ -->
+  <section class="pat">
+    <div class="pat-head"><span class="n">OPTION 1b · densest</span><h2>One row: stages left, track switch right</h2></div>
+    <p class="note">Collapse <b>both dimensions onto a single band</b> — stages on the left, track switch on the right edge. Maximum vertical savings.
+      The one awkward moment: when Administrative (no stages) is selected, the left side is empty and the row just holds the switch.</p>
+    <div class="stage" data-pat="opt1b">
+      <div class="ctxbar">
+        <div class="crumb"><a href="#">Reviews</a><span class="chev">›</span><span class="here">Loan&nbsp;#LN-4471</span></div>
+        <div class="ident">
+          <h2 class="ttl">1450 Corporate Center Dr</h2>
+          <div class="meta">Office (Medical) <span class="dot">·</span> Meridian Trust Bank, N.A. <span class="dot">·</span> Loan&nbsp;#LN-4471 <span class="i">i</span></div>
+        </div>
+        <div class="stages" data-role="stages" style="border-bottom:0; align-items:center; justify-content:space-between; padding-right:18px; margin-top:6px;">
+          <div style="display:flex;" data-role="stages-inner"></div>
+          <div class="track-seg" data-role="track" style="align-self:center;"></div>
+        </div>
+      </div>
+      <div class="body" data-role="body" style="border-top:1px solid var(--md-outline-v);"></div>
+    </div>
+    <div class="pros">
+      <span class="pill good">most compact — zero extra bands</span>
+      <span class="pill good">everything visible at a glance</span>
+      <span class="pill bad">empty left side on Admin (no stages)</span>
+    </div>
+  </section>
+
+  <!-- ============ OPTION 2 ============ -->
+  <section class="pat">
+    <div class="pat-head"><span class="n">OPTION 2</span><h2>Track switcher in the breadcrumb</h2></div>
+    <p class="note">Treat the track as <b>scope</b> — a switcher built into the breadcrumb (click it). Semantically cleanest and removes the most chrome,
+      but "a second deliverable exists" is hidden behind a caret, so it needs a count badge to stay discoverable. Probably too quiet for a pending attestation.</p>
+    <div class="stage" data-pat="opt2">
+      <div class="ctxbar">
+        <div class="crumb">
+          <a href="#">Reviews</a><span class="chev">›</span><a href="#">LN-4471</a><span class="chev">›</span>
+          <span style="position:relative;">
+            <button class="crumb-switch" data-role="track-trigger"></button>
+            <div class="popover" data-role="track" style="display:none;"></div>
+          </span>
+        </div>
+        <div class="ident">
+          <h2 class="ttl">1450 Corporate Center Dr</h2>
+          <div class="meta">Office (Medical) <span class="dot">·</span> Meridian Trust Bank, N.A. <span class="dot">·</span> Loan&nbsp;#LN-4471 <span class="i">i</span></div>
+        </div>
+        <div style="height:8px;"></div>
+      </div>
+      <div class="stages" data-role="stages"></div>
+      <div class="body" data-role="body"></div>
+    </div>
+    <div class="pros">
+      <span class="pill good">least chrome of all</span>
+      <span class="pill good">track = scope (semantically clean)</span>
+      <span class="pill bad">2nd track is easy to miss</span>
+    </div>
+  </section>
+
+  <!-- ============ OPTION 3 ============ -->
+  <section class="pat">
+    <div class="pat-head"><span class="n">OPTION 3</span><h2>Stages as a left sub-rail</h2></div>
+    <p class="note">Track stays a top switch; stages move to a <b>vertical rail</b> beside the content (Stripe / Vercel / Linear-settings pattern).
+      Costs zero vertical space and scales — but it steals horizontal width that Builder's 3-pane tool and the wide Workbook doc need, and adds a second left edge next to the app sidebar.</p>
+    <div class="stage" data-pat="opt3">
+      <div class="ctxbar">
+        <div class="crumb"><a href="#">Reviews</a><span class="chev">›</span><span class="here">Loan&nbsp;#LN-4471</span></div>
+        <div class="ident">
+          <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap; padding-bottom:12px;">
+            <div>
+              <h2 class="ttl">1450 Corporate Center Dr</h2>
+              <div class="meta">Office (Medical) <span class="dot">·</span> Meridian Trust Bank, N.A. <span class="dot">·</span> Loan&nbsp;#LN-4471 <span class="i">i</span></div>
+            </div>
+            <div class="track-seg" data-role="track"></div>
+          </div>
+        </div>
+      </div>
+      <div class="split">
+        <div class="rail" data-role="stages"><div class="rlabel" data-role="raillabel">Technical</div></div>
+        <div class="body" data-role="body" style="flex:1;"></div>
+      </div>
+    </div>
+    <div class="pros">
+      <span class="pill good">no vertical cost · scales to N stages</span>
+      <span class="pill good">rich per-stage status room</span>
+      <span class="pill bad">eats width Builder/Workbook need</span>
+      <span class="pill bad">two competing left rails</span>
+    </div>
+  </section>
+
+  <!-- ============ OPTION 4 ============ -->
+  <section class="pat">
+    <div class="pat-head"><span class="n">OPTION 4 · enrichment</span><h2>Stages as a status pipeline</h2></div>
+    <p class="note">Findings → Builder → Workbook is a real progression (decide → author → sign). Show it as a <b>directional pipeline with state</b>
+      instead of flat peer tabs. Not a rigid stepper (jump freely) — just status the flat tabs hide. Pairs with the Option&nbsp;1 track switch.</p>
+    <div class="stage" data-pat="opt4">
+      <div class="ctxbar">
+        <div class="crumb"><a href="#">Reviews</a><span class="chev">›</span><span class="here">Loan&nbsp;#LN-4471</span></div>
+        <div class="ident">
+          <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap; padding-bottom:12px;">
+            <div>
+              <h2 class="ttl">1450 Corporate Center Dr</h2>
+              <div class="meta">Office (Medical) <span class="dot">·</span> Meridian Trust Bank, N.A. <span class="dot">·</span> Loan&nbsp;#LN-4471 <span class="i">i</span></div>
+            </div>
+            <div class="track-seg" data-role="track"></div>
+          </div>
+        </div>
+        <div class="pipe" data-role="stages"></div>
+      </div>
+      <div class="body" data-role="body"></div>
+    </div>
+    <div class="pros">
+      <span class="pill good">communicates sequence + per-stage state</span>
+      <span class="pill good">feels purposeful, not generic tabs</span>
+      <span class="pill bad">heavier; risks implying lockstep</span>
+    </div>
+  </section>
+
+  <hr class="hr" />
+  <div class="verdict">
+    <h3>Recommendation</h3>
+    <p><b>Option 1</b> (track switch on the identity row) + a touch of <b>Option 4</b> (status on the stage tabs). It answers all three concerns —
+      kills the redundant band, keeps both tracks visible, degrades cleanly to one track — while preserving the locked, Cody-approved 3-stage underline sub-nav.
+      Smallest deviation from what's already approved.</p>
+    <p style="margin-bottom:0;">Flip the <b>“Technical only”</b> toggle above and compare <b>Current</b> vs <b>Option 1</b>: the current pattern keeps a lonely one-pill band; Option 1 disappears the switch entirely.</p>
+  </div>
+  <p class="footnote">Throwaway exploration mock · real Navy &amp; Petrol tokens · not wired into the app · <code>docs/mocks/review-nav-patterns.html</code></p>
+</div>
+
+<script>
+// ---- tiny svg icons (Tabler-ish) ----
+const I = {
+  findings:'<svg class="ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/></svg>',
+  builder:'<svg class="ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h6v6H4zM14 6h6v12h-6zM4 16h6v2H4z"/></svg>',
+  workbook:'<svg class="ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h10v18H6a2 2 0 0 1-2-2zM16 3h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-2"/></svg>',
+  admin:'<svg class="ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4M12 3l7 3v6c0 4-3 7-7 8-4-1-7-4-7-8V6z"/></svg>'
+};
+
+// stages of the Technical track
+const STAGES = [
+  {key:'findings', label:'Findings', icon:'findings', count:'2', status:'2 open'},
+  {key:'builder',  label:'Builder',  icon:'builder',  count:'',  status:'drafted'},
+  {key:'workbook', label:'Workbook', icon:'workbook', count:'',  status:'ready to sign'}
+];
+
+// per-mock state
+const state = {}; // patId -> {track:'tech'|'admin', stage:'findings'...}
+let TRACKS = 'both'; // or 'tech'
+let STAGE_STYLE = 'pill'; // or 'underline' — applies to opt1/opt1b/opt2 (Current stays underline as the true baseline)
+
+function bodyHtml(track, stageLabel){
+  if(track === 'admin'){
+    return `<div class="body-label"><span class="k">Administrative</span> · attestation</div>
+      <div class="ph t"></div><div class="ph w1"></div><div class="ph w2"></div><div class="ph w3"></div>
+      <div class="ph w2" style="margin-top:18px;"></div><div class="ph w3"></div>`;
+  }
+  return `<div class="body-label"><span class="k">Technical</span> · ${stageLabel}</div>
+    <div class="ph t"></div><div class="ph w1"></div><div class="ph w2"></div><div class="ph w3"></div>
+    <div class="ph w2" style="margin-top:18px;"></div><div class="ph w1"></div>`;
+}
+
+function renderTrackPills(el, st){
+  let h = `<button class="tp ${st.track==='tech'?'on':''}" data-track="tech">Technical <span class="b">2</span></button>`;
+  if(TRACKS==='both') h += `<button class="tp ${st.track==='admin'?'on':''}" data-track="admin">Administrative</button>`;
+  el.innerHTML = h;
+}
+function renderTrackSeg(el, st){
+  if(TRACKS!=='both'){ el.style.display='none'; return; } el.style.display='';
+  el.innerHTML =
+    `<button class="ts ${st.track==='tech'?'on':''}" data-track="tech">Technical <span class="b">2</span></button>`+
+    `<button class="ts ${st.track==='admin'?'on':''}" data-track="admin">Administrative</button>`;
+}
+function renderCrumbSwitch(trigger, pop, st){
+  const isTech = st.track==='tech';
+  const badge = (TRACKS==='both' && isTech) ? ' <span class="b">+1</span>' : '';
+  trigger.innerHTML = (isTech?'Technical':'Administrative') + (TRACKS==='both'?` <span class="caret">▾</span>`:'') + badge;
+  if(TRACKS!=='both'){ pop.style.display='none'; }
+  pop.innerHTML =
+    `<button class="${isTech?'on':''}" data-track="tech"><span>Technical<br><span class="sub">Findings · Builder · Workbook</span></span><span>2 open</span></button>`+
+    `<button class="${!isTech?'on':''}" data-track="admin"><span>Administrative<br><span class="sub">Attestation</span></span></button>`;
+}
+function renderBadges(el, st){
+  if(!el) return;
+  if(st.track==='admin'){
+    el.innerHTML = `<span class="sbadge sbadge--info">Attestation pending</span>`;
+  } else {
+    el.innerHTML =
+      `<span class="sbadge sbadge--ready"><span class="d"></span>Ready</span>`+
+      `<span class="sbadge sbadge--flag">2 flagged</span>`+
+      `<span class="sbadge sbadge--over">Overdue 3d</span>`;
+  }
+}
+function renderStagesUnderline(el, st, allowPill){
+  if(st.track==='admin'){ el.style.display='none'; return; } el.style.display='';
+  const pill = allowPill && STAGE_STYLE==='pill';
+  el.classList.toggle('pillmode', pill);
+  el.innerHTML = STAGES.map(s=>{
+    const icon = pill ? '' : I[s.icon];                  // no icon in pill mode
+    const cnt = s.count ? `<span class="scount">${s.count}</span>` : '';
+    return `<button class="st ${pill?'st--pill':''} ${st.stage===s.key?'on':''}" data-stage="${s.key}">${icon}${s.label}${cnt}</button>`;
+  }).join('');
+}
+function renderStagesRail(el, st){
+  const label = el.querySelector('[data-role="raillabel"]');
+  if(st.track==='admin'){
+    el.innerHTML = `<div class="rlabel">Administrative</div>`+
+      `<button class="rl on">${I.admin}Attestation</button>`;
+    return;
+  }
+  el.innerHTML = `<div class="rlabel">Technical</div>` + STAGES.map(s=>
+    `<button class="rl ${st.stage===s.key?'on':''}" data-stage="${s.key}">${I[s.icon]}${s.label}${s.count?`<span class="scount">${s.count}</span>`:''}</button>`).join('');
+}
+function renderStagesPipe(el, st){
+  if(st.track==='admin'){ el.style.display='none'; return; } el.style.display='';
+  el.innerHTML = STAGES.map((s,i)=>
+    `<button class="pp ${st.stage===s.key?'on':''}" data-stage="${s.key}">
+       <span class="pl"><span class="pnum">${i+1}</span>${s.label}</span>
+       <span class="ps">${s.status}</span>
+       <span class="arrow">›</span>
+     </button>`).join('');
+}
+
+function renderOne(stageEl){
+  const pat = stageEl.dataset.pat;
+  const st = state[pat] || (state[pat]={track:'tech', stage:'findings'});
+  if(TRACKS!=='both' && st.track==='admin') st.track='tech';
+
+  const trackEl = stageEl.querySelector('[data-role="track"]');
+  const stagesEl = stageEl.querySelector('[data-role="stages"]');
+  const stagesInner = stageEl.querySelector('[data-role="stages-inner"]');
+  const bodyEl = stageEl.querySelector('[data-role="body"]');
+  const trigger = stageEl.querySelector('[data-role="track-trigger"]');
+  const stLabel = (STAGES.find(s=>s.key===st.stage)||STAGES[0]).label;
+
+  // track control
+  if(pat==='current') renderTrackPills(trackEl, st);
+  else if(pat==='opt2') renderCrumbSwitch(trigger, trackEl, st);
+  else if(trackEl && trackEl.classList.contains('track-seg')) renderTrackSeg(trackEl, st);
+
+  // stages control — Current stays underline+icon (true baseline); others honor STAGE_STYLE
+  const allowPill = pat!=='current';
+  if(pat==='opt3') renderStagesRail(stagesEl, st);
+  else if(pat==='opt4') renderStagesPipe(stagesEl, st);
+  else if(pat==='opt1b') renderStagesUnderline(stagesInner, st, allowPill);
+  else if(stagesEl) renderStagesUnderline(stagesEl, st, allowPill);
+
+  renderBadges(stageEl.querySelector('[data-role="badges"]'), st);
+
+  if(bodyEl) bodyEl.innerHTML = bodyHtml(st.track, stLabel);
+}
+
+function renderAll(){ document.querySelectorAll('.stage[data-pat]').forEach(renderOne); }
+
+// ---- events ----
+document.addEventListener('click', e=>{
+  const stageEl = e.target.closest('.stage[data-pat]');
+  // breadcrumb popover toggle
+  const trig = e.target.closest('[data-role="track-trigger"]');
+  if(trig && TRACKS==='both'){
+    const pop = stageEl.querySelector('[data-role="track"]');
+    pop.style.display = pop.style.display==='none' ? 'block' : 'none';
+    e.stopPropagation();
+  } else {
+    // close any open popovers
+    document.querySelectorAll('[data-pat="opt2"] [data-role="track"]').forEach(p=>p.style.display='none');
+  }
+  if(stageEl){
+    const tBtn = e.target.closest('[data-track]');
+    if(tBtn){ state[stageEl.dataset.pat].track = tBtn.dataset.track; renderOne(stageEl); }
+    const sBtn = e.target.closest('[data-stage]');
+    if(sBtn){ state[stageEl.dataset.pat].stage = sBtn.dataset.stage; renderOne(stageEl); }
+  }
+
+  // controls
+  const tr = e.target.closest('#trackSet button');
+  if(tr){ TRACKS = tr.dataset.tracks; document.querySelectorAll('#trackSet button').forEach(b=>b.classList.toggle('on', b===tr)); renderAll(); }
+  const sy = e.target.closest('#styleSet button');
+  if(sy){ STAGE_STYLE = sy.dataset.style; document.querySelectorAll('#styleSet button').forEach(b=>b.classList.toggle('on', b===sy)); renderAll(); }
+  const th = e.target.closest('#themeSet button');
+  if(th){ document.documentElement.dataset.theme = th.dataset.themeSet; document.querySelectorAll('#themeSet button').forEach(b=>b.classList.toggle('on', b===th)); }
+});
+
+renderAll();
+</script>
+</body>
+</html>
