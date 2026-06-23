@@ -223,6 +223,71 @@ export interface WorkbookLayout extends BaseEntity {
   versions: WorkbookVersion[];
 }
 
+/* ============ Workbook analytical exhibits (compiled-doc data) ============ */
+// The "evidence of property" the workbook is built to present — the analytical
+// tables/charts the reviewer includes alongside their dispositions. Property-
+// level data (one record per review), distinct from the live finding state.
+// Conditions / returned items / action items are derived from dispositions; the
+// exhibits below are static source data.
+
+/** One row of the Sales Comparison adjustment grid (abbreviated $/SF view). */
+export interface WbAdjustmentRow {
+  comp: string;
+  unadj: number; // unadjusted $/SF
+  location: number; // signed % adjustment
+  condition: number;
+  quality: number;
+  adj: number; // adjusted $/SF
+  flag?: boolean; // the discrepancy comp — highlighted in the doc
+}
+
+/** A bar in the adjusted-$/SF-by-comparable chart. */
+export interface WbBar {
+  label: string;
+  value: number;
+  concluded?: boolean; // the reviewer's concluded figure (accent bar)
+}
+
+/** A point on the cap-rate comparison number-line. */
+export interface WbCapPoint {
+  label: string;
+  value: number; // percent (e.g. 6.0)
+  selected?: boolean; // the appraiser's selected rate
+}
+
+/** A column of the sensitivity heat table. */
+export interface WbSensitivityCol {
+  label: string;
+  value: number; // indicated value at this input
+  delta: number; // signed % vs the concluded value (0 = the selected column)
+  selected?: boolean;
+}
+
+export interface WbSwot {
+  strengths: string[];
+  weaknesses: string[];
+  opportunities: string[];
+  threats: string[];
+}
+
+/** A narrative section imported from the appraisal report into the workbook. */
+export interface WbImportedSection {
+  id: UUID;
+  title: string;
+  body: string;
+}
+
+export interface WorkbookExhibits {
+  id: UUID; // one record per review (id === reviewId)
+  reviewId: UUID;
+  adjustmentGrid: WbAdjustmentRow[];
+  psf: { bars: WbBar[]; note: string };
+  capRate: { points: WbCapPoint[]; bandMin: number; bandMax: number; unit: string; note: string };
+  sensitivity: { metric: string; cols: WbSensitivityCol[]; note: string };
+  swot: WbSwot;
+  imported: WbImportedSection[];
+}
+
 /* ============ A page of the source appraisal PDF (for side-by-side) ============ */
 export interface SourcePage {
   page: number;

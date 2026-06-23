@@ -3,14 +3,22 @@
 import { relativeDue } from "@/lib/utils";
 import { pipelineView, outcomeView } from "@/lib/review-lifecycle";
 import { useReview } from "@/store/useReview";
-import { Chip, type ChipTone } from "@/components/atoms";
-import { Tabs, SegmentedControl } from "@/components/molecules";
+import { Chip, Icon, type ChipTone, type IconName } from "@/components/atoms";
+import { Tabs } from "@/components/molecules";
 
 export type ReviewTab = "technical" | "administrative";
-/** Findings + Workbook are the two Technical sub-views. The former "Builder" is
- *  now an Edit-layout mode ON the Workbook (full authoring lives in Templates →
- *  Workbook Layout), so there is no separate Builder sub-view. */
-export type TechView = "findings" | "workbook";
+/** The three Technical sub-views (decision 2026-06-22, revised): **Findings ·
+ *  Builder · Workbook**. Findings = the decision surface; Builder = the layout/
+ *  section authoring tool; Workbook = the compiled, signable doc. (This reverses
+ *  the earlier Builder→Workbook "Edit mode" fold — a 3-pane builder is a place,
+ *  not a rail toggle; full record in parachute-v2-review-details-spec.md §2/§4.5.) */
+export type TechView = "findings" | "builder" | "workbook";
+
+const SUB_VIEWS: { value: TechView; label: string; icon: IconName }[] = [
+  { value: "findings", label: "Findings", icon: "reviews" },
+  { value: "builder", label: "Builder", icon: "filter" },
+  { value: "workbook", label: "Workbook", icon: "book" },
+];
 
 /** A review's pipeline phase → a single status chip tone (derived, never the raw
  *  `status`). Mirrors lib/review-lifecycle so the bar agrees with the queue. */
@@ -79,15 +87,18 @@ export function ReviewContextBar({
       </div>
 
       {tab === "technical" && (
-        <div className="revbar-sub">
-          <SegmentedControl
-            options={[
-              { value: "findings", label: "Findings" },
-              { value: "workbook", label: "Workbook" },
-            ]}
-            value={view}
-            onChange={setView}
-          />
+        <div className="revsub">
+          {SUB_VIEWS.map((s) => (
+            <button
+              key={s.value}
+              className={`revsub-tab${view === s.value ? " on" : ""}`}
+              onClick={() => setView(s.value)}
+              aria-current={view === s.value}
+            >
+              <Icon name={s.icon} size={15} />
+              {s.label}
+            </button>
+          ))}
         </div>
       )}
     </div>

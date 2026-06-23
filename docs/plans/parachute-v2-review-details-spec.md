@@ -21,14 +21,15 @@ Pipeline of work: **Findings (decide) → Workbook (assemble/style in Edit mode 
 ## 2. Locked decisions (2026-06-22)
 
 1. **Tech/Admin bifurcation = two elevated top tabs** (`Tabs` molecule, Framer `layoutId` sliding pill). Honors locked IA. Both tracks independently stateful within one order; each shows an in-place "Order …" CTA if its track wasn't ordered.
-2. **Builder folds into the Workbook as a Preview ⇄ Edit-layout mode.** Technical now has **2 sub-tabs: Findings → Workbook** (was 3). Full layout authoring lives once at org level (**Templates → Workbook Layout**); per-review editing is a right-side inspector for light overrides. *(Updates the locked "Findings/Builder/Workbook" sub-view IA — note in AGENTS.md.)*
-   - Rationale: modern peers (Gamma Present, Power BI Edit/Reading, Figma modes, Google Docs Editing/Viewing, Webflow Preview) put configuration as an *edit mode on the artifact*, not a separate destination; template-vs-instance is the only durable split. Also reclaims real estate.
+2. **~~Builder folds into the Workbook as a Preview ⇄ Edit-layout mode.~~ REVERSED 2026-06-22** (same day, after clicking through the client mock with Cody). **Technical has THREE sub-views again: `Findings · Builder · Workbook`**, rendered as **underline tabs** (deliberately a different shape from the top track pills, so the two nav levels don't read as a stack of identical pills — the fold's "Preview/Edit" toggle had created a confusing triple-decker). **Workbook** = the clean compiled doc + lifecycle (read/sign/file). **Builder** = the layout/section authoring surface — its own destination.
+   - Why the reversal: the fold's rationale (peers make config an *edit mode*; reclaim real estate) only holds for *light* config. The client's Builder is a **full 3-pane authoring tool** (sections list + add-palette of **9 section types** · per-section editor · live preview + template library), an **import-from-appraisal** band, and rich **document settings** (theme/font/size, header/footer/logo, show-status/confidence, hide rejected/overridden, **risk wording**). Cramming that into a right-rail "reduced panel" badly underbuilt the deliverable. A 3-pane builder is a *place*, not a toggle.
+   - Template-vs-instance split preserved: per-review authoring = the review's **Builder** sub-view; org-default layout authoring = **Templates → Workbook Layout** (same builder component in "org mode").
 3. **Aggressive toolbar consolidation** everywhere: sort + filter → one "Filter & sort" icon button → popover (badge = active count); Source PDF → icon toggle; bulk/power actions → ⋯ overflow; **Add finding → centered `Modal` form** (single-step; save → adds to review; mock data); property meta → compact line + ⓘ popover.
    - The **modal-form pattern** (centered `Modal` + structured inputs + Save/Cancel) is reusable for similar quick-add inputs app-wide. Coexists with `BottomSheet` (used for larger/contextual editing); use a modal for short structured create/quick-add, a `BottomSheet` for deeper editing on a place.
 4. **Disposition hierarchy** = two always-visible primaries + ⋯ overflow. Primary label adapts to origin: **AI/Parachute finding → `Agree` + `Reject`**; **reviewer-added finding → `Accept` + `Reject`**. Secondary (Disagree & edit, Comment, Add to conditions, Flag) in ⋯ `ActionMenu`. Honors the client's verb distinction without crowding the card.
 5. **One state-adaptive shell.** Same chrome; body swaps by **derived** state (`lib/review-lifecycle.ts`): `running` → pipeline tracker; `in_review` → active workspace; `completed` → read-only filed doc + signed badge; `returned` → dormant (client Q1). **Triage is the only separate route** (`/reviews/[id]/triage`), only for `autorejected`.
 6. **Administrative shares the Technical focus-mode shell** (early-specs decision #4) — list rail + focus pane + docked source, with attestation items (Yes/No/N-A) instead of findings. No sub-nav.
-7. **Workbook = clean doc + lifecycle only** in Preview; **Edit mode owns customization** (early-specs decision #5). Edit is **role-gated** (reviewer edits; recipient/read-only sees Preview).
+7. **Workbook = clean compiled doc + lifecycle only** (read/sign/file). **The Builder sub-view owns all customization** (sections, exhibits config, theme/branding, risk wording) — see decision #2. Builder is **role-gated** (reviewer authors; recipient/read-only sees only the Workbook).
 
 ---
 
@@ -36,20 +37,20 @@ Pipeline of work: **Findings (decide) → Workbook (assemble/style in Edit mode 
 
 ```
 ┌ ← Reviews   1450 Corporate Center Dr ⓘ   [▸Technical ·1]  [Administrative]   ⬇  ⋯ ┐
-│                          Findings ──▶ Workbook                                    │
+│              Findings · Builder · Workbook   (underline sub-tabs)                  │
 └───────────────────────────────────────────────────────────────────────────────┘
 
 /reviews/[id]                ONE route. Tabs + sub-views are STATE, never routes/breadcrumbs.
- ├ Technical (tab)
+ ├ Technical (tab)            top track = sliding-pill Tabs; sub-views = UNDERLINE tabs (distinct shape)
  │   ├ Findings  (sub-view, default) — focus mode: list rail · finding focus pane · docked source PDF
- │   └ Workbook  (sub-view)          — compiled doc · [Preview ⇄ Edit layout] · Sign → Complete/Return
- │                                      Edit = right-side inspector (sections reorder/show-hide,
- │                                      theme, font, risk labels) inheriting the org default layout
+ │   ├ Builder   (sub-view)          — layout/section authoring: 3-pane (sections+add · editor · preview),
+ │   │                                  import-from-appraisal, document settings. Role-gated (reviewer).
+ │   └ Workbook  (sub-view)          — compiled doc · Sign → Complete/Return. "Customize layout" → Builder.
  ├ Administrative (tab)               — SAME focus-mode shell; attestation items; Sign attestation
  └ (state) running / completed / returned bodies swap inside the same shell
 
 /reviews/[id]/triage          The ONE separate route — autorejected only.
-Templates → Workbook Layout   Org-level full layout authoring (the "real" builder), versioned.
+Templates → Workbook Layout   Org-level layout authoring (same Builder in "org mode"), versioned.
 ```
 
 **Surface taxonomy (app-wide):** route = *place*; `BottomSheet` = *focused task on a place* (add/edit finding, quick-look); `StepperModal` = *linear commit* (ordering). Floating layers portal to `document.body`, `position: fixed`.
@@ -89,11 +90,11 @@ Templates → Workbook Layout   Org-level full layout authoring (the "real" buil
 ### 4.3 Administrative review (attestation)
 Empty/running states · note banner ("Built from your template — Demo Bank Commercial Review Form… you attest then sign") · coverage panel · show filter (All / Needs attention / Pending / Attested) · **attestation card** (grouped by section; question + Yes/No/N-A + confidence + page cite + evidence; "needs attention" if AI=NO or conf<0.85) · **change-reason required when answer ≠ AI** · Confirm routine answers (bulk) · attestation preview + Sign/Export · DRAFT until signed. → Renders in the **shared focus-mode shell**.
 
-### 4.4 Workbook (compiled doc) — Preview mode
-Header band · **cover banner** (Reviewer recommendation: Approve / Approve-with-conditions / Review-in-progress + **Risk badge**) · value summary · sections (findings by category, exhibits as table/chart, sensitivity heat, SWOT, **Conditions C1/C2…**, action items, certification) · **DRAFT ribbon** until signed → **Sign** (name/timestamp/SHA-256) → **Complete (filed)** / **Return to appraiser** (batched return letter from conditions). Pending findings render as visible "Open — awaiting disposition" placeholders.
+### 4.4 Workbook (compiled doc) — the Workbook sub-view  ✅ built 2026-06-22
+Header band · **cover banner** (Reviewer recommendation: Approve / Approve-with-conditions / Review-in-progress + **Risk badge with wording**) · value summary · sections (findings by approach-section, exhibits as table/chart, sensitivity heat, SWOT, **Conditions C1/C2…**, action items, imported sections, certification) · **DRAFT ribbon** until signed → **Sign** (name/timestamp/SHA-256) → **Complete (filed)** / **Return to appraiser** (batched return letter from rejected findings). Pending findings render as visible "Open — awaiting disposition" placeholders. (No edit chrome here — the Workbook is read/sign/file only; "Customize layout" jumps to the Builder.)
 
-### 4.5 Workbook — Edit-layout mode (the folded Builder)
-Right-side inspector: sections reorder / show-hide (hide rejected/overridden) · theme · font · header/footer/logo · **risk rating** (auto/manual, custom label/color) · signature. Left rail = section navigation. Inherits org default layout (Templates → Workbook Layout). **v2 = reduced customize panel** (early-specs decision #6); full 3-pane authoring + appraisal-section import = org-level / deferred.
+### 4.5 Builder (layout/section authoring) — its OWN sub-view (decision-#2 reversal)
+~~Right-side inspector~~ — **superseded.** Builder is a full destination, not a Workbook edit-mode. Target: **3-pane** — sections list + **add-section** (9 types: summary · findings · exhibits · sensitivity · SWOT · conditions · actions · free-text · cert) | per-section editor (findings category filters, exhibit table/chart toggles, sensitivity range, SWOT placement, free-text) | live preview + template library — plus an **import-from-appraisal** band (drag source sections in) and **document settings** (theme/font/size, header/footer/logo, show status/confidence, hide rejected/overridden, **risk wording**). Inherits the org default `WorkbookLayout`; org-level authoring is the same Builder in "org mode" (Templates → Workbook Layout). **Status:** Phase-1 stub built (`Builder.tsx` — inherited sections + type palette + import sources, read-only); full tool is the next build (§7 #4).
 
 ### 4.6 Triage (`/reviews/[id]/triage`)
 Auto-rejected only: failed-criterion card + evidence + confidence; **Override & admit** (primary navy, audited reason → starts pipeline, resumes SLA) / **Confirm & return** (secondary). SLA paused while in triage.
@@ -129,10 +130,26 @@ Auto-rejected only: failed-criterion card + evidence + confidence; **Override & 
 ---
 
 ## 7. Suggested build sequence
-1. ~~**Shell + context bar**~~ ✅ — `Tabs`, derived chips, 2-tab sub-nav.
+1. ~~**Shell + context bar**~~ ✅ — `Tabs`, derived chips; sub-nav now **3 underline tabs** (Findings · Builder · Workbook) after the decision-#2 reversal.
 2. ~~**Findings focus-mode rebuild**~~ ✅ (build 2026-06-22) — list rail (`FindingList`) · focus pane (`FindingFocus`) · on-demand docked source (3rd pane appears only on cite / Source toggle); atoms + `SeverityChip`/`ConfidenceMeter`; decision-#4 actions; response-template composer (`ResponseComposer` + `ResponseTemplatePicker`, merge-fill via `lib/utils#fillTemplate`); consolidated toolbar (`FilterSortPopover` + Source toggle + Add + ⋯); collapsible coverage panel (`CoveragePanel`). **Old `FindingCard`/`WorkbookRail` removed; slim Workbook summary now lives in the rail foot.**
-3. **Workbook** — Preview compiled doc + lifecycle (Sign → Complete/Return).
-4. **Workbook Edit mode** — right-side inspector (reduced customize panel).
+3. ~~**Workbook compiled doc (rich)**~~ ✅ (build 2026-06-22, **Phase 1 of the un-folded design**) —
+   `Workbook` container (clean doc + DRAFT→Sign→Complete/Return lifecycle; "Customize layout" →
+   Builder) composing `WorkbookPreview`: running header strip · navy header band · cover banner
+   (derived **recommendation pill** w/ condition count + **risk badge with wording**) · meta row
+   (loan/effective/reviewer/reviewed) · **structured findings sections** (Scope & Compliance / Sales
+   Comparison / Income / Cost via category map) each w/ status badge + **AI-basis footnote** · pending
+   placeholders · **analytical exhibits** (adjustment grid · $/SF bar chart · cap-rate number-line —
+   `WorkbookExhibits.tsx`, bespoke SVG/CSS) · **sensitivity heat** · **SWOT** · conditions · conclusion
+   + **action items w/ deadlines** · **imported appraisal sections** · certification (**real SHA-256**
+   seal via `crypto.subtle`). Exhibit data seeded in `workbook-exhibits.seed.ts` (collection v13, loaded
+   by `workspace.store`). All derived in `lib/workbook.ts`; Sign gated until 0 pending.
+4. **Workbook Builder (full 3-pane authoring) — NEXT BUILD.** Phase-1 **stub shipped** (`Builder.tsx`):
+   own sub-view showing the inherited org-layout sections (read-only) + the 9 section-type palette +
+   import sources, with an "authoring next" note. The full tool to build: 3-pane (sections list +
+   add-section · per-section editor [findings category filters, exhibit table/chart toggles, sensitivity
+   range, SWOT placement, free-text] · live preview + template library), import-from-appraisal drag-in,
+   and document settings (theme/font/size, header/footer/logo, show-status/confidence, hide
+   rejected/overridden, risk wording). Org-mode variant wires into Templates → Workbook Layout.
 5. **Administrative** — attestation in the shared shell.
 6. **Triage** — rework to real data + correct route.
 
@@ -141,6 +158,10 @@ Captured here so the single post-Workbook IA pass (both `ia-board*.html` + `ia-m
 - **Decision #4 ⋯ secondary actions** now include **Add to conditions** and **Flag for follow-up** (state toggles on `FindingState.condition`/`flagged`), alongside Disagree-&-edit and Comment. Conditions feed the Workbook's batched Conditions list (§4.4); flag is personal follow-up.
 - **Coverage / anti-miss panel elevated** to a persistent collapsible header band above the panes (not an in-rail summary) — resolves the §8 "coverage panel placement" open question in favour of the header.
 - **Source PDF = on-demand 3rd pane** (default 2-pane rail+focus → 3-pane on cite/toggle), not always-on and not a BottomSheet — resolves part of the §8 "responsive focus mode" question for desktop.
+- **Technical sub-nav un-folded back to 3 views: `Findings · Builder · Workbook`** (decision-#2 reversal, 2026-06-22). Rendered as **underline tabs** (`.revsub` in `ReviewContextBar`), a different shape from the top track's sliding pills — the boards/map must drop the "2 sub-tabs / Builder folds into Workbook" wording and the Preview⇄Edit toggle, and restore Builder as its own sub-view.
+- **Workbook compiled doc — rich section set** (decision 2026-06-22). The doc renders, in order: Property & Value Summary · structured **findings sections** (Scope & Compliance / Sales Comparison / Income / Cost, mapped from finding category, each finding w/ disposition badge + **AI-basis footnote**; pending → "Open — awaiting disposition") · **Analytical Exhibits** (adjustment grid · $/SF bar chart · cap-rate number-line) · **Sensitivity Analysis** (heat) · Conditions of Approval (C1…) · Returned to Appraiser · Conclusion & Action Items (A1… w/ deadlines) · **Appendix: SWOT** · **Appendix: Imported appraisal sections** · Reviewer Certification. Conditions/Returned auto-hide when empty; exhibits/SWOT/imported come from `workbook-exhibits.seed.ts`. Everything else derived from the live workspace store.
+- **Workbook lifecycle vocabulary:** DRAFT (ribbon + diagonal watermark; Sign **gated** until 0 pending) → SIGNED (name/timestamp/**real SHA-256** seal) → FILED / RETURNED (locked banner). The reviewer **Recommendation** (Approve / Approve-with-conditions / Review-in-progress) + **risk wording** are **derived** — fold into `lib/review-lifecycle` if they should surface on queue/context-bar chips.
+- **Builder is reviewer-gated** and its own destination (not an edit-mode toggle) — confirms §8 "role gating"; full 3-pane authoring tool is the next build (§7 #4).
 
 ---
 
@@ -148,5 +169,6 @@ Captured here so the single post-Workbook IA pass (both `ia-board*.html` + `ia-m
 - **Responsive focus mode:** 2- vs 3-pane on narrow widths; can list rail + source show together? (early-specs §2 build-time open)
 - **Coverage panel placement:** persistent collapsible header vs in-rail summary.
 - **Return-to-appraiser:** build Sign → Complete now; keep Return present but `returned` queue state dormant pending **client Q1** (continuation vs new appraisal).
+- **Filing scope (decided 2026-06-22, with a deferred follow-up):** "Complete & file" is **local to the Workbook view** for now — it shows a "Filed — locked" banner inside the doc and does **not** flip `review.status` to `completed` app-wide. **TODO (later, must be thought through + built):** wire filing to the real lifecycle so a filed workbook flips the review to `completed` everywhere — which lights up the **completed → read-only filed-doc shell** (locked decision #5, §2) across the queue, context bar, and both tracks — plus how re-opening/amending a filed review behaves. Out of scope this session by agreement; the local `filing` state in `workspace.store.ts` is the seam to grow from.
 - **Workbook brand defaults vs per-workbook overrides:** which settings are org-locked vs per-review (early-specs §4 open; client wants brand colors/fonts as global defaults).
 - **Edit-mode role gating:** confirm reviewer-only edit for the demo (no recipient role yet).
