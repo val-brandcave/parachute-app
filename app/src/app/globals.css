@@ -760,46 +760,47 @@ textarea {
 }
 
 /* ============ Review workspace — Findings focus mode ============ */
-/* `--fm-reserve` ≈ app header + context bar + page padding + the coverage/tool
-   head; the panes region claims the rest of the viewport so each pane scrolls
-   on its own (the triage focus-mode pattern). Tunable in one place. */
+/* Fills the shared `.rw-body`: a coverage strip (auto height) over the panes
+   region, which flex-grows to claim the rest so each pane scrolls on its own
+   (the triage focus-mode pattern). No viewport reserve — the flex body removes
+   the per-view height jump. */
 .fm {
-  --fm-reserve: 336px;
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 14px;
   padding: var(--d-page-y) var(--d-page-x);
 }
-.fm-head {
-  display: flex;
-  align-items: flex-start;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-.fm-tools {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-left: auto;
-  flex-shrink: 0;
-}
 .fm-panes {
+  flex: 1;
+  min-height: 0;
   display: grid;
   grid-template-columns: minmax(244px, 288px) 1fr;
+  grid-template-rows: minmax(0, 1fr);
   gap: 16px;
-  height: calc(100vh - var(--fm-reserve));
-  min-height: 460px;
 }
 .fm-panes.with-source {
   grid-template-columns: minmax(220px, 258px) 1fr minmax(340px, 30%);
 }
+/* center column = the coverage band (auto) stacked over the finding focus (fill);
+   keeps the left list rail at full column height and the source PDF as its own
+   full-height column */
+.fm-center {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
 
 /* ---- state screens (running / intake / clean) ---- */
 .fm-state {
+  flex: 1;
+  min-height: 60vh;
   display: grid;
   place-items: center;
   padding: 56px var(--d-page-x);
-  min-height: 60vh;
 }
 .fm-state-card {
   max-width: 460px;
@@ -846,24 +847,38 @@ textarea {
 }
 
 /* ---- coverage / anti-miss panel ---- */
+/* full-width auto-height strip under the header (was `flex:1` to grow within the
+   old horizontal toolbar row; in the vertical `.fm` column it must NOT grow, or
+   it splits the leftover height with the panes and shows an empty band) */
 .fm-cov {
-  flex: 1;
-  min-width: 320px;
+  flex: 0 0 auto;
   border: 1px solid var(--md-outline);
   border-radius: 14px;
   background: var(--md-surface);
   box-shadow: var(--md-elev-1);
   overflow: hidden;
 }
+/* collapsed band = a single clickable row: donut · headline · chevron */
 .fm-cov-main {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 12px 14px;
+  gap: 11px;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  border-radius: 14px;
+  transition: background 0.12s;
+}
+.fm-cov-main:hover {
+  background: var(--md-surface-1);
 }
 .fm-cov-ring {
-  width: 52px;
-  height: 52px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   display: grid;
   place-items: center;
@@ -873,7 +888,7 @@ textarea {
 .fm-cov-ring::before {
   content: "";
   position: absolute;
-  inset: 6px;
+  inset: 4px;
   background: var(--md-surface);
   border-radius: 50%;
 }
@@ -881,27 +896,42 @@ textarea {
   position: relative;
   font-weight: 700;
   color: var(--md-on-surface);
-  font-size: 12.5px;
+  font-size: 7.5px;
+  letter-spacing: -0.2px;
   font-variant-numeric: tabular-nums;
 }
-.fm-cov-body {
-  min-width: 0;
-}
 .fm-cov-headline {
+  flex: 1;
+  min-width: 0;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 13px;
   color: var(--md-on-surface);
 }
 .fm-cov-judge {
   color: var(--md-warn);
   font-weight: 600;
 }
+.fm-cov-chev {
+  flex-shrink: 0;
+  color: var(--md-on-surface-t);
+  transition: transform 0.2s;
+}
+.fm-cov.open .fm-cov-chev {
+  transform: rotate(180deg);
+}
+.fm-cov-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  border-top: 1px solid var(--md-outline-v);
+  padding: 10px 14px 12px;
+  background: var(--md-surface-1);
+}
 .fm-cov-line {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 6px;
-  margin-top: 3px;
   font-size: 12.5px;
   color: var(--md-on-surface-v);
 }
@@ -911,31 +941,6 @@ textarea {
 }
 .fm-cov-dot {
   color: var(--md-on-surface-t);
-}
-.fm-cov-toggle {
-  margin-left: auto;
-  align-self: flex-start;
-  border: none;
-  background: transparent;
-  color: var(--md-on-surface-v);
-  cursor: pointer;
-  display: grid;
-  place-items: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
-  transition: transform 0.2s, background 0.15s;
-}
-.fm-cov-toggle:hover {
-  background: var(--md-surface-2);
-}
-.fm-cov.open .fm-cov-toggle {
-  transform: rotate(180deg);
-}
-.fm-cov-detail {
-  border-top: 1px solid var(--md-outline-v);
-  padding: 10px 14px 12px;
-  background: var(--md-surface-1);
 }
 .fm-cov-cats {
   display: flex;
@@ -1292,7 +1297,9 @@ textarea {
 
 /* ---- focus pane ---- */
 .fm-focus {
+  flex: 1;
   min-width: 0;
+  min-height: 0;
   overflow-y: auto;
   border: 1px solid var(--md-outline);
   border-radius: 14px;
@@ -1499,18 +1506,6 @@ textarea {
   border-color: var(--md-error);
   color: #fff;
 }
-.fm-kbd {
-  display: inline-grid;
-  place-items: center;
-  min-width: 16px;
-  height: 16px;
-  padding: 0 4px;
-  border-radius: 4px;
-  background: color-mix(in srgb, currentColor 14%, transparent);
-  font-size: 10px;
-  font-weight: 700;
-  font-family: inherit;
-}
 .fm-disp {
   margin-left: auto;
   display: inline-flex;
@@ -1668,9 +1663,8 @@ textarea {
 
 /* PDF side-by-side */
 .pdfpane {
-  position: sticky;
-  top: 96px;
-  height: calc(100vh - 230px);
+  height: 100%;
+  min-height: 0;
   background: var(--md-surface);
   border-radius: var(--r);
   box-shadow: var(--md-elev-1);
@@ -1732,32 +1726,39 @@ textarea {
    row, so the two nav levels read as clearly different controls (enclosed
    segmented switch vs. free-standing pills) in different places — no longer a
    stack of look-alike pill bands. */
+/* control row — sub-view pill tabs on the left, the active view's projected
+   action cluster on the right (one row, shared by Findings/Builder/Workbook) */
 .revsub {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
   padding: 7px 22px;
   border-top: 1px solid var(--md-outline-v);
   background: var(--md-surface);
+}
+.revsub-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.revsub-actions:empty {
+  display: none;
 }
 
 /* ============ Workbook (Technical → Workbook sub-view) ============ */
 /* The compiled, auditor-facing doc reads as branded "paper" inside the app
    chrome; `--wb-accent` / `--wb-head` are the per-review themed custom props. */
 .wb {
-  --wb-reserve: 232px;
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 14px;
   padding: var(--d-page-y) var(--d-page-x);
 }
-.wb-bar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-.wb-bar-spacer {
-  flex: 1;
-}
+/* Sign / file lifecycle hint — sits in the projected control-row actions */
 .wb-bar-hint {
   display: inline-flex;
   align-items: center;
@@ -1770,8 +1771,8 @@ textarea {
   color: var(--md-success);
 }
 .wb-stage {
-  height: calc(100vh - var(--wb-reserve));
-  min-height: 480px;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   border-radius: 14px;
 }
@@ -2688,25 +2689,38 @@ textarea {
 
 /* ============ Workbook Builder (3-pane authoring tool) ============ */
 .bld {
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 12px;
   padding: var(--d-page-y) var(--d-page-x);
 }
-.bld-bar {
+/* inherited-layout context inside the Document Settings panel header (replaced
+   the old standalone full-width band): "Based on <layout>" + Reset to inherited */
+.bld-base {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 10px;
-  flex-wrap: wrap;
+  margin: 2px 0 14px;
+  padding: 8px 12px;
+  border: 1px solid var(--md-outline-v);
+  border-radius: 10px;
+  background: var(--md-surface-1);
 }
-.bld-inherit {
+.bld-base-l {
   display: inline-flex;
   align-items: center;
   gap: 7px;
   font-size: 12.5px;
   color: var(--md-on-surface-v);
 }
-.bld-inherit svg {
+.bld-base-l b {
+  color: var(--md-on-surface);
+  font-weight: 600;
+}
+.bld-base-l svg {
   color: var(--md-accent-d);
 }
 .bld-role {
@@ -2727,77 +2741,109 @@ textarea {
   background: var(--md-surface-2);
 }
 
-/* ---- import-from-appraisal band ---- */
-.bld-importbar {
+/* ---- "From the appraisal" source tray (left pane, below the palette) ---- */
+.bld-srcgroup {
+  margin-top: 4px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--md-outline);
+}
+.bld-srcgroup-h {
   display: flex;
   align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  padding: 10px 14px;
-  border: 1px dashed var(--md-outline);
-  border-radius: 12px;
-  background: var(--md-surface-1);
-}
-.bld-importbar-h {
-  display: inline-flex;
-  align-items: center;
   gap: 7px;
+  width: 100%;
+  padding: 4px 2px;
+  border: none;
+  background: none;
+  font: inherit;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.4px;
   text-transform: uppercase;
   color: var(--md-on-surface-v);
-}
-.bld-importbar-h svg {
-  color: var(--md-accent-d);
-}
-.bld-imports {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 7px;
-}
-.bld-import {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font: inherit;
-  font-size: 12px;
-  font-weight: 600;
-  padding: 5px 10px;
-  border: 1px solid var(--md-outline);
-  border-radius: 8px;
-  background: var(--md-surface);
-  color: var(--md-on-surface);
   cursor: pointer;
 }
-.bld-import:hover:not(:disabled) {
+.bld-srcgroup-h svg {
+  color: var(--md-accent-d);
+}
+.bld-srcgroup-chev {
+  margin-left: auto;
+  color: var(--md-on-surface-t);
+  transition: transform 0.2s;
+}
+.bld-srcgroup[aria-expanded] .bld-srcgroup-chev,
+.bld-srcgroup-h[aria-expanded="true"] .bld-srcgroup-chev {
+  transform: rotate(180deg);
+}
+.bld-srclist {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 8px;
+}
+.bld-src {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 9px;
+  border: 1px dashed var(--md-outline);
+  border-radius: 10px;
+  background: var(--md-surface-1);
+}
+.bld-src-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--md-on-surface-v);
+}
+.bld-src-add {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--md-outline);
+  border-radius: 7px;
+  background: var(--md-surface);
+  color: var(--md-accent-d);
+  cursor: pointer;
+}
+.bld-src-add:hover:not(:disabled) {
   border-color: var(--md-accent);
-  color: var(--md-accent-d);
+  background: var(--md-selected);
 }
-.bld-import svg {
-  color: var(--md-accent-d);
+.bld-src-add:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
-.bld-import.is-added {
-  color: var(--md-success);
+.bld-src.is-added {
+  border-style: solid;
   border-color: var(--md-success);
   background: var(--md-success-c);
-  cursor: default;
 }
-.bld-import.is-added svg {
+.bld-src.is-added .bld-src-title {
+  color: var(--md-on-surface);
+}
+.bld-src-added {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 700;
   color: var(--md-success);
-}
-.bld-import:disabled:not(.is-added) {
-  opacity: 0.45;
-  cursor: not-allowed;
 }
 
 /* ---- the 3-pane grid ---- */
 .bld-3 {
+  flex: 1;
+  min-height: 0;
   display: grid;
   grid-template-columns: 300px minmax(0, 1fr) 380px;
+  grid-template-rows: minmax(0, 1fr);
   gap: 14px;
   align-items: stretch;
-  min-height: 0;
 }
 .bld-3.is-readonly .bld-left,
 .bld-3.is-readonly .bld-center {
@@ -2809,8 +2855,8 @@ textarea {
   background: var(--md-surface);
   box-shadow: var(--md-elev-1);
   padding: 14px;
-  height: calc(100vh - 290px);
-  min-height: 460px;
+  height: 100%;
+  min-height: 0;
   overflow-y: auto;
 }
 .bld-pane-h {
@@ -2881,14 +2927,16 @@ textarea {
   gap: 5px;
 }
 .bld-secrow {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 8px;
-  padding: 7px 9px;
+  gap: 9px;
+  padding: 6px 8px;
   border: 1px solid var(--md-outline-v);
-  border-radius: 10px;
+  border-radius: 9px;
   background: var(--md-surface);
   cursor: pointer;
+  list-style: none;
 }
 .bld-secrow:hover {
   border-color: var(--md-outline);
@@ -2902,77 +2950,66 @@ textarea {
 .bld-secrow.is-off {
   opacity: 0.55;
 }
-.bld-reorder {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  flex-shrink: 0;
-}
-.bld-reorder button {
+/* grip handle — the drag affordance (Framer drag starts from here) */
+.bld-grip {
   display: grid;
   place-items: center;
-  width: 18px;
-  height: 14px;
+  flex-shrink: 0;
+  width: 20px;
+  height: 26px;
   border: none;
   background: none;
-  border-radius: 4px;
+  border-radius: 6px;
   color: var(--md-on-surface-t);
-  cursor: pointer;
+  cursor: grab;
+  touch-action: none;
 }
-.bld-reorder button:hover:not(:disabled) {
+.bld-grip:hover:not(:disabled) {
   background: var(--md-surface-2);
   color: var(--md-on-surface);
 }
-.bld-reorder button:disabled {
+.bld-grip:active:not(:disabled) {
+  cursor: grabbing;
+}
+.bld-grip:disabled {
   opacity: 0.3;
   cursor: default;
 }
-.bld-secrow-i {
-  color: var(--md-accent-d);
+/* section number — mirrors the compiled doc (1,2,3 · A,B · — when not rendered) */
+.bld-secnum {
   flex-shrink: 0;
+  min-width: 16px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--md-accent-d);
 }
+.bld-secnum.is-off {
+  color: var(--md-on-surface-t);
+}
+/* the title's Tooltip wrapper is the grid item — let it shrink so the inner
+   span can ellipsise (grid items floor at min-content without this) */
+.bld-secrow .ui-tip-wrap {
+  min-width: 0;
+}
+/* single-line title — ellipsis; tooltip shows only when actually clipped */
 .bld-secrow-title {
-  flex: 1;
+  display: block;
   min-width: 0;
   font-size: 12.5px;
   font-weight: 600;
   color: var(--md-on-surface);
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  line-height: 1.3;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.bld-secrow-appx {
-  font-size: 9px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-  color: var(--md-on-surface-t);
-  border: 1px solid var(--md-outline-v);
-  border-radius: 5px;
-  padding: 1px 4px;
-}
-.bld-secrow-tag {
-  font-size: 9.5px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  color: var(--md-on-surface-t);
-  flex-shrink: 0;
-}
 .bld-secrow-actions {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
   flex-shrink: 0;
-}
-.bld-secrow-actions .bld-del {
-  color: var(--md-on-surface-t);
-}
-.bld-secrow-actions .bld-del:hover:not(:disabled) {
-  color: var(--md-error);
 }
 
 /* add-section palette */
@@ -3048,7 +3085,15 @@ textarea {
   flex-direction: column;
   gap: 6px;
   margin-bottom: 16px;
-  max-width: 520px;
+}
+/* editor controls fill the pane so the content adapts when the nav collapses and
+   the center column widens (no fixed-width island leaving dead space). Scoped to
+   the Builder editor — the app-wide `.ui-seg` stays content-sized. */
+.bld-editor .ui-seg {
+  width: 100%;
+}
+.bld-editor .ui-seg button {
+  flex: 1;
 }
 .bld-sub-h {
   font-size: 11px;
@@ -3065,7 +3110,6 @@ textarea {
   line-height: 1.55;
   color: var(--md-on-surface-v);
   margin: -2px 0 12px;
-  max-width: 560px;
 }
 .bld-toggle {
   display: flex;
@@ -3073,7 +3117,6 @@ textarea {
   gap: 14px;
   padding: 9px 0;
   border-bottom: 1px solid var(--md-hairline, var(--md-outline-v));
-  max-width: 560px;
 }
 .bld-toggle:last-of-type {
   border-bottom: none;
@@ -3098,7 +3141,6 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  max-width: 520px;
 }
 .bld-cat {
   display: flex;
@@ -3125,7 +3167,6 @@ textarea {
   font-size: 12.5px;
   line-height: 1.55;
   color: var(--md-on-surface-v);
-  max-width: 560px;
 }
 .bld-auto-note svg {
   color: var(--md-accent-d);
@@ -3192,6 +3233,20 @@ textarea {
   border: 1px solid var(--md-outline-v);
   border-radius: 11px;
   margin-bottom: 7px;
+}
+/* the currently-inherited base layout — highlighted, action replaced by "In use" */
+.bld-tpl.is-base {
+  border-color: var(--md-accent);
+  background: var(--md-selected);
+}
+.bld-tpl-inuse {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--md-accent-d);
 }
 .bld-tpl-main {
   flex: 1;
@@ -6287,12 +6342,27 @@ select.qfilter {
 }
 
 /* ---- organism: ReviewContextBar (identity · track tabs · sub-views) ---- */
+/* The review workspace fills the content area as ONE flex column: an auto-height
+   header (identity + control row) that stays put, over a single body region that
+   owns the scroll. No `calc(100vh - Npx)` reserves — the body simply takes the
+   remaining space, so the body's top edge never jumps when switching sub-views. */
+.rw {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.rw-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 .revbar {
   background: var(--md-surface);
   border-bottom: 1px solid var(--md-outline-v);
-  position: sticky;
-  top: 0;
-  z-index: 5;
+  flex-shrink: 0;
 }
 /* (1) identity row — title + status chips + meta line on the left, the
    Technical/Administrative track switch right-aligned (when both tracks exist) */
@@ -8413,6 +8483,18 @@ select.qfilter {
 }
 .ui-switch.on .ui-switch-thumb {
   transform: translateX(16px);
+}
+/* compact variant for dense rows (Builder section list) */
+.ui-switch--sm {
+  width: 30px;
+  height: 18px;
+}
+.ui-switch--sm .ui-switch-thumb {
+  width: 14px;
+  height: 14px;
+}
+.ui-switch--sm.on .ui-switch-thumb {
+  transform: translateX(12px);
 }
 
 /* ---- molecule: AvatarCropper ---- */

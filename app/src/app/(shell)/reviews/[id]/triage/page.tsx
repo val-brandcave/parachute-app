@@ -75,7 +75,7 @@ export default function TriagePage() {
               <button
                 className="btn btn-filled btn-sm"
                 disabled={!reason.trim()}
-                onClick={() => router.push(`/reviews/${id}/technical`)}
+                onClick={() => router.push(`/reviews/${id}`)}
               >
                 Admit &amp; start pipeline
               </button>

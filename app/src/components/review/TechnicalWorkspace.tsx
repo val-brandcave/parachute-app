@@ -8,6 +8,7 @@ import { ActionMenu, PipelineTracker } from "@/components/molecules";
 import { useWorkspaceStore, useTemplatesStore } from "@/store";
 import { useReview } from "@/store/useReview";
 import { CoveragePanel } from "@/components/review/CoveragePanel";
+import { ReviewActions } from "@/components/review/ReviewChrome";
 import { FilterSortPopover, type Sort, type SevFilter } from "@/components/review/FilterSortPopover";
 import { FindingList } from "@/components/review/FindingList";
 import { FindingFocus } from "@/components/review/FindingFocus";
@@ -41,6 +42,9 @@ export function TechnicalWorkspace({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [pdfPage, setPdfPage] = useState<number | null>(null);
   const [addOpen, setAddOpen] = useState(false);
+  // Coverage is a slim header band over the focus column — collapsed by default;
+  // opening the Source PDF auto-collapses it so the finding text keeps its height.
+  const [coverageOpen, setCoverageOpen] = useState(false);
 
   useEffect(() => {
     if (reviewId) loadReview(reviewId);
@@ -104,8 +108,17 @@ export function TechnicalWorkspace({
     return () => window.removeEventListener("keydown", onKey);
   }, [sorted, effectiveId, select]);
 
-  const toggleSource = () =>
-    setPdfPage((p) => (p !== null ? null : selected?.page ?? findings[0]?.page ?? 1));
+  // Opening the source dock collapses the coverage band so the focus + PDF keep
+  // their height (the 3rd column is full-height on its own).
+  const openSource = useCallback((page: number) => {
+    setPdfPage(page);
+    setCoverageOpen(false);
+  }, []);
+
+  const toggleSource = () => {
+    if (pdfPage !== null) setPdfPage(null);
+    else openSource(selected?.page ?? findings[0]?.page ?? 1);
+  };
 
   if ((isLoading && !findings.length) || !review) {
     return <div className="fm-state text-secondary">Loading findings…</div>;
@@ -171,36 +184,33 @@ export function TechnicalWorkspace({
 
   return (
     <div className="fm">
-      <div className="fm-head">
-        <CoveragePanel findings={findings} states={states} />
-        <div className="fm-tools">
-          <FilterSortPopover
-            sort={sort}
-            setSort={setSort}
-            sevFilter={sevFilter}
-            setSevFilter={setSevFilter}
-            counts={counts}
-          />
-          <Button
-            variant={pdfPage !== null ? "primary" : "outline"}
-            size="sm"
-            iconLeft="pdf"
-            onClick={toggleSource}
-          >
-            Source
-          </Button>
-          <Button variant="outline" size="sm" iconLeft="add" onClick={() => setAddOpen(true)}>
-            Add finding
-          </Button>
-          <ActionMenu
-            tooltip="More actions"
-            items={[
-              { header: true, label: "Bulk" },
-              { label: "Accept all passing checks", icon: "check-all", onClick: acceptAllPasses },
-            ]}
-          />
-        </div>
-      </div>
+      <ReviewActions>
+        <FilterSortPopover
+          sort={sort}
+          setSort={setSort}
+          sevFilter={sevFilter}
+          setSevFilter={setSevFilter}
+          counts={counts}
+        />
+        <Button
+          variant={pdfPage !== null ? "primary" : "outline"}
+          size="sm"
+          iconLeft="pdf"
+          onClick={toggleSource}
+        >
+          Source
+        </Button>
+        <Button variant="outline" size="sm" iconLeft="add" onClick={() => setAddOpen(true)}>
+          Add finding
+        </Button>
+        <ActionMenu
+          tooltip="More actions"
+          items={[
+            { header: true, label: "Bulk" },
+            { label: "Accept all passing checks", icon: "check-all", onClick: acceptAllPasses },
+          ]}
+        />
+      </ReviewActions>
 
       <div className={`fm-panes${pdfPage !== null ? " with-source" : ""}`}>
         <FindingList
@@ -212,19 +222,28 @@ export function TechnicalWorkspace({
           onCompile={onOpenWorkbook}
         />
 
-        {selected ? (
-          <FindingFocus
-            key={selected.id}
-            finding={selected}
-            state={states[selected.id] ?? { disposition: "pending" }}
-            property={review.propertyAddress}
-            onCite={(p) => setPdfPage(p)}
+        <div className="fm-center">
+          <CoveragePanel
+            findings={findings}
+            states={states}
+            open={coverageOpen}
+            onToggle={() => setCoverageOpen((o) => !o)}
           />
-        ) : (
-          <div className="fm-focus fm-focus--empty text-secondary">
-            Select a finding to review it.
-          </div>
-        )}
+
+          {selected ? (
+            <FindingFocus
+              key={selected.id}
+              finding={selected}
+              state={states[selected.id] ?? { disposition: "pending" }}
+              property={review.propertyAddress}
+              onCite={openSource}
+            />
+          ) : (
+            <div className="fm-focus fm-focus--empty text-secondary">
+              Select a finding to review it.
+            </div>
+          )}
+        </div>
 
         {pdfPage !== null && <PdfPane page={pdfPage} onClose={() => setPdfPage(null)} />}
       </div>

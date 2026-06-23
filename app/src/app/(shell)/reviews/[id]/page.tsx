@@ -10,6 +10,7 @@ import {
 import { TechnicalWorkspace } from "@/components/review/TechnicalWorkspace";
 import { Workbook } from "@/components/review/Workbook";
 import { Builder } from "@/components/review/Builder";
+import { ReviewChromeProvider } from "@/components/review/ReviewChrome";
 import { Card, Icon } from "@/components/atoms";
 
 function DetailStub({ title, note }: { title: string; note: string }) {
@@ -49,27 +50,31 @@ export default function ReviewDetailPage() {
   const [view, setView] = useState<TechView>("findings");
 
   return (
-    <>
-      <ReviewContextBar
-        reviewId={id}
-        tab={tab}
-        setTab={setTab}
-        view={view}
-        setView={setView}
-      />
-
-      {tab === "administrative" ? (
-        <DetailStub
-          title="Administrative Review"
-          note="AI pre-fills the bank's compliance checklist (Yes / No / N-A with page citations); the reviewer attests and signs. Coming next."
+    <ReviewChromeProvider>
+      <div className="rw">
+        <ReviewContextBar
+          reviewId={id}
+          tab={tab}
+          setTab={setTab}
+          view={view}
+          setView={setView}
         />
-      ) : view === "workbook" ? (
-        <Workbook reviewId={id} onCustomize={() => setView("builder")} />
-      ) : view === "builder" ? (
-        <Builder reviewId={id} onPreview={() => setView("workbook")} />
-      ) : (
-        <TechnicalWorkspace reviewId={id} onOpenWorkbook={() => setView("workbook")} />
-      )}
-    </>
+
+        <div className="rw-body">
+          {tab === "administrative" ? (
+            <DetailStub
+              title="Administrative Review"
+              note="AI pre-fills the bank's compliance checklist (Yes / No / N-A with page citations); the reviewer attests and signs. Coming next."
+            />
+          ) : view === "workbook" ? (
+            <Workbook reviewId={id} />
+          ) : view === "builder" ? (
+            <Builder reviewId={id} />
+          ) : (
+            <TechnicalWorkspace reviewId={id} onOpenWorkbook={() => setView("workbook")} />
+          )}
+        </div>
+      </div>
+    </ReviewChromeProvider>
   );
 }

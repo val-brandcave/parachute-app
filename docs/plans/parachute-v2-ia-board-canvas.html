@@ -139,22 +139,22 @@ const AREAS = [
           { name:'Reviews', status:'built', route:'/reviews',
             desc:'<b>Function</b> — the team\'s queue of appraisal reviews.<br><b>Actions</b> — filter, search, open a review, or start a new one.',
             children:[
-              { name:'Review detail', status:'locked', route:'/reviews/[id]', kind:'page',
-                desc:'<b>Function</b> — a single review, with a technical and an administrative side.<br><b>Actions</b> — switch sides, work through it, then compile or return it.',
+              { name:'Review detail', status:'built', route:'/reviews/[id]', kind:'page',
+                desc:'<b>Function</b> — a single review, with a technical and an administrative side.<br><b>Actions</b> — switch sides (a SegmentedControl, shown only when the review has both tracks), work through it, then compile or return it.',
                 children:[
-                  { name:'Tab / Technical', status:'locked', kind:'tab',
+                  { name:'Tab / Technical', status:'built', kind:'tab',
                     desc:'Work through the review\'s findings and build the report.',
                     children:[
-                      { name:'Findings', status:'locked', kind:'subview',
+                      { name:'Findings', status:'built', kind:'subview',
                         desc:'<b>Function</b> — review findings one at a time, with the source document alongside.<br><b>Actions</b> — accept, reject, or comment on each.' },
-                      { name:'Builder', status:'locked', kind:'subview',
-                        desc:'Adjust how the final report is laid out.' },
-                      { name:'Workbook', status:'locked', kind:'subview',
+                      { name:'Builder', status:'built', kind:'subview',
+                        desc:'Author the Technical report layout — order and configure the sections that compile into the Workbook. Its OWN sub-view (the earlier "fold into Workbook" was reversed).' },
+                      { name:'Workbook', status:'built', kind:'subview',
                         desc:'<b>Function</b> — the finished, branded report.<br><b>Actions</b> — sign it off, or send it back to the appraiser.' }
                     ]},
                   { name:'Tab / Administrative', status:'locked', kind:'tab',
-                    desc:'<b>Function</b> — the bank\'s compliance checklist.<br><b>Actions</b> — answer each item with evidence, then sign off.' },
-                  { name:'Triage', status:'locked', route:'/reviews/[id]/triage', kind:'page',
+                    desc:'<b>Function</b> — the bank\'s compliance checklist (AI pre-fills Yes / No / N-A with page citations; the reviewer attests).<br><b>Actions</b> — answer each item with evidence, then sign off. <i>(Stub — coming next.)</i>' },
+                  { name:'Triage', status:'built', route:'/reviews/[id]/triage', kind:'page',
                     desc:'<b>Function</b> — a review the system automatically rejected.<br><b>Actions</b> — let it through, or confirm the rejection.' }
                 ]}
             ]},
@@ -171,15 +171,18 @@ const AREAS = [
             ]},
 
           { name:'Settings', status:'built', route:'/settings',
-            desc:'Manage the organization, review defaults, compliance, your profile, and preferences.' }
+            desc:'<b>Org-level</b> setup: organization profile (logo, details), review defaults (quality gate, SLA, default review profile &amp; checklist), and compliance (checklist + bank policy).' },
+
+          { name:'Profile', status:'built', route:'/profile',
+            desc:'<b>Your</b> account &amp; preferences — reached from the user menu, not the sidebar: reviewer profile &amp; photo · theme &amp; density · notification channels + email digest.' }
         ]}
     ]
   },
   {
     label:'Global overlays', kind:'flat', tint:true,
     roots:[
-      { name:'Order stepper', status:'locked', kind:'overlay',
-        desc:'<b>Function</b> — order a new review.<br><b>Actions</b> — choose a source, set it up, and start it.' },
+      { name:'Order stepper', status:'built', kind:'overlay',
+        desc:'<b>Function</b> — order a new review (3 steps: Source · Configure · Summary).<br><b>Actions</b> — choose a source, set it up, and 🚀 Run.' },
       { name:'Command palette', status:'built', kind:'overlay',
         desc:'A keyboard shortcut to jump anywhere or run a quick action.' },
       { name:'Notifications panel', status:'locked', kind:'overlay',

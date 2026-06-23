@@ -88,6 +88,8 @@ interface WorkspaceState {
   resetWorkbook: (config: WorkbookConfig) => void;
   /** Move a section up/down within the order. */
   moveSection: (id: string, dir: -1 | 1) => void;
+  /** Replace the whole section order (drag-to-reorder in the Builder). */
+  reorderSections: (sections: WbSection[]) => void;
   toggleSection: (id: string) => void;
   deleteSection: (id: string) => void;
   /** Append a new section (id stamped here). Returns the new id. */
@@ -229,6 +231,9 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       [next[i], next[j]] = [next[j], next[i]];
       return { workbook: { ...s.workbook, sections: next } };
     }),
+
+  reorderSections: (sections) =>
+    set((s) => (s.workbook ? { workbook: { ...s.workbook, sections } } : {})),
 
   toggleSection: (id) =>
     set((s) =>

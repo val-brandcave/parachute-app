@@ -184,7 +184,6 @@ export function FindingFocus({
           >
             <Icon name="check" size={17} />
             {acceptLabel}
-            <kbd className="fm-kbd">a</kbd>
           </button>
           <button
             className={`fm-act fm-act--reject${disp === "rejected" ? " on" : ""}`}
@@ -192,7 +191,6 @@ export function FindingFocus({
           >
             <Icon name="reject" size={17} />
             Reject
-            <kbd className="fm-kbd">r</kbd>
           </button>
           <ActionMenu items={overflow} tooltip="More actions" />
 
