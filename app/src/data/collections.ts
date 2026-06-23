@@ -11,6 +11,7 @@ export const Collections = {
   RESPONSE_TEMPLATES: "responseTemplates",
   CHECKLIST_TEMPLATES: "checklistTemplates",
   WORKBOOK_LAYOUTS: "workbookLayouts",
+  WORKBOOK_EXHIBITS: "workbookExhibits",
 } as const;
 
 export type CollectionName = (typeof Collections)[keyof typeof Collections];

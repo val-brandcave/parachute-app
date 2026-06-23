@@ -24,8 +24,10 @@ const SEEDED_KEY = `${STORAGE_PREFIX}:__seeded__`;
 // v9: added Templates — response, checklist & workbook-layout collections;
 // v10: versioned checklist & workbook templates (versions[] + draft/publish);
 // v11: more seeded families (4 checklists, 2 layouts) + a fuller response set;
-// v12: org-default checklist flag + per-profile workbook defaults).
-const SEED_VERSION = "v12";
+// v12: org-default checklist flag + per-profile workbook defaults;
+// v13: workbook analytical exhibits collection (adjustment grid, $/SF, cap-rate,
+//      sensitivity, SWOT, imported sections) for the compiled workbook doc).
+const SEED_VERSION = "v13";
 
 export const mockAdapter: DataAdapter = {
   async getAll<T>(collection: string): Promise<T[]> {

@@ -8,6 +8,8 @@ import {
   type TechView,
 } from "@/components/shell/ReviewContextBar";
 import { TechnicalWorkspace } from "@/components/review/TechnicalWorkspace";
+import { Workbook } from "@/components/review/Workbook";
+import { Builder } from "@/components/review/Builder";
 import { Card, Icon } from "@/components/atoms";
 
 function DetailStub({ title, note }: { title: string; note: string }) {
@@ -59,18 +61,12 @@ export default function ReviewDetailPage() {
       {tab === "administrative" ? (
         <DetailStub
           title="Administrative Review"
-          note="AI pre-fills the bank's compliance checklist (Yes / No / N-A with page citations); the reviewer attests and signs. Coming in a later sprint."
-        />
-      ) : view === "builder" ? (
-        <DetailStub
-          title="Workbook Builder"
-          note="Assemble and reorder sections, customize themes/fonts/risk labels, and set the org default layout. Coming in a later sprint."
+          note="AI pre-fills the bank's compliance checklist (Yes / No / N-A with page citations); the reviewer attests and signs. Coming next."
         />
       ) : view === "workbook" ? (
-        <DetailStub
-          title="Reviewer Workbook"
-          note="The compiled, branded output document — DRAFT → sign → complete or return to appraiser. Coming in a later sprint."
-        />
+        <Workbook reviewId={id} onCustomize={() => setView("builder")} />
+      ) : view === "builder" ? (
+        <Builder reviewId={id} onPreview={() => setView("workbook")} />
       ) : (
         <TechnicalWorkspace reviewId={id} onOpenWorkbook={() => setView("workbook")} />
       )}

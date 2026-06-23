@@ -77,3 +77,21 @@ export const PIPELINE_STAGES = [
 export function formatPct(v: number): string {
   return `${Math.round(v * 100)}%`;
 }
+
+/**
+ * Fill a response-template body's `{{merge}}` tokens from the finding/review.
+ * The three tokens we can resolve from data — `property`, `page`, `topic` — are
+ * substituted; any remaining soft token (`action`, `condition`, `detail`, …) is
+ * left as a bracketed editable placeholder (e.g. `[detail]`) for the reviewer to
+ * complete before saving. Mirrors the merge-field contract in domain.types.
+ */
+export function fillTemplate(
+  body: string,
+  ctx: { property: string; page: number; topic: string },
+): string {
+  return body
+    .replace(/\{\{\s*property\s*\}\}/g, ctx.property)
+    .replace(/\{\{\s*page\s*\}\}/g, String(ctx.page))
+    .replace(/\{\{\s*topic\s*\}\}/g, ctx.topic)
+    .replace(/\{\{\s*(\w+)\s*\}\}/g, (_, k: string) => `[${k}]`);
+}
