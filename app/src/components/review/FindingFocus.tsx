@@ -113,7 +113,8 @@ export function FindingFocus({
   const tag = disp !== "pending" ? DISP_TAG[disp] : null;
 
   return (
-    <article className="fm-focus scroll">
+    <article className="fm-focus">
+      <div className="fm-focus-body scroll">
       <header className="fm-focus-head">
         <div className="fm-focus-eyebrow">
           <span className="fm-cat">{finding.category}</span>
@@ -129,7 +130,9 @@ export function FindingFocus({
         <h2 className="fm-focus-q">{finding.question}</h2>
         <div className="fm-focus-meta">
           <SeverityChip severity={finding.severity} />
+          <span className="fm-meta-sep" aria-hidden />
           <ConfidenceMeter value={finding.confidence} />
+          <span className="fm-meta-sep" aria-hidden />
           <button className="fm-cite" onClick={() => onCite(finding.page)}>
             <Icon name="book" size={14} />
             View source · p.{finding.page}
@@ -166,27 +169,21 @@ export function FindingFocus({
         </div>
       </section>
 
-      {composer ? (
-        <ResponseComposer
-          mode={composer}
-          finding={finding}
-          property={property}
-          responses={responses}
-          initialText={composer === "rejected" || composer === "override" ? state.reason ?? "" : state.comment ?? ""}
-          onSave={saveComposer}
-          onCancel={() => setComposer(null)}
-        />
-      ) : (
-        <footer className="fm-actions">
+      </div>
+
+      <footer className="fm-actions">
+        <div className="fm-actions-row">
           <button
-            className={`fm-act fm-act--accept${disp === "accepted" ? " on" : ""}`}
+            className={`fm-act fm-act--accept${!composer && disp === "accepted" ? " on" : ""}`}
             onClick={accept}
           >
             <Icon name="check" size={17} />
             {acceptLabel}
           </button>
           <button
-            className={`fm-act fm-act--reject${disp === "rejected" ? " on" : ""}`}
+            className={`fm-act fm-act--reject${
+              composer === "rejected" || (!composer && disp === "rejected") ? " on" : ""
+            }`}
             onClick={() => openComposer("rejected")}
           >
             <Icon name="reject" size={17} />
@@ -200,8 +197,20 @@ export function FindingFocus({
               {tag.label}
             </span>
           )}
-        </footer>
-      )}
+        </div>
+
+        {composer && (
+          <ResponseComposer
+            mode={composer}
+            finding={finding}
+            property={property}
+            responses={responses}
+            initialText={composer === "rejected" || composer === "override" ? state.reason ?? "" : state.comment ?? ""}
+            onSave={saveComposer}
+            onCancel={() => setComposer(null)}
+          />
+        )}
+      </footer>
     </article>
   );
 }

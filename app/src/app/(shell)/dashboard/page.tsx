@@ -39,7 +39,7 @@ export default function DashboardPage() {
     {
       label: "Pipeline running",
       value: kpis.running,
-      icon: "ai",
+      icon: "rocket",
       live: true,
       tip: "Appraisals being processed by Parachute's pipeline right now — a live count, not affected by the period picker.",
     },

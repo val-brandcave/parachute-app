@@ -28,7 +28,7 @@ Pipeline of work: **Findings (decide) → Workbook (assemble/style in Edit mode 
    - The **modal-form pattern** (centered `Modal` + structured inputs + Save/Cancel) is reusable for similar quick-add inputs app-wide. Coexists with `BottomSheet` (used for larger/contextual editing); use a modal for short structured create/quick-add, a `BottomSheet` for deeper editing on a place.
 4. **Disposition hierarchy** = two always-visible primaries + ⋯ overflow. Primary label adapts to origin: **AI/Parachute finding → `Agree` + `Reject`**; **reviewer-added finding → `Accept` + `Reject`**. Secondary (Disagree & edit, Comment, Add to conditions, Flag) in ⋯ `ActionMenu`. Honors the client's verb distinction without crowding the card.
 5. **One state-adaptive shell.** Same chrome; body swaps by **derived** state (`lib/review-lifecycle.ts`): `running` → pipeline tracker; `in_review` → active workspace; `completed` → read-only filed doc + signed badge; `returned` → dormant (client Q1). **Triage is the only separate route** (`/reviews/[id]/triage`), only for `autorejected`.
-6. **Administrative shares the Technical focus-mode shell** (early-specs decision #4) — list rail + focus pane + docked source, with attestation items (Yes/No/N-A) instead of findings. No sub-nav.
+6. **Administrative shares the Technical focus-mode shell** (early-specs decision #4) — list rail + focus pane + docked source, with attestation items (Yes/No/N-A) instead of findings. **REVISED 2026-06-23 — Admin now has TWO sub-tabs `Attestations · Preview`** (was "no sub-nav"): the signable attestation document is genuinely a second surface, the exact sibling of the Workbook, so it earns its own sub-tab rather than a one-off "preview" toggle. The tracks are now cleanly parallel — `Technical → Findings · Builder · Workbook` / `Administrative → Attestations · Preview` (Admin has **no Builder**: the form layout is authored once, org-level, in Templates → Compliance Checklist, not per-review). Rendered with the same sliding-pill `Tabs` molecule as Technical's sub-nav.
 7. **Workbook = clean compiled doc + lifecycle only** (read/sign/file). **The Builder sub-view owns all customization** (sections, exhibits config, theme/branding, risk wording) — see decision #2. Builder is **role-gated** (reviewer authors; recipient/read-only sees only the Workbook).
 
 ---
@@ -46,7 +46,10 @@ Pipeline of work: **Findings (decide) → Workbook (assemble/style in Edit mode 
  │   ├ Builder   (sub-view)          — layout/section authoring: 3-pane (sections+add · editor · preview),
  │   │                                  import-from-appraisal, document settings. Role-gated (reviewer).
  │   └ Workbook  (sub-view)          — compiled doc · Sign → Complete/Return. "Customize layout" → Builder.
- ├ Administrative (tab)               — SAME focus-mode shell; attestation items; Sign attestation
+ ├ Administrative (tab)               — sub-views = Attestations · Preview (sliding-pill Tabs)
+ │   ├ Attestations (sub-view, default) — focus mode: list rail · attestation focus pane · docked source;
+ │   │                                    Yes/No/N-A + Confirm (reason required when answer ≠ AI); bulk Confirm-routine
+ │   └ Preview      (sub-view)          — compiled signable attestation doc · Sign (SHA-256) · Export. Sibling of Workbook.
  └ (state) running / completed / returned bodies swap inside the same shell
 
 /reviews/[id]/triage          The ONE separate route — autorejected only.
@@ -87,8 +90,11 @@ Templates → Workbook Layout   Org-level layout authoring (same Builder in "org
 | Workbook rail | accepted/overridden/rejected/pending tally + live feed + "Compile workbook" | Keep as slim summary |
 | Source PDF pane | docked right, cited page, highlighted phrase | Keep (client's "missing in-document context" pain) |
 
-### 4.3 Administrative review (attestation)
-Empty/running states · note banner ("Built from your template — Demo Bank Commercial Review Form… you attest then sign") · coverage panel · show filter (All / Needs attention / Pending / Attested) · **attestation card** (grouped by section; question + Yes/No/N-A + confidence + page cite + evidence; "needs attention" if AI=NO or conf<0.85) · **change-reason required when answer ≠ AI** · Confirm routine answers (bulk) · attestation preview + Sign/Export · DRAFT until signed. → Renders in the **shared focus-mode shell**.
+### 4.3 Administrative review (attestation)  ✅ built 2026-06-23
+Two sub-views in the shared shell (decision-#6 revision): **Attestations** (focus mode) + **Preview** (signable doc).
+- **Attestations** — empty/running/intake states · coverage / anti-miss panel (attested-of-total ring · all pre-filled, 0 blank · N need attention · per-group breakdown · "out of scope: value accuracy → run Technical") · **Show filter** (All / Needs attention / Pending / Attested) via the `.fm-fs` popover · **Source toggle** (on-cite docked `PdfPane`) · **Confirm-routine** bulk (⋯) · list rail (answer + group + state dot) · **attestation focus pane** (group + needs-attention cue; question; AI-suggested answer chip + `ConfidenceMeter` + page cite; quoted evidence; **Yes/No/N-A toggle + Confirm**; **reason required when answer ≠ AI** → re-opens the item). Keyboard: j/k navigate · y/n/x answer · c confirm. "needs attention" = AI=NO or conf<0.85.
+- **Preview** — compiled, branded attestation document reusing the Workbook doc shell (`.wb-doc`/band/runhead/sig): grouped tables (# · item · answer · cite) with **changed-answer reasons** inline, certification + signature. DRAFT ribbon until signed; **Sign gated until every item is attested** → name/timestamp/**real SHA-256** seal (shared with the Workbook's signer) → Export.
+- **Data:** items **derived from the org-default `ChecklistTemplate`'s published version** (single source of truth — Templates → Compliance Checklist); the per-review AI pre-fill (answer/confidence/page/evidence) is a seeded `Attestation[]` keyed by `itemId` (`attestations.seed.ts`, review-001), zipped at load in **`admin.store.ts`**. Parallel to Finding/FindingState + findings.seed. New components: `AdministrativeWorkspace` · `AttestationList` · `AttestationFocus` · `AttestCoverage` · `AttestFilterPopover` · `AttestationPreview`.
 
 ### 4.4 Workbook (compiled doc) — the Workbook sub-view  ✅ built 2026-06-22
 Header band · **cover banner** (Reviewer recommendation: Approve / Approve-with-conditions / Review-in-progress + **Risk badge with wording**) · value summary · sections (findings by approach-section, exhibits as table/chart, sensitivity heat, SWOT, **Conditions C1/C2…**, action items, imported sections, certification) · **DRAFT ribbon** until signed → **Sign** (name/timestamp/SHA-256) → **Complete (filed)** / **Return to appraiser** (batched return letter from rejected findings). Pending findings render as visible "Open — awaiting disposition" placeholders. (No edit chrome here — the Workbook is read/sign/file only; "Customize layout" jumps to the Builder.)
@@ -152,8 +158,15 @@ Auto-rejected only: failed-criterion card + evidence + confidence; **Override & 
    (order/visibility/grouping/presentation) while content still derives from live dispositions — so the
    Builder, its mini-preview, and the Workbook sub-view all render the same paper. Org-mode variant
    (Templates → Workbook Layout) deferred. New CSS lives under the `.bld-*` block in `globals.css`.
-5. **Administrative** — attestation in the shared shell.
-6. **Triage** — rework to real data + correct route.
+5. ~~**Administrative** — attestation in the shared shell.~~ ✅ (build 2026-06-23) — two sub-views
+   `Attestations · Preview` (decision-#6 revision). Attestations = focus-mode shell (rail · focus pane ·
+   on-cite source) with Yes/No/N-A + Confirm + reason-on-change, coverage panel, Show filter, Confirm-routine
+   bulk; Preview = compiled signable attestation doc (Workbook doc shell) with Sign (SHA-256) + Export, gated
+   until all attested. New: `Attestation`/`AttestationState` types, `attestations.seed.ts` (review-001),
+   `ATTESTATIONS` collection (seed v14), `admin.store.ts` (zips live org-default checklist items × AI prefill),
+   `AdministrativeWorkspace`/`AttestationList`/`AttestationFocus`/`AttestCoverage`/`AttestFilterPopover`/
+   `AttestationPreview`, Admin sub-tabs in `ReviewContextBar`, `.att-*`/`.attdoc-*` CSS. tsc + eslint clean; route 200.
+6. **Triage** — rework to real data + correct route. (Route fixed 2026-06-23: admit → `/reviews/[id]`.)
 
 ### 7.1 IA deltas to fold into the boards/map at the next reconciliation
 Captured here so the single post-Workbook IA pass (both `ia-board*.html` + `ia-map.md`) doesn't miss them:

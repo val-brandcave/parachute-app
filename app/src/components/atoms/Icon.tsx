@@ -72,11 +72,13 @@ import {
   IconGripVertical,
   type Icon as TablerIcon,
 } from "@tabler/icons-react";
+import { ParachuteGlyph } from "./BrandGlyph";
 
 export const ICONS = {
   dashboard: IconLayoutDashboard,
   order: IconCirclePlus,
   add: IconPlus,
+  minus: IconMinus,
   templates: IconTemplate,
   document: IconFileText,
   settings: IconSettings,
@@ -162,6 +164,10 @@ export function Icon({
   className?: string;
   style?: React.CSSProperties;
 }) {
+  // The AI cue is the Parachute brand mark (currentColor), not a stroke icon.
+  if (name === "ai") {
+    return <ParachuteGlyph size={size} className={className} style={style} />;
+  }
   const Cmp = ICONS[name];
   return (
     <Cmp size={size} stroke={strokeWidth} className={className} style={style} />
