@@ -3,7 +3,38 @@
  * adapt to context: Microsoft inherits the button ink (dark in light / light in
  * dark); YouConnect renders white on the navy primary button.
  * Source assets: docs/assets/logos/{microsoft,youconnect}-logo.svg
+ *
+ * `ParachuteGlyph` is the Parachute emblem (from /logos/parachute-emblem-*.svg)
+ * redrawn with `fill="currentColor"` so it can stand in as the app-wide AI cue
+ * — it inherits the flat-petrol AI accent color in context. Wired through the
+ * `Icon` atom as `name="ai"`. Native aspect ratio (1033×800) is preserved:
+ * `size` sets the width, height is derived.
  */
+export function ParachuteGlyph({
+  size = 18,
+  className,
+  style,
+}: {
+  size?: number;
+  className?: string;
+  style?: React.CSSProperties;
+}) {
+  return (
+    <svg
+      width={size}
+      height={(size * 800) / 1033}
+      viewBox="0 0 1033 800"
+      fill="currentColor"
+      aria-hidden="true"
+      focusable="false"
+      className={className}
+      style={style}
+    >
+      <path d="M183.616 701.001C183.616 701.001 178.511 372.403 401.702 295.845C401.702 295.845 143.312 145.229 29.5019 334.599C-88.044 530.186 183.616 701.001 183.616 701.001Z" />
+      <path d="M887.396 800C887.396 800 1262.66 228.668 804.498 50.9707C404.447 -104.208 159.707 144.439 159.707 144.439C159.707 144.439 671.268 92.415 887.396 800Z" />
+    </svg>
+  );
+}
 
 export function MicrosoftGlyph({ size = 18 }: { size?: number }) {
   return (

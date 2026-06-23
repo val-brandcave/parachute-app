@@ -116,6 +116,35 @@ export interface FindingState {
   templateId?: string;
 }
 
+/* ============ Administrative review (checklist attestation) ============ */
+// A reviewer's possible answer to a compliance-checklist item.
+export type AttAnswer = "YES" | "NO" | "NA";
+
+// Per-review AI pre-fill for ONE checklist item: the answer Parachute proposed
+// against THIS appraisal, with its confidence, page cite and quoted evidence.
+// Keyed to a ChecklistTemplateItem by `itemId` — the item's text/group are owned
+// by the org-default checklist (single source of truth, resolved at load); this
+// is the per-review layer the AI produces, parallel to how a Finding is the
+// per-review output of the Technical pipeline.
+export interface Attestation extends BaseEntity {
+  reviewId: UUID;
+  itemId: string; // → ChecklistTemplateItem.id on the inherited checklist
+  aiAnswer: AttAnswer;
+  confidence: number; // 0..1
+  page: number; // source page cite
+  evidence: string; // quoted excerpt supporting the AI's answer
+}
+
+// The reviewer's attestation of one item — lives in the admin store, not the
+// data layer (mirrors FindingState). `answer` starts at the AI's suggestion;
+// changing it away from the AI requires a `reason` before it can be `confirmed`
+// (attested). Changing the answer re-opens it (clears `confirmed`).
+export interface AttestationState {
+  answer: AttAnswer;
+  confirmed: boolean;
+  reason?: string; // required for the audit trail when answer !== the AI's
+}
+
 /* ============ Templates ============ */
 // The Templates hub holds three kinds of reusable, AI-configurable artifacts
 // that drive the review pipeline and its output. Only response templates carry

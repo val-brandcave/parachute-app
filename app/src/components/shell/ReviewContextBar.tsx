@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { relativeDue } from "@/lib/utils";
 import { pipelineView, outcomeView } from "@/lib/review-lifecycle";
 import { useReview } from "@/store/useReview";
-import { useUsersStore } from "@/store";
+import { useUsersStore, useAdminStore, attTally } from "@/store";
 import { Chip, Icon, type ChipTone } from "@/components/atoms";
 import { SegmentedControl, Tabs } from "@/components/molecules";
 import { ReviewSummaryModal } from "@/components/review/ReviewSummaryModal";
@@ -17,11 +17,22 @@ export type ReviewTab = "technical" | "administrative";
  *  the earlier Builder→Workbook "Edit mode" fold — a 3-pane builder is a place,
  *  not a rail toggle; full record in parachute-v2-review-details-spec.md §2/§4.5.) */
 export type TechView = "findings" | "builder" | "workbook";
+/** The two Administrative sub-views (decision-#6 revision, 2026-06-23):
+ *  **Attestations · Preview**. Attestations = the focus-mode decision surface
+ *  (mirrors Technical's Findings); Preview = the compiled, signable attestation
+ *  document (mirrors the Workbook). Admin has no Builder — the form layout is
+ *  authored once, org-level, in Templates → Compliance Checklist. */
+export type AdminView = "attestations" | "preview";
 
 const SUB_VIEWS: { value: TechView; label: string }[] = [
   { value: "findings", label: "Findings" },
   { value: "builder", label: "Builder" },
   { value: "workbook", label: "Workbook" },
+];
+
+const ADMIN_SUB_VIEWS: { value: AdminView; label: string }[] = [
+  { value: "attestations", label: "Attestations" },
+  { value: "preview", label: "Preview" },
 ];
 
 const TRACK_LABELS: Record<ReviewTab, string> = {
@@ -64,17 +75,26 @@ export function ReviewContextBar({
   setTab,
   view,
   setView,
+  adminView,
+  setAdminView,
 }: {
   reviewId: string;
   tab: ReviewTab;
   setTab: (t: ReviewTab) => void;
   view: TechView;
   setView: (v: TechView) => void;
+  adminView: AdminView;
+  setAdminView: (v: AdminView) => void;
 }) {
   const review = useReview(reviewId);
   const byId = useUsersStore((s) => s.byId);
   const users = useUsersStore((s) => s.users);
   const fetchUsers = useUsersStore((s) => s.fetchUsers);
+  // Pending-attestation count for the Administrative tab badge (mirrors the
+  // Findings open-count). Only meaningful once the admin store has this review.
+  const adminStates = useAdminStore((s) => s.states);
+  const adminLoadedId = useAdminStore((s) => s.reviewId);
+  const attPending = adminLoadedId === reviewId ? attTally(adminStates).pending : 0;
   const [detailsOpen, setDetailsOpen] = useState(false);
 
   // The identity block names the reviewer, so ensure users are loaded here (the
@@ -97,6 +117,13 @@ export function ReviewContextBar({
       s.value === "findings" && review && review.openFindings > 0
         ? review.openFindings
         : undefined,
+  }));
+
+  // Admin sub-views; Attestations carries its pending-count.
+  const adminSubTabs = ADMIN_SUB_VIEWS.map((s) => ({
+    value: s.value,
+    label: s.label,
+    count: s.value === "attestations" && attPending > 0 ? attPending : undefined,
   }));
 
   const pipe = review ? pipelineView(review) : null;
@@ -157,6 +184,12 @@ export function ReviewContextBar({
       {tab === "technical" && (
         <div className="revsub">
           <Tabs tabs={subTabs} value={view} onChange={setView} />
+          <ReviewActionsOutlet />
+        </div>
+      )}
+      {tab === "administrative" && (
+        <div className="revsub">
+          <Tabs tabs={adminSubTabs} value={adminView} onChange={setAdminView} />
           <ReviewActionsOutlet />
         </div>
       )}

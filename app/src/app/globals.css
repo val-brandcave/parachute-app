@@ -1300,17 +1300,27 @@ textarea {
   flex: 1;
   min-width: 0;
   min-height: 0;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   border: 1px solid var(--md-outline);
   border-radius: 14px;
   background: var(--md-surface);
   box-shadow: var(--md-elev-1);
+}
+/* the scrolling content region; the decision bar (.fm-actions) is pinned below
+   it so the commit controls stay in one place as you move through items. */
+.fm-focus-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
   padding: 22px 26px 24px;
 }
 .fm-focus--empty {
   display: grid;
   place-items: center;
   font-size: 13.5px;
+  padding: 22px 26px;
 }
 .fm-focus-head {
   border-bottom: 1px solid var(--md-outline-v);
@@ -1369,8 +1379,15 @@ textarea {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 14px;
+  gap: 12px;
   margin-top: 12px;
+}
+/* thin vertical divider between meta groups (severity │ confidence │ source) */
+.fm-meta-sep {
+  flex: 0 0 auto;
+  width: 1px;
+  height: 15px;
+  background: var(--md-outline);
 }
 .fm-cite {
   display: inline-flex;
@@ -1452,14 +1469,23 @@ textarea {
   color: var(--md-warn);
 }
 
-/* ---- focus action bar (decision #4) ---- */
+/* ---- the bottom-anchored decision bar (shared: Findings & Attestations) ---- */
+/* Pinned below the scrolling .fm-focus-body. One grammar for both tracks:
+   outcomes left · ⋯ secondary · status right (in .fm-actions-row); the
+   reason/wording field expands inline BELOW the row (never a takeover). */
 .fm-actions {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 26px;
+  border-top: 1px solid var(--md-outline);
+  background: var(--md-surface-1);
+}
+.fm-actions-row {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-top: 22px;
-  padding-top: 18px;
-  border-top: 1px solid var(--md-outline-v);
   flex-wrap: wrap;
 }
 .fm-act {
@@ -1527,11 +1553,202 @@ textarea {
   color: var(--md-info);
 }
 
-/* ---- disposition composer ---- */
+/* ---- attestation decision bar (Administrative review) ---- */
+/* Shares the bottom-anchored .fm-actions footer + .fm-actions-row grammar with
+   Findings. The 3-way answer toggle sits left; clicking the AI-suggested answer
+   attests in one click, a divergent answer opens the inline reason (submit
+   right). The AI's suggested answer is shown as a faint "suggested" segment
+   until the reviewer commits a choice. */
+.att-ai-sug {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--md-on-surface-v);
+}
+.att-decide-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--md-on-surface-v);
+}
+.att-ans {
+  display: inline-flex;
+  border: 1px solid var(--md-outline);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--md-surface);
+}
+.att-ans-opt {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  height: 40px;
+  padding: 0 18px;
+  border: 0;
+  border-right: 1px solid var(--md-outline);
+  background: transparent;
+  color: var(--md-on-surface);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.att-ans-opt:last-child {
+  border-right: 0;
+}
+.att-ans-opt:hover {
+  background: var(--md-surface-1);
+}
+/* the AI's suggested answer, before the reviewer commits — a faint hint, not a
+   selection (so clicking it reads as a deliberate one-click attestation). */
+.att-ans-opt.is-suggested {
+  background: var(--md-accent-c);
+  color: var(--md-accent-d);
+}
+.att-ans-opt.on--pass {
+  background: var(--md-success);
+  color: #fff;
+}
+.att-ans-opt.on--fail {
+  background: var(--md-error);
+  color: #fff;
+}
+.att-ans-opt.on--neutral {
+  background: var(--md-on-surface-v);
+  color: #fff;
+}
+.att-confirm {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 40px;
+  padding: 0 18px;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  border: 1px solid var(--md-primary);
+  background: var(--md-primary);
+  color: #fff;
+  cursor: pointer;
+  transition: filter 0.12s, opacity 0.12s;
+}
+.att-confirm:hover {
+  filter: brightness(1.1);
+}
+.att-confirm:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.att-done {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--md-success);
+}
+.att-reopen {
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  border: 0;
+  background: transparent;
+  color: var(--md-accent-d);
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+/* Calm, neutral — it's a note to record, not an error. Shown only while a
+   changed answer is awaiting attestation; collapses once attested. */
+.att-reason {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.att-reason-lbl {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--md-on-surface-v);
+  line-height: 1.45;
+}
+.att-reason-foot {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+}
+/* subtle right-aligned prompt before the reviewer has attested an item */
+.att-hint {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--md-on-surface-t);
+}
+
+/* ---- attestation document table (Preview sub-view) ---- */
+.attdoc-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.attdoc-table th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--md-on-surface-t);
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--md-outline);
+}
+.attdoc-table td {
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--md-outline-v);
+  vertical-align: top;
+  line-height: 1.45;
+}
+.attdoc-n {
+  width: 30px;
+  color: var(--md-on-surface-t);
+}
+.attdoc-ans-col {
+  width: 96px;
+}
+.attdoc-cite {
+  width: 56px;
+  color: var(--md-on-surface-v);
+  white-space: nowrap;
+}
+.attdoc-ans--yes {
+  color: var(--md-success);
+}
+.attdoc-ans--no {
+  color: var(--md-error);
+}
+.attdoc-ans--na {
+  color: var(--md-on-surface-v);
+}
+.attdoc-ph {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  color: var(--md-on-surface-t);
+}
+.attdoc-changed {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--md-warn);
+  line-height: 1.4;
+}
+
+/* ---- disposition composer (inline in the decision bar, below the action row) ---- */
 .fm-composer {
-  margin-top: 22px;
-  padding-top: 18px;
-  border-top: 1px solid var(--md-outline-v);
+  border-top: 1px dashed var(--md-outline);
+  padding-top: 12px;
 }
 .fm-composer-head {
   display: flex;
@@ -1681,9 +1898,71 @@ textarea {
   font-size: 13px;
   font-weight: 600;
 }
+/* viewer toolbar — zoom (with a % readout that resets to fit) + page nav */
+.pdftools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--md-outline-v);
+  background: var(--md-surface-1);
+}
+.pdftools-grp {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.pdftools-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--md-on-surface-v);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.pdftools-btn:hover:not(:disabled) {
+  background: var(--md-surface-2);
+  color: var(--md-on-surface);
+}
+.pdftools-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.pdftools-pct {
+  min-width: 54px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 7px;
+  border: 1px solid var(--md-outline);
+  background: var(--md-surface);
+  color: var(--md-on-surface);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.pdftools-pct:hover {
+  background: var(--md-surface-1);
+}
+.pdftools-page {
+  min-width: 92px;
+  text-align: center;
+  white-space: nowrap;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--md-on-surface-v);
+}
 .pdfpage {
   flex: 1;
-  overflow-y: auto;
+  overflow: auto;
   padding: 18px;
   background: #525659;
 }
@@ -1718,6 +1997,32 @@ textarea {
   color: #999;
   font-size: 10px;
   margin-top: 24px;
+}
+/* placeholder for a page outside the prototype's excerpt set */
+.pdfpage .sheet--empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 8px;
+  color: #8a949e;
+  white-space: normal;
+}
+.pdfpage .sheet--empty .pp-empty-t {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #5a6672;
+}
+.pdfpage .sheet--empty p {
+  max-width: 280px;
+  font-size: 12px;
+  line-height: 1.6;
+  margin: 0;
+}
+.pdfpage .sheet--empty .pp-num {
+  margin-top: 14px;
 }
 
 /* ============ Technical sub-nav (Findings · Builder · Workbook) ============ */
@@ -3759,20 +4064,45 @@ textarea {
 .ui-conf {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
   font-size: 11.5px;
   color: var(--md-on-surface-v);
 }
-.ui-conf .track {
-  width: 46px;
-  height: 5px;
+.ui-conf-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--md-on-surface-t);
+}
+.ui-conf-track {
+  width: 56px;
+  height: 6px;
   border-radius: 3px;
   background: var(--md-surface-3);
   overflow: hidden;
 }
-.ui-conf .fill {
+/* display:block so the inline-by-default span honours its width (the fill was
+   collapsing to zero as a plain inline element). */
+.ui-conf-fill {
+  display: block;
   height: 100%;
+  border-radius: 3px;
   background: var(--md-accent);
+  transition: width 0.3s ease;
+}
+.ui-conf-val {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--md-on-surface);
+  min-width: 30px;
+}
+/* below 85% — the AI is unsure; mirror the needs-attention cue */
+.ui-conf--low .ui-conf-fill {
+  background: var(--md-warn);
+}
+.ui-conf--low .ui-conf-val {
+  color: var(--md-warn);
 }
 
 /* ---- molecule: Breadcrumbs ---- */

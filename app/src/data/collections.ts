@@ -7,6 +7,7 @@ export const Collections = {
   ORGS: "orgs",
   REVIEWS: "reviews",
   FINDINGS: "findings",
+  ATTESTATIONS: "attestations",
   YC_DELIVERIES: "yc_deliveries",
   RESPONSE_TEMPLATES: "responseTemplates",
   CHECKLIST_TEMPLATES: "checklistTemplates",
