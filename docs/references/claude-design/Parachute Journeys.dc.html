@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  body { margin:0; font-family:'Inter',system-ui,-apple-system,sans-serif; -webkit-font-smoothing:antialiased; }
+</style>
+</helmet>
+
+<!-- dark canvas backdrop (Voltagent near-black) -->
+<div style="position:absolute;left:0;top:0;width:7820px;height:2080px;background:#101010;pointer-events:none;"></div>
+
+<!-- ════════════════ JOURNEY 1 — Embedded Reviewer [MVP] ════════════════ -->
+<div data-drags-parent="1" style="position:absolute;left:56px;top:40px;width:1000px;">
+  <div style="font-size:27px;font-weight:700;color:#f4f4f4;letter-spacing:-0.3px;">Journey 1 — Embedded Reviewer [MVP]</div>
+  <div style="font-size:15px;color:#8b949e;margin-top:5px;">YouConnect customer · runs Parachute per-document, result lands back in YouConnect · no queue</div>
+</div>
+
+<!-- 1.1 -->
+<div data-screen-label="1.1" data-drags-parent="1" style="position:absolute;left:56px;top:120px;width:700px;">
+  <div style="display:flex;align-items:center;gap:7px;margin:0 0 9px 2px;color:#8b949e;font-size:13px;font-weight:500;"><span style="letter-spacing:2px;color:#565451;">⠿</span>1.1 · YouConnect: trigger</div>
+  <div style="background:#141414;border:1px solid #3d3a39;border-radius:12px;overflow:hidden;">
+    <div style="background:#1d2a33;height:42px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;">
+      <div style="display:flex;align-items:center;gap:9px;"><span style="width:13px;height:13px;border-radius:50%;background:#6b7a82;"></span><span style="color:#e8eef2;font-size:14px;font-weight:600;">YouConnect</span></div>
+      <div style="display:flex;align-items:center;gap:9px;"><span style="border:1px solid #3a4a54;color:#b8c4cc;font-size:12px;padding:2px 11px;border-radius:999px;">Appraisal</span><span style="width:20px;height:20px;border-radius:50%;border:1.5px solid #3a4a54;"></span></div>
+    </div>
+    <div style="display:flex;height:362px;">
+      <div style="width:84px;background:#18222a;padding:16px 12px;display:flex;flex-direction:column;gap:8px;"><span style="height:7px;border-radius:4px;background:#2a3742;"></span><span style="height:7px;border-radius:4px;background:#243039;width:65%;"></span><span style="height:7px;border-radius:4px;background:#243039;width:80%;"></span></div>
+      <div style="flex:1;padding:22px 24px 18px;display:flex;flex-direction:column;">
+        <div style="font-size:22px;font-weight:700;color:#f2f2f2;margin-bottom:16px;">1450 Corporate Center Dr</div>
+        <div style="flex:1;background:#1c1c1c;border:1px solid #333;border-radius:7px;position:relative;min-height:150px;"><span style="position:absolute;left:46%;top:48%;width:0;height:0;border-left:7px solid #9a9792;border-top:5px solid transparent;border-bottom:5px solid transparent;transform:rotate(-38deg);"></span></div>
+        <div style="display:flex;justify-content:flex-end;margin-top:16px;"><div style="background:#00d992;color:#08130e;border-radius:7px;padding:10px 16px;font-size:14px;font-weight:700;display:flex;align-items:center;gap:7px;">▶ Run Parachute</div></div>
+      </div>
+    </div>
+    <div style="border-top:1px dashed #3d3a39;background:#1a1a1a;padding:11px 14px;display:flex;gap:8px;align-items:flex-start;">
+      <span style="color:#df8b7f;font-size:13px;flex:1;line-height:1.45;"><span style="opacity:.7;">✎ </span><span style="font-weight:700;color:#ec9d92;">1.1 · YouConnect</span> (context — not ours). “Run Parachute”, or auto-run on delivery.</span>
+      <span style="flex:none;background:rgba(0,217,146,.13);color:#00d992;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;">MVP</span>
+    </div>
+  </div>
+</div>
+
+<!-- 1.2 -->
+<div data-screen-label="1.2" data-drags-parent="1" style="position:absolute;left:826px;top:120px;width:700px;">
+  <div style="display:flex;align-items:center;gap:7px;margin:0 0 9px 2px;color:#8b949e;font-size:13px;font-weight:500;"><span style="letter-spacing:2px;color:#565451;">⠿</span>1.2 · Running (headless)</div>
+  <div style="background:#141414;border:1px solid #3d3a39;border-radius:12px;overflow:hidden;">
+    <div style="background:#1d2a33;height:42px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;">
+      <div style="display:flex;align-items:center;gap:9px;"><span style="width:13px;height:13px;border-radius:50%;background:#6b7a82;"></span><span style="color:#e8eef2;font-size:14px;font-weight:600;">YouConnect</span></div>
+      <div style="display:flex;align-items:center;gap:9px;"><span style="border:1px solid #3a4a54;color:#b8c4cc;font-size:12px;padding:2px 11px;border-radius:999px;">Appraisal</span><span style="width:20px;height:20px;border-radius:50%;border:1.5px solid #3a4a54;"></span></div>
+    </div>
+    <div style="display:flex;height:362px;">
+      <div style="width:84px;background:#18222a;padding:16px 12px;display:flex;flex-direction:column;gap:8px;"><span style="height:7px;border-radius:4px;background:#2a3742;"></span><span style="height:7px;border-radius:4px;background:#243039;width:65%;"></span><span style="height:7px;border-radius:4px;background:#243039;width:80%;"></span></div>
+      <div style="flex:1;padding:30px 26px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;">
+        <div style="background:rgba(232,176,75,.14);border:1px solid rgba(232,176,75,.32);color:#e8b04b;font-size:14px;font-weight:600;padding:8px 16px;border-radius:999px;">◔ Parachute: running…</div>
+        <div style="display:flex;border:1px solid #3d3a39;border-radius:8px;overflow:hidden;width:100%;max-width:440px;">
+          <div style="background:rgba(0,217,146,.15);color:#00d992;padding:11px 14px;font-size:13px;font-weight:600;white-space:nowrap;">Classify ✓</div>
+          <div style="flex:1;background:rgba(232,176,75,.16);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:#e8b04b;padding:11px 8px;border-left:1px solid #3d3a39;border-right:1px solid #3d3a39;">Reviewing…</div>
+          <div style="background:transparent;color:#8b949e;padding:11px 16px;font-size:13px;white-space:nowrap;">Compile</div>
+        </div>
+        <div style="text-align:center;color:#8b949e;font-size:13px;line-height:1.5;max-width:320px;">Headless — no Parachute page opens; the YouConnect record shows progress. We'll ping when ready.</div>
+      </div>
+    </div>
+    <div style="border-top:1px dashed #3d3a39;background:#1a1a1a;padding:11px 14px;display:flex;gap:8px;align-items:flex-start;">
+      <span style="color:#df8b7f;font-size:13px;flex:1;line-height:1.45;"><span style="opacity:.7;">✎ </span><span style="font-weight:700;color:#ec9d92;">1.2 · Running (headless)</span> — run progress on the YC record; review is the long stretch. No Parachute UI.</span>
+      <span style="flex:none;background:rgba(0,217,146,.13);color:#00d992;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;">MVP</span>
+    </div>
+  </div>
+</div>
+
+<!-- 1.3 -->
+<div data-screen-label="1.3" data-drags-parent="1" style="position:absolute;left:1596px;top:120px;width:700px;">
+  <div style="display:flex;align-items:center;gap:7px;margin:0 0 9px 2px;color:#8b949e;font-size:13px;font-weight:500;"><span style="letter-spacing:2px;color:#565451;">⠿</span>1.3 · Result ready</div>
+  <div style="background:#141414;border:1px solid #3d3a39;border-radius:12px;overflow:hidden;">
+    <div style="background:#1d2a33;height:42px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;">
+      <div style="display:flex;align-items:center;gap:9px;"><span style="width:13px;height:13px;border-radius:50%;background:#6b7a82;"></span><span style="color:#e8eef2;font-size:14px;font-weight:600;">YouConnect</span></div>
+      <div style="display:flex;align-items:center;gap:9px;"><span style="background:rgba(0,217,146,.16);color:#00d992;font-size:12px;font-weight:600;padding:2px 11px;border-radius:999px;">Ready</span><span style="width:20px;height:20px;border-radius:50%;border:1.5px solid #3a4a54;"></span></div>
+    </div>
+    <div style="display:flex;height:362px;">
+      <div style="width:84px;background:#18222a;padding:16px 12px;display:flex;flex-direction:column;gap:8px;"><span style="height:7px;border-radius:4px;background:#2a3742;"></span><span style="height:7px;border-radius:4px;background:#243039;width:65%;"></span><span style="height:7px;border-radius:4px;background:#243039;width:80%;"></span></div>
+      <div style="flex:1;padding:22px 24px 18px;display:flex;flex-direction:column;">
+        <div style="align-self:flex-start;background:rgba(0,217,146,.16);color:#00d992;font-size:14px;font-weight:700;padding:9px 16px;border-radius:8px;margin-bottom:16px;">✓ Parachute: Ready</div>
+        <div style="flex:1;background:#1c1c1c;border:1px solid #333;border-radius:7px;padding:14px;min-height:120px;"><span style="color:#8b949e;font-size:13px;">result document attached</span></div>
+        <div style="display:flex;justify-content:space-between;margin-top:16px;gap:12px;">
+          <div style="border:1px solid #3d3a39;color:#e0e0e0;border-radius:7px;padding:10px 18px;font-size:14px;font-weight:600;">Accept as-is</div>
+          <div style="background:#00d992;color:#08130e;border-radius:7px;padding:10px 18px;font-size:14px;font-weight:700;">Adjust in Parachute ›</div>
+        </div>
+      </div>
+    </div>
+    <div style="border-top:1px dashed #3d3a39;background:#1a1a1a;padding:11px 14px;display:flex;gap:8px;align-items:flex-start;">
+      <span style="color:#df8b7f;font-size:13px;flex:1;line-height:1.45;"><span style="opacity:.7;">✎ </span><span style="font-weight:700;color:#ec9d92;">1.3 · Result ready</span> — delivered in YC + notification. Accept (done) or Adjust → jumps into Parachute.</span>
+      <span style="flex:none;background:rgba(0,217,146,.13);color:#00d992;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;">MVP</span>
+    </div>
+  </div>
+</div>
+
+<!-- 1.4 -->
+<div data-screen-label="1.4" data-drags-parent="1" style="position:absolute;left:2366px;top:120px;width:700px;">
+  <div style="display:flex;align-items:center;gap:7px;margin:0 0 9px 2px;color:#8b949e;font-size:13px;font-weight:500;"><span style="letter-spacing:2px;color:#565451;">⠿</span>1.4 · SSO handoff</div>
+  <div style="background:#141414;border:1px solid #3d3a39;border-radius:12px;overflow:hidden;">
+    <div style="height:404px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:30px;">
+      <div style="display:flex;align-items:center;gap:9px;"><span style="width:12px;height:12px;border-radius:50%;background:#6b7a82;"></span><span style="width:6px;height:6px;border-radius:50%;background:#3d3a39;"></span><span style="width:6px;height:6px;border-radius:50%;background:#3d3a39;"></span><span style="width:12px;height:12px;border-radius:50%;background:#00d992;"></span></div>
+      <div style="font-size:24px;font-weight:700;color:#f2f2f2;text-align:center;">Transferring you to Parachute…</div>
+      <div style="color:#8b949e;font-size:14px;text-align:center;">Signing you in via SSO — no new login.</div>
+      <div style="height:8px;border-radius:5px;background:#262626;overflow:hidden;width:270px;"><div style="width:48%;height:100%;background:#00d992;"></div></div>
+    </div>
+    <div style="border-top:1px dashed #3d3a39;background:#1a1a1a;padding:11px 14px;display:flex;gap:8px;align-items:flex-start;">
+      <span style="color:#df8b7f;font-size:13px;flex:1;line-height:1.45;"><span style="opacity:.7;">✎ </span><span style="font-weight:700;color:#ec9d92;">1.4 · SSO handoff</span> — soft cross-system jump (Expedia→Southwest). Lands directly on the doc (S-A) — no dashboard, no queue.</span>
+      <span style="flex:none;background:rgba(0,217,146,.13);color:#00d992;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;">MVP</span>
+    </div>
+  </div>
+</div>
+
+
+<!-- 1.5 — Workbook (S-A) -->
+<div data-screen-label="1.5" data-drags-parent="1" style="position:absolute;left:3136px;top:120px;width:700px;">
+  <div style="display:flex;align-items:center;gap:7px;margin:0 0 9px 2px;color:#8b949e;font-size:13px;font-weight:500;"><span style="letter-spacing:2px;color:#565451;">⠿</span>1.5 · Workbook</div>
+  <div style="background:#141414;border:1px solid #3d3a39;border-radius:12px;overflow:hidden;">
+    <div style="background:#1b1b1b;height:42px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;border-bottom:1px solid #2c2c2c;">
+      <div style="display:flex;align-items:center;gap:10px;"><span style="width:12px;height:12px;border-radius:50%;background:#00d992;"></span><span style="width:80px;height:7px;border-radius:4px;background:#2c2c2c;"></span></div>
+      <div style="display:flex;align-items:center;gap:8px;"><span style="background:rgba(232,176,75,.14);border:1px solid rgba(232,176,75,.32);color:#e8b04b;font-size:11px;font-weight:700;padding:2px 10px;border-radius:999px;">DRAFT</span><span style="border:1px solid #3d3a39;color:#9aa1a9;font-size:11px;padding:2px 10px;border-radius:999px;">Admin</span><span style="width:20px;height:20px;border-radius:50%;border:1.5px solid #3d3a39;"></span></div>
+    </div>
+    <div style="display:flex;height:362px;">
+      <div style="width:128px;background:#171717;border-right:1px solid #2c2c2c;padding:16px 12px;display:flex;flex-direction:column;gap:14px;">
+        <div style="display:flex;align-items:center;gap:7px;"><span style="width:11px;height:11px;border-radius:50%;background:#00d992;"></span><span style="flex:1;height:6px;border-radius:4px;background:#2c2c2c;"></span></div>
+        <div style="display:flex;align-items:center;gap:8px;color:#8b949e;font-size:13px;"><span style="width:13px;height:13px;border:1.5px solid #3d3a39;border-radius:3px;"></span>Dashboard</div>
+        <div style="display:flex;align-items:center;gap:8px;color:#f2f2f2;font-size:13px;font-weight:700;"><span style="width:13px;height:13px;border:1.5px solid #00d992;border-radius:3px;"></span>Reviews</div>
+        <div style="display:flex;align-items:center;gap:8px;color:#8b949e;font-size:13px;"><span style="width:13px;height:13px;border:1.5px solid #3d3a39;border-radius:3px;"></span>Templates</div>
+      </div>
+      <div style="flex:1;padding:16px 18px;display:flex;flex-direction:column;gap:12px;">
+        <div style="border:1px solid rgba(0,217,146,.22);background:rgba(0,217,146,.07);border-radius:8px;padding:9px 12px;font-size:12px;color:#9fdcc4;display:flex;align-items:center;gap:7px;"><span>↩</span>Single document · returns to YouConnect on sign</div>
+        <div style="font-size:11px;font-weight:600;letter-spacing:1.5px;color:#8b949e;">EXTRACTION — LOOKS RIGHT?</div>
+        <div style="border-top:1px solid #2c2c2c;"></div>
+        <div style="border:1px solid rgba(232,176,75,.32);background:rgba(232,176,75,.1);border-radius:8px;padding:11px 12px;font-size:13px;color:#e6c07a;font-weight:600;display:flex;justify-content:space-between;gap:8px;"><span>⚠ 4 items below the confidence threshold — review them?</span><span style="color:#b89248;">×</span></div>
+        <div style="display:flex;gap:12px;align-items:flex-end;">
+          <div style="width:130px;height:78px;background:#1c1c1c;border:1px solid #2a2a2a;border-radius:6px;display:flex;align-items:flex-end;gap:5px;padding:9px;"><span style="flex:1;height:55%;background:#3a3a3a;border-radius:2px;"></span><span style="flex:1;height:80%;background:#3a3a3a;border-radius:2px;"></span><span style="flex:1;height:40%;background:#3a3a3a;border-radius:2px;"></span><span style="flex:1;height:68%;background:#3a3a3a;border-radius:2px;"></span><span style="flex:1;height:50%;background:#3a3a3a;border-radius:2px;"></span></div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:7px;"><span style="height:7px;border-radius:4px;background:#2a2a2a;"></span><span style="height:7px;border-radius:4px;background:#2a2a2a;width:80%;"></span><span style="height:7px;border-radius:4px;background:#2a2a2a;width:90%;"></span></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:auto;">
+          <div style="background:#00d992;color:#08130e;border-radius:6px;padding:8px 12px;font-size:12px;font-weight:700;">Sign / download</div>
+          <div style="border:1px solid #3d3a39;color:#d0d0d0;border-radius:6px;padding:8px 12px;font-size:12px;font-weight:600;">Review findings</div>
+          <div style="border:1px solid #3d3a39;color:#d0d0d0;border-radius:6px;padding:8px 12px;font-size:12px;font-weight:600;">Customize</div>
+        </div>
+      </div>
+    </div>
+    <div style="border-top:1px dashed #3d3a39;background:#1a1a1a;padding:11px 14px;display:flex;gap:8px;align-items:flex-start;">
+      <span style="color:#df8b7f;font-size:13px;flex:1;line-height:1.45;"><span style="opacity:.7;">✎ </span><span style="font-weight:700;color:#ec9d92;">S-A · Workbook</span> — home base. DRAFT until signed; trust strip answers “extraction wrong?”; callout is dismissible &amp; non-blocking.</span>
+      <span style="flex:none;background:rgba(0,217,146,.13);color:#00d992;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;">MVP</span>
+    </div>
+  </div>
+</div>
+
+<!-- 1.6 — Exceptions (S-B) -->
+<div data-screen-label="1.6" data-drags-parent="1" style="position:absolute;left:3906px;top:120px;width:700px;">
+  <div style="display:flex;align-items:center;gap:7px;margin:0 0 9px 2px;color:#8b949e;font-size:13px;font-weight:500;"><span style="letter-spacing:2px;color:#565451;">⠿</span>1.6 · Exceptions (optional)</div>
+  <div style="background:#141414;border:1px solid #3d3a39;border-radius:12px;overflow:hidden;">
+    <div style="background:#1b1b1b;height:42px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;border-bottom:1px solid #2c2c2c;">
+      <div style="display:flex;align-items:center;gap:10px;"><span style="width:12px;height:12px;border-radius:50%;background:#00d992;"></span><span style="width:80px;height:7px;border-radius:4px;background:#2c2c2c;"></span></div>
+      <div style="display:flex;align-items:center;gap:8px;"><span style="border:1px solid #3d3a39;color:#9aa1a9;font-size:11px;padding:2px 10px;border-radius:999px;">Exceptions</span><span style="width:20px;height:20px;border-radius:50%;border:1.5px solid #3d3a39;"></span></div>
+    </div>
+    <div style="display:flex;height:362px;">
+      <div style="flex:1.8;background:#0b0b0b;display:flex;flex-direction:column;">
+        <div style="height:36px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;border-bottom:1px solid #222;">
+          <span style="color:#9fabb3;font-size:12px;font-family:'JetBrains Mono',monospace;">−&nbsp; 100%&nbsp; +</span>
+          <span style="color:#7d8890;font-size:11px;font-family:'JetBrains Mono',monospace;">3 exceptions · 142 findings · p.42</span>
+        </div>
+        <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:16px;position:relative;">
+          <div style="background:#f3f1ec;border-radius:3px;width:100%;height:100%;padding:18px 16px;display:flex;flex-direction:column;gap:10px;position:relative;">
+            <span style="height:6px;border-radius:3px;background:#d8d5cf;width:70%;"></span>
+            <span style="position:absolute;left:16px;top:38px;width:13px;height:13px;border-radius:50%;background:#ff5f52;color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;">1</span>
+            <span style="height:12px;border-radius:3px;background:#f0d68a;width:84%;margin-top:6px;"></span>
+            <div style="background:#fff;border:1px solid #d9d5cd;border-radius:6px;padding:8px 11px;font-size:11px;color:#3a3733;line-height:1.4;box-shadow:0 2px 8px rgba(0,0,0,.25);width:180px;"><span style="color:#d23b30;font-weight:700;">Cap rate 6.5%</span> vs market ~7.2% — verify?</div>
+            <span style="height:12px;border-radius:3px;background:#d8d5cf;width:90%;"></span>
+            <span style="position:absolute;left:26px;bottom:28px;width:15px;height:15px;border-radius:50%;background:#e8b04b;color:#3a2c08;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;">3</span>
+            <span style="height:10px;border-radius:3px;background:#d8d5cf;width:60%;margin-top:auto;"></span>
+          </div>
+        </div>
+      </div>
+      <div style="flex:1;background:#141414;border-left:1px solid #2c2c2c;display:flex;flex-direction:column;">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid #2c2c2c;"><span style="font-size:13px;font-weight:700;color:#f2f2f2;">Comments</span><span style="display:flex;align-items:center;gap:6px;font-size:11px;color:#8b949e;">all<span style="width:26px;height:15px;border-radius:999px;background:#00d992;position:relative;"><span style="position:absolute;right:2px;top:2px;width:11px;height:11px;border-radius:50%;background:#08130e;"></span></span></span></div>
+        <div style="background:rgba(232,176,75,.09);border-left:3px solid #e8b04b;padding:11px 14px;">
+          <div style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:700;color:#f2f2f2;"><span style="width:15px;height:15px;border-radius:50%;background:#ff5f52;color:#fff;font-size:9px;display:flex;align-items:center;justify-content:center;">1</span>Cap rate below market</div>
+          <div style="display:flex;align-items:center;gap:6px;margin:9px 0;"><span style="font-size:10px;color:#8b949e;">conf</span><span style="flex:1;height:5px;border-radius:3px;background:#2a2a2a;"><span style="display:block;width:55%;height:100%;border-radius:3px;background:#4a4a4a;"></span></span></div>
+          <div style="display:flex;gap:6px;"><span style="background:#00d992;color:#08130e;font-size:11px;font-weight:700;padding:5px 11px;border-radius:5px;">Agree</span><span style="border:1px solid #3d3a39;color:#d0d0d0;font-size:11px;padding:5px 11px;border-radius:5px;">Override</span><span style="border:1px solid #3d3a39;color:#d0d0d0;font-size:11px;padding:5px 11px;border-radius:5px;">Flag</span></div>
+        </div>
+        <div style="padding:12px 14px;border-bottom:1px solid #2c2c2c;"><div style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:#d4d4d4;"><span style="width:15px;height:15px;border-radius:50%;border:1.5px solid #ff5f52;color:#ff5f52;font-size:9px;display:flex;align-items:center;justify-content:center;">2</span>Comp #3 outside radius</div></div>
+        <div style="padding:12px 14px;"><div style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:#d4d4d4;"><span style="width:15px;height:15px;border-radius:50%;border:1.5px solid #ff5f52;color:#ff5f52;font-size:9px;display:flex;align-items:center;justify-content:center;">3</span>Effective date missing</div></div>
+        <div style="margin-top:auto;padding:11px 14px;border-top:1px solid #2c2c2c;font-size:11px;color:#8b949e;">↩ back to workbook · writes live</div>
+      </div>
+    </div>
+    <div style="border-top:1px dashed #3d3a39;background:#1a1a1a;padding:11px 14px;display:flex;gap:8px;align-items:flex-start;">
+      <span style="color:#df8b7f;font-size:13px;flex:1;line-height:1.45;"><span style="opacity:.7;">✎ </span><span style="font-weight:700;color:#ec9d92;">S-B · Exceptions</span> — proofing view (Ashore-style): annotations pinned spatially on the PDF, a comment thread resolves each. Exceptions-first; decisions write back live.</span>
+      <span style="flex:none;background:rgba(0,217,146,.13);color:#00d992;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;">MVP</span>
+    </div>
+  </div>
+</div>
+
+<!-- 1.7 — Customize (S-C) -->
+<div data-screen-label="1.7" data-drags-parent="1" style="position:absolute;left:4676px;top:120px;width:700px;">
+  <div style="display:flex;align-items:center;gap:7px;margin:0 0 9px 2px;color:#8b949e;font-size:13px;font-weight:500;"><span style="letter-spacing:2px;color:#565451;">⠿</span>1.7 · Customize (optional)</div>
+  <div style="background:#141414;border:1px solid #3d3a39;border-radius:12px;overflow:hidden;">
+    <div style="background:#1b1b1b;height:42px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;border-bottom:1px solid #2c2c2c;">
+      <div style="display:flex;align-items:center;gap:10px;"><span style="width:12px;height:12px;border-radius:50%;background:#00d992;"></span><span style="width:80px;height:7px;border-radius:4px;background:#2c2c2c;"></span></div>
+      <div style="display:flex;align-items:center;gap:8px;"><span style="background:rgba(232,176,75,.14);border:1px solid rgba(232,176,75,.32);color:#e8b04b;font-size:11px;font-weight:700;padding:2px 10px;border-radius:999px;">DRAFT</span><span style="width:20px;height:20px;border-radius:50%;border:1.5px solid #3d3a39;"></span></div>
+    </div>
+    <div style="display:flex;height:362px;">
+      <div style="flex:1.1;background:#181614;padding:18px;display:flex;flex-direction:column;gap:11px;">
+        <div style="font-size:11px;font-weight:600;letter-spacing:1.5px;color:#8b949e;">CUSTOMIZE</div>
+        <div style="display:flex;align-items:center;gap:9px;border:1px solid #2c2a27;background:#1e1e1e;border-radius:7px;padding:10px 12px;"><span style="color:#565451;letter-spacing:1px;">⠿</span><span style="flex:1;height:6px;border-radius:4px;background:#2c2c2c;"></span><span style="width:28px;height:16px;border-radius:999px;background:#00d992;position:relative;"><span style="position:absolute;right:2px;top:2px;width:12px;height:12px;border-radius:50%;background:#08130e;"></span></span></div>
+        <div style="display:flex;align-items:center;gap:9px;border:1px solid #2c2a27;background:#1e1e1e;border-radius:7px;padding:10px 12px;"><span style="color:#565451;letter-spacing:1px;">⠿</span><span style="flex:1;height:6px;border-radius:4px;background:#2c2c2c;"></span><span style="width:28px;height:16px;border-radius:999px;background:#00d992;position:relative;"><span style="position:absolute;right:2px;top:2px;width:12px;height:12px;border-radius:50%;background:#08130e;"></span></span></div>
+        <div style="display:flex;align-items:center;gap:9px;border:1px solid #2c2a27;background:#1e1e1e;border-radius:7px;padding:10px 12px;"><span style="color:#565451;letter-spacing:1px;">⠿</span><span style="flex:1;height:6px;border-radius:4px;background:#2c2c2c;"></span><span style="width:28px;height:16px;border-radius:999px;background:#00d992;position:relative;"><span style="position:absolute;right:2px;top:2px;width:12px;height:12px;border-radius:50%;background:#08130e;"></span></span></div>
+        <div style="display:flex;align-items:center;gap:9px;border:1px solid #2c2a27;background:#1e1e1e;border-radius:7px;padding:10px 12px;"><span style="color:#565451;letter-spacing:1px;">⠿</span><span style="flex:1;height:6px;border-radius:4px;background:#2c2c2c;"></span><span style="width:28px;height:16px;border-radius:999px;background:#3a3a3a;position:relative;"><span style="position:absolute;left:2px;top:2px;width:12px;height:12px;border-radius:50%;background:#bbb;"></span></span></div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:6px;"><span style="font-size:12px;color:#8b949e;">Theme · font · template</span><span style="width:18px;height:18px;border-radius:4px;background:#2a3a44;"></span><span style="width:18px;height:18px;border-radius:4px;background:#1f6b6b;"></span><span style="width:18px;height:18px;border-radius:4px;background:#6b5436;"></span><span style="border:1px solid #3d3a39;border-radius:4px;font-size:11px;padding:2px 7px;color:#bdbdbd;">Aa</span><span style="background:#00d992;color:#08130e;border-radius:4px;font-size:11px;padding:2px 7px;font-weight:600;">Aa</span></div>
+      </div>
+      <div style="flex:0.9;background:#0e0e0e;padding:18px;display:flex;flex-direction:column;gap:11px;">
+        <div style="font-size:12px;color:#8b949e;text-align:right;">live preview →</div>
+        <div style="flex:1;background:#f3f1ec;border-radius:6px;padding:16px;display:flex;flex-direction:column;gap:10px;"><span style="height:9px;border-radius:4px;background:#d4d1ca;width:70%;"></span><span style="height:6px;border-radius:4px;background:#e3e0d9;"></span><span style="height:6px;border-radius:4px;background:#e3e0d9;width:90%;"></span><span style="height:6px;border-radius:4px;background:#e3e0d9;width:80%;"></span><div style="flex:1;border:1px solid #ddd9d1;border-radius:5px;min-height:44px;margin-top:4px;"></div></div>
+      </div>
+    </div>
+    <div style="border-top:1px dashed #3d3a39;background:#1a1a1a;padding:11px 14px;display:flex;gap:8px;align-items:flex-start;">
+      <span style="color:#df8b7f;font-size:13px;flex:1;line-height:1.45;"><span style="opacity:.7;">✎ </span><span style="font-weight:700;color:#ec9d92;">S-C · Builder</span> — opens as a panel over the workbook, never a wizard step; live preview; “save as defaults” after a change. Closes back to S-A.</span>
+      <span style="flex:none;background:#262626;color:#8b949e;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;">Later</span>
+    </div>
+  </div>
+</div>
+
+<!-- 1.8 — Sign (S-D) -->
+<div data-screen-label="1.8" data-drags-parent="1" style="position:absolute;left:5446px;top:120px;width:700px;">
+  <div style="display:flex;align-items:center;gap:7px;margin:0 0 9px 2px;color:#8b949e;font-size:13px;font-weight:500;"><span style="letter-spacing:2px;color:#565451;">⠿</span>1.8 · Sign</div>
+  <div style="background:#141414;border:1px solid #3d3a39;border-radius:12px;overflow:hidden;">
+    <div style="background:#1b1b1b;display:flex;align-items:center;justify-content:space-between;padding:14px 18px 9px;">
+      <div style="font-size:21px;font-weight:700;color:#f2f2f2;">Sign &amp; finalize</div>
+      <div style="display:flex;align-items:center;gap:8px;"><span style="border:1px solid #3d3a39;color:#9aa1a9;font-size:11px;padding:2px 10px;border-radius:999px;">Signing</span><span style="width:20px;height:20px;border-radius:50%;border:1.5px solid #3d3a39;"></span></div>
+    </div>
+    <div style="background:#1b1b1b;padding:0 18px 10px;font-size:12px;color:#8b949e;">Attesting converts <span style="font-weight:700;color:#c4c4c4;">DRAFT → FINAL</span> and writes the audit trail.</div>
+    <div style="display:flex;height:300px;border-top:1px solid #2c2c2c;">
+      <div style="width:128px;background:#171717;border-right:1px solid #2c2c2c;padding:16px 12px;display:flex;flex-direction:column;gap:14px;">
+        <div style="display:flex;align-items:center;gap:7px;"><span style="width:11px;height:11px;border-radius:50%;background:#00d992;"></span><span style="flex:1;height:6px;border-radius:4px;background:#2c2c2c;"></span></div>
+        <div style="display:flex;align-items:center;gap:8px;color:#8b949e;font-size:13px;"><span style="width:13px;height:13px;border:1.5px solid #3d3a39;border-radius:3px;"></span>Dashboard</div>
+        <div style="display:flex;align-items:center;gap:8px;color:#8b949e;font-size:13px;"><span style="width:13px;height:13px;border:1.5px solid #3d3a39;border-radius:3px;"></span>Reviews</div>
+        <div style="display:flex;align-items:center;gap:8px;color:#8b949e;font-size:13px;"><span style="width:13px;height:13px;border:1.5px solid #3d3a39;border-radius:3px;"></span>Templates</div>
+      </div>
+      <div style="flex:1;padding:16px 18px;display:flex;flex-direction:column;gap:11px;">
+        <div><div style="font-size:12px;color:#8b949e;margin-bottom:5px;">Signer</div><div style="background:#181818;border:1px solid #3d3a39;border-radius:6px;padding:9px 11px;font-size:13px;color:#e4e4e4;display:flex;justify-content:space-between;">Jordan Reyes<span style="color:#8b949e;">▾</span></div></div>
+        <div style="display:flex;gap:10px;">
+          <div style="flex:1;"><div style="font-size:12px;color:#8b949e;margin-bottom:5px;">Timestamp</div><div style="background:#181818;border:1px solid #3d3a39;border-radius:6px;padding:9px 11px;font-size:12px;color:#e4e4e4;font-family:'JetBrains Mono',monospace;">Jun 24, 2026 · 3:51 PM</div></div>
+          <div style="flex:0.7;"><div style="font-size:12px;color:#8b949e;margin-bottom:5px;">Hash</div><div style="background:#181818;border:1px solid #3d3a39;border-radius:6px;padding:9px 11px;font-size:12px;color:#00d992;font-family:'JetBrains Mono',monospace;">a1f9…7c</div></div>
+        </div>
+        <div><div style="font-size:12px;color:#8b949e;margin-bottom:5px;">Download</div><div style="display:flex;gap:7px;"><span style="border:1px solid #3d3a39;color:#d0d0d0;font-size:11px;padding:3px 12px;border-radius:999px;">PDF</span><span style="border:1px solid #3d3a39;color:#d0d0d0;font-size:11px;padding:3px 12px;border-radius:999px;">DOCX</span><span style="border:1px solid #3d3a39;color:#d0d0d0;font-size:11px;padding:3px 12px;border-radius:999px;">ZIP</span></div></div>
+        <div style="margin-top:auto;border:1px solid rgba(0,217,146,.22);background:rgba(0,217,146,.07);border-radius:7px;padding:9px 12px;font-size:12px;color:#9fdcc4;display:flex;align-items:center;gap:7px;"><span>↩</span>On sign, push result back to YouConnect</div>
+      </div>
+    </div>
+    <div style="border-top:1px dashed #3d3a39;background:#1a1a1a;padding:11px 14px;display:flex;gap:8px;align-items:flex-start;">
+      <span style="color:#df8b7f;font-size:13px;flex:1;line-height:1.45;"><span style="opacity:.7;">✎ </span><span style="font-weight:700;color:#ec9d92;">S-D · Sign</span> — name / time / hash → FINAL; download PDF·DOCX·ZIP; pushes back to YouConnect; audit trail.</span>
+      <span style="flex:none;background:rgba(0,217,146,.13);color:#00d992;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;">MVP</span>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ JOURNEY 2 — Org Admin (YouConnect) [MVP-lite] ════════════════ -->
+<div data-drags-parent="1" style="position:absolute;left:56px;top:700px;width:1000px;">
+  <div style="font-size:27px;font-weight:700;color:#f4f4f4;letter-spacing:-0.3px;">Journey 2 — Org Admin (YouConnect) [MVP-lite]</div>
+  <div style="font-size:15px;color:#8b949e;margin-top:5px;">Opens the app occasionally to configure the org · no queue, no due dates, no assignments</div>
+</div>
+
+<!-- 2.1 — Entry → SSO -->
+<div data-screen-label="2.1" data-drags-parent="1" style="position:absolute;left:56px;top:780px;width:700px;">
+  <div style="display:flex;align-items:center;gap:7px;margin:0 0 9px 2px;color:#8b949e;font-size:13px;font-weight:500;"><span style="letter-spacing:2px;color:#565451;">⠿</span>2.1 · Entry → SSO</div>
+  <div style="background:#141414;border:1px solid #3d3a39;border-radius:12px;overflow:hidden;">
+    <div style="height:404px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:30px;">
+      <div style="display:flex;align-items:center;gap:9px;"><span style="width:12px;height:12px;border-radius:50%;background:#6b7a82;"></span><span style="width:6px;height:6px;border-radius:50%;background:#3d3a39;"></span><span style="width:6px;height:6px;border-radius:50%;background:#3d3a39;"></span><span style="width:12px;height:12px;border-radius:50%;background:#00d992;"></span></div>
+      <div style="font-size:24px;font-weight:700;color:#f2f2f2;text-align:center;">Transferring you to Parachute…</div>
+      <div style="color:#8b949e;font-size:14px;text-align:center;">Signing you in via SSO — no new login.</div>
+      <div style="height:8px;border-radius:5px;background:#262626;overflow:hidden;width:270px;"><div style="width:48%;height:100%;background:#00d992;"></div></div>
+    </div>
+    <div style="border-top:1px dashed #3d3a39;background:#1a1a1a;padding:11px 14px;display:flex;gap:8px;align-items:flex-start;">
+      <span style="color:#df8b7f;font-size:13px;flex:1;line-height:1.45;"><span style="opacity:.7;">✎ </span><span style="font-weight:700;color:#ec9d92;">1.4 · SSO handoff</span> — soft cross-system jump (Expedia→Southwest). Lands directly on the doc (S-A) — no dashboard, no queue.</span>
+      <span style="flex:none;background:rgba(0,217,146,.13);color:#00d992;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;">MVP</span>
+    </div>
+  </div>
+</div>
+
+<!-- 2.2 — Settings home -->
+<div data-screen-label="2.2" data-drags-parent="1" style="position:absolute;left:826px;top:780px;width:700px;">
+  <div style="display:flex;align-items:center;gap:7px;margin:0 0 9px 2px;color:#8b949e;font-size:13px;font-weight:500;"><span style="letter-spacing:2px;color:#565451;">⠿</span>2.2 · Settings home</div>
+  <div style="background:#141414;border:1px solid #3d3a39;border-radius:12px;overflow:hidden;">
+    <div style="background:#1b1b1b;height:42px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;border-bottom:1px solid #2c2c2c;">
+      <div style="display:flex;align-items:center;gap:10px;"><span style="width:12px;height:12px;border-radius:50%;background:#00d992;"></span><span style="width:80px;height:7px;border-radius:4px;background:#2c2c2c;"></span></div>
+      <div style="display:flex;align-items:center;gap:8px;"><span style="border:1px solid #3d3a39;color:#9aa1a9;font-size:11px;padding:2px 10px;border-radius:999px;">Admin</span><span style="width:20px;height:20px;border-radius:50%;border:1.5px solid #3d3a39;"></span></div>
+    </div>
+    <div style="display:flex;height:362px;">
+      <div style="width:128px;background:#171717;border-right:1px solid #2c2c2c;padding:16px 12px;display:flex;flex-direction:column;gap:14px;">
+        <div style="display:flex;align-items:center;gap:7px;"><span style="width:11px;height:11px;border-radius:50%;background:#00d992;"></span><span style="flex:1;height:6px;border-radius:4px;background:#2c2c2c;"></span></div>
+        <div style="display:flex;align-items:center;gap:8px;color:#f2f2f2;font-size:13px;font-weight:700;"><span style="width:13px;height:13px;border:1.5px solid #00d992;border-radius:3px;"></span>Settings</div>
+        <div style="display:flex;align-items:center;gap:8px;color:#8b949e;font-size:13px;"><span style="width:13px;height:13px;border:1.5px solid #3d3a39;border-radius:3px;"></span>Templates</div>
+        <div style="display:flex;align-items:center;gap:8px;color:#8b949e;font-size:13px;"><span style="width:13px;height:13px;border:1.5px solid #3d3a39;border-radius:3px;"></span>Checklists</div>
+      </div>
+      <div style="flex:1;padding:18px;display:flex;flex-direction:column;">
+        <div style="font-size:20px;font-weight:700;color:#f2f2f2;">Configure Parachute</div>
+        <div style="font-size:13px;color:#8b949e;margin:3px 0 14px;">Org setup — no queue, no reviews here.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;">
+          <div style="border:1px solid #2c2c2c;background:#181818;border-radius:9px;padding:12px;"><span style="display:inline-flex;width:24px;height:24px;border-radius:5px;background:#232323;align-items:center;justify-content:center;font-size:13px;margin-bottom:8px;color:#9aa1a9;">▣</span><div style="font-size:14px;font-weight:700;color:#f0f0f0;">Templates &amp; layouts</div><div style="font-size:11px;color:#8b949e;margin-top:2px;">Workbook + response libraries</div></div>
+          <div style="border:1px solid #2c2c2c;background:#181818;border-radius:9px;padding:12px;"><span style="display:inline-flex;width:24px;height:24px;border-radius:5px;background:#232323;align-items:center;justify-content:center;font-size:13px;margin-bottom:8px;color:#9aa1a9;">☑</span><div style="font-size:14px;font-weight:700;color:#f0f0f0;">Compliance checklists</div><div style="font-size:11px;color:#8b949e;margin-top:2px;">Drives administrative review</div></div>
+          <div style="border:1px solid #2c2c2c;background:#181818;border-radius:9px;padding:12px;"><span style="display:inline-flex;width:24px;height:24px;border-radius:5px;background:#232323;align-items:center;justify-content:center;font-size:13px;margin-bottom:8px;color:#9aa1a9;">◎</span><div style="font-size:14px;font-weight:700;color:#f0f0f0;">Review defaults</div></div>
+          <div style="border:1px solid #2c2c2c;background:#181818;border-radius:9px;padding:12px;"><span style="display:inline-flex;width:24px;height:24px;border-radius:5px;background:#232323;align-items:center;justify-content:center;font-size:13px;margin-bottom:8px;color:#9aa1a9;">◐</span><div style="font-size:14px;font-weight:700;color:#f0f0f0;">Branding</div></div>
+        </div>
+      </div>
+    </div>
+    <div style="border-top:1px dashed #3d3a39;background:#1a1a1a;padding:11px 14px;display:flex;gap:8px;align-items:flex-start;">
+      <span style="color:#df8b7f;font-size:13px;flex:1;line-height:1.45;"><span style="opacity:.7;">✎ </span><span style="font-weight:700;color:#ec9d92;">2.2 · Settings home</span> — the admin hub. Cards into each area; deliberately <span style="font-weight:700;color:#ec9d92;">no</span> queue / reviews list.</span>
+      <span style="flex:none;background:rgba(0,217,146,.13);color:#00d992;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;">MVP</span>
+    </div>
+  </div>
+</div>
+
+<!-- 2.3 — Templates & layouts -->
+<div data-screen-label="2.3" data-drags-parent="1" style="position:absolute;left:1596px;top:780px;width:700px;">
+  <div style="display:flex;align-items:center;gap:7px;margin:0 0 9px 2px;color:#8b949e;font-size:13px;font-weight:500;"><span style="letter-spacing:2px;color:#565451;">⠿</span>2.3 · Templates &amp; layouts</div>
+  <div style="background:#141414;border:1px solid #3d3a39;border-radius:12px;overflow:hidden;">
+    <div style="background:#1b1b1b;height:42px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;border-bottom:1px solid #2c2c2c;">
+      <div style="display:flex;align-items:center;gap:10px;"><span style="width:12px;height:12px;border-radius:50%;background:#00d992;"></span><span style="width:80px;height:7px;border-radius:4px;background:#2c2c2c;"></span></div>
+      <div style="display:flex;align-items:center;gap:8px;"><span style="border:1px solid #3d3a39;color:#9aa1a9;font-size:11px;padding:2px 10px;border-radius:999px;">Admin</span><span style="width:20px;height:20px;border-radius:50%;border:1.5px solid #3d3a39;"></span></div>
+    </div>
+    <div style="display:flex;height:362px;">
+      <div style="width:128px;background:#171717;border-right:1px solid #2c2c2c;padding:16px 12px;display:flex;flex-direction:column;gap:14px;">
+        <div style="display:flex;align-items:center;gap:7px;"><span style="width:11px;height:11px;border-radius:50%;background:#00d992;"></span><span style="flex:1;height:6px;border-radius:4px;background:#2c2c2c;"></span></div>
+        <div style="display:flex;align-items:center;gap:8px;color:#8b949e;font-size:13px;"><span style="width:13px;height:13px;border:1.5px solid #3d3a39;border-radius:3px;"></span>Settings</div>
+        <div style="display:flex;align-items:center;gap:8px;color:#f2f2f2;font-size:13px;font-weight:700;"><span style="width:13px;height:13px;border:1.5px solid #00d992;border-radius:3px;"></span>Templates</div>
+        <div style="display:flex;align-items:center;gap:8px;color:#8b949e;font-size:13px;"><span style="width:13px;height:13px;border:1.5px solid #3d3a39;border-radius:3px;"></span>Checklists</div>
+      </div>
+      <div style="flex:1;padding:18px;display:flex;flex-direction:column;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;"><div style="font-size:20px;font-weight:700;color:#f2f2f2;">Templates &amp; layouts</div><span style="background:#00d992;color:#08130e;font-size:12px;font-weight:700;padding:5px 11px;border-radius:6px;">+ New</span></div>
+        <div style="display:grid;grid-template-columns:1fr 60px 90px;font-size:10px;font-weight:600;letter-spacing:0.8px;color:#8b949e;padding:0 2px 8px;border-bottom:1px solid #2c2c2c;">TEMPLATE<span>VERSION</span><span>STATUS</span></div>
+        <div style="display:grid;grid-template-columns:1fr 60px 90px;align-items:center;font-size:13px;color:#e4e4e4;padding:11px 2px;border-bottom:1px solid #232323;"><span style="font-weight:700;">Admin workbook</span><span style="font-family:'JetBrains Mono',monospace;color:#8b949e;font-size:12px;">v4</span><span><span style="background:rgba(0,217,146,.13);color:#00d992;font-size:11px;font-weight:600;padding:2px 9px;border-radius:999px;">Published</span></span></div>
+        <div style="display:grid;grid-template-columns:1fr 60px 90px;align-items:center;font-size:13px;color:#e4e4e4;padding:11px 2px;border-bottom:1px solid #232323;"><span style="font-weight:700;">Technical workbook</span><span style="font-family:'JetBrains Mono',monospace;color:#8b949e;font-size:12px;">v2</span><span><span style="background:rgba(0,217,146,.13);color:#00d992;font-size:11px;font-weight:600;padding:2px 9px;border-radius:999px;">Published</span></span></div>
+        <div style="display:grid;grid-template-columns:1fr 60px 90px;align-items:center;font-size:13px;color:#e4e4e4;padding:11px 2px;border-bottom:1px solid #232323;"><span style="font-weight:700;">Response voice</span><span style="font-family:'JetBrains Mono',monospace;color:#8b949e;font-size:12px;">v7</span><span><span style="background:rgba(232,176,75,.14);border:1px solid rgba(232,176,75,.32);color:#e8b04b;font-size:11px;font-weight:600;padding:1px 9px;border-radius:999px;">Draft</span></span></div>
+        <div style="font-size:11px;color:#8b949e;margin-top:12px;line-height:1.5;">ⓘ version history · promote-to-published · org vs. personal response library</div>
+      </div>
+    </div>
+    <div style="border-top:1px dashed #3d3a39;background:#1a1a1a;padding:11px 14px;display:flex;gap:8px;align-items:flex-start;">
+      <span style="color:#df8b7f;font-size:13px;flex:1;line-height:1.45;"><span style="opacity:.7;">✎ </span><span style="font-weight:700;color:#ec9d92;">2.3 · Templates</span> — library per type, version history, promote-to-published.</span>
+      <span style="flex:none;background:rgba(0,217,146,.13);color:#00d992;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;">MVP</span>
+    </div>
+  </div>
+</div>
+
+<!-- 2.4 — Compliance checklists -->
+<div data-screen-label="2.4" data-drags-parent="1" style="position:absolute;left:2366px;top:780px;width:700px;">
+  <div style="display:flex;align-items:center;gap:7px;margin:0 0 9px 2px;color:#8b949e;font-size:13px;font-weight:500;"><span style="letter-spacing:2px;color:#565451;">⠿</span>2.4 · Compliance checklists</div>
+  <div style="background:#141414;border:1px solid #3d3a39;border-radius:12px;overflow:hidden;">
+    <div style="background:#1b1b1b;height:42px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;border-bottom:1px solid #2c2c2c;">
+      <div style="display:flex;align-items:center;gap:10px;"><span style="width:12px;height:12px;border-radius:50%;background:#00d992;"></span><span style="width:80px;height:7px;border-radius:4px;background:#2c2c2c;"></span></div>
+      <div style="display:flex;align-items:center;gap:8px;"><span style="border:1px solid #3d3a39;color:#9aa1a9;font-size:11px;padding:2px 10px;border-radius:999px;">Admin</span><span style="width:20px;height:20px;border-radius:50%;border:1.5px solid #3d3a39;"></span></div>
+    </div>
+    <div style="display:flex;height:362px;">
+      <div style="width:128px;background:#171717;border-right:1px solid #2c2c2c;padding:16px 12px;display:flex;flex-direction:column;gap:14px;">
+        <div style="display:flex;align-items:center;gap:7px;"><span style="width:11px;height:11px;border-radius:50%;background:#00d992;"></span><span style="flex:1;height:6px;border-radius:4px;background:#2c2c2c;"></span></div>
+        <div style="display:flex;align-items:center;gap:8px;color:#8b949e;font-size:13px;"><span style="width:13px;height:13px;border:1.5px solid #3d3a39;border-radius:3px;"></span>Settings</div>
+        <div style="display:flex;align-items:center;gap:8px;color:#8b949e;font-size:13px;"><span style="width:13px;height:13px;border:1.5px solid #3d3a39;border-radius:3px;"></span>Templates</div>
+        <div style="display:flex;align-items:center;gap:8px;color:#f2f2f2;font-size:13px;font-weight:700;"><span style="width:13px;height:13px;border:1.5px solid #00d992;border-radius:3px;"></span>Checklists</div>
+      </div>
+      <div style="flex:1;padding:18px;display:flex;flex-direction:column;gap:13px;">
+        <div style="font-size:20px;font-weight:700;color:#f2f2f2;">Compliance checklists</div>
+        <div style="border:1.5px dashed #3d3a39;border-radius:9px;padding:20px;text-align:center;color:#8b949e;font-size:13px;">↑<div style="margin-top:5px;">Upload a checklist (.xlsx / .pdf)</div></div>
+        <div style="display:flex;flex-direction:column;gap:9px;">
+          <div style="border:1px solid #2c2c2c;background:#181818;border-radius:7px;padding:11px 13px;display:flex;align-items:center;justify-content:space-between;"><span style="font-size:13px;font-weight:700;color:#e4e4e4;">FHA admin checklist</span><span style="background:rgba(0,217,146,.13);color:#00d992;font-size:11px;font-weight:600;padding:2px 11px;border-radius:999px;">Active</span></div>
+          <div style="border:1px solid #2c2c2c;background:#181818;border-radius:7px;padding:11px 13px;display:flex;align-items:center;justify-content:space-between;"><span style="font-size:13px;font-weight:700;color:#e4e4e4;">Conventional v3</span><span style="width:36px;height:18px;border:1px solid #3d3a39;border-radius:999px;display:flex;align-items:center;justify-content:center;color:#6a6a6a;font-size:11px;">—</span></div>
+          <div style="border:1px solid #2c2c2c;background:#181818;border-radius:7px;padding:11px 13px;display:flex;align-items:center;justify-content:space-between;"><span style="font-size:13px;font-weight:700;color:#e4e4e4;">State addendum</span><span style="width:36px;height:18px;border:1px solid #3d3a39;border-radius:999px;display:flex;align-items:center;justify-content:center;color:#6a6a6a;font-size:11px;">—</span></div>
+        </div>
+      </div>
+    </div>
+    <div style="border-top:1px dashed #3d3a39;background:#1a1a1a;padding:11px 14px;display:flex;gap:8px;align-items:flex-start;">
+      <span style="color:#df8b7f;font-size:13px;flex:1;line-height:1.45;"><span style="opacity:.7;">✎ </span><span style="font-weight:700;color:#ec9d92;">2.4 · Checklists</span> — upload / version / set active. Feeds the admin variant of S-B.</span>
+      <span style="flex:none;background:rgba(0,217,146,.13);color:#00d992;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;">MVP</span>
+    </div>
+  </div>
+</div>
+
+<!-- 2.5 — Review defaults + branding -->
+<div data-screen-label="2.5" data-drags-parent="1" style="position:absolute;left:3136px;top:780px;width:700px;">
+  <div style="display:flex;align-items:center;gap:7px;margin:0 0 9px 2px;color:#8b949e;font-size:13px;font-weight:500;"><span style="letter-spacing:2px;color:#565451;">⠿</span>2.5 · Review defaults + branding</div>
+  <div style="background:#141414;border:1px solid #3d3a39;border-radius:12px;overflow:hidden;">
+    <div style="background:#1b1b1b;height:42px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;border-bottom:1px solid #2c2c2c;">
+      <div style="display:flex;align-items:center;gap:10px;"><span style="width:12px;height:12px;border-radius:50%;background:#00d992;"></span><span style="width:80px;height:7px;border-radius:4px;background:#2c2c2c;"></span></div>
+      <div style="display:flex;align-items:center;gap:8px;"><span style="border:1px solid #3d3a39;color:#9aa1a9;font-size:11px;padding:2px 10px;border-radius:999px;">Admin</span><span style="width:20px;height:20px;border-radius:50%;border:1.5px solid #3d3a39;"></span></div>
+    </div>
+    <div style="display:flex;height:362px;">
+      <div style="width:128px;background:#171717;border-right:1px solid #2c2c2c;padding:16px 12px;display:flex;flex-direction:column;gap:14px;">
+        <div style="display:flex;align-items:center;gap:7px;"><span style="width:11px;height:11px;border-radius:50%;background:#00d992;"></span><span style="flex:1;height:6px;border-radius:4px;background:#2c2c2c;"></span></div>
+        <div style="display:flex;align-items:center;gap:8px;color:#f2f2f2;font-size:13px;font-weight:700;"><span style="width:13px;height:13px;border:1.5px solid #00d992;border-radius:3px;"></span>Settings</div>
+        <div style="display:flex;align-items:center;gap:8px;color:#8b949e;font-size:13px;"><span style="width:13px;height:13px;border:1.5px solid #3d3a39;border-radius:3px;"></span>Templates</div>
+        <div style="display:flex;align-items:center;gap:8px;color:#8b949e;font-size:13px;"><span style="width:13px;height:13px;border:1.5px solid #3d3a39;border-radius:3px;"></span>Checklists</div>
+      </div>
+      <div style="flex:1;padding:18px;display:flex;flex-direction:column;gap:14px;">
+        <div style="font-size:20px;font-weight:700;color:#f2f2f2;">Review defaults + branding</div>
+        <div style="display:flex;gap:12px;">
+          <div style="flex:1;"><div style="font-size:11px;color:#8b949e;margin-bottom:5px;">Default review type</div><div style="background:#181818;border:1px solid #3d3a39;border-radius:6px;padding:9px 11px;font-size:13px;font-weight:700;color:#e4e4e4;display:flex;justify-content:space-between;">Administrative<span style="color:#8b949e;">▾</span></div></div>
+          <div style="flex:1;"><div style="font-size:11px;color:#8b949e;margin-bottom:5px;">Default template</div><div style="background:#181818;border:1px solid #3d3a39;border-radius:6px;padding:9px 11px;font-size:13px;font-weight:700;color:#e4e4e4;display:flex;justify-content:space-between;">Admin workbook v4<span style="color:#8b949e;">▾</span></div></div>
+        </div>
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><span style="font-size:12px;color:#c4c4c4;">Auto-accept confidence threshold</span><span style="background:rgba(232,176,75,.14);border:1px solid rgba(232,176,75,.32);color:#e8b04b;font-size:10px;font-weight:600;padding:1px 8px;border-radius:999px;">open Q</span></div>
+          <div style="display:flex;align-items:center;gap:10px;"><div style="flex:1;height:5px;border-radius:3px;background:#262626;position:relative;"><span style="position:absolute;left:0;top:0;width:78%;height:100%;border-radius:3px;background:#4a4a4a;"></span><span style="position:absolute;left:76%;top:50%;transform:translateY(-50%);width:15px;height:15px;border-radius:50%;background:#00d992;"></span></div><span style="font-size:13px;font-family:'JetBrains Mono',monospace;color:#e4e4e4;">0.85</span></div>
+        </div>
+        <div>
+          <div style="font-size:12px;color:#c4c4c4;margin-bottom:8px;">Branding</div>
+          <div style="display:flex;align-items:center;gap:8px;"><span style="width:42px;height:30px;border:1.5px dashed #3d3a39;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#6a6a6a;">logo</span><span style="width:30px;height:30px;border-radius:5px;background:#2a3a44;"></span><span style="width:30px;height:30px;border-radius:5px;background:#1f6b6b;"></span><span style="width:34px;height:30px;border-radius:5px;background:#00d992;color:#08130e;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;">Aa</span></div>
+        </div>
+      </div>
+    </div>
+    <div style="border-top:1px dashed #3d3a39;background:#1a1a1a;padding:11px 14px;display:flex;gap:8px;align-items:flex-start;">
+      <span style="color:#df8b7f;font-size:13px;flex:1;line-height:1.45;"><span style="opacity:.7;">✎ </span><span style="font-weight:700;color:#ec9d92;">2.5 · Defaults</span> — the smart defaults that make runs config-free. Confidence threshold = open question #2.</span>
+      <span style="flex:none;background:rgba(0,217,146,.13);color:#00d992;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;">MVP</span>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ JOURNEY 3 — Standalone User [Later] ════════════════ -->
+<div data-drags-parent="1" style="position:absolute;left:56px;top:1360px;width:1100px;">
+  <div style="font-size:27px;font-weight:700;color:#f4f4f4;letter-spacing:-0.3px;">Journey 3 — Standalone User [Later]</div>
+  <div style="font-size:15px;color:#8b949e;margin-top:5px;">Lives in Parachute · drops, reviews, customizes, signs &amp; manages their own queue — the only journey with a queue</div>
+</div>
+
+<!-- 3.1 — Login -->
+<div data-screen-label="3.1" data-drags-parent="1" style="position:absolute;left:56px;top:1440px;width:700px;">
+  <div style="display:flex;align-items:center;gap:7px;margin:0 0 9px 2px;color:#8b949e;font-size:13px;font-weight:500;"><span style="letter-spacing:2px;color:#565451;">⠿</span>3.1 · Login</div>
+  <div style="background:#141414;border:1px solid #3d3a39;border-radius:12px;overflow:hidden;">
+    <div style="height:404px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:30px;">
+      <span style="width:38px;height:38px;border-radius:50%;background:#00d992;"></span>
+      <div style="font-size:24px;font-weight:700;color:#f2f2f2;">Parachute</div>
+      <div style="background:#00d992;color:#08130e;font-size:14px;font-weight:700;padding:11px 26px;border-radius:7px;">Continue with SSO</div>
+      <div style="color:#8b949e;font-size:13px;">or work email →</div>
+    </div>
+    <div style="border-top:1px dashed #3d3a39;background:#1a1a1a;padding:11px 14px;display:flex;gap:8px;align-items:flex-start;">
+      <span style="color:#df8b7f;font-size:13px;flex:1;line-height:1.45;"><span style="opacity:.7;">✎ </span><span style="font-weight:700;color:#ec9d92;">3.1 · Login</span> — SSO primary, work-email fallback.</span>
+      <span style="flex:none;background:#262626;color:#8b949e;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;">Later</span>
+    </div>
+  </div>
+</div>
+
+<!-- 3.2 — Dashboard (drop-first) -->
+<div data-screen-label="3.2" data-drags-parent="1" style="position:absolute;left:826px;top:1440px;width:700px;">
+  <div style="display:flex;align-items:center;gap:7px;margin:0 0 9px 2px;color:#8b949e;font-size:13px;font-weight:500;"><span style="letter-spacing:2px;color:#565451;">⠿</span>3.2 · Dashboard (drop-first)</div>
+  <div style="background:#141414;border:1px solid #3d3a39;border-radius:12px;overflow:hidden;">
+    <div style="background:#1b1b1b;height:42px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;border-bottom:1px solid #2c2c2c;">
+      <div style="display:flex;align-items:center;gap:10px;"><span style="width:12px;height:12px;border-radius:50%;background:#00d992;"></span><span style="width:80px;height:7px;border-radius:4px;background:#2c2c2c;"></span></div>
+      <div style="display:flex;align-items:center;gap:8px;"><span style="border:1px solid #3d3a39;color:#9aa1a9;font-size:11px;padding:2px 10px;border-radius:999px;">Standalone</span><span style="width:20px;height:20px;border-radius:50%;border:1.5px solid #3d3a39;"></span></div>
+    </div>
+    <div style="display:flex;height:362px;">
+      <div style="width:128px;background:#171717;border-right:1px solid #2c2c2c;padding:16px 12px;display:flex;flex-direction:column;gap:14px;">
+        <div style="display:flex;align-items:center;gap:7px;"><span style="width:11px;height:11px;border-radius:50%;background:#00d992;"></span><span style="flex:1;height:6px;border-radius:4px;background:#2c2c2c;"></span></div>
+        <div style="display:flex;align-items:center;gap:8px;color:#f2f2f2;font-size:13px;font-weight:700;"><span style="width:13px;height:13px;border:1.5px solid #00d992;border-radius:3px;"></span>Dashboard</div>
+        <div style="display:flex;align-items:center;gap:8px;color:#8b949e;font-size:13px;"><span style="width:13px;height:13px;border:1.5px solid #3d3a39;border-radius:3px;"></span>Reviews</div>
+        <div style="display:flex;align-items:center;gap:8px;color:#8b949e;font-size:13px;"><span style="width:13px;height:13px;border:1.5px solid #3d3a39;border-radius:3px;"></span>Settings</div>
+      </div>
+      <div style="flex:1;padding:20px 22px;display:flex;flex-direction:column;gap:14px;">
+        <div style="font-size:21px;font-weight:700;color:#f2f2f2;">Drop an appraisal to start</div>
+        <div style="border:1.5px dashed #3d3a39;border-radius:10px;padding:26px;text-align:center;color:#c4c4c4;"><div style="font-size:20px;color:#8b949e;">↓</div><div style="font-size:15px;font-weight:700;margin-top:6px;">Drag &amp; drop the appraisal PDF</div><div style="font-size:12px;color:#8b949e;margin-top:3px;">or browse</div></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;"><span style="font-size:13px;font-weight:700;color:#f2f2f2;">Your reviews</span><span style="font-size:12px;color:#8b949e;">view all</span></div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="border:1px solid #2c2c2c;background:#181818;border-radius:7px;padding:11px 13px;display:flex;align-items:center;justify-content:space-between;"><span style="font-size:13px;font-weight:700;color:#e4e4e4;">88 Harbor View Rd</span><span style="background:rgba(232,176,75,.14);border:1px solid rgba(232,176,75,.32);color:#e8b04b;font-size:11px;font-weight:600;padding:1px 10px;border-radius:999px;">Running</span></div>
+          <div style="border:1px solid #2c2c2c;background:#181818;border-radius:7px;padding:11px 13px;display:flex;align-items:center;justify-content:space-between;"><span style="font-size:13px;font-weight:700;color:#e4e4e4;">2200 Industrial Pkwy</span><span style="background:#262626;color:#9aa1a9;font-size:11px;font-weight:600;padding:1px 10px;border-radius:999px;">Needs review</span></div>
+        </div>
+      </div>
+    </div>
+    <div style="border-top:1px dashed #3d3a39;background:#1a1a1a;padding:11px 14px;display:flex;gap:8px;align-items:flex-start;">
+      <span style="color:#df8b7f;font-size:13px;flex:1;line-height:1.45;"><span style="opacity:.7;">✎ </span><span style="font-weight:700;color:#ec9d92;">3.2 · Dashboard</span> — drop zone is the primary CTA; a light queue underneath. The only journey with a visible queue.</span>
+      <span style="flex:none;background:#262626;color:#8b949e;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;">Later</span>
+    </div>
+  </div>
+</div>
+
+<!-- 3.3 — Source + property form -->
+<div data-screen-label="3.3" data-drags-parent="1" style="position:absolute;left:1596px;top:1440px;width:700px;">
+  <div style="display:flex;align-items:center;gap:7px;margin:0 0 9px 2px;color:#8b949e;font-size:13px;font-weight:500;"><span style="letter-spacing:2px;color:#565451;">⠿</span>3.3 · Source + property form</div>
+  <div style="background:#141414;border:1px solid #3d3a39;border-radius:12px;overflow:hidden;">
+    <div style="background:#1b1b1b;height:42px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;border-bottom:1px solid #2c2c2c;">
+      <div style="display:flex;align-items:center;gap:10px;"><span style="width:12px;height:12px;border-radius:50%;background:#00d992;"></span><span style="width:80px;height:7px;border-radius:4px;background:#2c2c2c;"></span></div>
+      <div style="display:flex;align-items:center;gap:8px;"><span style="border:1px solid #3d3a39;color:#9aa1a9;font-size:11px;padding:2px 10px;border-radius:999px;">Standalone</span><span style="width:20px;height:20px;border-radius:50%;border:1.5px solid #3d3a39;"></span></div>
+    </div>
+    <div style="display:flex;height:362px;">
+      <div style="width:128px;background:#171717;border-right:1px solid #2c2c2c;padding:16px 12px;display:flex;flex-direction:column;gap:14px;">
+        <div style="display:flex;align-items:center;gap:7px;"><span style="width:11px;height:11px;border-radius:50%;background:#00d992;"></span><span style="flex:1;height:6px;border-radius:4px;background:#2c2c2c;"></span></div>
+        <div style="display:flex;align-items:center;gap:8px;color:#8b949e;font-size:13px;"><span style="width:13px;height:13px;border:1.5px solid #3d3a39;border-radius:3px;"></span>Dashboard</div>
+        <div style="display:flex;align-items:center;gap:8px;color:#8b949e;font-size:13px;"><span style="width:13px;height:13px;border:1.5px solid #3d3a39;border-radius:3px;"></span>Reviews</div>
+        <div style="display:flex;align-items:center;gap:8px;color:#8b949e;font-size:13px;"><span style="width:13px;height:13px;border:1.5px solid #3d3a39;border-radius:3px;"></span>Settings</div>
+      </div>
+      <div style="flex:1;padding:20px 22px;display:flex;flex-direction:column;gap:15px;">
+        <div><div style="font-size:21px;font-weight:700;color:#f2f2f2;">Quick check before we run</div><div style="font-size:12px;color:#8b949e;margin-top:3px;">Prefilled from your defaults — usually one click.</div></div>
+        <div style="border:1px solid #2c2c2c;background:#181818;border-radius:7px;padding:11px 13px;display:flex;align-items:center;justify-content:space-between;"><span style="font-size:13px;color:#e4e4e4;display:flex;align-items:center;gap:7px;">▤ appraisal.pdf <span style="color:#8b949e;font-family:'JetBrains Mono',monospace;font-size:11px;">· 74pp</span></span><span style="color:#00d992;font-size:12px;font-weight:600;">✓ read</span></div>
+        <div style="display:flex;gap:14px;">
+          <div style="flex:1.2;"><div style="font-size:11px;color:#8b949e;margin-bottom:6px;">Property address</div><div style="background:#181818;border:1px solid #3d3a39;border-radius:6px;padding:10px 12px;font-size:13px;color:#e4e4e4;font-weight:600;">1450 Corporate Center Dr</div></div>
+          <div style="flex:1;"><div style="font-size:11px;color:#8b949e;margin-bottom:6px;">Property type</div><div style="background:#181818;border:1px solid #3d3a39;border-radius:6px;padding:10px 12px;font-size:13px;color:#e4e4e4;font-weight:600;display:flex;justify-content:space-between;">Office (Medical)<span style="color:#8b949e;">▾</span></div></div>
+        </div>
+        <div><div style="font-size:11px;color:#8b949e;margin-bottom:7px;">Review type</div><div style="display:inline-flex;border:1px solid #3d3a39;border-radius:7px;overflow:hidden;"><span style="background:#00d992;color:#08130e;font-size:13px;font-weight:700;padding:9px 18px;">Administrative</span><span style="background:transparent;color:#bdbdbd;font-size:13px;padding:9px 18px;">Technical</span></div></div>
+      </div>
+    </div>
+    <div style="border-top:1px dashed #3d3a39;background:#1a1a1a;padding:11px 14px;display:flex;gap:8px;align-items:flex-start;">
+      <span style="color:#df8b7f;font-size:13px;flex:1;line-height:1.45;"><span style="opacity:.7;">✎ </span><span style="font-weight:700;color:#ec9d92;">3.3 · Source + property form</span> — minimal (no YC to pull from); short, prefilled. Then → S-E.</span>
+      <span style="flex:none;background:#262626;color:#8b949e;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;">Later</span>
+    </div>
+  </div>
+</div>
+
+<!-- 3.4 — Live Progress (S-E) -->
+<div data-screen-label="3.4" data-drags-parent="1" style="position:absolute;left:2366px;top:1440px;width:700px;">
+  <div style="display:flex;align-items:center;gap:7px;margin:0 0 9px 2px;color:#8b949e;font-size:13px;font-weight:500;"><span style="letter-spacing:2px;color:#565451;">⠿</span>3.4 · Live Progress</div>
+  <div style="background:#141414;border:1px solid #3d3a39;border-radius:12px;overflow:hidden;">
+    <div style="background:#1b1b1b;height:42px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;border-bottom:1px solid #2c2c2c;">
+      <div style="display:flex;align-items:center;gap:10px;"><span style="width:12px;height:12px;border-radius:50%;background:#00d992;"></span><span style="width:80px;height:7px;border-radius:4px;background:#2c2c2c;"></span></div>
+      <span style="width:20px;height:20px;border-radius:50%;border:1.5px solid #3d3a39;"></span>
+    </div>
+    <div style="display:flex;height:362px;">
+      <div style="width:128px;background:#171717;border-right:1px solid #2c2c2c;padding:16px 12px;display:flex;flex-direction:column;gap:14px;">
+        <div style="display:flex;align-items:center;gap:7px;"><span style="width:11px;height:11px;border-radius:50%;background:#00d992;"></span><span style="flex:1;height:6px;border-radius:4px;background:#2c2c2c;"></span></div>
+        <div style="display:flex;align-items:center;gap:8px;color:#8b949e;font-size:13px;"><span style="width:13px;height:13px;border:1.5px solid #3d3a39;border-radius:3px;"></span>Dashboard</div>
+        <div style="display:flex;align-items:center;gap:8px;color:#8b949e;font-size:13px;"><span style="width:13px;height:13px;border:1.5px solid #3d3a39;border-radius:3px;"></span>Reviews</div>
+        <div style="display:flex;align-items:center;gap:8px;color:#8b949e;font-size:13px;"><span style="width:13px;height:13px;border:1.5px solid #3d3a39;border-radius:3px;"></span>Templates</div>
+      </div>
+      <div style="flex:1;padding:30px 26px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;">
+        <div style="font-size:23px;font-weight:700;color:#f2f2f2;text-align:center;">Reviewing your appraisal…</div>
+        <div style="display:flex;border:1px solid #3d3a39;border-radius:8px;overflow:hidden;width:100%;max-width:420px;">
+          <div style="background:rgba(0,217,146,.15);color:#00d992;padding:12px 14px;font-size:13px;font-weight:600;white-space:nowrap;">Classify ✓</div>
+          <div style="flex:1;background:rgba(232,176,75,.16);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:#e8b04b;padding:12px 8px;border-left:1px solid #3d3a39;border-right:1px solid #3d3a39;">Reviewing…</div>
+          <div style="background:transparent;color:#8b949e;padding:12px 16px;font-size:13px;white-space:nowrap;">Compile</div>
+        </div>
+        <div style="text-align:center;color:#8b949e;font-size:13px;line-height:1.5;">Review is the long stretch (~10–20 min); compile is a quick final tick.</div>
+        <div style="border:1px solid #3d3a39;background:#181818;border-radius:7px;padding:11px 16px;font-size:13px;color:#e4e4e4;display:flex;align-items:center;gap:8px;">🔔 We'll notify you when it's ready — you can leave</div>
+      </div>
+    </div>
+    <div style="border-top:1px dashed #3d3a39;background:#1a1a1a;padding:11px 14px;display:flex;gap:8px;align-items:flex-start;">
+      <span style="color:#df8b7f;font-size:13px;flex:1;line-height:1.45;"><span style="opacity:.7;">✎ </span><span style="font-weight:700;color:#ec9d92;">S-E · Live Progress</span> — standalone only. Honestly weighted: “review” dominates, “compile” is a tick. Auto-advances to S-A.</span>
+      <span style="flex:none;background:rgba(0,217,146,.13);color:#00d992;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;">MVP</span>
+    </div>
+  </div>
+</div>
+
+<!-- 3.5 — Workbook (S-A, standalone) -->
+<div data-screen-label="3.5" data-drags-parent="1" style="position:absolute;left:3136px;top:1440px;width:700px;">
+  <div style="display:flex;align-items:center;gap:7px;margin:0 0 9px 2px;color:#8b949e;font-size:13px;font-weight:500;"><span style="letter-spacing:2px;color:#565451;">⠿</span>3.5 · Workbook</div>
+  <div style="background:#141414;border:1px solid #3d3a39;border-radius:12px;overflow:hidden;">
+    <div style="background:#1b1b1b;height:42px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;border-bottom:1px solid #2c2c2c;">
+      <div style="display:flex;align-items:center;gap:10px;"><span style="width:12px;height:12px;border-radius:50%;background:#00d992;"></span><span style="width:80px;height:7px;border-radius:4px;background:#2c2c2c;"></span></div>
+      <div style="display:flex;align-items:center;gap:8px;"><span style="background:rgba(232,176,75,.14);border:1px solid rgba(232,176,75,.32);color:#e8b04b;font-size:11px;font-weight:700;padding:2px 10px;border-radius:999px;">DRAFT</span><span style="border:1px solid #3d3a39;color:#9aa1a9;font-size:11px;padding:2px 10px;border-radius:999px;">Admin</span><span style="width:20px;height:20px;border-radius:50%;border:1.5px solid #3d3a39;"></span></div>
+    </div>
+    <div style="display:flex;height:362px;">
+      <div style="width:128px;background:#171717;border-right:1px solid #2c2c2c;padding:16px 12px;display:flex;flex-direction:column;gap:14px;">
+        <div style="display:flex;align-items:center;gap:7px;"><span style="width:11px;height:11px;border-radius:50%;background:#00d992;"></span><span style="flex:1;height:6px;border-radius:4px;background:#2c2c2c;"></span></div>
+        <div style="display:flex;align-items:center;gap:8px;color:#8b949e;font-size:13px;"><span style="width:13px;height:13px;border:1.5px solid #3d3a39;border-radius:3px;"></span>Dashboard</div>
+        <div style="display:flex;align-items:center;gap:8px;color:#f2f2f2;font-size:13px;font-weight:700;"><span style="width:13px;height:13px;border:1.5px solid #00d992;border-radius:3px;"></span>Reviews</div>
+        <div style="display:flex;align-items:center;gap:8px;color:#8b949e;font-size:13px;"><span style="width:13px;height:13px;border:1.5px solid #3d3a39;border-radius:3px;"></span>Templates</div>
+      </div>
+      <div style="flex:1;padding:18px 22px;display:flex;flex-direction:column;gap:14px;">
+        <div style="font-size:11px;font-weight:600;letter-spacing:1.5px;color:#8b949e;">EXTRACTION — LOOKS RIGHT?</div>
+        <div style="border-top:1px solid #2c2c2c;"></div>
+        <div style="border:1px solid rgba(232,176,75,.32);background:rgba(232,176,75,.1);border-radius:8px;padding:12px 14px;font-size:13px;color:#e6c07a;font-weight:600;display:flex;justify-content:space-between;gap:8px;"><span>⚠ 4 items below the confidence threshold — review them?</span><span style="color:#b89248;">×</span></div>
+        <div style="display:flex;gap:16px;align-items:flex-end;">
+          <div style="width:170px;height:90px;background:#1c1c1c;border:1px solid #2a2a2a;border-radius:6px;display:flex;align-items:flex-end;gap:6px;padding:10px;"><span style="flex:1;height:55%;background:#3a3a3a;border-radius:2px;"></span><span style="flex:1;height:80%;background:#3a3a3a;border-radius:2px;"></span><span style="flex:1;height:40%;background:#3a3a3a;border-radius:2px;"></span><span style="flex:1;height:68%;background:#3a3a3a;border-radius:2px;"></span><span style="flex:1;height:50%;background:#3a3a3a;border-radius:2px;"></span></div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:8px;"><span style="height:7px;border-radius:4px;background:#2a2a2a;"></span><span style="height:7px;border-radius:4px;background:#2a2a2a;width:80%;"></span><span style="height:7px;border-radius:4px;background:#2a2a2a;width:90%;"></span><span style="height:7px;border-radius:4px;background:#2a2a2a;width:70%;"></span></div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:auto;">
+          <div style="background:#00d992;color:#08130e;border-radius:6px;padding:9px 14px;font-size:13px;font-weight:700;">Sign / download</div>
+          <div style="border:1px solid #3d3a39;color:#d0d0d0;border-radius:6px;padding:9px 14px;font-size:13px;font-weight:600;">Review findings</div>
+          <div style="border:1px solid #3d3a39;color:#d0d0d0;border-radius:6px;padding:9px 14px;font-size:13px;font-weight:600;">Customize</div>
+        </div>
+      </div>
+    </div>
+    <div style="border-top:1px dashed #3d3a39;background:#1a1a1a;padding:11px 14px;display:flex;gap:8px;align-items:flex-start;">
+      <span style="color:#df8b7f;font-size:13px;flex:1;line-height:1.45;"><span style="opacity:.7;">✎ </span><span style="font-weight:700;color:#ec9d92;">S-A · Workbook</span> — home base. DRAFT until signed; trust strip answers “extraction wrong?”; callout is dismissible &amp; non-blocking.</span>
+      <span style="flex:none;background:rgba(0,217,146,.13);color:#00d992;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;">MVP</span>
+    </div>
+  </div>
+</div>
+
+<!-- 3.6 — Exceptions (S-B) -->
+<div data-screen-label="3.6" data-drags-parent="1" style="position:absolute;left:3906px;top:1440px;width:700px;">
+  <div style="display:flex;align-items:center;gap:7px;margin:0 0 9px 2px;color:#8b949e;font-size:13px;font-weight:500;"><span style="letter-spacing:2px;color:#565451;">⠿</span>3.6 · Exceptions (optional)</div>
+  <div style="background:#141414;border:1px solid #3d3a39;border-radius:12px;overflow:hidden;">
+    <div style="background:#1b1b1b;height:42px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;border-bottom:1px solid #2c2c2c;">
+      <div style="display:flex;align-items:center;gap:10px;"><span style="width:12px;height:12px;border-radius:50%;background:#00d992;"></span><span style="width:80px;height:7px;border-radius:4px;background:#2c2c2c;"></span></div>
+      <div style="display:flex;align-items:center;gap:8px;"><span style="border:1px solid #3d3a39;color:#9aa1a9;font-size:11px;padding:2px 10px;border-radius:999px;">Exceptions</span><span style="width:20px;height:20px;border-radius:50%;border:1.5px solid #3d3a39;"></span></div>
+    </div>
+    <div style="display:flex;height:362px;">
+      <div style="flex:1.8;background:#0b0b0b;display:flex;flex-direction:column;">
+        <div style="height:36px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;border-bottom:1px solid #222;">
+          <span style="color:#9fabb3;font-size:12px;font-family:'JetBrains Mono',monospace;">−&nbsp; 100%&nbsp; +</span>
+          <span style="color:#7d8890;font-size:11px;font-family:'JetBrains Mono',monospace;">3 exceptions · 142 findings · p.42</span>
+        </div>
+        <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:16px;position:relative;">
+          <div style="background:#f3f1ec;border-radius:3px;width:100%;height:100%;padding:18px 16px;display:flex;flex-direction:column;gap:10px;position:relative;">
+            <span style="height:6px;border-radius:3px;background:#d8d5cf;width:70%;"></span>
+            <span style="position:absolute;left:16px;top:38px;width:13px;height:13px;border-radius:50%;background:#ff5f52;color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;">1</span>
+            <span style="height:12px;border-radius:3px;background:#f0d68a;width:84%;margin-top:6px;"></span>
+            <div style="background:#fff;border:1px solid #d9d5cd;border-radius:6px;padding:8px 11px;font-size:11px;color:#3a3733;line-height:1.4;box-shadow:0 2px 8px rgba(0,0,0,.25);width:180px;"><span style="color:#d23b30;font-weight:700;">Cap rate 6.5%</span> vs market ~7.2% — verify?</div>
+            <span style="height:12px;border-radius:3px;background:#d8d5cf;width:90%;"></span>
+            <span style="position:absolute;left:26px;bottom:28px;width:15px;height:15px;border-radius:50%;background:#e8b04b;color:#3a2c08;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;">3</span>
+            <span style="height:10px;border-radius:3px;background:#d8d5cf;width:60%;margin-top:auto;"></span>
+          </div>
+        </div>
+      </div>
+      <div style="flex:1;background:#141414;border-left:1px solid #2c2c2c;display:flex;flex-direction:column;">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid #2c2c2c;"><span style="font-size:13px;font-weight:700;color:#f2f2f2;">Comments</span><span style="display:flex;align-items:center;gap:6px;font-size:11px;color:#8b949e;">all<span style="width:26px;height:15px;border-radius:999px;background:#00d992;position:relative;"><span style="position:absolute;right:2px;top:2px;width:11px;height:11px;border-radius:50%;background:#08130e;"></span></span></span></div>
+        <div style="background:rgba(232,176,75,.09);border-left:3px solid #e8b04b;padding:11px 14px;">
+          <div style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:700;color:#f2f2f2;"><span style="width:15px;height:15px;border-radius:50%;background:#ff5f52;color:#fff;font-size:9px;display:flex;align-items:center;justify-content:center;">1</span>Cap rate below market</div>
+          <div style="display:flex;align-items:center;gap:6px;margin:9px 0;"><span style="font-size:10px;color:#8b949e;">conf</span><span style="flex:1;height:5px;border-radius:3px;background:#2a2a2a;"><span style="display:block;width:55%;height:100%;border-radius:3px;background:#4a4a4a;"></span></span></div>
+          <div style="display:flex;gap:6px;"><span style="background:#00d992;color:#08130e;font-size:11px;font-weight:700;padding:5px 11px;border-radius:5px;">Agree</span><span style="border:1px solid #3d3a39;color:#d0d0d0;font-size:11px;padding:5px 11px;border-radius:5px;">Override</span><span style="border:1px solid #3d3a39;color:#d0d0d0;font-size:11px;padding:5px 11px;border-radius:5px;">Flag</span></div>
+        </div>
+        <div style="padding:12px 14px;border-bottom:1px solid #2c2c2c;"><div style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:#d4d4d4;"><span style="width:15px;height:15px;border-radius:50%;border:1.5px solid #ff5f52;color:#ff5f52;font-size:9px;display:flex;align-items:center;justify-content:center;">2</span>Comp #3 outside radius</div></div>
+        <div style="padding:12px 14px;"><div style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:#d4d4d4;"><span style="width:15px;height:15px;border-radius:50%;border:1.5px solid #ff5f52;color:#ff5f52;font-size:9px;display:flex;align-items:center;justify-content:center;">3</span>Effective date missing</div></div>
+        <div style="margin-top:auto;padding:11px 14px;border-top:1px solid #2c2c2c;font-size:11px;color:#8b949e;">↩ back to workbook · writes live</div>
+      </div>
+    </div>
+    <div style="border-top:1px dashed #3d3a39;background:#1a1a1a;padding:11px 14px;display:flex;gap:8px;align-items:flex-start;">
+      <span style="color:#df8b7f;font-size:13px;flex:1;line-height:1.45;"><span style="opacity:.7;">✎ </span><span style="font-weight:700;color:#ec9d92;">S-B · Exceptions</span> — proofing view (Ashore-style): annotations pinned spatially on the PDF, a comment thread resolves each. Exceptions-first; decisions write back live.</span>
+      <span style="flex:none;background:rgba(0,217,146,.13);color:#00d992;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;">MVP</span>
+    </div>
+  </div>
+</div>
+
+<!-- 3.7 — Customize (S-C) -->
+<div data-screen-label="3.7" data-drags-parent="1" style="position:absolute;left:4676px;top:1440px;width:700px;">
+  <div style="display:flex;align-items:center;gap:7px;margin:0 0 9px 2px;color:#8b949e;font-size:13px;font-weight:500;"><span style="letter-spacing:2px;color:#565451;">⠿</span>3.7 · Customize (optional)</div>
+  <div style="background:#141414;border:1px solid #3d3a39;border-radius:12px;overflow:hidden;">
+    <div style="background:#1b1b1b;height:42px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;border-bottom:1px solid #2c2c2c;">
+      <div style="display:flex;align-items:center;gap:10px;"><span style="width:12px;height:12px;border-radius:50%;background:#00d992;"></span><span style="width:80px;height:7px;border-radius:4px;background:#2c2c2c;"></span></div>
+      <div style="display:flex;align-items:center;gap:8px;"><span style="background:rgba(232,176,75,.14);border:1px solid rgba(232,176,75,.32);color:#e8b04b;font-size:11px;font-weight:700;padding:2px 10px;border-radius:999px;">DRAFT</span><span style="width:20px;height:20px;border-radius:50%;border:1.5px solid #3d3a39;"></span></div>
+    </div>
+    <div style="display:flex;height:362px;">
+      <div style="flex:1.1;background:#181614;padding:18px;display:flex;flex-direction:column;gap:11px;">
+        <div style="font-size:11px;font-weight:600;letter-spacing:1.5px;color:#8b949e;">CUSTOMIZE</div>
+        <div style="display:flex;align-items:center;gap:9px;border:1px solid #2c2a27;background:#1e1e1e;border-radius:7px;padding:10px 12px;"><span style="color:#565451;letter-spacing:1px;">⠿</span><span style="flex:1;height:6px;border-radius:4px;background:#2c2c2c;"></span><span style="width:28px;height:16px;border-radius:999px;background:#00d992;position:relative;"><span style="position:absolute;right:2px;top:2px;width:12px;height:12px;border-radius:50%;background:#08130e;"></span></span></div>
+        <div style="display:flex;align-items:center;gap:9px;border:1px solid #2c2a27;background:#1e1e1e;border-radius:7px;padding:10px 12px;"><span style="color:#565451;letter-spacing:1px;">⠿</span><span style="flex:1;height:6px;border-radius:4px;background:#2c2c2c;"></span><span style="width:28px;height:16px;border-radius:999px;background:#00d992;position:relative;"><span style="position:absolute;right:2px;top:2px;width:12px;height:12px;border-radius:50%;background:#08130e;"></span></span></div>
+        <div style="display:flex;align-items:center;gap:9px;border:1px solid #2c2a27;background:#1e1e1e;border-radius:7px;padding:10px 12px;"><span style="color:#565451;letter-spacing:1px;">⠿</span><span style="flex:1;height:6px;border-radius:4px;background:#2c2c2c;"></span><span style="width:28px;height:16px;border-radius:999px;background:#00d992;position:relative;"><span style="position:absolute;right:2px;top:2px;width:12px;height:12px;border-radius:50%;background:#08130e;"></span></span></div>
+        <div style="display:flex;align-items:center;gap:9px;border:1px solid #2c2a27;background:#1e1e1e;border-radius:7px;padding:10px 12px;"><span style="color:#565451;letter-spacing:1px;">⠿</span><span style="flex:1;height:6px;border-radius:4px;background:#2c2c2c;"></span><span style="width:28px;height:16px;border-radius:999px;background:#3a3a3a;position:relative;"><span style="position:absolute;left:2px;top:2px;width:12px;height:12px;border-radius:50%;background:#bbb;"></span></span></div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:6px;"><span style="font-size:12px;color:#8b949e;">Theme · font · template</span><span style="width:18px;height:18px;border-radius:4px;background:#2a3a44;"></span><span style="width:18px;height:18px;border-radius:4px;background:#1f6b6b;"></span><span style="width:18px;height:18px;border-radius:4px;background:#6b5436;"></span><span style="border:1px solid #3d3a39;border-radius:4px;font-size:11px;padding:2px 7px;color:#bdbdbd;">Aa</span><span style="background:#00d992;color:#08130e;border-radius:4px;font-size:11px;padding:2px 7px;font-weight:600;">Aa</span></div>
+      </div>
+      <div style="flex:0.9;background:#0e0e0e;padding:18px;display:flex;flex-direction:column;gap:11px;">
+        <div style="font-size:12px;color:#8b949e;text-align:right;">live preview →</div>
+        <div style="flex:1;background:#f3f1ec;border-radius:6px;padding:16px;display:flex;flex-direction:column;gap:10px;"><span style="height:9px;border-radius:4px;background:#d4d1ca;width:70%;"></span><span style="height:6px;border-radius:4px;background:#e3e0d9;"></span><span style="height:6px;border-radius:4px;background:#e3e0d9;width:90%;"></span><span style="height:6px;border-radius:4px;background:#e3e0d9;width:80%;"></span><div style="flex:1;border:1px solid #ddd9d1;border-radius:5px;min-height:44px;margin-top:4px;"></div></div>
+      </div>
+    </div>
+    <div style="border-top:1px dashed #3d3a39;background:#1a1a1a;padding:11px 14px;display:flex;gap:8px;align-items:flex-start;">
+      <span style="color:#df8b7f;font-size:13px;flex:1;line-height:1.45;"><span style="opacity:.7;">✎ </span><span style="font-weight:700;color:#ec9d92;">S-C · Builder</span> — opens as a panel over the workbook, never a wizard step; live preview; “save as defaults” after a change. Closes back to S-A.</span>
+      <span style="flex:none;background:#262626;color:#8b949e;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;">Later</span>
+    </div>
+  </div>
+</div>
+
+<!-- 3.8 — Sign / download (S-D) -->
+<div data-screen-label="3.8" data-drags-parent="1" style="position:absolute;left:5446px;top:1440px;width:700px;">
+  <div style="display:flex;align-items:center;gap:7px;margin:0 0 9px 2px;color:#8b949e;font-size:13px;font-weight:500;"><span style="letter-spacing:2px;color:#565451;">⠿</span>3.8 · Sign / download</div>
+  <div style="background:#141414;border:1px solid #3d3a39;border-radius:12px;overflow:hidden;">
+    <div style="background:#1b1b1b;display:flex;align-items:center;justify-content:space-between;padding:14px 18px 9px;">
+      <div style="font-size:21px;font-weight:700;color:#f2f2f2;">Sign &amp; finalize</div>
+      <div style="display:flex;align-items:center;gap:8px;"><span style="border:1px solid #3d3a39;color:#9aa1a9;font-size:11px;padding:2px 10px;border-radius:999px;">Signing</span><span style="width:20px;height:20px;border-radius:50%;border:1.5px solid #3d3a39;"></span></div>
+    </div>
+    <div style="background:#1b1b1b;padding:0 18px 10px;font-size:12px;color:#8b949e;">Attesting converts <span style="font-weight:700;color:#c4c4c4;">DRAFT → FINAL</span> and writes the audit trail.</div>
+    <div style="display:flex;height:320px;border-top:1px solid #2c2c2c;">
+      <div style="width:128px;background:#171717;border-right:1px solid #2c2c2c;padding:16px 12px;display:flex;flex-direction:column;gap:14px;">
+        <div style="display:flex;align-items:center;gap:7px;"><span style="width:11px;height:11px;border-radius:50%;background:#00d992;"></span><span style="flex:1;height:6px;border-radius:4px;background:#2c2c2c;"></span></div>
+        <div style="display:flex;align-items:center;gap:8px;color:#8b949e;font-size:13px;"><span style="width:13px;height:13px;border:1.5px solid #3d3a39;border-radius:3px;"></span>Dashboard</div>
+        <div style="display:flex;align-items:center;gap:8px;color:#8b949e;font-size:13px;"><span style="width:13px;height:13px;border:1.5px solid #3d3a39;border-radius:3px;"></span>Reviews</div>
+        <div style="display:flex;align-items:center;gap:8px;color:#8b949e;font-size:13px;"><span style="width:13px;height:13px;border:1.5px solid #3d3a39;border-radius:3px;"></span>Templates</div>
+      </div>
+      <div style="flex:1;padding:18px 22px;display:flex;flex-direction:column;gap:13px;">
+        <div><div style="font-size:12px;color:#8b949e;margin-bottom:6px;">Signer</div><div style="background:#181818;border:1px solid #3d3a39;border-radius:6px;padding:10px 12px;font-size:13px;color:#e4e4e4;display:flex;justify-content:space-between;">Jordan Reyes<span style="color:#8b949e;">▾</span></div></div>
+        <div style="display:flex;gap:12px;">
+          <div style="flex:1;"><div style="font-size:12px;color:#8b949e;margin-bottom:6px;">Timestamp</div><div style="background:#181818;border:1px solid #3d3a39;border-radius:6px;padding:10px 12px;font-size:12px;color:#e4e4e4;font-family:'JetBrains Mono',monospace;">Jun 24, 2026 · 3:51 PM</div></div>
+          <div style="flex:0.7;"><div style="font-size:12px;color:#8b949e;margin-bottom:6px;">Hash</div><div style="background:#181818;border:1px solid #3d3a39;border-radius:6px;padding:10px 12px;font-size:12px;color:#00d992;font-family:'JetBrains Mono',monospace;">a1f9…7c</div></div>
+        </div>
+        <div><div style="font-size:12px;color:#8b949e;margin-bottom:6px;">Download</div><div style="display:flex;gap:8px;"><span style="border:1px solid #3d3a39;color:#d0d0d0;font-size:11px;padding:4px 14px;border-radius:999px;">PDF</span><span style="border:1px solid #3d3a39;color:#d0d0d0;font-size:11px;padding:4px 14px;border-radius:999px;">DOCX</span><span style="border:1px solid #3d3a39;color:#d0d0d0;font-size:11px;padding:4px 14px;border-radius:999px;">ZIP</span></div></div>
+      </div>
+    </div>
+    <div style="border-top:1px dashed #3d3a39;background:#1a1a1a;padding:11px 14px;display:flex;gap:8px;align-items:flex-start;">
+      <span style="color:#df8b7f;font-size:13px;flex:1;line-height:1.45;"><span style="opacity:.7;">✎ </span><span style="font-weight:700;color:#ec9d92;">S-D · Sign</span> — name / time / hash → FINAL; download PDF·DOCX·ZIP; audit trail.</span>
+      <span style="flex:none;background:rgba(0,217,146,.13);color:#00d992;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;">MVP</span>
+    </div>
+  </div>
+</div>
+
+<!-- 3.9 — Reviews / queue -->
+<div data-screen-label="3.9" data-drags-parent="1" style="position:absolute;left:6216px;top:1440px;width:700px;">
+  <div style="display:flex;align-items:center;gap:7px;margin:0 0 9px 2px;color:#8b949e;font-size:13px;font-weight:500;"><span style="letter-spacing:2px;color:#565451;">⠿</span>3.9 · Reviews / queue</div>
+  <div style="background:#141414;border:1px solid #3d3a39;border-radius:12px;overflow:hidden;">
+    <div style="background:#1b1b1b;height:42px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;border-bottom:1px solid #2c2c2c;">
+      <div style="display:flex;align-items:center;gap:10px;"><span style="width:12px;height:12px;border-radius:50%;background:#00d992;"></span><span style="width:80px;height:7px;border-radius:4px;background:#2c2c2c;"></span></div>
+      <div style="display:flex;align-items:center;gap:8px;"><span style="border:1px solid #3d3a39;color:#9aa1a9;font-size:11px;padding:2px 10px;border-radius:999px;">Standalone</span><span style="width:20px;height:20px;border-radius:50%;border:1.5px solid #3d3a39;"></span></div>
+    </div>
+    <div style="display:flex;height:362px;">
+      <div style="width:128px;background:#171717;border-right:1px solid #2c2c2c;padding:16px 12px;display:flex;flex-direction:column;gap:14px;">
+        <div style="display:flex;align-items:center;gap:7px;"><span style="width:11px;height:11px;border-radius:50%;background:#00d992;"></span><span style="flex:1;height:6px;border-radius:4px;background:#2c2c2c;"></span></div>
+        <div style="display:flex;align-items:center;gap:8px;color:#8b949e;font-size:13px;"><span style="width:13px;height:13px;border:1.5px solid #3d3a39;border-radius:3px;"></span>Dashboard</div>
+        <div style="display:flex;align-items:center;gap:8px;color:#f2f2f2;font-size:13px;font-weight:700;"><span style="width:13px;height:13px;border:1.5px solid #00d992;border-radius:3px;"></span>Reviews</div>
+        <div style="display:flex;align-items:center;gap:8px;color:#8b949e;font-size:13px;"><span style="width:13px;height:13px;border:1.5px solid #3d3a39;border-radius:3px;"></span>Settings</div>
+      </div>
+      <div style="flex:1;padding:18px 20px;display:flex;flex-direction:column;gap:13px;">
+        <div style="font-size:21px;font-weight:700;color:#f2f2f2;">Reviews</div>
+        <div style="border:1px solid #2c2c2c;border-radius:8px;overflow:hidden;">
+          <div style="display:grid;grid-template-columns:1fr 120px 70px 72px;background:#1b1b1b;padding:9px 14px;font-size:10px;font-weight:600;letter-spacing:0.8px;color:#8b949e;"><span>PROPERTY / OUTPUT</span><span>STATUS</span><span>DUE</span><span>ACTION</span></div>
+          <div style="display:flex;align-items:center;gap:10px;background:rgba(232,176,75,.08);border-top:1px solid #2c2c2c;padding:10px 14px;font-size:13px;color:#f2f2f2;"><span style="font-weight:700;">▾ 1450 Corporate Center Dr</span><span style="color:#e8b04b;font-weight:600;">2 outputs</span></div>
+          <div style="display:grid;grid-template-columns:1fr 120px 70px 72px;align-items:center;border-top:1px solid #232323;padding:11px 14px;font-size:13px;color:#cfcfcf;"><span style="padding-left:14px;">Administrative</span><span><span style="background:rgba(232,176,75,.14);border:1px solid rgba(232,176,75,.32);color:#e8b04b;font-size:11px;font-weight:600;padding:2px 9px;border-radius:999px;">Needs review</span></span><span style="color:#8b949e;font-size:12px;">Jun 26</span><span style="color:#00d992;font-weight:700;">Open</span></div>
+          <div style="display:grid;grid-template-columns:1fr 120px 70px 72px;align-items:center;border-top:1px solid #232323;padding:11px 14px;font-size:13px;color:#cfcfcf;"><span style="padding-left:14px;">Technical</span><span><span style="background:rgba(232,176,75,.14);border:1px solid rgba(232,176,75,.32);color:#e8b04b;font-size:11px;font-weight:600;padding:2px 9px;border-radius:999px;">Running</span></span><span style="color:#8b949e;font-size:12px;">Jun 27</span><span style="color:#6a6a6a;">—</span></div>
+          <div style="display:grid;grid-template-columns:1fr 120px 70px 72px;align-items:center;border-top:1px solid #2c2c2c;padding:11px 14px;font-size:13px;color:#f2f2f2;"><span style="font-weight:700;">14 Mill Street · Administrative</span><span><span style="background:rgba(0,217,146,.13);color:#00d992;font-size:11px;font-weight:600;padding:2px 9px;border-radius:999px;">Signed</span></span><span style="color:#6a6a6a;">—</span><span style="color:#00d992;font-weight:700;">View</span></div>
+        </div>
+      </div>
+    </div>
+    <div style="border-top:1px dashed #3d3a39;background:#1a1a1a;padding:11px 14px;display:flex;gap:8px;align-items:flex-start;">
+      <span style="color:#df8b7f;font-size:13px;flex:1;line-height:1.45;"><span style="opacity:.7;">✎ </span><span style="font-weight:700;color:#ec9d92;">3.9 · Reviews / queue</span> — the one place a queue lives. Property-centric roll-up, but opening acts on <span style="font-weight:700;color:#ec9d92;">one output</span>.</span>
+      <span style="flex:none;background:#262626;color:#8b949e;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;">Later</span>
+    </div>
+  </div>
+</div>
+
+<!-- 3.10 — Settings -->
+<div data-screen-label="3.10" data-drags-parent="1" style="position:absolute;left:6986px;top:1440px;width:700px;">
+  <div style="display:flex;align-items:center;gap:7px;margin:0 0 9px 2px;color:#8b949e;font-size:13px;font-weight:500;"><span style="letter-spacing:2px;color:#565451;">⠿</span>3.10 · Settings</div>
+  <div style="background:#141414;border:1px solid #3d3a39;border-radius:12px;overflow:hidden;">
+    <div style="background:#1b1b1b;height:42px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;border-bottom:1px solid #2c2c2c;">
+      <div style="display:flex;align-items:center;gap:10px;"><span style="width:12px;height:12px;border-radius:50%;background:#00d992;"></span><span style="width:80px;height:7px;border-radius:4px;background:#2c2c2c;"></span></div>
+      <div style="display:flex;align-items:center;gap:8px;"><span style="border:1px solid #3d3a39;color:#9aa1a9;font-size:11px;padding:2px 10px;border-radius:999px;">Admin</span><span style="width:20px;height:20px;border-radius:50%;border:1.5px solid #3d3a39;"></span></div>
+    </div>
+    <div style="display:flex;height:362px;">
+      <div style="width:128px;background:#171717;border-right:1px solid #2c2c2c;padding:16px 12px;display:flex;flex-direction:column;gap:14px;">
+        <div style="display:flex;align-items:center;gap:7px;"><span style="width:11px;height:11px;border-radius:50%;background:#00d992;"></span><span style="flex:1;height:6px;border-radius:4px;background:#2c2c2c;"></span></div>
+        <div style="display:flex;align-items:center;gap:8px;color:#f2f2f2;font-size:13px;font-weight:700;"><span style="width:13px;height:13px;border:1.5px solid #00d992;border-radius:3px;"></span>Settings</div>
+        <div style="display:flex;align-items:center;gap:8px;color:#8b949e;font-size:13px;"><span style="width:13px;height:13px;border:1.5px solid #3d3a39;border-radius:3px;"></span>Templates</div>
+        <div style="display:flex;align-items:center;gap:8px;color:#8b949e;font-size:13px;"><span style="width:13px;height:13px;border:1.5px solid #3d3a39;border-radius:3px;"></span>Checklists</div>
+      </div>
+      <div style="flex:1;padding:18px;display:flex;flex-direction:column;">
+        <div style="font-size:20px;font-weight:700;color:#f2f2f2;">Configure Parachute</div>
+        <div style="font-size:13px;color:#8b949e;margin:3px 0 14px;">Org setup — no queue, no reviews here.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div style="border:1px solid #2c2c2c;background:#181818;border-radius:9px;padding:14px;"><span style="display:inline-flex;width:24px;height:24px;border-radius:5px;background:#232323;align-items:center;justify-content:center;font-size:13px;margin-bottom:8px;color:#9aa1a9;">▣</span><div style="font-size:14px;font-weight:700;color:#f0f0f0;">Templates &amp; layouts</div><div style="font-size:11px;color:#8b949e;margin-top:2px;">Workbook + response libraries</div></div>
+          <div style="border:1px solid #2c2c2c;background:#181818;border-radius:9px;padding:14px;"><span style="display:inline-flex;width:24px;height:24px;border-radius:5px;background:#232323;align-items:center;justify-content:center;font-size:13px;margin-bottom:8px;color:#9aa1a9;">☑</span><div style="font-size:14px;font-weight:700;color:#f0f0f0;">Compliance checklists</div><div style="font-size:11px;color:#8b949e;margin-top:2px;">Drives administrative review</div></div>
+          <div style="border:1px solid #2c2c2c;background:#181818;border-radius:9px;padding:14px;"><span style="display:inline-flex;width:24px;height:24px;border-radius:5px;background:#232323;align-items:center;justify-content:center;font-size:13px;margin-bottom:8px;color:#9aa1a9;">◎</span><div style="font-size:14px;font-weight:700;color:#f0f0f0;">Review defaults</div></div>
+          <div style="border:1px solid #2c2c2c;background:#181818;border-radius:9px;padding:14px;"><span style="display:inline-flex;width:24px;height:24px;border-radius:5px;background:#232323;align-items:center;justify-content:center;font-size:13px;margin-bottom:8px;color:#9aa1a9;">◐</span><div style="font-size:14px;font-weight:700;color:#f0f0f0;">Branding</div></div>
+        </div>
+      </div>
+    </div>
+    <div style="border-top:1px dashed #3d3a39;background:#1a1a1a;padding:11px 14px;display:flex;gap:8px;align-items:flex-start;">
+      <span style="color:#df8b7f;font-size:13px;flex:1;line-height:1.45;"><span style="opacity:.7;">✎ </span><span style="font-weight:700;color:#ec9d92;">2.2 · Settings home</span> — the admin hub. Cards into each area; deliberately <span style="font-weight:700;color:#ec9d92;">no</span> queue / reviews list.</span>
+      <span style="flex:none;background:rgba(0,217,146,.13);color:#00d992;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;">MVP</span>
+    </div>
+  </div>
+</div></x-dc>
+</body>
+</html>
