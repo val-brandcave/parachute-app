@@ -68,6 +68,35 @@
   --d-card-pad: 22px;
   --d-gap: 16px;
   --d-font: 14px;
+
+  /* ── PAPER ──────────────────────────────────────────────────────────────
+     Fixed light "paper" scale for rendered DOCUMENTS (the signable workbook +
+     the source appraisal). Both are real deliverables — what gets downloaded
+     and sent — so the page is WYSIWYG white in BOTH app themes; only the chrome
+     around it follows light/dark. Defined once here and intentionally NOT
+     overridden in the dark block, so paper stays paper. Tokenised (no raw hex
+     in components) per AGENTS. */
+  --paper-bg: #ffffff; /* the page */
+  --paper-bg-1: #f6f8fa; /* inset tiles / soft panels */
+  --paper-bg-2: #eceff3; /* table header rows, zebra */
+  --paper-ink: #1a1d21; /* primary text */
+  --paper-ink-2: #545a62; /* secondary text */
+  --paper-ink-3: #888f97; /* tertiary / labels */
+  --paper-line: #d6dbe1; /* borders */
+  --paper-hair: #e7eaee; /* hairlines / zebra lines */
+  --paper-elev: 0 1px 2px rgba(16, 24, 33, 0.08), 0 8px 28px rgba(16, 24, 33, 0.12);
+  /* Severity/state on paper — the canonical LIGHT palette, fixed in both themes
+     so chips, severity edges, and source-doc highlights read on white paper. */
+  --paper-ok: #15834a;
+  --paper-ok-c: #e3f5ea;
+  --paper-warn: #c98a12;
+  --paper-warn-c: #fcf1d8;
+  --paper-err: #d23f34;
+  --paper-err-c: #fce7e5;
+  --paper-crit: #7e1d1d;
+  --paper-crit-c: #f6dcdc;
+  --paper-info: #2d6ca6;
+  --paper-info-c: #e4eef7;
 }
 
 /* Compact density — info-dense, layout unchanged */
@@ -2083,17 +2112,62 @@ textarea {
 }
 
 /* ---- the document ("paper") ---- */
+/* The workbook is a stack of paper SHEETS (cover + content pages), not one
+   surface. The container is transparent; each .wb-page is the paper. Documents
+   render on the fixed light --paper-* scale in BOTH themes (they're the signable
+   deliverable — WYSIWYG with the downloaded PDF); only the surrounding chrome
+   follows light/dark. We re-scope the --md-* tokens to paper here so every
+   existing .wb-* rule paints on paper without per-rule edits. */
 .wb-doc {
   position: relative;
-  max-width: 880px;
+  max-width: 820px;
   margin: 0 auto;
-  background: var(--md-surface);
-  border: 1px solid var(--md-outline);
-  border-radius: 14px;
-  box-shadow: var(--md-elev-2);
-  overflow: hidden;
-  padding-bottom: 0;
   font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  color: var(--paper-ink);
+  --md-surface: var(--paper-bg);
+  --md-surface-1: var(--paper-bg-1);
+  --md-surface-2: var(--paper-bg-2);
+  --md-surface-3: var(--paper-bg-2);
+  --md-on-surface: var(--paper-ink);
+  --md-on-surface-v: var(--paper-ink-2);
+  --md-on-surface-t: var(--paper-ink-3);
+  --md-on-surface-dis: var(--paper-ink-3);
+  --md-outline: var(--paper-line);
+  --md-outline-v: var(--paper-hair);
+  --md-elev-1: var(--paper-elev);
+  --md-elev-2: var(--paper-elev);
+  --md-error: var(--paper-err);
+  --md-error-c: var(--paper-err-c);
+  --md-success: var(--paper-ok);
+  --md-success-c: var(--paper-ok-c);
+  --md-warn: var(--paper-warn);
+  --md-warn-c: var(--paper-warn-c);
+  --md-crit: var(--paper-crit);
+  --md-crit-c: var(--paper-crit-c);
+  --md-info: var(--paper-info);
+  --md-info-c: var(--paper-info-c);
+}
+
+/* A single sheet */
+.wb-page {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 56rem; /* Letter-ish; grows when content overflows */
+  background: var(--paper-bg);
+  border: 1px solid var(--paper-line);
+  border-radius: 4px;
+  box-shadow: var(--paper-elev);
+  overflow: hidden;
+}
+.wb-page-body {
+  flex: 1;
+}
+.wb-page--cover {
+  min-height: 56rem;
 }
 /* density (Builder document setting) — scales the section vertical rhythm */
 .wb-doc--compact .wb-sec {
@@ -2104,21 +2178,10 @@ textarea {
   padding-top: 32px;
   padding-bottom: 12px;
 }
-.wb-doc.is-draft::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: repeating-linear-gradient(
-    -45deg,
-    transparent 0 22px,
-    color-mix(in srgb, var(--md-on-surface) 2.2%, transparent) 22px 44px
-  );
-}
 .wb-ribbon {
   position: absolute;
-  top: 20px;
-  right: -40px;
+  top: 22px;
+  right: -42px;
   transform: rotate(45deg);
   background: var(--md-warn);
   color: #fff;
@@ -2126,9 +2189,91 @@ textarea {
   font-weight: 800;
   letter-spacing: 2px;
   text-transform: uppercase;
-  padding: 5px 50px;
+  padding: 5px 52px;
   z-index: 4;
   box-shadow: var(--md-elev-1);
+}
+
+/* Cover: contents list + per-page footer */
+.wb-cover-toc {
+  padding: 32px 34px 10px;
+}
+.wb-toc-h {
+  font-family: var(--wb-head);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--paper-ink-3);
+  padding-bottom: 12px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--paper-hair);
+}
+.wb-toc {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.wb-toc-row {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--paper-hair);
+}
+.wb-toc-row:last-child {
+  border-bottom: none;
+}
+.wb-toc-n {
+  flex: none;
+  /* wide enough to hold "Appendix A" so every title starts at the same x */
+  min-width: 5.5em;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--wb-accent);
+  font-variant-numeric: tabular-nums;
+}
+.wb-toc-title {
+  flex: none;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--paper-ink);
+}
+.wb-toc-dots {
+  flex: 1;
+  align-self: center;
+  height: 0;
+  border-bottom: 1px dotted var(--paper-line);
+  transform: translateY(-2px);
+}
+.wb-toc-pg {
+  flex: none;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--paper-ink-2);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Per-page footer (confidentiality line + page number) */
+.wb-page-foot {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 34px;
+  border-top: 1px solid var(--paper-hair);
+  font-size: 10.5px;
+  color: var(--paper-ink-3);
+}
+.wb-page-foot--cover {
+  border-top: none;
+  padding-top: 0;
+}
+.wb-page-foot-n {
+  flex: none;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 .wb-filebar {
   display: flex;
@@ -2205,20 +2350,38 @@ textarea {
 }
 .wb-band-bars {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 16px;
+  gap: 12px;
+  margin-top: 18px;
+  align-items: stretch; /* both chips share the row + match height */
 }
-.wb-rec-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 9px;
-  padding: 9px 15px;
+/* Two MATCHED info chips (recommendation · risk) — identical shape/treatment;
+   tone is shown only by the left edge, so they read as a consistent pair. */
+.wb-pill {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px 14px;
   border-radius: 10px;
-  font-size: 13.5px;
-  font-weight: 700;
-  background: color-mix(in srgb, #fff 15%, transparent);
+  font-size: 13px;
+  line-height: 1.4;
+  color: #fff;
+  background: color-mix(in srgb, #fff 13%, transparent);
   border-left: 3px solid #fff;
+}
+.wb-pill > .ui-icon,
+.wb-pill > svg {
+  flex: none;
+  margin-top: 1px;
+  opacity: 0.92;
+}
+.wb-pill-text {
+  flex: 1;
+  min-width: 0;
+}
+.wb-pill-text b {
+  font-weight: 800;
 }
 .wb-rec-pill--pass {
   border-left-color: #7fd1a3;
@@ -2229,30 +2392,30 @@ textarea {
 .wb-rec-pill--info {
   border-left-color: #9cc4e8;
 }
+.wb-risk-pill--low {
+  border-left-color: #7fd1a3;
+}
+.wb-risk-pill--moderate {
+  border-left-color: #f0c674;
+}
+.wb-risk-pill--elevated {
+  border-left-color: #e8a59b;
+}
 .wb-rec-count {
+  display: inline-block;
+  margin-left: 8px;
   font-size: 11.5px;
   font-weight: 700;
   padding: 1px 8px;
   border-radius: 7px;
   background: color-mix(in srgb, #fff 22%, transparent);
 }
-.wb-risk-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 9px 15px;
-  border-radius: 10px;
-  font-size: 13px;
-}
-.wb-risk-pill b {
-  font-weight: 800;
-}
 .wb-risk-word {
   font-weight: 500;
-  opacity: 0.92;
-  border-left: 1px solid currentColor;
+  opacity: 0.9;
+  border-left: 1px solid color-mix(in srgb, #fff 38%, transparent);
   padding-left: 8px;
-  margin-left: 1px;
+  margin-left: 6px;
 }
 .wb-band-meta {
   display: flex;
@@ -9215,7 +9378,7 @@ select.qfilter {
   font-size: 14px;
 }
 
-/* ---- S-E Live progress ---- */
+/* ---- S-E Live progress — scanning hero + per-stage fill card ---- */
 .run-progress {
   flex: 1;
   display: grid;
@@ -9227,17 +9390,62 @@ select.qfilter {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 18px;
-  max-width: 440px;
+  gap: 16px;
+  width: 100%;
+  max-width: 460px;
 }
-.run-progress-spinner {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  border: 3px solid var(--md-outline-v);
-  border-top-color: var(--md-accent);
-  animation: spin 0.8s linear infinite;
+
+/* Scanning document tile — petrol-tinted, with a sweeping scan line + soft glow. */
+.run-scan {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  color: var(--md-accent-d);
+  background: var(--md-accent-c);
+  border: 1px solid color-mix(in srgb, var(--md-accent) 22%, transparent);
+  overflow: hidden;
 }
+.run-scan .ui-icon,
+.run-scan svg {
+  position: relative;
+  z-index: 1;
+}
+.run-scan-glow {
+  position: absolute;
+  inset: -30%;
+  background: radial-gradient(
+    circle at 50% 50%,
+    color-mix(in srgb, var(--md-accent) 30%, transparent),
+    transparent 70%
+  );
+  animation: run-scan-glow 2.6s ease-in-out infinite;
+}
+@keyframes run-scan-glow {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+.run-scan-line {
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  /* Anchored to the tile's vertical centre (line is 2px tall); Framer animates
+     `y` around this — no centering transform to fight (AGENTS Motion rule). */
+  top: calc(50% - 1px);
+  height: 2px;
+  border-radius: 2px;
+  z-index: 2;
+  background: linear-gradient(90deg, transparent, var(--md-accent), transparent);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--md-accent) 60%, transparent);
+}
+
 .run-progress-title {
   font-family: var(--font-display);
   font-size: 22px;
@@ -9247,47 +9455,99 @@ select.qfilter {
 .run-progress-doc {
   font-size: 13px;
   color: var(--md-on-surface-t);
-  margin-top: -10px;
+  margin-top: -8px;
 }
-.run-pipe {
-  display: flex;
+
+/* Stage card */
+.run-stages {
   width: 100%;
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 20px 22px;
+  text-align: left;
+  background: var(--md-surface);
   border: 1px solid var(--md-outline-v);
-  border-radius: 10px;
-  overflow: hidden;
+  border-radius: 16px;
+  box-shadow: var(--md-elev-2);
 }
-.run-pipe-seg {
-  flex: 1;
+.run-st {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: opacity 0.3s ease;
+}
+.run-st--idle {
+  opacity: 0.5;
+}
+.run-st-row {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 5px;
-  padding: 11px 8px;
-  font-size: 13px;
+  justify-content: space-between;
+  gap: 12px;
+}
+.run-st-label {
+  font-size: 13.5px;
   font-weight: 600;
-  color: var(--md-on-surface-t);
-  border-right: 1px solid var(--md-outline-v);
+  color: var(--md-on-surface);
 }
-.run-pipe-seg:last-child {
-  border-right: none;
-}
-.run-pipe-seg--done {
-  background: var(--md-success-c);
-  color: var(--md-success);
-}
-.run-pipe-seg--active {
-  background: var(--md-accent-c);
-  color: var(--md-accent-d);
-}
-.run-progress-note {
-  font-size: 13px;
+.run-st--idle .run-st-label {
+  font-weight: 500;
   color: var(--md-on-surface-v);
-  line-height: 1.5;
 }
+/* Right-aligned status mark — a fixed 20px box; the check / dot / ring stack
+   absolutely inside it so swapping them never shifts the row. */
+.run-st-ind {
+  position: relative;
+  flex: none;
+  width: 20px;
+  height: 20px;
+}
+.run-st-ind > * {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+}
+.run-st-check {
+  display: grid;
+  place-items: center;
+  color: var(--md-accent);
+}
+.run-st-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--md-accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--md-accent) 18%, transparent);
+}
+.run-st-ring {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--md-outline);
+}
+.run-st-bar {
+  position: relative;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--md-surface-2);
+  overflow: hidden;
+}
+.run-st-bar-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--md-accent), var(--md-accent-d));
+}
+
 .run-progress-leave {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  margin-top: 2px;
   font-size: 13px;
   color: var(--md-on-surface-v);
   background: var(--md-surface-1);
@@ -9303,6 +9563,45 @@ select.qfilter {
   display: flex;
   flex-direction: column;
   min-height: 0;
+}
+/* Slim document toolbar — same control language as the appraisal viewer
+   (reuses .run-ex-tools / .run-ex-ctl). Holds only read affordances (zoom +
+   page); workflow actions stay in the footer. */
+.run-wb-bar {
+  flex: none;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  background: var(--md-surface);
+  border-bottom: 1px solid var(--md-outline-v);
+}
+.run-wb-bar-label {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--md-on-surface);
+}
+.run-wb-bar-state {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--md-on-surface-t);
+}
+.run-wb-bar-state--final {
+  color: var(--md-success);
+}
+.run-wb-zoom {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* `zoom` scales the rendered sheets; the stage (overflow:auto) scrolls. */
 }
 /* Main row inside the workbook view: scrolling document stage + (optional) the
    Customize dock on the right. Keeps the document the consistent main pane. */
@@ -9442,9 +9741,10 @@ select.qfilter {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  background: var(--md-surface-2);
+  /* dark viewer chrome behind the always-white pages (Acrobat/Docsend pattern) */
+  background: var(--md-bg);
 }
-.run-ex-doc-bar {
+.run-ex-bar {
   flex: none;
   height: 48px;
   display: flex;
@@ -9453,6 +9753,10 @@ select.qfilter {
   padding: 0 14px;
   border-bottom: 1px solid var(--md-outline-v);
   background: var(--md-surface);
+}
+.run-ex-doc-firm {
+  color: var(--md-on-surface-t);
+  font-weight: 500;
 }
 .run-ex-doc-meta {
   display: inline-flex;
@@ -9514,87 +9818,333 @@ select.qfilter {
   color: var(--md-on-surface-t);
   font-weight: 500;
 }
-.run-ex-canvas {
+/* Continuous scroll of white Letter pages (the source PDF is the hero). */
+.run-ex-scroll {
   flex: 1;
   min-height: 0;
   overflow: auto;
-  padding: 24px;
+  padding: 26px 20px 64px;
+}
+.run-ex-pages {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 22px;
 }
-.run-ex-sheet {
+.run-ex-page {
   position: relative;
-  width: 100%;
-  max-width: 620px;
-  min-height: 460px;
-  background: var(--md-surface);
-  border: 1px solid var(--md-outline-v);
-  border-radius: 6px;
-  box-shadow: var(--md-elev-1);
-  padding: 32px 34px;
-}
-.run-ex-sheet h4 {
-  font-family: var(--font-display);
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--md-on-surface);
-  margin-bottom: 14px;
-  letter-spacing: 0.01em;
-}
-.run-ex-sheet-body {
-  font-size: 13px;
-  line-height: 1.7;
-  color: var(--md-on-surface-v);
-  white-space: pre-line;
-}
-.run-ex-hl {
-  background: var(--md-warn-c);
-  color: var(--md-on-surface);
-  border-radius: 3px;
-  padding: 0 2px;
-}
-.run-ex-sheet-empty {
+  width: var(--page-w, 760px);
+  min-height: calc(var(--page-w, 760px) * 1.294); /* US-Letter proportion */
   display: flex;
   flex-direction: column;
+  background: var(--paper-bg);
+  color: var(--paper-ink);
+  border: 1px solid var(--paper-line);
+  border-radius: 3px;
+  box-shadow: var(--paper-elev);
+}
+.run-ex-page-head {
+  flex: none;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 48px;
+  border-bottom: 1px solid var(--paper-hair);
+  font-size: 10.5px;
+  color: var(--paper-ink-3);
+}
+.run-ex-page-head-firm {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.run-ex-page-head-sec {
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--paper-ink-2);
+  text-align: right;
+}
+
+/* Cover letterhead — the appraisal firm's masthead */
+.run-ex-letterhead {
+  display: flex;
   align-items: center;
-  gap: 8px;
-  color: var(--md-on-surface-t);
-  text-align: center;
-  padding: 40px 10px;
+  gap: 14px;
+  padding-bottom: 18px;
+  margin-bottom: 26px;
+  border-bottom: 2px solid var(--paper-ink);
 }
-.run-ex-pagenum {
-  font-size: 11px;
-  color: var(--md-on-surface-t);
-}
-.run-pin {
-  position: absolute;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
+.run-ex-lh-mark {
+  flex: none;
+  width: 46px;
+  height: 46px;
   display: grid;
   place-items: center;
-  font-size: 12px;
+  border-radius: 8px;
+  background: var(--paper-ink);
+  color: var(--paper-bg);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 16px;
+  letter-spacing: 0.04em;
+}
+.run-ex-lh-id {
+  flex: 1;
+  min-width: 0;
+}
+.run-ex-lh-name {
+  font-family: var(--font-display);
+  font-size: 19px;
   font-weight: 700;
-  color: #fff;
-  border: 2px solid var(--md-surface);
-  box-shadow: var(--md-elev-2);
+  letter-spacing: 0.01em;
+  color: var(--paper-ink);
+}
+.run-ex-lh-tag {
+  margin-top: 2px;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--paper-ink-3);
+}
+.run-ex-lh-contact {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  text-align: right;
+  font-size: 10.5px;
+  line-height: 1.5;
+  color: var(--paper-ink-3);
+}
+.run-ex-page-body {
+  flex: 1;
+  padding: 26px 52px 22px; /* generous right pad = the annotation gutter */
+}
+.run-ex-page-foot {
+  flex: none;
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 48px;
+  border-top: 1px solid var(--paper-hair);
+  font-size: 10px;
+  color: var(--paper-ink-3);
+}
+.run-ex-page-foot-n {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Cover page */
+.run-ex-page--cover .run-ex-page-body {
+  display: flex;
+  flex-direction: column;
+  padding: 44px 50px;
+}
+.run-ex-page--cover .run-doc-h {
+  font-size: 26px;
+  margin: 16px 0 4px;
+}
+.run-ex-page--cover .run-doc-p {
+  font-size: 14px;
+  color: var(--paper-ink-2);
+  margin-bottom: 22px;
+}
+
+/* Document typography */
+.run-doc-h {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--paper-ink);
+  margin: 18px 0 8px;
+  letter-spacing: 0.01em;
+}
+.run-doc-h:first-child {
+  margin-top: 0;
+}
+.run-doc-p {
+  font-size: 13.5px;
+  line-height: 1.78;
+  color: var(--paper-ink);
+  margin: 0 0 12px;
+}
+.run-doc-note {
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--paper-ink-2);
+  background: var(--paper-bg-1);
+  border: 1px solid var(--paper-hair);
+  border-radius: 6px;
+  padding: 9px 12px;
+  margin: 0 0 12px;
+}
+.run-doc-facts {
+  margin: 0 0 14px;
+  border: 1px solid var(--paper-line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.run-doc-fact {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--paper-hair);
+  font-size: 13px;
+}
+.run-doc-fact:last-child {
+  border-bottom: none;
+}
+.run-doc-fact dt {
+  color: var(--paper-ink-3);
+  font-weight: 600;
+}
+.run-doc-fact dd {
+  margin: 0;
+  color: var(--paper-ink);
+  font-weight: 600;
+  text-align: right;
+}
+.run-doc-tablewrap {
+  margin: 0 0 14px;
+}
+.run-doc-cap {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--paper-ink-3);
+  margin: 0 0 7px;
+}
+.run-doc-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+  border: 1px solid var(--paper-line);
+}
+.run-doc-table th,
+.run-doc-table td {
+  text-align: right;
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--paper-hair);
+  font-variant-numeric: tabular-nums;
+  color: var(--paper-ink);
+}
+.run-doc-table th {
+  background: var(--paper-bg-2);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  color: var(--paper-ink-2);
+}
+.run-doc-table th.is-label,
+.run-doc-table td.is-label {
+  text-align: left;
+  font-weight: 600;
+}
+.run-doc-table tbody tr:last-child td {
+  border-bottom: none;
+}
+.run-doc-tnote {
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--paper-ink-2);
+  margin: 7px 0 0;
+}
+.run-doc-figure {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 220px;
+  background: var(--paper-bg-1);
+  border: 1px dashed var(--paper-line);
+  border-radius: 8px;
+  color: var(--paper-ink-3);
+  margin: 0 0 18px;
+}
+.run-doc-figure-label {
+  font-size: 12px;
+  font-weight: 600;
+}
+.run-doc-figure-cap {
+  font-size: 12px;
+  color: var(--paper-ink-2);
+}
+
+/* Inline annotation = severity-tinted highlight + colored left edge */
+.run-anno {
+  border-radius: 2px;
+  padding: 1px 2px 1px 5px;
+  color: var(--paper-ink);
   cursor: pointer;
-  transform: translate(-50%, -50%);
+  background: var(--paper-warn-c);
+  box-shadow: inset 3px 0 0 var(--paper-warn);
+  transition: filter 0.15s ease;
+}
+.run-anno--crit {
+  background: var(--paper-crit-c);
+  box-shadow: inset 3px 0 0 var(--paper-crit);
+}
+.run-anno--fail {
+  background: var(--paper-err-c);
+  box-shadow: inset 3px 0 0 var(--paper-err);
+}
+.run-anno--flag {
+  background: var(--paper-warn-c);
+  box-shadow: inset 3px 0 0 var(--paper-warn);
+}
+.run-anno--pass {
+  background: var(--paper-ok-c);
+  box-shadow: inset 3px 0 0 var(--paper-ok);
+}
+.run-anno--na {
+  background: var(--paper-bg-2);
+  box-shadow: inset 3px 0 0 var(--paper-ink-3);
+}
+.run-anno:hover {
+  filter: brightness(0.97);
+}
+.run-anno.active {
+  outline: 2px solid var(--md-accent);
+  outline-offset: 1px;
+}
+
+/* Numbered tag in the right margin, aligned to the cited line */
+.run-anno-tag {
+  position: absolute;
+  right: 13px;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+  border: 2px solid var(--paper-bg);
+  box-shadow: var(--paper-elev);
+  cursor: pointer;
+  transform: translateY(-2px);
   transition: transform 0.12s ease;
 }
-.run-pin:hover {
-  transform: translate(-50%, -50%) scale(1.12);
+.run-anno-tag:hover {
+  transform: translateY(-2px) scale(1.12);
 }
-.run-pin.active {
-  outline: 3px solid color-mix(in srgb, var(--md-accent) 45%, transparent);
+.run-anno-tag.active {
+  outline: 2px solid var(--md-accent);
+  outline-offset: 2px;
 }
-.run-pin--crit { background: var(--md-crit); }
-.run-pin--fail { background: var(--md-error); }
-.run-pin--flag { background: var(--md-warn); color: #3a2c08; }
-.run-pin--pass { background: var(--md-success); }
-.run-pin--na { background: var(--md-on-surface-t); }
+.run-anno-tag--crit { background: var(--paper-crit); }
+.run-anno-tag--fail { background: var(--paper-err); }
+.run-anno-tag--flag { background: var(--paper-warn); color: var(--paper-ink); }
+.run-anno-tag--pass { background: var(--paper-ok); }
+.run-anno-tag--na { background: var(--paper-ink-3); }
 
 /* Exceptions thread */
 .run-ex-thread {

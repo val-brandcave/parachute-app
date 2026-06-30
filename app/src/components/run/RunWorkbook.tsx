@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { Button, Icon } from "@/components/atoms";
 import { useWorkspaceStore } from "@/store";
 import { WorkbookPreview } from "@/components/review/WorkbookPreview";
@@ -36,6 +36,28 @@ export function RunWorkbook({
   const [dismissed, setDismissed] = useState(false);
   const [customizing, setCustomizing] = useState(false);
 
+  // Document-toolbar state — zoom + a page indicator that tracks scroll.
+  const stageRef = useRef<HTMLDivElement>(null);
+  const [zoom, setZoom] = useState(1);
+  const [page, setPage] = useState(1);
+  const [pageCount, setPageCount] = useState(1);
+
+  // Count rendered sheets for "Page X of N"; a MutationObserver keeps it current
+  // as Customize toggles sections in/out.
+  useLayoutEffect(() => {
+    const sc = stageRef.current;
+    if (!sc) return;
+    const count = () => {
+      const n = sc.querySelectorAll(".wb-page").length;
+      if (n) setPageCount(n);
+    };
+    count();
+    if (typeof MutationObserver === "undefined") return;
+    const mo = new MutationObserver(count);
+    mo.observe(sc, { childList: true, subtree: true });
+    return () => mo.disconnect();
+  }, [ctx.ready]);
+
   const signed = !!signature;
   const blocked = ctx.pendingCount > 0;
 
@@ -45,10 +67,82 @@ export function RunWorkbook({
 
   const showCallout = !dismissed && !signed && ctx.lowConfidenceCount > 0;
 
+  const zoomBy = (d: number) =>
+    setZoom((z) => Math.min(1.5, Math.max(0.7, +(z + d).toFixed(2))));
+  const onStageScroll = () => {
+    const sc = stageRef.current;
+    if (!sc) return;
+    const top = sc.getBoundingClientRect().top;
+    let cur = 1;
+    sc.querySelectorAll<HTMLElement>(".wb-page").forEach((el, i) => {
+      if (el.getBoundingClientRect().top - top <= 120) cur = i + 1;
+    });
+    setPage(cur);
+  };
+  const goPage = (n: number) => {
+    const target = Math.min(Math.max(1, n), pageCount);
+    stageRef.current
+      ?.querySelectorAll<HTMLElement>(".wb-page")
+      [target - 1]?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   return (
     <div className="run-wb">
+      <div className="run-wb-bar">
+        <span className="run-wb-bar-label">
+          Workbook
+          <span className={`run-wb-bar-state run-wb-bar-state--${signed ? "final" : "draft"}`}>
+            · {signed ? "FINAL" : "DRAFT"}
+          </span>
+        </span>
+        <div className="run-ex-tools">
+          <div className="run-ex-ctl" role="group" aria-label="Zoom">
+            <button
+              className="run-ex-ctl-btn"
+              onClick={() => zoomBy(-0.1)}
+              disabled={zoom <= 0.7}
+              aria-label="Zoom out"
+            >
+              <Icon name="minus" size={15} />
+            </button>
+            <span className="run-ex-ctl-val">{Math.round(zoom * 100)}%</span>
+            <button
+              className="run-ex-ctl-btn"
+              onClick={() => zoomBy(0.1)}
+              disabled={zoom >= 1.5}
+              aria-label="Zoom in"
+            >
+              <Icon name="add" size={15} />
+            </button>
+          </div>
+          <span className="run-ex-tools-div" aria-hidden="true" />
+          <div className="run-ex-ctl" role="group" aria-label="Pages">
+            <button
+              className="run-ex-ctl-btn"
+              onClick={() => goPage(page - 1)}
+              disabled={page <= 1}
+              aria-label="Previous page"
+            >
+              <Icon name="chevron-left" size={16} />
+            </button>
+            <span className="run-ex-ctl-val">
+              Page {Math.min(page, pageCount)}
+              <span className="run-ex-ctl-of"> of {pageCount}</span>
+            </span>
+            <button
+              className="run-ex-ctl-btn"
+              onClick={() => goPage(page + 1)}
+              disabled={page >= pageCount}
+              aria-label="Next page"
+            >
+              <Icon name="chevron-right" size={16} />
+            </button>
+          </div>
+        </div>
+      </div>
+
       <div className="run-wb-main">
-        <div className="run-wb-stage scroll">
+        <div className="run-wb-stage scroll" ref={stageRef} onScroll={onStageScroll}>
           {embedded && (
             <div className="run-trust">
               <Icon name="sso" size={15} />
@@ -79,19 +173,21 @@ export function RunWorkbook({
             </div>
           )}
 
-          <WorkbookPreview
-            review={review}
-            findings={findings}
-            states={states}
-            exhibits={exhibits}
-            config={workbook}
-            recommendation={ctx.recommendation}
-            risk={ctx.risk}
-            reviewerName={ctx.reviewerName}
-            reviewedAt={review.orderedAt}
-            signature={signature}
-            filing={filing}
-          />
+          <div className="run-wb-zoom" style={{ zoom }}>
+            <WorkbookPreview
+              review={review}
+              findings={findings}
+              states={states}
+              exhibits={exhibits}
+              config={workbook}
+              recommendation={ctx.recommendation}
+              risk={ctx.risk}
+              reviewerName={ctx.reviewerName}
+              reviewedAt={review.orderedAt}
+              signature={signature}
+              filing={filing}
+            />
+          </div>
         </div>
 
         {customizing && <RunCustomizePanel onClose={() => setCustomizing(false)} />}

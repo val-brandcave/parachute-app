@@ -70,6 +70,7 @@ import {
   IconCopy,
   IconHistory,
   IconGripVertical,
+  IconScan,
   type Icon as TablerIcon,
 } from "@tabler/icons-react";
 import { ParachuteGlyph } from "./BrandGlyph";
@@ -147,6 +148,7 @@ export const ICONS = {
   copy: IconCopy,
   history: IconHistory,
   grip: IconGripVertical,
+  scan: IconScan,
 } satisfies Record<string, TablerIcon>;
 
 export type IconName = keyof typeof ICONS;

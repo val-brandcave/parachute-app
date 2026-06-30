@@ -326,10 +326,6 @@ export function WorkbookPreview({
     }
   }
 
-  // Number: body sections 1..N, appendices A, B, …
-  let num = 0;
-  let appx = 0;
-
   const draft = !signature;
   const scaleClass =
     settings.scale === "compact"
@@ -338,12 +334,93 @@ export function WorkbookPreview({
         ? " wb-doc--spacious"
         : "";
 
+  // Rough per-section height as a fraction of one Letter sheet — used to pack
+  // sections onto pages so the doc reads as a real multi-page PDF. Deterministic
+  // (no DOM measuring), so it's SSR-safe and re-packs when sections are toggled.
+  function estimateWeight(s: WbSection): number {
+    switch (s.type) {
+      case "summary":
+        return 0.5;
+      case "findings": {
+        const cats = s.categories ?? [];
+        const items = findings.filter(
+          (f) => cats.includes(f.category) && bodyDisps.includes(disp(f.id)),
+        );
+        return 0.16 + items.length * 0.14;
+      }
+      case "exhibits":
+        return 0.78;
+      case "sensitivity":
+        return 0.42;
+      case "swot":
+        return 0.5;
+      case "conditions":
+        return 0.16 + conditions.length * 0.1;
+      case "returns":
+        return 0.16 + returned.length * 0.15;
+      case "conclusion":
+        return 0.32 + actions.length * 0.07;
+      case "freeText":
+        return 0.3;
+      case "certification":
+        return 0.5;
+      default:
+        return 0.3;
+    }
+  }
+
+  // Number sections (body 1..N, appendices A, B…) and weight each — same order
+  // the Builder's list labels use.
+  let num = 0;
+  let appx = 0;
+  const labeled = built.map(({ s, node }) => ({
+    s,
+    node,
+    label: s.appendix ? `Appendix ${String.fromCharCode(65 + appx++)}` : String(++num),
+    weight: estimateWeight(s),
+  }));
+  type LabeledSection = (typeof labeled)[number];
+
+  // Greedy weight-packing into content pages (cover is page 1; content from 2).
+  // Budget runs ahead of 1.0 because the weights estimate conservatively — this
+  // keeps sections flowing onto a sheet until it's genuinely full (fewer, fuller
+  // pages) rather than breaking early and leaving the bottom empty.
+  const PAGE_BUDGET = 1.7;
+  const pages: LabeledSection[][] = [];
+  let cur: LabeledSection[] = [];
+  let sum = 0;
+  for (const it of labeled) {
+    if (cur.length && sum + it.weight > PAGE_BUDGET) {
+      pages.push(cur);
+      cur = [];
+      sum = 0;
+    }
+    cur.push(it);
+    sum += it.weight;
+  }
+  if (cur.length) pages.push(cur);
+  const totalPages = 1 + pages.length;
+
+  // Contents list — each rendered section to its 1-based page number.
+  const toc = pages.flatMap((pg, pi) =>
+    pg.map((it) => ({ id: it.s.id, label: it.label, title: it.s.title, pageNo: pi + 2 })),
+  );
+
+  const runHead = settings.showHeader ? (
+    <div className="wb-runhead">
+      <span className="wb-runhead-org">
+        {settings.showLogo && <Icon name="org" size={14} />}
+        {workbookHeader(review.bank)}
+      </span>
+      <span className="wb-runhead-doc">Technical Review Workbook</span>
+    </div>
+  ) : null;
+
   return (
     <article
       className={`wb-doc${draft ? " is-draft" : ""}${scaleClass}`}
       style={{ "--wb-accent": accent, "--wb-head": headingFont } as React.CSSProperties}
     >
-      {draft && <div className="wb-ribbon">Draft</div>}
       {filing && (
         <div className={`wb-filebar wb-filebar--${filing}`}>
           <Icon name={filing === "filed" ? "check-circle" : "undo"} size={16} />
@@ -353,66 +430,96 @@ export function WorkbookPreview({
         </div>
       )}
 
-      {/* running header strip (the org/document header) */}
-      {settings.showHeader && (
-        <div className="wb-runhead">
-          <span className="wb-runhead-org">
-            {settings.showLogo && <Icon name="org" size={14} />}
-            {workbookHeader(review.bank)}
-          </span>
-          <span className="wb-runhead-doc">Technical Review Workbook</span>
-        </div>
-      )}
+      {/* PAGE 1 — branded cover with the contents list */}
+      <section className="wb-page wb-page--cover">
+        {draft && <div className="wb-ribbon">Draft</div>}
+        <header className="wb-band">
+          <div className="wb-band-eyebrow">Technical Review Workbook</div>
+          <div className="wb-band-title" style={{ fontFamily: headingFont }}>
+            {review.propertyAddress}
+          </div>
+          <div className="wb-band-sub">
+            {review.propertyType} · Appraisal by {review.appraisalFirm} · Prepared for{" "}
+            {review.bank}
+          </div>
 
-      <header className="wb-band">
-        <div className="wb-band-eyebrow">Technical Review Workbook</div>
-        <div className="wb-band-title" style={{ fontFamily: headingFont }}>
-          {review.propertyAddress}
-        </div>
-        <div className="wb-band-sub">
-          {review.propertyType} · Appraisal by {review.appraisalFirm} · Prepared for {review.bank}
-        </div>
-
-        <div className="wb-band-bars">
-          <div className={`wb-rec-pill wb-rec-pill--${rec.tone}`}>
-            <Icon
-              name={rec.tone === "pass" ? "check-circle" : rec.tone === "flag" ? "checklist" : "clock"}
-              size={17}
-            />
-            Reviewer recommendation: {rec.label}
-            {conditions.length > 0 && rec.tone !== "info" && (
-              <span className="wb-rec-count">
-                {conditions.length} condition{conditions.length === 1 ? "" : "s"}
+          <div className="wb-band-bars">
+            <div className={`wb-pill wb-rec-pill wb-rec-pill--${rec.tone}`}>
+              <Icon
+                name={
+                  rec.tone === "pass" ? "check-circle" : rec.tone === "flag" ? "checklist" : "clock"
+                }
+                size={16}
+              />
+              <span className="wb-pill-text">
+                Reviewer recommendation: <b>{rec.label}</b>
+                {conditions.length > 0 && rec.tone !== "info" && (
+                  <span className="wb-rec-count">
+                    {conditions.length} condition{conditions.length === 1 ? "" : "s"}
+                  </span>
+                )}
               </span>
-            )}
+            </div>
+            <div className={`wb-pill wb-risk-pill wb-risk-pill--${risk}`}>
+              <Icon name="info" size={16} />
+              <span className="wb-pill-text">
+                <b>Risk: {riskMeta.label.replace(" Risk", "")}</b>
+                <span className="wb-risk-word">{riskWording}</span>
+              </span>
+            </div>
           </div>
-          <div className="wb-risk-pill" style={{ background: riskMeta.bg, color: riskMeta.color }}>
-            <Icon name="info" size={15} />
-            <b>Risk: {riskMeta.label.replace(" Risk", "")}</b>
-            <span className="wb-risk-word">{riskWording}</span>
+
+          <div className="wb-band-meta">
+            <Meta label="Loan #" value={review.loanNo} />
+            <Meta label="Effective Date" value={formatLongDate(value.effectiveDate)} />
+            <Meta label="Reviewer" value={reviewerName} />
+            <Meta label="Reviewed" value={formatLongDate(reviewedAt)} />
           </div>
+        </header>
+
+        {toc.length > 0 && (
+          <div className="wb-cover-toc">
+            <div className="wb-toc-h">Contents</div>
+            <ol className="wb-toc">
+              {toc.map((it) => (
+                <li key={it.id} className="wb-toc-row">
+                  <span className="wb-toc-n" style={{ fontFamily: "var(--wb-head)" }}>
+                    {it.label}
+                  </span>
+                  <span className="wb-toc-title">{it.title}</span>
+                  <span className="wb-toc-dots" aria-hidden="true" />
+                  <span className="wb-toc-pg">{it.pageNo}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        )}
+
+        <div className="wb-page-foot wb-page-foot--cover">
+          {settings.showFooter && <span>{WORKBOOK_FOOTER}</span>}
+          <span className="wb-page-foot-n">Page 1 of {totalPages}</span>
         </div>
+      </section>
 
-        <div className="wb-band-meta">
-          <Meta label="Loan #" value={review.loanNo} />
-          <Meta label="Effective Date" value={formatLongDate(value.effectiveDate)} />
-          <Meta label="Reviewer" value={reviewerName} />
-          <Meta label="Reviewed" value={formatLongDate(reviewedAt)} />
-        </div>
-      </header>
-
-      {built.map(({ s, node }) => {
-        const label = s.appendix
-          ? `Appendix ${String.fromCharCode(65 + appx++)}`
-          : String(++num);
-        return (
-          <Section key={s.id} id={s.id} label={label} title={s.title}>
-            {node}
-          </Section>
-        );
-      })}
-
-      {settings.showFooter && <footer className="wb-foot">{WORKBOOK_FOOTER}</footer>}
+      {/* Content pages — sections packed onto Letter sheets */}
+      {pages.map((pg, pi) => (
+        <section className="wb-page" key={`pg-${pi}`}>
+          {runHead}
+          <div className="wb-page-body">
+            {pg.map(({ s, node, label }) => (
+              <Section key={s.id} id={s.id} label={label} title={s.title}>
+                {node}
+              </Section>
+            ))}
+          </div>
+          <div className="wb-page-foot">
+            {settings.showFooter && <span>{WORKBOOK_FOOTER}</span>}
+            <span className="wb-page-foot-n">
+              Page {pi + 2} of {totalPages}
+            </span>
+          </div>
+        </section>
+      ))}
     </article>
   );
 }

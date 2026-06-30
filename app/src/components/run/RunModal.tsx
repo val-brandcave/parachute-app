@@ -24,6 +24,7 @@ import {
   sha256Hex,
 } from "@/lib/workbook";
 import { defaultWorkbookConfig } from "@/lib/workbook-config";
+import { PIPELINE_STAGES } from "@/lib/utils";
 import { RunWorkbook } from "./RunWorkbook";
 import { RunExceptions } from "./RunExceptions";
 import { RunSignModal } from "./RunSign";
@@ -240,8 +241,8 @@ export function RunModal() {
                     onReturn={finishReturn}
                   />
                 )}
-                {spoke === "exceptions" && (
-                  <RunExceptions reviewId={ctx.reviewId} onBack={() => go("workbook")} />
+                {spoke === "exceptions" && review && (
+                  <RunExceptions review={review} onBack={() => go("workbook")} />
                 )}
               </div>
             </div>
@@ -337,10 +338,39 @@ function RunNav({
 
 /* ----------------------------- S-E · Progress ----------------------------- */
 
-const PIPE_STAGES = ["Classify", "Reviewing", "Compile"] as const;
+/** Friendly, present-tense phrasing for each canonical pipeline stage
+ *  (Checklist · Validation · Consistency · Analytics · Policy — `PIPELINE_STAGES`).
+ *  Kept as a map keyed off that source so the order/count stay in lockstep. */
+const STAGE_COPY: Record<string, string> = {
+  Checklist: "Running the compliance checklist",
+  Validation: "Validating the appraisal data",
+  Consistency: "Checking internal consistency",
+  Analytics: "Analyzing valuation & market",
+  Policy: "Applying lender policy",
+};
+const RUN_STAGES = PIPELINE_STAGES.map((s) => STAGE_COPY[s] ?? s);
 
-/** Live progress: review is the long stretch, compile a quick final tick.
- *  Auto-advances to the workbook (the 90%-user "land on the workbook" goal). */
+/** Per-stage dwell (ms). Relaxed pacing — the active stage's bar fills over this
+ *  window before the next takes over; total ≈ 5 × this + a beat, then onDone. */
+const STAGE_MS = 1500;
+
+/** Staggered reveal for the hero column on mount. */
+const RUN_WRAP_V = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.09, delayChildren: 0.04 } },
+};
+const RUN_ITEM_V = {
+  hidden: { opacity: 0, y: 12 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.42, ease: "easeOut" } },
+} as const;
+
+/**
+ * Live progress (S-E): a scanning-document hero over a card of pipeline stages
+ * that fill one after another — each its own progress bar, with a check on
+ * completion and a pulsing dot on the active one. Review is the long stretch in
+ * production; here it's compressed and auto-advances to the workbook (the
+ * 90%-user "land on the workbook" goal). Framer Motion throughout.
+ */
 function RunProgress({
   docLabel,
   onDone,
@@ -351,41 +381,117 @@ function RunProgress({
   const [stage, setStage] = useState(0);
 
   useEffect(() => {
-    const t1 = setTimeout(() => setStage(1), 700);
-    const t2 = setTimeout(() => setStage(2), 2400);
-    const t3 = setTimeout(() => setStage(3), 3000);
-    const done = setTimeout(onDone, 3300);
-    return () => [t1, t2, t3, done].forEach(clearTimeout);
+    const timers = RUN_STAGES.map((_, i) =>
+      setTimeout(() => setStage(i + 1), STAGE_MS * (i + 1)),
+    );
+    const done = setTimeout(onDone, STAGE_MS * RUN_STAGES.length + 700);
+    return () => {
+      timers.forEach(clearTimeout);
+      clearTimeout(done);
+    };
   }, [onDone]);
 
   return (
     <div className="run-progress">
-      <div className="run-progress-inner">
-        <span className="run-progress-spinner" aria-hidden="true" />
-        <h2 className="run-progress-title">Reviewing your appraisal…</h2>
-        {docLabel && <p className="run-progress-doc">{docLabel}</p>}
+      <motion.div
+        className="run-progress-inner"
+        variants={RUN_WRAP_V}
+        initial="hidden"
+        animate="show"
+      >
+        {/* Scanning-document hero */}
+        <motion.div className="run-scan" variants={RUN_ITEM_V} aria-hidden="true">
+          <span className="run-scan-glow" />
+          <Icon name="scan" size={30} />
+          <motion.span
+            className="run-scan-line"
+            animate={{ y: [-18, 18, -18] }}
+            transition={{ duration: 2.1, ease: "easeInOut", repeat: Infinity }}
+          />
+        </motion.div>
 
-        <div className="run-pipe" role="status" aria-live="polite">
-          {PIPE_STAGES.map((label, i) => {
-            const state = stage > i ? "done" : stage === i ? "active" : "idle";
+        <motion.h2 className="run-progress-title" variants={RUN_ITEM_V}>
+          Reviewing your appraisal…
+        </motion.h2>
+        {docLabel && (
+          <motion.p className="run-progress-doc" variants={RUN_ITEM_V}>
+            {docLabel}
+          </motion.p>
+        )}
+
+        {/* Stage card — each row fills in turn */}
+        <motion.div
+          className="run-stages"
+          variants={RUN_ITEM_V}
+          role="status"
+          aria-live="polite"
+        >
+          {RUN_STAGES.map((label, i) => {
+            const done = i < stage;
+            const active = i === stage;
+            const state = done ? "done" : active ? "active" : "idle";
             return (
-              <div key={label} className={`run-pipe-seg run-pipe-seg--${state}`}>
-                {state === "done" ? <Icon name="check" size={14} /> : null}
-                {label}
-                {state === "active" ? "…" : ""}
+              <div key={label} className={`run-st run-st--${state}`}>
+                <div className="run-st-row">
+                  <span className="run-st-label">{label}</span>
+                  <span className="run-st-ind">
+                    <AnimatePresence initial={false}>
+                      {done ? (
+                        <motion.span
+                          key="done"
+                          className="run-st-check"
+                          initial={{ scale: 0, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          exit={{ scale: 0, opacity: 0 }}
+                          transition={{ type: "spring", stiffness: 520, damping: 24 }}
+                        >
+                          <Icon name="check-circle" size={18} />
+                        </motion.span>
+                      ) : active ? (
+                        <motion.span
+                          key="active"
+                          className="run-st-dot"
+                          initial={{ scale: 0.4, opacity: 0 }}
+                          animate={{
+                            scale: [1, 0.6, 1],
+                            opacity: [1, 0.5, 1],
+                          }}
+                          exit={{ scale: 0, opacity: 0 }}
+                          transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
+                        />
+                      ) : (
+                        <motion.span
+                          key="idle"
+                          className="run-st-ring"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                        />
+                      )}
+                    </AnimatePresence>
+                  </span>
+                </div>
+                <span className="run-st-bar">
+                  <motion.span
+                    className="run-st-bar-fill"
+                    initial={{ width: "0%" }}
+                    animate={{ width: done || active ? "100%" : "0%" }}
+                    transition={{
+                      duration: active ? STAGE_MS / 1000 : done ? 0.3 : 0.2,
+                      ease: active ? "easeInOut" : "easeOut",
+                    }}
+                  />
+                </span>
               </div>
             );
           })}
-        </div>
+        </motion.div>
 
-        <p className="run-progress-note">
-          Review is the long stretch (~10–20 min); compile is a quick final tick.
-        </p>
-        <div className="run-progress-leave">
+        <motion.div className="run-progress-leave" variants={RUN_ITEM_V}>
           <Icon name="bell" size={15} /> We&rsquo;ll notify you when it&rsquo;s ready —
           you can leave.
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </div>
   );
 }
