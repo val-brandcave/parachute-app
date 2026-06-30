@@ -9561,7 +9561,9 @@ select.qfilter {
   place-items: center;
   font-size: 11px;
   font-weight: 700;
-  color: var(--md-on-primary);
+  /* dark ink reads on the gold/warn fill in both themes (white was low-contrast,
+     esp. in dark mode where warn is a light tint); matches .run-ex-num--flag */
+  color: #3a2c08;
   background: var(--md-warn);
 }
 .run-nav-status {
@@ -10541,7 +10543,8 @@ select.qfilter {
   height: 48px;
   display: flex;
   align-items: center;
-  padding: 0 16px;
+  justify-content: space-between;
+  padding: 0 10px 0 16px;
   border-bottom: 1px solid var(--md-outline-v);
 }
 .run-ex-thread-title {
@@ -10579,6 +10582,9 @@ select.qfilter {
 .run-ex-item.active {
   background: var(--md-surface-1);
 }
+.run-ex-item:not(.active):hover {
+  background: var(--md-surface-1);
+}
 .run-ex-item-head {
   display: flex;
   align-items: center;
@@ -10606,6 +10612,11 @@ select.qfilter {
 .run-ex-num--flag { background: var(--md-warn); color: #3a2c08; }
 .run-ex-num--pass { background: var(--md-success); }
 .run-ex-num--na { background: var(--md-on-surface-t); }
+/* In dark mode the severity fills are light pastels (success/error/crit/warn),
+   so white numbers go low-contrast — flip the number to a dark ink. */
+:root[data-theme="dark"] .run-ex-num {
+  color: var(--md-surface);
+}
 .run-ex-item-title {
   flex: 1;
   font-size: 13px;
@@ -10623,6 +10634,16 @@ select.qfilter {
 .run-ex-state--override { background: var(--md-warn); }
 .run-ex-state--rejected { background: var(--md-error); }
 .run-ex-state--commented { background: var(--md-info); }
+/* disclosure chevron — points right when collapsed, rotates down when open */
+.run-ex-chev {
+  flex: none;
+  color: var(--md-on-surface-t);
+  transform: rotate(-90deg);
+  transition: transform 0.2s ease;
+}
+.run-ex-chev.open {
+  transform: rotate(0deg);
+}
 .run-ex-item-body {
   padding: 0 14px 14px 43px;
 }
@@ -10686,11 +10707,18 @@ select.qfilter {
   font-size: 12px;
   font-style: italic;
   color: var(--md-on-surface-v);
-  background: var(--md-surface-1);
-  border-left: 2px solid var(--md-outline);
-  border-radius: 0 6px 6px 0;
-  padding: 8px 11px;
-  margin: 0 0 11px;
+  background: var(--md-surface-2);
+  border: 1px solid var(--md-outline-v);
+  border-left: 2px solid var(--md-accent);
+  border-radius: 6px;
+  padding: 9px 11px;
+  margin: 0 0 12px;
+}
+/* separates the AI's finding (above) from the reviewer's decision zone (below) */
+.run-ex-divider {
+  height: 1px;
+  background: var(--md-outline-v);
+  margin: 0 0 12px;
 }
 .run-ex-actions {
   display: flex;

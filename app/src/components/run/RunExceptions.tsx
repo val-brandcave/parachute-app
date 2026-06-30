@@ -2,6 +2,7 @@
 
 import { Fragment, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Button, Icon } from "@/components/atoms";
+import { ActionMenu } from "@/components/molecules";
 import { useWorkspaceStore } from "@/store";
 import { buildAppraisalDoc, type DocBlock, type DocRun } from "@/data/appraisal-doc";
 import { valueSummary, formatLongDate } from "@/lib/workbook";
@@ -130,6 +131,16 @@ export function RunExceptions({ review, onBack }: { review: Review; onBack: () =
     setPicked(id);
     const el = scrollRef.current?.querySelector<HTMLElement>(`#anno-${id}`);
     el?.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
+
+  // Bulk action — accept every finding that hasn't been decided yet (leaves
+  // any already overridden/flagged untouched).
+  const agreeAll = () => {
+    findings.forEach((f) => {
+      if ((states[f.id]?.disposition ?? "pending") === "pending") {
+        setDisposition(f.id, "accepted");
+      }
+    });
   };
 
   // Track which page is in view → the page counter.
@@ -379,6 +390,10 @@ export function RunExceptions({ review, onBack }: { review: Review; onBack: () =
             Findings
             <span className="run-ex-count">{exceptions.length}</span>
           </span>
+          <ActionMenu
+            tooltip="More actions"
+            items={[{ label: "Agree with all", icon: "check-all", onClick: agreeAll }]}
+          />
         </div>
 
         <div className="run-ex-list scroll">
@@ -401,6 +416,11 @@ export function RunExceptions({ review, onBack }: { review: Review; onBack: () =
                   <span className={`run-ex-num run-ex-num--${sev.tone}`}>{i + 1}</span>
                   <span className="run-ex-item-title">{f.category}</span>
                   <span className={`run-ex-state run-ex-state--${disp}`} aria-hidden="true" />
+                  <Icon
+                    name="chevron-down"
+                    size={16}
+                    className={`run-ex-chev${active ? " open" : ""}`}
+                  />
                 </button>
 
                 {active && (
@@ -421,6 +441,8 @@ export function RunExceptions({ review, onBack }: { review: Review; onBack: () =
                     <blockquote className="run-ex-evidence">
                       <Icon name="quote" size={13} /> {f.evidence}
                     </blockquote>
+
+                    <div className="run-ex-divider" />
 
                     <div className="run-ex-actions">
                       <button
