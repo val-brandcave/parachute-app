@@ -9296,15 +9296,16 @@ select.qfilter {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   padding: 40px 24px;
 }
 .run-cf-inner {
   width: 100%;
-  max-width: 720px;
+  max-width: 640px;
+  margin: 0 auto; /* horizontal only — vertical margin:auto on a flex child traps the scroll */
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 .run-cf-head {
   text-align: center;
@@ -9323,22 +9324,18 @@ select.qfilter {
 .run-cf-card {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 18px;
+  gap: 13px;
+  padding: 16px 18px;
   background: var(--md-surface);
   border: 1px solid var(--md-outline-v);
-  border-radius: 16px;
-  box-shadow: var(--md-elev-2);
+  border-radius: 14px;
+  box-shadow: var(--md-elev-1);
 }
-.run-cf-filebar {
-  display: flex;
+.run-cf-card--file {
+  flex-direction: row;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 12px 14px;
-  background: var(--md-surface-1);
-  border: 1px solid var(--md-outline-v);
-  border-radius: 10px;
 }
 .run-cf-file {
   display: inline-flex;
@@ -9396,90 +9393,149 @@ select.qfilter {
 .run-cf-wide {
   grid-column: 1 / 3;
 }
-.run-cf-types {
+/* ---- Type-first confirm gate: one card per section (D2) ---- */
+.run-cf-card-head {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--md-on-surface);
+}
+.run-cf-card-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--md-on-surface-t);
+}
+.run-cf-card-note > svg {
+  flex: none;
+  color: var(--md-accent);
+}
+/* Review type — full-row selectable checklist. */
+.run-cf-opts {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
-.run-cf-types-label {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.4px;
-  text-transform: uppercase;
-  color: var(--md-on-surface-t);
-}
-.run-cf-types-opts {
-  display: flex;
-  gap: 10px;
-}
-.run-cf-type {
-  flex: 1;
+.run-cf-opt {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 11px;
+  width: 100%;
   padding: 12px 14px;
-  border-radius: 10px;
   border: 1px solid var(--md-outline);
+  border-radius: 10px;
   background: var(--md-surface);
-  color: var(--md-on-surface-v);
-  font-size: 13px;
+  color: var(--md-on-surface);
+  font-size: 13.5px;
   font-weight: 600;
   text-align: left;
   cursor: pointer;
+  transition:
+    background 0.14s ease,
+    border-color 0.14s ease,
+    color 0.14s ease;
 }
-.run-cf-type:hover:not(.run-cf-type--locked):not(.on) {
+.run-cf-opt:hover:not(.is-on):not(.is-locked):not(.is-soon) {
   background: var(--md-surface-1);
+  border-color: var(--md-on-surface-t);
 }
-.run-cf-type.on {
-  border-color: var(--md-selected);
+.run-cf-opt.is-on {
+  border-color: var(--md-primary);
   background: var(--md-selected);
   color: var(--md-on-selected);
 }
-.run-cf-type--locked {
+.run-cf-opt.is-locked {
   cursor: default;
 }
-.run-cf-type > svg {
-  flex: none;
+.run-cf-opt.is-soon {
+  cursor: default;
+  border-style: dashed;
+  border-color: var(--md-outline-v);
+  background: var(--md-surface-1);
+  color: var(--md-on-surface-t);
 }
-.run-cf-type-text {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  line-height: 1.25;
-}
-/* Consistent checkbox affordance on every option (empty → checked). */
-.run-cf-check {
+/* Square check affordance — fills navy when selected. */
+.run-cf-opt-box {
   flex: none;
   width: 20px;
   height: 20px;
-  display: grid;
-  place-items: center;
   border-radius: 6px;
-  border: 1.5px solid var(--md-outline);
+  border: 1.6px solid var(--md-outline);
   background: var(--md-surface);
   color: transparent;
+  display: grid;
+  place-items: center;
   transition:
-    background 0.12s ease,
-    border-color 0.12s ease,
-    color 0.12s ease;
+    background 0.14s ease,
+    border-color 0.14s ease,
+    color 0.14s ease;
 }
-.run-cf-type.on .run-cf-check {
-  border-color: var(--md-on-selected);
-  background: var(--md-on-selected);
-  color: var(--md-selected);
+.run-cf-opt.is-on .run-cf-opt-box {
+  background: var(--md-primary);
+  border-color: var(--md-primary);
+  color: var(--md-on-primary);
 }
-.run-cf-type-sub {
-  font-size: 11.5px;
+.run-cf-opt.is-soon .run-cf-opt-box {
+  border-style: dashed;
+}
+.run-cf-opt-label {
+  flex: 1;
+}
+.run-cf-opt-soon {
+  margin-left: 6px;
   font-weight: 500;
-  opacity: 0.78;
-  margin-top: 1px;
+  color: var(--md-on-surface-t);
 }
-.run-cf-types-hint {
+.run-cf-opt-tag {
+  flex: none;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--md-on-surface-t);
+}
+.run-cf-opt.is-on .run-cf-opt-tag {
+  color: var(--md-on-selected);
+  opacity: 0.7;
+}
+.run-cf-inherited {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 12px;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 11px;
+  border-radius: 9px;
+  background: var(--md-surface);
+  border: 1px solid var(--md-outline-v);
+  font-size: 12.5px;
+  color: var(--md-on-surface-v);
+}
+.run-cf-inherited-val {
+  font-weight: 700;
+  color: var(--md-on-surface);
+}
+.run-cf-inherited-tag {
+  flex: none;
+  font-size: 11px;
   color: var(--md-on-surface-t);
+}
+.run-cf-policy {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  width: fit-content;
+  padding: 8px 11px;
+  border-radius: 9px;
+  border: 1px dashed var(--md-outline);
+  background: var(--md-surface);
+  font-size: 12px;
+  color: var(--md-on-surface-v);
+  cursor: pointer;
+}
+.run-cf-policy:hover {
+  background: var(--md-surface-1);
+}
+.run-cf-policy > svg {
+  flex: none;
+  color: var(--md-accent);
 }
 .run-cf-foot {
   display: flex;
@@ -9487,8 +9543,6 @@ select.qfilter {
   justify-content: space-between;
   gap: 12px;
   margin-top: 2px;
-  padding-top: 14px;
-  border-top: 1px solid var(--md-outline-v);
 }
 
 /* ---- Left sidebar nav (Workbook · Exceptions) + status ---- */

@@ -55,8 +55,19 @@ export interface RunContext {
  */
 export function RunModal() {
   const router = useRouter();
-  const { open, reviewId, spoke, docLabel, display, source, go, close, setDisplay, setReviewTypes } =
-    useRunStore();
+  const {
+    open,
+    reviewId,
+    spoke,
+    docLabel,
+    display,
+    source,
+    go,
+    close,
+    setDisplay,
+    setReviewTypes,
+    setChecklistId,
+  } = useRunStore();
   const mode = useSessionStore((s) => s.mode);
   const returnLabel = useSessionStore((s) => s.returnLabel);
   const resetSession = useSessionStore((s) => s.reset);
@@ -174,11 +185,17 @@ export function RunModal() {
     }
   };
 
-  // Confirm gate → commit the verified identity + review type, then kick off the
-  // AI review (S-E progress, which auto-advances to the workbook).
-  const startReview = (d: RunDisplay, types: RunReviewType[]) => {
+  // Confirm gate → commit the verified identity + review type(s) + the chosen
+  // compliance checklist, then kick off the AI review (S-E progress, which
+  // auto-advances to the workbook).
+  const startReview = (
+    d: RunDisplay,
+    types: RunReviewType[],
+    opts?: { checklistId?: string | null },
+  ) => {
     setDisplay(d);
     setReviewTypes(types);
+    setChecklistId(opts?.checklistId ?? null);
     go("progress");
   };
 

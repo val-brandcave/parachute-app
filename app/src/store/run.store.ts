@@ -16,9 +16,20 @@ export type RunSpoke =
 /** How the run was started — drives the confirm step's source-aware framing. */
 export type RunSource = "drop" | "yc";
 
-/** Review types this run covers. Technical is the built path; Administrative is
- *  captured here for later (its downstream workspace is a future task). */
-export type RunReviewType = "technical" | "administrative";
+/** Review types this run covers. The confirm gate is driven by a generic
+ *  `ReviewTypeSpec` registry (see `RunConfirm`); this union is the registry's id
+ *  space so future types slot in without re-typing. Only `technical` +
+ *  `administrative` are *live* today — the rest render as "coming soon" cards and
+ *  are never selectable yet. Technical is the built path; Administrative is
+ *  captured for its (future) downstream workspace. */
+export type RunReviewType =
+  | "technical"
+  | "administrative"
+  | "evaluation"
+  | "vendor_short"
+  | "property_type_tech"
+  | "environmental"
+  | "residential";
 
 /** The seeded demo review that drives the run flow's findings + workbook. A
  *  dropped/standalone file is cosmetic in the prototype — the content is real
@@ -46,6 +57,10 @@ interface RunState {
   display: RunDisplay | null;
   source: RunSource | null;
   reviewTypes: RunReviewType[];
+  /** Compliance checklist chosen at the confirm gate (Administrative only).
+   *  Null = use the org-default. Defaults live in Templates; an explicit pick is
+   *  a per-order override (audited), same rule as the Order flow. */
+  checklistId: string | null;
   openRun: (
     reviewId: string,
     opts?: {
@@ -58,6 +73,7 @@ interface RunState {
   /** Commit the confirmed identity (from the confirm gate) for the rest of the run. */
   setDisplay: (display: RunDisplay) => void;
   setReviewTypes: (types: RunReviewType[]) => void;
+  setChecklistId: (id: string | null) => void;
   go: (spoke: RunSpoke) => void;
   close: () => void;
 }
@@ -70,6 +86,7 @@ export const useRunStore = create<RunState>((set) => ({
   display: null,
   source: null,
   reviewTypes: ["technical"],
+  checklistId: null,
   openRun: (reviewId, opts) =>
     set({
       open: true,
@@ -79,9 +96,11 @@ export const useRunStore = create<RunState>((set) => ({
       display: opts?.display ?? null,
       source: opts?.source ?? null,
       reviewTypes: ["technical"],
+      checklistId: null,
     }),
   setDisplay: (display) => set({ display }),
   setReviewTypes: (reviewTypes) => set({ reviewTypes }),
+  setChecklistId: (checklistId) => set({ checklistId }),
   go: (spoke) => set({ spoke }),
   close: () => set({ open: false }),
 }));

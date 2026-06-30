@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { Button, Icon, YouConnectGlyph } from "@/components/atoms";
+import { useTemplatesStore } from "@/store";
+import { inheritedLayout, profileFor } from "@/lib/workbook";
 import type { Review } from "@/types";
 import type { RunDisplay, RunReviewType, RunSource } from "@/store";
 
@@ -23,6 +25,64 @@ const PROP_TYPES = [
 /** Mock source-document length for the parsed-file chip. */
 const MOCK_PAGES = 74;
 
+/**
+ * Which field-group a review type contributes to the confirm form. The form
+ * renders the UNION of groups across the selected *live* types (deduping the
+ * shared `identity` group). A future non-property type ships with
+ * `propertyBased: false` and no `identity` group — the forcing function for the
+ * property-vs-entity decision (still open).
+ */
+type FieldGroup = "identity" | "technical" | "administrative";
+
+interface ReviewTypeSpec {
+  id: RunReviewType;
+  label: string;
+  status: "live" | "soon";
+  propertyBased: boolean;
+  locked?: boolean; // always-on, can't be toggled off (Technical, MVP)
+  defaultOn?: boolean; // selected by default
+  fieldGroups: FieldGroup[];
+}
+
+/**
+ * Generic review-type registry. Only the two `live` specs are selectable today;
+ * a short "coming soon" tail names the next types on Ed's roadmap. Names only —
+ * no icons/descriptions in the picker. Add a type by adding a spec (the picker,
+ * union form, and store id-space all follow).
+ */
+const REVIEW_TYPES: ReviewTypeSpec[] = [
+  {
+    id: "technical",
+    label: "Technical",
+    status: "live",
+    propertyBased: true,
+    locked: true,
+    defaultOn: true,
+    fieldGroups: ["identity", "technical"],
+  },
+  {
+    id: "administrative",
+    label: "Administrative",
+    status: "live",
+    propertyBased: true,
+    fieldGroups: ["identity", "administrative"],
+  },
+  {
+    id: "evaluation",
+    label: "Evaluation",
+    status: "soon",
+    propertyBased: true,
+    fieldGroups: ["identity"],
+  },
+  {
+    id: "vendor_short",
+    label: "Vendor short form",
+    status: "soon",
+    propertyBased: false,
+    fieldGroups: [],
+  },
+];
+
 const WRAP_V = {
   hidden: {},
   show: { transition: { staggerChildren: 0.06, delayChildren: 0.04 } },
@@ -34,11 +94,15 @@ const ITEM_V = {
 
 /**
  * Pre-review confirm gate — a source-aware "fast confirm" of the values the AI
- * extracted before the review runs. Full-page (no side nav, like Progress); a
- * single centered card. Nothing is required (fields are pre-filled), so the
- * happy path is one click to Start. Drop reads "review & correct"; a YouConnect
- * delivery reads "confirm & run". Technical is the built review type;
- * Administrative is an optional capture for later.
+ * extracted, before the review runs. Full-page (no side nav, like Progress); a
+ * single centered card.
+ *
+ * Type-first (D2): the **review type drives the inputs**, not the other way
+ * round. You pick what to review (name-only pills — Technical locked-on,
+ * Administrative a toggle, a couple "coming soon"); the form below is the union
+ * of the selected types' field groups — shared Property identity once, plus a
+ * per-type setup section that fades in. Lean scope: identity + type + checklist
+ * only; assignee/due/priority stay in the heavier Order flow.
  */
 export function RunConfirm({
   review,
@@ -50,23 +114,59 @@ export function RunConfirm({
   review: Review;
   docLabel: string | null;
   source: RunSource | null;
-  onStart: (display: RunDisplay, types: RunReviewType[]) => void;
+  onStart: (
+    display: RunDisplay,
+    types: RunReviewType[],
+    opts?: { checklistId?: string | null },
+  ) => void;
   onCancel: () => void;
 }) {
   const yc = source === "yc";
+
+  const checklists = useTemplatesStore((s) => s.checklists);
+  const layouts = useTemplatesStore((s) => s.layouts);
 
   const [address, setAddress] = useState(review.propertyAddress ?? "");
   const [propertyType, setPropertyType] = useState(review.propertyType ?? PROP_TYPES[0]);
   const [bank, setBank] = useState(review.bank ?? "");
   const [loanNo, setLoanNo] = useState(review.loanNo ?? "");
   const [firm, setFirm] = useState(review.appraisalFirm ?? "");
-  const [admin, setAdmin] = useState(false);
 
-  const canStart = address.trim().length > 0;
+  // Selected *live* types (Technical locked-on by default).
+  const [selected, setSelected] = useState<RunReviewType[]>(
+    REVIEW_TYPES.filter((s) => s.status === "live" && (s.locked || s.defaultOn)).map((s) => s.id),
+  );
+
+  // Compliance checklist pick (Administrative). Null falls back to org-default.
+  const defaultChecklist = checklists.find((c) => c.isDefault) ?? checklists[0];
+  const [checklistId, setChecklistId] = useState<string | null>(null);
+  const effectiveChecklistId = checklistId ?? defaultChecklist?.id ?? null;
+
+  // Optional bank policy doc (the fine-tuning context banks supply). Cosmetic.
+  const [policyDoc, setPolicyDoc] = useState<string | null>(null);
+
+  const isSel = (id: RunReviewType) => selected.includes(id);
+  const toggle = (spec: ReviewTypeSpec) => {
+    if (spec.locked || spec.status !== "live") return;
+    setSelected((prev) =>
+      prev.includes(spec.id) ? prev.filter((x) => x !== spec.id) : [...prev, spec.id],
+    );
+  };
+
+  // The form's field groups = union across the selected types.
+  const selectedSpecs = REVIEW_TYPES.filter((s) => selected.includes(s.id));
+  const showIdentity = selectedSpecs.some((s) => s.fieldGroups.includes("identity"));
+  const showTechnical = isSel("technical");
+  const showAdmin = isSel("administrative");
+
+  // Technical config = the inherited org workbook layout for this property's profile
+  // (read-only here; authored in Templates) — same model as the Order flow.
+  const layout = inheritedLayout(layouts, profileFor(propertyType));
+
+  const canStart = !showIdentity || address.trim().length > 0;
 
   const start = () => {
     if (!canStart) return;
-    const types: RunReviewType[] = admin ? ["technical", "administrative"] : ["technical"];
     onStart(
       {
         address: address.trim(),
@@ -75,7 +175,8 @@ export function RunConfirm({
         loanNo: loanNo.trim(),
         firm: firm.trim(),
       },
-      types,
+      selected,
+      { checklistId: showAdmin ? effectiveChecklistId : null },
     );
   };
 
@@ -83,133 +184,188 @@ export function RunConfirm({
     <div className="run-cf scroll">
       <motion.div className="run-cf-inner" variants={WRAP_V} initial="hidden" animate="show">
         <motion.div className="run-cf-head" variants={ITEM_V}>
-          <h2 className="run-cf-title">
-            {yc ? "Confirm the details" : "Confirm appraisal details"}
-          </h2>
+          <h2 className="run-cf-title">{yc ? "Confirm & set up the review" : "Set up this review"}</h2>
           <p className="run-cf-sub">
             {yc
-              ? "Pulled from YouConnect — confirm and run the review."
-              : "Review the auto-filled values, then start the review."}
+              ? "Pulled from YouConnect — choose what to review, confirm the details, and run."
+              : "Choose what to review, check the auto-filled details, then run."}
           </p>
         </motion.div>
 
-        <motion.div className="run-cf-card" variants={ITEM_V}>
-          <div className="run-cf-filebar">
-            <span className="run-cf-file">
-              <Icon name="pdf" size={18} />
-              <span className="run-cf-file-name">{docLabel ?? "Appraisal.pdf"}</span>
-              <span className="run-cf-file-meta">· {MOCK_PAGES} pages</span>
+        {/* Card — the source file. */}
+        <motion.div className="run-cf-card run-cf-card--file" variants={ITEM_V}>
+          <span className="run-cf-file">
+            <Icon name="pdf" size={18} />
+            <span className="run-cf-file-name">{docLabel ?? "Appraisal.pdf"}</span>
+            <span className="run-cf-file-meta">· {MOCK_PAGES} pages</span>
+          </span>
+          {yc ? (
+            <span className="run-cf-tag run-cf-tag--yc">
+              <YouConnectGlyph size={14} /> From YouConnect
             </span>
-            {yc ? (
-              <span className="run-cf-tag run-cf-tag--yc">
-                <YouConnectGlyph size={14} /> From YouConnect
-              </span>
-            ) : (
-              <span className="run-cf-tag run-cf-tag--parsed">
-                <Icon name="check-circle" size={15} /> parsed
-              </span>
-            )}
+          ) : (
+            <span className="run-cf-tag run-cf-tag--parsed">
+              <Icon name="check-circle" size={15} /> parsed
+            </span>
+          )}
+        </motion.div>
+
+        {/* Card — review type (drives the inputs below). */}
+        <motion.div className="run-cf-card" variants={ITEM_V}>
+          <span className="run-cf-card-head">What do you want to review?</span>
+          <div className="run-cf-opts">
+            {REVIEW_TYPES.map((spec) => {
+              const soon = spec.status === "soon";
+              const on = !soon && isSel(spec.id);
+              const cls = `run-cf-opt${on ? " is-on" : ""}${
+                spec.locked ? " is-locked" : ""
+              }${soon ? " is-soon" : ""}`;
+              const body = (
+                <>
+                  <span className="run-cf-opt-box" aria-hidden="true">
+                    {on && <Icon name="check" size={14} />}
+                  </span>
+                  <span className="run-cf-opt-label">
+                    {spec.label}
+                    {soon && <span className="run-cf-opt-soon">(coming soon)</span>}
+                  </span>
+                  {spec.locked && <span className="run-cf-opt-tag">Always included</span>}
+                </>
+              );
+              return soon ? (
+                <div key={spec.id} className={cls} aria-disabled="true">
+                  {body}
+                </div>
+              ) : (
+                <button
+                  key={spec.id}
+                  type="button"
+                  className={cls}
+                  role="checkbox"
+                  aria-checked={on}
+                  aria-disabled={spec.locked || undefined}
+                  onClick={() => toggle(spec)}
+                >
+                  {body}
+                </button>
+              );
+            })}
           </div>
+        </motion.div>
 
-          <p className="run-cf-note">
-            {yc ? (
-              <>
-                <Icon name="connect" size={14} /> Delivered from YouConnect — verify the details
-                below, then run.
-              </>
-            ) : (
-              <>
-                <Icon name="ai" size={14} /> Auto-filled from the appraisal — review and correct
-                before continuing.
-              </>
-            )}
-          </p>
-
-          <div className="run-cf-form">
-            <label className="field run-cf-wide">
-              <span>Property address</span>
-              <input value={address} onChange={(e) => setAddress(e.target.value)} />
-            </label>
-            <label className="field">
-              <span>Property type</span>
-              <select value={propertyType} onChange={(e) => setPropertyType(e.target.value)}>
-                {PROP_TYPES.map((t) => (
-                  <option key={t}>{t}</option>
-                ))}
-              </select>
-            </label>
-            <label className="field">
-              <span>Client / Lender</span>
-              <input value={bank} onChange={(e) => setBank(e.target.value)} />
-            </label>
-            <label className="field">
-              <span>Loan number</span>
-              <input value={loanNo} onChange={(e) => setLoanNo(e.target.value)} />
-            </label>
-            <label className="field">
-              <span>Appraiser firm</span>
-              <input value={firm} onChange={(e) => setFirm(e.target.value)} />
-            </label>
-          </div>
-
-          <div className="run-cf-types">
-            <span className="run-cf-types-label">Review type</span>
-            <div className="run-cf-types-opts">
-              <span
-                className="run-cf-type on run-cf-type--locked"
-                role="checkbox"
-                aria-checked="true"
-                aria-disabled="true"
-                title="Technical review is always included"
-              >
-                <Icon name="reviews" size={16} />
-                <span className="run-cf-type-text">
-                  Technical
-                  <span className="run-cf-type-sub">Appraisal quality &amp; methodology</span>
-                </span>
-                <span className="run-cf-check" aria-hidden="true">
-                  <Icon name="check" size={13} />
-                </span>
-              </span>
-              <button
-                type="button"
-                className={`run-cf-type${admin ? " on" : ""}`}
-                role="checkbox"
-                aria-checked={admin}
-                onClick={() => setAdmin((v) => !v)}
-              >
-                <Icon name="checklist" size={16} />
-                <span className="run-cf-type-text">
-                  Administrative
-                  <span className="run-cf-type-sub">Compliance checklist &amp; attestations</span>
-                </span>
-                <span className="run-cf-check" aria-hidden="true">
-                  <Icon name="check" size={13} />
-                </span>
-              </button>
+        {/* Card — property details (shared identity group). */}
+        {showIdentity && (
+          <motion.div className="run-cf-card" variants={ITEM_V}>
+            <span className="run-cf-card-head">Property details</span>
+            <p className="run-cf-card-note">
+              {yc ? (
+                <>
+                  <Icon name="connect" size={14} /> Delivered from YouConnect — verify before you
+                  run.
+                </>
+              ) : (
+                <>
+                  <Icon name="ai" size={14} /> Auto-filled from the appraisal — review and correct.
+                </>
+              )}
+            </p>
+            <div className="run-cf-form">
+              <label className="field run-cf-wide">
+                <span>Property address</span>
+                <input value={address} onChange={(e) => setAddress(e.target.value)} />
+              </label>
+              <label className="field">
+                <span>Property type</span>
+                <select value={propertyType} onChange={(e) => setPropertyType(e.target.value)}>
+                  {PROP_TYPES.map((t) => (
+                    <option key={t}>{t}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="field">
+                <span>Client / Lender</span>
+                <input value={bank} onChange={(e) => setBank(e.target.value)} />
+              </label>
+              <label className="field">
+                <span>Loan number</span>
+                <input value={loanNo} onChange={(e) => setLoanNo(e.target.value)} />
+              </label>
+              <label className="field">
+                <span>Appraiser firm</span>
+                <input value={firm} onChange={(e) => setFirm(e.target.value)} />
+              </label>
             </div>
-            {admin && (
-              <p className="run-cf-types-hint">
-                <Icon name="info" size={13} /> Technical runs now; the Administrative workspace is
-                coming soon — your selection is saved on the review.
-              </p>
-            )}
-          </div>
+          </motion.div>
+        )}
 
-          <div className="run-cf-foot">
-            <Button variant="ghost" size="sm" onClick={onCancel}>
-              Cancel
-            </Button>
-            <Button
-              variant="primary"
-              size="sm"
-              iconLeft="rocket"
-              disabled={!canStart}
-              onClick={start}
+        {/* Card — technical setup. */}
+        {showTechnical && (
+          <motion.div className="run-cf-card" variants={ITEM_V}>
+            <span className="run-cf-card-head">Technical setup</span>
+            <div className="run-cf-inherited">
+              <span>
+                Workbook layout{" "}
+                <span className="run-cf-inherited-val">{layout?.name ?? "Org default"}</span>
+              </span>
+              <span className="run-cf-inherited-tag">inherited · {profileFor(propertyType)}</span>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Card — administrative setup (fades in when selected). */}
+        <AnimatePresence initial={false}>
+          {showAdmin && (
+            <motion.div
+              key="admin-setup"
+              className="run-cf-card"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.24, ease: "easeOut" }}
+              style={{ overflow: "hidden" }}
             >
-              Start review
-            </Button>
-          </div>
+              <span className="run-cf-card-head">Administrative setup</span>
+              <label className="field">
+                <span>Compliance checklist</span>
+                <select
+                  value={effectiveChecklistId ?? ""}
+                  onChange={(e) => setChecklistId(e.target.value || null)}
+                >
+                  {checklists.length === 0 && <option value="">Org default</option>}
+                  {checklists.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                      {c.isDefault ? " (default)" : ""}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="run-cf-policy">
+                <input
+                  type="file"
+                  hidden
+                  onChange={(e) => setPolicyDoc(e.target.files?.[0]?.name ?? null)}
+                />
+                <Icon name={policyDoc ? "check-circle" : "upload"} size={14} />
+                {policyDoc ?? "Attach bank policy document (optional)"}
+              </label>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <motion.div className="run-cf-foot" variants={ITEM_V}>
+          <Button variant="ghost" size="sm" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            size="sm"
+            iconLeft="rocket"
+            disabled={!canStart}
+            onClick={start}
+          >
+            Start review
+          </Button>
         </motion.div>
       </motion.div>
     </div>
