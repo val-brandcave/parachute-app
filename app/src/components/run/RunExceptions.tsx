@@ -353,7 +353,7 @@ export function RunExceptions({ review, onBack }: { review: Review; onBack: () =
                       className={`run-anno-tag run-anno-tag--${tone}${selectedId === fid ? " active" : ""}`}
                       style={{ top }}
                       onClick={() => selectFinding(fid)}
-                      aria-label={`Exception ${numberOf[fid]}: ${f.category}`}
+                      aria-label={`Finding ${numberOf[fid]}: ${f.category}`}
                     >
                       {numberOf[fid]}
                     </button>
@@ -376,7 +376,7 @@ export function RunExceptions({ review, onBack }: { review: Review; onBack: () =
       <aside className="run-ex-thread">
         <div className="run-ex-thread-head">
           <span className="run-ex-thread-title">
-            Exceptions
+            Findings
             <span className="run-ex-count">{exceptions.length}</span>
           </span>
         </div>

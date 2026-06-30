@@ -253,8 +253,8 @@ export function RunSignModal({
                   {blocked && (
                     <p className="run-seal-block">
                       <Icon name="clock" size={14} /> {ctx.pendingCount} finding
-                      {ctx.pendingCount === 1 ? "" : "s"} still need a decision — open Exceptions
-                      to resolve them before signing.
+                      {ctx.pendingCount === 1 ? "" : "s"} still need a decision — open Findings to
+                      resolve them before signing.
                     </p>
                   )}
                 </>

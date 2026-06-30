@@ -9922,6 +9922,192 @@ select.qfilter {
 .run-foot-actions {
   display: flex;
   gap: 10px;
+  margin-left: auto; /* keep actions right-aligned even if the footer has 1 child */
+}
+
+/* ============================================================================
+   SSO HANDOFF / BRIDGE (/launch) — "transferring you to Parachute"
+   Always navy (a brand interstitial, not theme-aware): white-on-navy + tokens.
+   ============================================================================ */
+.hf {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  color: var(--md-on-surface);
+  /* same calm, theme-sensitive canvas as the start / login screens */
+  background:
+    radial-gradient(115% 75% at 50% -10%, var(--md-accent-c) 0%, transparent 55%),
+    var(--md-bg);
+}
+.hf-inner {
+  position: relative;
+  z-index: 1;
+  width: min(460px, 88vw);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 30px;
+}
+.hf-bridge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  width: 100%;
+}
+.hf-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  flex: none;
+}
+.hf-brand-mark {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  color: var(--md-on-surface-v);
+  background: var(--md-surface);
+  border: 1px solid var(--md-outline-v);
+  box-shadow: var(--md-elev-1);
+}
+.hf-brand--dest .hf-brand-mark {
+  color: var(--md-accent-d);
+  background: var(--md-accent-c);
+  border-color: color-mix(in srgb, var(--md-accent) 35%, transparent);
+  animation: hf-pulse 2s ease-in-out infinite;
+}
+.hf-brand--dest.is-arrived .hf-brand-mark {
+  animation: none;
+  box-shadow: 0 0 22px color-mix(in srgb, var(--md-accent) 45%, transparent);
+}
+@keyframes hf-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--md-accent) 0%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 20px 0 color-mix(in srgb, var(--md-accent) 35%, transparent);
+  }
+}
+.hf-brand-name {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--md-on-surface);
+}
+.hf-arrive {
+  position: absolute;
+  right: -5px;
+  bottom: -5px;
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--md-success);
+  color: #fff;
+  border: 2px solid var(--md-bg);
+}
+.hf-track {
+  position: relative;
+  flex: 1;
+  min-width: 70px;
+  max-width: 150px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+}
+.hf-track-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 2px;
+  transform: translateY(-50%);
+  border-radius: 2px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--md-outline) 0 5px,
+    transparent 5px 11px
+  );
+}
+.hf-doc {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  background: var(--md-surface);
+  color: var(--md-accent-d);
+  border: 1px solid var(--md-outline-v);
+  box-shadow: var(--md-elev-2);
+}
+.hf-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 280px;
+}
+.hf-step {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  font-size: 13.5px;
+  transition:
+    color 0.2s ease,
+    opacity 0.2s ease;
+}
+.hf-step--idle {
+  color: var(--md-on-surface-t);
+}
+.hf-step--active {
+  color: var(--md-on-surface);
+  font-weight: 600;
+}
+.hf-step--done {
+  color: var(--md-on-surface-v);
+}
+.hf-step-ic {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+}
+.hf-step--done .hf-step-ic {
+  color: var(--md-success);
+}
+.hf-spinner {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid var(--md-outline);
+  border-top-color: var(--md-accent);
+  animation: spin 0.7s linear infinite;
+}
+.hf-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--md-outline);
+}
+.hf-step-label {
+  line-height: 1.2;
 }
 
 /* ---- S-B Exceptions (Ashore-style) ---- */

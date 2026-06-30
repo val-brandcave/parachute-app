@@ -170,7 +170,7 @@ export function RunModal() {
     close();
     if (embedded) {
       resetSession();
-      router.push("/start");
+      router.push("/youconnect");
     }
   };
 
@@ -188,7 +188,7 @@ export function RunModal() {
     close();
     if (embedded) {
       resetSession();
-      router.push("/start");
+      router.push("/youconnect");
     } else {
       router.push("/reviews");
     }
@@ -303,7 +303,9 @@ export function RunModal() {
 
 const NAV_ITEMS: { key: RunSpoke; label: string; icon: "book" | "quote" }[] = [
   { key: "workbook", label: "Workbook", icon: "book" },
-  { key: "exceptions", label: "Exceptions", icon: "quote" },
+  // `exceptions` is the internal spoke key (the exceptions-first proofing view);
+  // the user-facing label is "Findings" to match the rest of the app.
+  { key: "exceptions", label: "Findings", icon: "quote" },
 ];
 
 /** Left sidebar — the two run destinations + a live status read-out. Customize &

@@ -147,7 +147,7 @@ export function RunWorkbook({
               <Icon name="sso" size={15} />
               <span>
                 <b>Single document</b> · the signed result returns to {returnLabel ?? "YouConnect"}{" "}
-                on sign. Extraction wrong? Correct it in Exceptions before signing.
+                on sign. Extraction wrong? Correct it in Findings before signing.
               </span>
             </div>
           )}
@@ -160,7 +160,7 @@ export function RunWorkbook({
                 need a closer look before you sign — review them?
               </span>
               <button className="run-callout-cta" onClick={onReviewFindings}>
-                Review exceptions
+                Review findings
               </button>
               <button
                 className="run-callout-x"
