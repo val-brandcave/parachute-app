@@ -9268,6 +9268,13 @@ select.qfilter {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* Animated stage wrapper — Framer cross-fades confirm → progress → review. */
+.run-stage {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
 /* Main row: left sidebar nav + the active view's body. */
 .run-main {
   flex: 1;
@@ -9279,6 +9286,209 @@ select.qfilter {
   min-width: 0;
   min-height: 0;
   display: flex;
+}
+
+/* ---- Confirm gate (pre-review) — source-aware fast-confirm card ---- */
+.run-cf {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+}
+.run-cf-inner {
+  width: 100%;
+  max-width: 720px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.run-cf-head {
+  text-align: center;
+}
+.run-cf-title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--md-on-surface);
+}
+.run-cf-sub {
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--md-on-surface-t);
+}
+.run-cf-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 18px;
+  background: var(--md-surface);
+  border: 1px solid var(--md-outline-v);
+  border-radius: 16px;
+  box-shadow: var(--md-elev-2);
+}
+.run-cf-filebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--md-surface-1);
+  border: 1px solid var(--md-outline-v);
+  border-radius: 10px;
+}
+.run-cf-file {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+.run-cf-file > svg {
+  flex: none;
+  color: var(--md-error);
+}
+.run-cf-file-name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--md-on-surface);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.run-cf-file-meta {
+  flex: none;
+  font-size: 12.5px;
+  color: var(--md-on-surface-t);
+}
+.run-cf-tag {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.run-cf-tag--parsed {
+  color: var(--md-success);
+}
+.run-cf-tag--yc {
+  color: var(--md-accent-d);
+}
+.run-cf-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--md-accent-d);
+}
+.run-cf-note > svg {
+  flex: none;
+  color: var(--md-accent);
+}
+.run-cf-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.run-cf-wide {
+  grid-column: 1 / 3;
+}
+.run-cf-types {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.run-cf-types-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--md-on-surface-t);
+}
+.run-cf-types-opts {
+  display: flex;
+  gap: 10px;
+}
+.run-cf-type {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--md-outline);
+  background: var(--md-surface);
+  color: var(--md-on-surface-v);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.run-cf-type:hover:not(.run-cf-type--locked):not(.on) {
+  background: var(--md-surface-1);
+}
+.run-cf-type.on {
+  border-color: var(--md-selected);
+  background: var(--md-selected);
+  color: var(--md-on-selected);
+}
+.run-cf-type--locked {
+  cursor: default;
+}
+.run-cf-type > svg {
+  flex: none;
+}
+.run-cf-type-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+/* Consistent checkbox affordance on every option (empty → checked). */
+.run-cf-check {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  border: 1.5px solid var(--md-outline);
+  background: var(--md-surface);
+  color: transparent;
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease,
+    color 0.12s ease;
+}
+.run-cf-type.on .run-cf-check {
+  border-color: var(--md-on-selected);
+  background: var(--md-on-selected);
+  color: var(--md-selected);
+}
+.run-cf-type-sub {
+  font-size: 11.5px;
+  font-weight: 500;
+  opacity: 0.78;
+  margin-top: 1px;
+}
+.run-cf-types-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--md-on-surface-t);
+}
+.run-cf-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 2px;
+  padding-top: 14px;
+  border-top: 1px solid var(--md-outline-v);
 }
 
 /* ---- Left sidebar nav (Workbook · Exceptions) + status ---- */
@@ -9703,27 +9913,11 @@ select.qfilter {
   flex: none;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 16px;
   padding: 12px 20px;
   background: var(--md-surface);
   border-top: 1px solid var(--md-outline-v);
-}
-.run-foot-meta {
-  font-size: 12.5px;
-}
-.run-foot-ok {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--md-success);
-  font-weight: 600;
-}
-.run-foot-hint {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--md-on-surface-v);
 }
 .run-foot-actions {
   display: flex;

@@ -91,8 +91,9 @@ export default function YouConnectMockPage() {
     // J1 embedded entry: SSO handoff into the live run flow for this document.
     setMode("embedded", { returnLabel: "YouConnect" });
     openRun(DEMO_RUN_REVIEW_ID, {
-      startAt: "progress",
+      startAt: "confirm",
       docLabel: "Commercial Appraisal Report.pdf",
+      source: "yc",
     });
     router.push("/launch");
   };

@@ -13,6 +13,8 @@ import {
   useTemplatesStore,
   useUsersStore,
   type RunSpoke,
+  type RunDisplay,
+  type RunReviewType,
 } from "@/store";
 import { CURRENT_USER } from "@/lib/current-user";
 import {
@@ -25,6 +27,7 @@ import {
 } from "@/lib/workbook";
 import { defaultWorkbookConfig } from "@/lib/workbook-config";
 import { PIPELINE_STAGES } from "@/lib/utils";
+import { RunConfirm } from "./RunConfirm";
 import { RunWorkbook } from "./RunWorkbook";
 import { RunExceptions } from "./RunExceptions";
 import { RunSignModal } from "./RunSign";
@@ -52,7 +55,8 @@ export interface RunContext {
  */
 export function RunModal() {
   const router = useRouter();
-  const { open, reviewId, spoke, docLabel, display, go, close } = useRunStore();
+  const { open, reviewId, spoke, docLabel, display, source, go, close, setDisplay, setReviewTypes } =
+    useRunStore();
   const mode = useSessionStore((s) => s.mode);
   const returnLabel = useSessionStore((s) => s.returnLabel);
   const resetSession = useSessionStore((s) => s.reset);
@@ -170,6 +174,14 @@ export function RunModal() {
     }
   };
 
+  // Confirm gate → commit the verified identity + review type, then kick off the
+  // AI review (S-E progress, which auto-advances to the workbook).
+  const startReview = (d: RunDisplay, types: RunReviewType[]) => {
+    setDisplay(d);
+    setReviewTypes(types);
+    go("progress");
+  };
+
   // Post-sign "finish": embedded returns to YouConnect, standalone lands in the queue.
   const finishReturn = () => {
     setSignOpen(false);
@@ -223,30 +235,53 @@ export function RunModal() {
             <IconButton name="close" onClick={onClose} aria-label="Close" />
           </header>
 
-          {spoke === "progress" ? (
-            <RunProgress docLabel={docLabel} onDone={() => go("workbook")} />
-          ) : (
-            <div className="run-main">
-              <RunNav spoke={spoke} ctx={ctx} signed={!!signature} onGo={go} />
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={spoke === "confirm" ? "confirm" : spoke === "progress" ? "progress" : "review"}
+              className="run-stage"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.24, ease: "easeOut" }}
+            >
+              {spoke === "confirm" && review && (
+                <RunConfirm
+                  review={review}
+                  docLabel={docLabel}
+                  source={source}
+                  onStart={startReview}
+                  onCancel={onClose}
+                />
+              )}
 
-              <div className="run-body">
-                {spoke === "workbook" && review && (
-                  <RunWorkbook
-                    review={review}
-                    ctx={ctx}
-                    embedded={embedded}
-                    returnLabel={returnLabel}
-                    onSign={() => setSignOpen(true)}
-                    onReviewFindings={() => go("exceptions")}
-                    onReturn={finishReturn}
-                  />
-                )}
-                {spoke === "exceptions" && review && (
-                  <RunExceptions review={review} onBack={() => go("workbook")} />
-                )}
-              </div>
-            </div>
-          )}
+              {spoke === "progress" && (
+                <RunProgress docLabel={docLabel} onDone={() => go("workbook")} />
+              )}
+
+              {(spoke === "workbook" || spoke === "exceptions") && (
+                <div className="run-main">
+                  <RunNav spoke={spoke} ctx={ctx} signed={!!signature} onGo={go} />
+
+                  <div className="run-body">
+                    {spoke === "workbook" && review && (
+                      <RunWorkbook
+                        review={review}
+                        ctx={ctx}
+                        embedded={embedded}
+                        returnLabel={returnLabel}
+                        onSign={() => setSignOpen(true)}
+                        onReviewFindings={() => go("exceptions")}
+                        onReturn={finishReturn}
+                      />
+                    )}
+                    {spoke === "exceptions" && review && (
+                      <RunExceptions review={review} onBack={() => go("workbook")} />
+                    )}
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          </AnimatePresence>
 
           <RunSignModal
             open={signOpen}
@@ -315,22 +350,6 @@ function RunNav({
             </button>
           );
         })}
-      </div>
-
-      <div className="run-nav-status">
-        {signed ? (
-          <span className="run-nav-status-line run-nav-status-line--ok">
-            <Icon name="check-circle" size={15} /> Signed &amp; sealed
-          </span>
-        ) : ctx.pendingCount > 0 ? (
-          <span className="run-nav-status-line run-nav-status-line--wait">
-            <Icon name="clock" size={15} /> {ctx.pendingCount} to review
-          </span>
-        ) : (
-          <span className="run-nav-status-line run-nav-status-line--ok">
-            <Icon name="check-circle" size={15} /> Ready to sign
-          </span>
-        )}
       </div>
     </nav>
   );

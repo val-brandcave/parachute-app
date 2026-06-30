@@ -59,7 +59,6 @@ export function RunWorkbook({
   }, [ctx.ready]);
 
   const signed = !!signature;
-  const blocked = ctx.pendingCount > 0;
 
   if (!ctx.ready || !review || !workbook) {
     return <div className="run-loading text-secondary">Compiling your workbook…</div>;
@@ -194,23 +193,6 @@ export function RunWorkbook({
       </div>
 
       <footer className="run-foot">
-        <div className="run-foot-meta">
-          {signed ? (
-            <span className="run-foot-ok">
-              <Icon name="check-circle" size={15} /> Signed &amp; sealed · workbook is FINAL
-            </span>
-          ) : blocked ? (
-            <span className="run-foot-hint">
-              <Icon name="clock" size={14} /> {ctx.pendingCount} finding
-              {ctx.pendingCount === 1 ? "" : "s"} awaiting a decision
-            </span>
-          ) : (
-            <span className="run-foot-ok">
-              <Icon name="check-circle" size={15} /> All findings dispositioned — ready to sign
-            </span>
-          )}
-        </div>
-
         <div className="run-foot-actions">
           {signed ? (
             <>

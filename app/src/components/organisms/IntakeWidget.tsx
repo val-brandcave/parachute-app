@@ -35,14 +35,19 @@ export function IntakeWidget() {
     [],
   );
 
-  const start = (docLabel: string, display: RunDisplay | null = null) => {
+  const start = (
+    docLabel: string,
+    display: RunDisplay | null = null,
+    source: "drop" | "yc" = "drop",
+  ) => {
     if (parsing) return;
     setParsing(true);
-    // Cosmetic "reading the PDF" beat, then hand off to the run flow. The chosen
-    // property's identity (display) carries through; findings stay mock content.
+    // Cosmetic "reading the PDF" beat, then hand off to the run flow's confirm
+    // gate. The chosen property's identity (display) carries through; findings
+    // stay mock content.
     timer.current = setTimeout(() => {
       setParsing(false);
-      openRun(DEMO_RUN_REVIEW_ID, { startAt: "progress", docLabel, display });
+      openRun(DEMO_RUN_REVIEW_ID, { startAt: "confirm", docLabel, display, source });
     }, 700);
   };
 
@@ -50,12 +55,12 @@ export function IntakeWidget() {
     e.preventDefault();
     setDragging(false);
     const name = e.dataTransfer.files?.[0]?.name ?? "Appraisal.pdf";
-    start(name);
+    start(name, null, "drop");
   };
 
   const onPick = (e: React.ChangeEvent<HTMLInputElement>) => {
     const name = e.target.files?.[0]?.name ?? "Appraisal.pdf";
-    start(name);
+    start(name, null, "drop");
   };
 
   const q = query.trim().toLowerCase();
@@ -164,13 +169,17 @@ export function IntakeWidget() {
                     key={d.id}
                     className="intake-yc-item"
                     onClick={() =>
-                      start(d.propertyAddress, {
-                        address: d.propertyAddress,
-                        propertyType: d.propertyType,
-                        bank: d.bank,
-                        loanNo: d.loanNo,
-                        firm: d.appraisalFirm,
-                      })
+                      start(
+                        d.propertyAddress,
+                        {
+                          address: d.propertyAddress,
+                          propertyType: d.propertyType,
+                          bank: d.bank,
+                          loanNo: d.loanNo,
+                          firm: d.appraisalFirm,
+                        },
+                        "yc",
+                      )
                     }
                     disabled={parsing}
                   >
