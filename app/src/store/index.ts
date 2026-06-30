@@ -18,3 +18,7 @@ export {
 export type { OrderDraft, OrderProperty, OrderPrefill } from "./order.store";
 export { useTemplatesStore } from "./templates.store";
 export { useIdentityStore } from "./identity.store";
+export { useSessionStore } from "./session.store";
+export type { AppMode } from "./session.store";
+export { useRunStore, DEMO_RUN_REVIEW_ID } from "./run.store";
+export type { RunSpoke, RunDisplay } from "./run.store";

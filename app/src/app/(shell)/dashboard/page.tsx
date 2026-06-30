@@ -11,6 +11,7 @@ import {
   ActionNeeded,
   NewFromYouConnect,
   TrendChart,
+  IntakeWidget,
   DashboardSkeleton,
 } from "@/components/organisms";
 
@@ -107,6 +108,10 @@ export default function DashboardPage() {
               transition={{ duration: 0.28 }}
             >
               <StatBar stats={stats} />
+
+              <div style={{ marginTop: "var(--d-gap)" }}>
+                <IntakeWidget />
+              </div>
 
               <div style={{ marginTop: "var(--d-gap)" }}>
                 <TrendChart {...trend} periodLabel={periodLabel(period, range)} />

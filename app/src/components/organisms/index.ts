@@ -4,6 +4,7 @@ export { UserMenu } from "./UserMenu";
 export { StatBar, type Stat } from "./StatBar";
 export { ReviewTable, reviewHref } from "./ReviewTable";
 export { ActionNeeded, NewFromYouConnect, TrendChart } from "./dashboard-widgets";
+export { IntakeWidget } from "./IntakeWidget";
 export { DashboardSkeleton, ReviewTableSkeleton } from "./Skeletons";
 export { OrderButton } from "./OrderButton";
 export { OrderModal } from "./OrderModal";
