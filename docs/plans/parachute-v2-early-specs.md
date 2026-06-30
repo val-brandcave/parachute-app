@@ -269,6 +269,100 @@ Sort: needs-me → overdue → running → due asc.
 
 ---
 
+## 10. Run flow — confirm gate (`RunConfirm`) — D2 (settled Jun 30 2026)
+
+**What this is:** the pre-review "fast confirm" in the J3/J1 run flow (`components/run/RunConfirm.tsx`),
+shown after upload/YC-delivery and before `progress`. Source brief: `parachute-update-plan.md`
++ the Jun 30 call (`meetings/processed-calls/parachute-jun-30-2026-processed.md`, decision **D2**).
+
+**Why it changed:** today the gate is **fields-first, type-last** — review type sits at the
+bottom and drives nothing. Cody (repeat from the prior call): *"you have to select the review
+type first in order to know the inputs… those inputs are dependent on the review type."* Not all
+future review types are property-based, so the form must be **schema-driven by review type.**
+This is **distinct from §1 Order/Configure**: that's the heavyweight order wizard; this is the
+lean in-flow confirm. Keep them consistent in language, not identical in scope.
+
+**Resolved layout (settled Jun 30 — MCQs w/ Val, then simplified on visual review):**
+**single adaptive card**, type-first, **name-only pills**.
+```
+┌ Set up this review ───────────────────────────────────┐
+│ [📄 Appraisal.pdf · 74 pages]                parsed ✓ │
+│ 1 · What do you want to review?                       │
+│ [ Technical ] [ Administrative ]                      │
+│ [ Evaluation (coming soon) ] [ Vendor short form …]   │
+│ 2 · Property details                         (shared) │
+│ [address_____________________________________]        │
+│ [type ▾] [client/lender] [loan #] [appraiser firm]    │
+│ ▸ Technical setup      [inherited workbook layout]    │
+│ ▸ Administrative setup ⤵ fades in when Admin is on    │
+│   [compliance checklist ▾]  [bank policy doc ⤒ opt]   │
+│                        Cancel      🚀 Start review     │
+└───────────────────────────────────────────────────────┘
+```
+
+1. **Type picker — name-only pills (revised Jun 30 on visual review).** A wrapping row of
+   **`.run-cf-pill`** chips — **just the labels**, no icons, no descriptions, no output text.
+   Multi-select per **D3** (one PDF, ≥1 type).
+   - **Live pills** — `Technical` and `Administrative`. Selected = navy `--md-selected` fill
+     (no check icon — fill *is* the affordance). **Technical stays locked-on for MVP**
+     (`locked`+`defaultOn`); Administrative toggles.
+   - **Coming-soon pills** — kept to a short tail of **2**: `Evaluation (coming soon)` and
+     `Vendor short form (coming soon)`. Muted + dashed, `aria-disabled`, non-interactive — name
+     plus a parenthetical "(coming soon)" only. (The earlier 5-card icon grid was dropped: too
+     heavy, and it read as broken.)
+2. **Selection display — 2 layers (decision).** Pill on-state (fill) **+** the per-type setup
+   section that fades in below (`AnimatePresence` height/opacity). **No footer echo, no chips.**
+   A selected type "earns" its setup section — selection and consequence are the same gesture.
+3. **Field scope — lean (decision).** The gate collects identity + type + template **only**;
+   assignee · due date · priority · auto-reject stay in §1 Order / post-run config.
+
+| Field group | Fields | Shown for |
+|---|---|---|
+| `identity` (shared, rendered once) | Address* · Property type · Client/Lender · Loan # · Appraiser firm | any **property-based** type |
+| `technical` | Technical checklist/template (defaults to org-default `ChecklistTemplate.isDefault`) | Technical |
+| `administrative` | Compliance checklist (org-default) · Bank policy doc *(optional upload — the fine-tuning context banks supply)* | Administrative |
+
+- `Property type` lives in `identity` but is **load-bearing for Technical** (drives the rule
+  set / classification pass) — keep it prominent.
+- Checklist defaults mirror §1 and Templates (single source of truth); an explicit pick is a
+  per-order override (audited), same rule as the Order flow.
+
+**Generic registry (decision: build now, 2 active).** Decouples the UI from exactly-two types
+without resolving property-vs-entity (still Ed's call — `parachute-v2-client-questions.md` Q3).
+```ts
+interface ReviewTypeSpec {
+  id: ReviewTypeId;            // technical | administrative | evaluation | vendor_short
+                              //  | property_type_tech | environmental | residential
+  label; desc; output; icon;
+  status: "live" | "soon";
+  propertyBased: boolean;      // future env/vendor types → false ⇒ omit the `identity` group
+  locked?: boolean;            // technical (MVP)
+  defaultOn?: boolean;         // technical
+  fieldGroups: ("identity" | "technical" | "administrative")[];
+}
+```
+The form renders the **union** of `fieldGroups` across selected **live** types, deduping
+`identity`. A future non-property type (`propertyBased:false`, no `identity` group) is the
+forcing function for Ed's property-vs-entity decision — **Environmental** (site/report-centric)
+and **Vendor short form** (appraiser-centric) are the two that genuinely strain the
+property-centric model.
+
+**Other review types — context for Ed/Cody.** MVP = Technical + Administrative only (confirmed
+Jun 23). The picker names just **2** roadmap types as "(coming soon)" — `Evaluation` and the
+fee-appraiser `Vendor short form` (pass/fail "thumbs", a cheaper PLG entry). The wider roadmap
+from Ed's Jun 23 riff (31:11–35:00) — property-type-specific technical forms, residential,
+environmental — stays in `RunReviewType`'s id-space for forward-compat but is **not surfaced**
+in the picker until greenlit (avoids crowding the fast gate).
+
+**Implementation touch-points:** `RunConfirm.tsx` (reorder + registry-driven sections);
+`onStart` / `run.store` extended to carry the chosen checklist ids (today it passes only
+`display` + `types`). Keep `RunReviewType` but widen to the registry ids.
+
+**Open (not blocking the build):** exact field set for the 5 soon types (deferred until any is
+greenlit); whether `property_type_tech` is a standalone type or a Technical variant.
+
+---
+
 ## Cross-cutting / to add to the data model
 
 New seed/types as these land: `ycEngagements`, `checklistItems`, `checklistTemplates`,
