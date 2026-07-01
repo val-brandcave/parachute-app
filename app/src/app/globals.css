@@ -2168,6 +2168,9 @@ textarea {
 }
 .wb-page--cover {
   min-height: 56rem;
+  background: var(--wb-accent);
+  color: #fff;
+  overflow: hidden;
 }
 /* density (Builder document setting) — scales the section vertical rhythm */
 .wb-doc--compact .wb-sec {
@@ -2194,20 +2197,32 @@ textarea {
   box-shadow: var(--md-elev-1);
 }
 
-/* Cover: contents list + per-page footer */
-.wb-cover-toc {
-  padding: 32px 34px 10px;
+/* Contents — its own page (page 2), grouped into Sections / Appendices */
+.wb-toc-page {
+  flex: 1;
+  padding: 40px 40px 10px;
 }
-.wb-toc-h {
+.wb-toc-page-h {
   font-family: var(--wb-head);
-  font-size: 13px;
+  font-size: 26px;
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: -0.01em;
+  color: var(--paper-ink);
+  padding-bottom: 16px;
+  margin-bottom: 6px;
+  border-bottom: 2px solid var(--wb-accent);
+}
+.wb-toc-group {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--paper-ink-3);
-  padding-bottom: 12px;
-  margin-bottom: 8px;
-  border-bottom: 1px solid var(--paper-hair);
+  margin-top: 24px;
+  margin-bottom: 2px;
+}
+.wb-toc-group:first-of-type {
+  margin-top: 14px;
 }
 .wb-toc {
   list-style: none;
@@ -2322,31 +2337,102 @@ textarea {
   letter-spacing: 0.3px;
 }
 
-/* header band */
-.wb-band {
-  background: var(--wb-accent);
+/* Full-bleed branded cover (page 1) — three zones: brand / title+verdict / facts */
+.wb-cover-mark {
+  position: absolute;
+  right: -70px;
+  bottom: -90px;
   color: #fff;
-  padding: 24px 34px 22px;
+  opacity: 0.05;
+  line-height: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+.wb-cover-top {
   position: relative;
-  z-index: 1;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 34px 40px 0;
 }
-.wb-band-eyebrow {
-  font-size: 11px;
+.wb-cover-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-family: var(--wb-head);
+  font-size: 16px;
   font-weight: 700;
-  letter-spacing: 2px;
+  letter-spacing: 0.01em;
+}
+.wb-cover-conf {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
   text-transform: uppercase;
-  opacity: 0.62;
+  padding: 5px 11px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, #fff 34%, transparent);
+  opacity: 0.85;
 }
-.wb-band-title {
-  font-size: 27px;
+.wb-cover-main {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 40px;
+}
+.wb-cover-eyebrow {
+  font-size: 12px;
   font-weight: 700;
-  letter-spacing: -0.015em;
-  margin-top: 5px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  opacity: 0.6;
+  margin-bottom: 16px;
 }
-.wb-band-sub {
-  font-size: 13px;
-  opacity: 0.88;
-  margin-top: 5px;
+.wb-cover-title {
+  margin: 0;
+  font-size: 38px;
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+}
+.wb-cover-sub {
+  margin-top: 13px;
+  font-size: 14px;
+  opacity: 0.85;
+  max-width: 46ch;
+}
+/* On the cover, stack the two verdict chips vertically, each on a single line. */
+.wb-cover-bars {
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 30px;
+  max-width: none;
+}
+.wb-cover-bars .wb-pill {
+  align-items: center;
+}
+.wb-cover-bars .wb-pill-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wb-cover-bottom {
+  position: relative;
+  z-index: 2;
+  padding: 0 40px;
+}
+.wb-cover-bottom .wb-band-meta {
+  margin: 0 0 4px;
+}
+.wb-page--cover .wb-page-foot {
+  color: color-mix(in srgb, #fff 72%, transparent);
+  border-top: none;
+  padding: 16px 40px 30px;
 }
 .wb-band-bars {
   display: flex;

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { Icon } from "@/components/atoms";
+import { Icon, ParachuteGlyph } from "@/components/atoms";
 import { SeverityChip } from "@/components/molecules";
 import {
   RECOMMENDATION_META,
@@ -399,12 +399,26 @@ export function WorkbookPreview({
     sum += it.weight;
   }
   if (cur.length) pages.push(cur);
-  const totalPages = 1 + pages.length;
+
+  // Front matter is TWO pages now (D7): page 1 = cover, page 2 = contents.
+  // Content sheets therefore start at page 3. If there are no sections, the
+  // contents page is skipped and content (none) would start at page 2.
+  const hasToc = pages.length > 0;
+  const coverPages = hasToc ? 2 : 1;
+  const totalPages = coverPages + pages.length;
 
   // Contents list — each rendered section to its 1-based page number.
   const toc = pages.flatMap((pg, pi) =>
-    pg.map((it) => ({ id: it.s.id, label: it.label, title: it.s.title, pageNo: pi + 2 })),
+    pg.map((it) => ({
+      id: it.s.id,
+      label: it.label,
+      title: it.s.title,
+      appendix: !!it.s.appendix,
+      pageNo: pi + coverPages + 1,
+    })),
   );
+  const tocSections = toc.filter((it) => !it.appendix);
+  const tocAppendices = toc.filter((it) => it.appendix);
 
   const runHead = settings.showHeader ? (
     <div className="wb-runhead">
@@ -430,20 +444,31 @@ export function WorkbookPreview({
         </div>
       )}
 
-      {/* PAGE 1 — branded cover with the contents list */}
+      {/* PAGE 1 — full-bleed branded cover (D7: cover is its own page) */}
       <section className="wb-page wb-page--cover">
         {draft && <div className="wb-ribbon">Draft</div>}
-        <header className="wb-band">
-          <div className="wb-band-eyebrow">Technical Review Workbook</div>
-          <div className="wb-band-title" style={{ fontFamily: headingFont }}>
+        <span className="wb-cover-mark" aria-hidden="true">
+          <ParachuteGlyph size={420} />
+        </span>
+
+        <div className="wb-cover-top">
+          <span className="wb-cover-brand">
+            <ParachuteGlyph size={22} /> Parachute
+          </span>
+          <span className="wb-cover-conf">Confidential</span>
+        </div>
+
+        <div className="wb-cover-main">
+          <div className="wb-cover-eyebrow">Technical Review Workbook</div>
+          <h1 className="wb-cover-title" style={{ fontFamily: headingFont }}>
             {review.propertyAddress}
-          </div>
-          <div className="wb-band-sub">
+          </h1>
+          <div className="wb-cover-sub">
             {review.propertyType} · Appraisal by {review.appraisalFirm} · Prepared for{" "}
             {review.bank}
           </div>
 
-          <div className="wb-band-bars">
+          <div className="wb-band-bars wb-cover-bars">
             <div className={`wb-pill wb-rec-pill wb-rec-pill--${rec.tone}`}>
               <Icon
                 name={
@@ -468,38 +493,71 @@ export function WorkbookPreview({
               </span>
             </div>
           </div>
+        </div>
 
+        <div className="wb-cover-bottom">
           <div className="wb-band-meta">
             <Meta label="Loan #" value={review.loanNo} />
             <Meta label="Effective Date" value={formatLongDate(value.effectiveDate)} />
             <Meta label="Reviewer" value={reviewerName} />
             <Meta label="Reviewed" value={formatLongDate(reviewedAt)} />
           </div>
-        </header>
-
-        {toc.length > 0 && (
-          <div className="wb-cover-toc">
-            <div className="wb-toc-h">Contents</div>
-            <ol className="wb-toc">
-              {toc.map((it) => (
-                <li key={it.id} className="wb-toc-row">
-                  <span className="wb-toc-n" style={{ fontFamily: "var(--wb-head)" }}>
-                    {it.label}
-                  </span>
-                  <span className="wb-toc-title">{it.title}</span>
-                  <span className="wb-toc-dots" aria-hidden="true" />
-                  <span className="wb-toc-pg">{it.pageNo}</span>
-                </li>
-              ))}
-            </ol>
+          <div className="wb-page-foot wb-page-foot--cover">
+            {settings.showFooter && <span>{WORKBOOK_FOOTER}</span>}
+            <span className="wb-page-foot-n">Page 1 of {totalPages}</span>
           </div>
-        )}
-
-        <div className="wb-page-foot wb-page-foot--cover">
-          {settings.showFooter && <span>{WORKBOOK_FOOTER}</span>}
-          <span className="wb-page-foot-n">Page 1 of {totalPages}</span>
         </div>
       </section>
+
+      {/* PAGE 2 — contents, its own page, grouped Sections / Appendices */}
+      {hasToc && (
+        <section className="wb-page wb-page--toc">
+          {runHead}
+          <div className="wb-toc-page">
+            <div className="wb-toc-page-h" style={{ fontFamily: headingFont }}>
+              Contents
+            </div>
+            {tocSections.length > 0 && (
+              <>
+                <div className="wb-toc-group">Sections</div>
+                <ol className="wb-toc">
+                  {tocSections.map((it) => (
+                    <li key={it.id} className="wb-toc-row">
+                      <span className="wb-toc-n" style={{ fontFamily: "var(--wb-head)" }}>
+                        {it.label}
+                      </span>
+                      <span className="wb-toc-title">{it.title}</span>
+                      <span className="wb-toc-dots" aria-hidden="true" />
+                      <span className="wb-toc-pg">{it.pageNo}</span>
+                    </li>
+                  ))}
+                </ol>
+              </>
+            )}
+            {tocAppendices.length > 0 && (
+              <>
+                <div className="wb-toc-group">Appendices</div>
+                <ol className="wb-toc">
+                  {tocAppendices.map((it) => (
+                    <li key={it.id} className="wb-toc-row">
+                      <span className="wb-toc-n" style={{ fontFamily: "var(--wb-head)" }}>
+                        {it.label.replace("Appendix ", "")}
+                      </span>
+                      <span className="wb-toc-title">{it.title}</span>
+                      <span className="wb-toc-dots" aria-hidden="true" />
+                      <span className="wb-toc-pg">{it.pageNo}</span>
+                    </li>
+                  ))}
+                </ol>
+              </>
+            )}
+          </div>
+          <div className="wb-page-foot">
+            {settings.showFooter && <span>{WORKBOOK_FOOTER}</span>}
+            <span className="wb-page-foot-n">Page 2 of {totalPages}</span>
+          </div>
+        </section>
+      )}
 
       {/* Content pages — sections packed onto Letter sheets */}
       {pages.map((pg, pi) => (
@@ -515,7 +573,7 @@ export function WorkbookPreview({
           <div className="wb-page-foot">
             {settings.showFooter && <span>{WORKBOOK_FOOTER}</span>}
             <span className="wb-page-foot-n">
-              Page {pi + 2} of {totalPages}
+              Page {pi + coverPages + 1} of {totalPages}
             </span>
           </div>
         </section>
