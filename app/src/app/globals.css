@@ -9430,11 +9430,21 @@ select.qfilter {
 .run-cf-file {
   display: inline-flex;
   align-items: center;
-  gap: 9px;
+  gap: 11px;
   min-width: 0;
 }
-.run-cf-file > svg {
+/* Shared bordered icon tile — file glyphs (PDF) match the book tile on this page. */
+.run-cf-ic {
   flex: none;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  border: 1px solid var(--md-outline-v);
+  background: var(--md-surface-1);
+}
+.run-cf-ic--file {
   color: var(--md-error);
 }
 .run-cf-file-name {
@@ -9488,17 +9498,6 @@ select.qfilter {
   font-size: 14px;
   font-weight: 700;
   color: var(--md-on-surface);
-}
-.run-cf-card-note {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12.5px;
-  color: var(--md-on-surface-t);
-}
-.run-cf-card-note > svg {
-  flex: none;
-  color: var(--md-accent);
 }
 /* Review type — full-row selectable checklist. */
 .run-cf-opts {
@@ -9586,46 +9585,161 @@ select.qfilter {
   color: var(--md-on-selected);
   opacity: 0.7;
 }
-.run-cf-inherited {
+/* Inherited-config tile (Technical review setup → workbook layout). */
+.run-cf-inh {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 9px 11px;
+  gap: 12px;
+  padding: 12px 13px;
+  border-radius: 11px;
+  background: var(--md-surface-1);
+  border: 1px solid var(--md-outline-v);
+}
+.run-cf-inh-ic {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
   border-radius: 9px;
   background: var(--md-surface);
   border: 1px solid var(--md-outline-v);
-  font-size: 12.5px;
-  color: var(--md-on-surface-v);
+  color: var(--md-accent-d);
 }
-.run-cf-inherited-val {
+.run-cf-inh-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.run-cf-inh-val {
+  font-size: 13.5px;
   font-weight: 700;
   color: var(--md-on-surface);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.run-cf-inherited-tag {
-  flex: none;
-  font-size: 11px;
+.run-cf-inh-meta {
+  font-size: 11.5px;
   color: var(--md-on-surface-t);
 }
-.run-cf-policy {
-  display: inline-flex;
+.run-cf-inh-badge {
+  flex: none;
+  align-self: flex-start;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: var(--md-selected);
+  color: var(--md-on-selected);
+}
+/* File upload (Bank policy document) — empty dropzone + attached row w/ replace/remove.
+   Scoped under `.field` to beat the generic `.field label` rule (0,1,1), which
+   otherwise forces this label to display:block and clobbers the stacked layout. */
+.field .run-cf-upload {
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 7px;
-  width: fit-content;
-  padding: 8px 11px;
-  border-radius: 9px;
-  border: 1px dashed var(--md-outline);
+  justify-content: center;
+  gap: 4px;
+  margin-bottom: 0;
+  padding: 22px 16px;
+  border-radius: 10px;
+  border: 1.5px dashed var(--md-outline);
   background: var(--md-surface);
-  font-size: 12px;
-  color: var(--md-on-surface-v);
+  text-align: center;
   cursor: pointer;
+  transition:
+    background 0.14s ease,
+    border-color 0.14s ease;
 }
-.run-cf-policy:hover {
+.field .run-cf-upload:hover {
   background: var(--md-surface-1);
+  border-color: var(--md-accent);
 }
-.run-cf-policy > svg {
+.field .run-cf-upload > svg {
   flex: none;
   color: var(--md-accent);
+  margin-bottom: 2px;
+}
+.run-cf-upload-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--md-on-surface-v);
+}
+.run-cf-upload-hint {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--md-on-surface-t);
+}
+.run-cf-file-row {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 10px 12px;
+  border-radius: 9px;
+  border: 1px solid var(--md-outline-v);
+  background: var(--md-surface-1);
+}
+/* Row sits on --md-surface-1, so its tile goes lighter (--md-surface) to match the book. */
+.run-cf-file-row .run-cf-ic {
+  background: var(--md-surface);
+}
+.run-cf-file-row-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.run-cf-file-row-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--md-on-surface);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.run-cf-file-row-size {
+  font-size: 11.5px;
+  color: var(--md-on-surface-t);
+}
+.run-cf-file-row-act {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+/* Scoped under `.run-cf-file-row` (0,2,0) so the "Replace" <label> beats the
+   generic `.field label` rule (0,1,1) and matches the "Remove" <button> exactly
+   — otherwise Replace renders as a block with label typography (the misalignment). */
+.run-cf-file-row .run-cf-file-act {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  margin-bottom: 0;
+  padding: 0 9px;
+  border-radius: 7px;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--md-accent-d);
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.run-cf-file-row .run-cf-file-act:hover {
+  background: var(--md-surface-2);
+}
+.run-cf-file-row .run-cf-file-act--remove {
+  color: var(--md-on-surface-t);
 }
 .run-cf-foot {
   display: flex;

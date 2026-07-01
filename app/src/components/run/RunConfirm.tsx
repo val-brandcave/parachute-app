@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ChangeEvent } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button, Icon, YouConnectGlyph } from "@/components/atoms";
 import { useTemplatesStore } from "@/store";
@@ -24,6 +24,13 @@ const PROP_TYPES = [
 
 /** Mock source-document length for the parsed-file chip. */
 const MOCK_PAGES = 74;
+
+/** Human-readable file size for the attached-document row. */
+function formatBytes(n: number): string {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${Math.round(n / 1024)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 /**
  * Which field-group a review type contributes to the confirm form. The form
@@ -143,7 +150,12 @@ export function RunConfirm({
   const effectiveChecklistId = checklistId ?? defaultChecklist?.id ?? null;
 
   // Optional bank policy doc (the fine-tuning context banks supply). Cosmetic.
-  const [policyDoc, setPolicyDoc] = useState<string | null>(null);
+  const [policyDoc, setPolicyDoc] = useState<{ name: string; size: number } | null>(null);
+  const onPolicyPick = (e: ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (f) setPolicyDoc({ name: f.name, size: f.size });
+    e.target.value = ""; // allow re-picking the same file
+  };
 
   const isSel = (id: RunReviewType) => selected.includes(id);
   const toggle = (spec: ReviewTypeSpec) => {
@@ -195,7 +207,9 @@ export function RunConfirm({
         {/* Card — the source file. */}
         <motion.div className="run-cf-card run-cf-card--file" variants={ITEM_V}>
           <span className="run-cf-file">
-            <Icon name="pdf" size={18} />
+            <span className="run-cf-ic run-cf-ic--file" aria-hidden="true">
+              <Icon name="pdf" size={18} />
+            </span>
             <span className="run-cf-file-name">{docLabel ?? "Appraisal.pdf"}</span>
             <span className="run-cf-file-meta">· {MOCK_PAGES} pages</span>
           </span>
@@ -257,18 +271,6 @@ export function RunConfirm({
         {showIdentity && (
           <motion.div className="run-cf-card" variants={ITEM_V}>
             <span className="run-cf-card-head">Property details</span>
-            <p className="run-cf-card-note">
-              {yc ? (
-                <>
-                  <Icon name="connect" size={14} /> Delivered from YouConnect — verify before you
-                  run.
-                </>
-              ) : (
-                <>
-                  <Icon name="ai" size={14} /> Auto-filled from the appraisal — review and correct.
-                </>
-              )}
-            </p>
             <div className="run-cf-form">
               <label className="field run-cf-wide">
                 <span>Property address</span>
@@ -298,16 +300,24 @@ export function RunConfirm({
           </motion.div>
         )}
 
-        {/* Card — technical setup. */}
+        {/* Card — technical review setup. */}
         {showTechnical && (
           <motion.div className="run-cf-card" variants={ITEM_V}>
-            <span className="run-cf-card-head">Technical setup</span>
-            <div className="run-cf-inherited">
-              <span>
-                Workbook layout{" "}
-                <span className="run-cf-inherited-val">{layout?.name ?? "Org default"}</span>
-              </span>
-              <span className="run-cf-inherited-tag">inherited · {profileFor(propertyType)}</span>
+            <span className="run-cf-card-head">Technical review setup</span>
+            <div className="field">
+              <span>Workbook layout</span>
+              <div className="run-cf-inh">
+                <span className="run-cf-inh-ic">
+                  <Icon name="book" size={18} />
+                </span>
+                <div className="run-cf-inh-body">
+                  <span className="run-cf-inh-val">{layout?.name ?? "Org default"}</span>
+                  <span className="run-cf-inh-meta">
+                    From the {profileFor(propertyType)} profile · authored in Templates
+                  </span>
+                </div>
+                <span className="run-cf-inh-badge">Inherited</span>
+              </div>
             </div>
           </motion.div>
         )}
@@ -324,7 +334,7 @@ export function RunConfirm({
               transition={{ duration: 0.24, ease: "easeOut" }}
               style={{ overflow: "hidden" }}
             >
-              <span className="run-cf-card-head">Administrative setup</span>
+              <span className="run-cf-card-head">Administrative review setup</span>
               <label className="field">
                 <span>Compliance checklist</span>
                 <select
@@ -340,15 +350,40 @@ export function RunConfirm({
                   ))}
                 </select>
               </label>
-              <label className="run-cf-policy">
-                <input
-                  type="file"
-                  hidden
-                  onChange={(e) => setPolicyDoc(e.target.files?.[0]?.name ?? null)}
-                />
-                <Icon name={policyDoc ? "check-circle" : "upload"} size={14} />
-                {policyDoc ?? "Attach bank policy document (optional)"}
-              </label>
+              <div className="field">
+                <span>Bank policy document (optional)</span>
+                {policyDoc ? (
+                  <div className="run-cf-file-row">
+                    <span className="run-cf-ic run-cf-ic--file" aria-hidden="true">
+                      <Icon name="pdf" size={18} />
+                    </span>
+                    <span className="run-cf-file-row-info">
+                      <span className="run-cf-file-row-name">{policyDoc.name}</span>
+                      <span className="run-cf-file-row-size">{formatBytes(policyDoc.size)}</span>
+                    </span>
+                    <span className="run-cf-file-row-act">
+                      <label className="run-cf-file-act">
+                        Replace
+                        <input type="file" hidden onChange={onPolicyPick} />
+                      </label>
+                      <button
+                        type="button"
+                        className="run-cf-file-act run-cf-file-act--remove"
+                        onClick={() => setPolicyDoc(null)}
+                      >
+                        Remove
+                      </button>
+                    </span>
+                  </div>
+                ) : (
+                  <label className="run-cf-upload">
+                    <input type="file" hidden onChange={onPolicyPick} />
+                    <Icon name="upload" size={20} />
+                    <span className="run-cf-upload-label">Upload document</span>
+                    <span className="run-cf-upload-hint">PDF or DOCX</span>
+                  </label>
+                )}
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
