@@ -86,14 +86,12 @@ export function CapRateScale({ cap }: { cap: WorkbookExhibits["capRate"] }) {
         />
         {cap.points.map((p) => (
           <span key={p.label} className="wb-cap-pt" style={{ left: at(p.value) }}>
-            <span className={`wb-cap-dot${p.selected ? " is-sel" : ""}`} />
-            <span className={`wb-cap-lab${p.selected ? " is-sel" : ""}`}>
-              <b>
-                {p.value}
-                {cap.unit}
-              </b>
-              {p.label}
+            <span className={`wb-cap-val${p.selected ? " is-sel" : ""}`}>
+              {p.value}
+              {cap.unit}
             </span>
+            <span className={`wb-cap-dot${p.selected ? " is-sel" : ""}`} />
+            <span className={`wb-cap-cap${p.selected ? " is-sel" : ""}`}>{p.label}</span>
           </span>
         ))}
       </div>

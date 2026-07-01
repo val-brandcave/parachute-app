@@ -2877,8 +2877,8 @@ textarea {
 /* cap-rate number-line */
 .wb-cap {
   position: relative;
-  height: 50px;
-  margin: 26px 36px 6px;
+  height: 64px;
+  margin: 24px 36px 8px;
 }
 .wb-cap-line {
   position: absolute;
@@ -2899,10 +2899,21 @@ textarea {
 .wb-cap-pt {
   position: absolute;
   top: 0;
+  bottom: 0;
+}
+.wb-cap-val {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--md-on-surface);
+  font-variant-numeric: tabular-nums;
 }
 .wb-cap-dot {
   position: absolute;
-  top: 23px;
+  top: 24px;
   width: 15px;
   height: 15px;
   border-radius: 50%;
@@ -2915,23 +2926,16 @@ textarea {
   background: var(--md-error);
   box-shadow: 0 0 0 1px var(--md-error);
 }
-.wb-cap-lab {
+.wb-cap-cap {
   position: absolute;
-  top: 0;
+  top: 44px;
   transform: translateX(-50%);
   white-space: nowrap;
   font-size: 10.5px;
   color: var(--md-on-surface-t);
-  text-align: center;
 }
-.wb-cap-lab b {
-  display: block;
-  font-size: 12px;
-  color: var(--md-on-surface);
-  font-variant-numeric: tabular-nums;
-}
-.wb-cap-lab.is-sel,
-.wb-cap-lab.is-sel b {
+.wb-cap-val.is-sel,
+.wb-cap-cap.is-sel {
   color: var(--md-error);
   font-weight: 700;
 }
