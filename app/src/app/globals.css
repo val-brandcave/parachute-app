@@ -10313,61 +10313,11 @@ select.qfilter {
   border: 1px solid var(--md-outline-v);
   box-shadow: var(--md-elev-2);
 }
-.hf-steps {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  width: 100%;
-  max-width: 280px;
-}
-.hf-step {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  font-size: 13.5px;
-  transition:
-    color 0.2s ease,
-    opacity 0.2s ease;
-}
-.hf-step--idle {
-  color: var(--md-on-surface-t);
-}
-.hf-step--active {
-  color: var(--md-on-surface);
-  font-weight: 600;
-}
-.hf-step--done {
-  color: var(--md-on-surface-v);
-}
-.hf-step-ic {
-  flex: none;
-  width: 18px;
-  height: 18px;
-  display: grid;
-  place-items: center;
-}
-.hf-step--done .hf-step-ic {
-  color: var(--md-success);
-}
-.hf-spinner {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  border: 2px solid var(--md-outline);
-  border-top-color: var(--md-accent);
-  animation: spin 0.7s linear infinite;
-}
-.hf-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--md-outline);
-}
-.hf-step-label {
-  line-height: 1.2;
+/* Launch steps reuse the review-processing card (.run-stages / .run-st*);
+   only the width is constrained so 3 short steps sit balanced under the bridge. */
+.hf-stages {
+  max-width: 360px;
+  margin: 0 auto;
 }
 
 /* ---- S-B Exceptions (Ashore-style) ---- */

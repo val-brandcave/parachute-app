@@ -101,33 +101,66 @@ export default function LaunchPage() {
               </div>
             </div>
 
-            {/* Setup steps */}
-            <ul className="hf-steps">
+            {/* Setup steps — same pattern as the review-processing screen:
+                a surface card of rows, each with a status mark + a filling bar. */}
+            <div className="run-stages hf-stages" role="status" aria-live="polite">
               {STEPS.map((label, i) => {
-                const state = i < step ? "done" : i === step ? "active" : "idle";
+                const isDone = i < step;
+                const isActive = i === step;
+                const state = isDone ? "done" : isActive ? "active" : "idle";
                 return (
-                  <li key={label} className={`hf-step hf-step--${state}`}>
-                    <span className="hf-step-ic">
-                      {state === "done" ? (
-                        <motion.span
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          transition={{ type: "spring", stiffness: 500, damping: 20 }}
-                          style={{ display: "inline-flex" }}
-                        >
-                          <Icon name="check" size={13} />
-                        </motion.span>
-                      ) : state === "active" ? (
-                        <span className="hf-spinner" />
-                      ) : (
-                        <span className="hf-dot" />
-                      )}
+                  <div key={label} className={`run-st run-st--${state}`}>
+                    <div className="run-st-row">
+                      <span className="run-st-label">{label}</span>
+                      <span className="run-st-ind">
+                        <AnimatePresence initial={false}>
+                          {isDone ? (
+                            <motion.span
+                              key="done"
+                              className="run-st-check"
+                              initial={{ scale: 0, opacity: 0 }}
+                              animate={{ scale: 1, opacity: 1 }}
+                              exit={{ scale: 0, opacity: 0 }}
+                              transition={{ type: "spring", stiffness: 520, damping: 24 }}
+                            >
+                              <Icon name="check-circle" size={18} />
+                            </motion.span>
+                          ) : isActive ? (
+                            <motion.span
+                              key="active"
+                              className="run-st-dot"
+                              initial={{ scale: 0.4, opacity: 0 }}
+                              animate={{ scale: [1, 0.6, 1], opacity: [1, 0.5, 1] }}
+                              exit={{ scale: 0, opacity: 0 }}
+                              transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
+                            />
+                          ) : (
+                            <motion.span
+                              key="idle"
+                              className="run-st-ring"
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              exit={{ opacity: 0 }}
+                            />
+                          )}
+                        </AnimatePresence>
+                      </span>
+                    </div>
+                    <span className="run-st-bar">
+                      <motion.span
+                        className="run-st-bar-fill"
+                        initial={{ width: "0%" }}
+                        animate={{ width: isDone || isActive ? "100%" : "0%" }}
+                        transition={{
+                          duration: isActive ? 0.85 : isDone ? 0.3 : 0.2,
+                          ease: isActive ? "easeInOut" : "easeOut",
+                        }}
+                      />
                     </span>
-                    <span className="hf-step-label">{label}</span>
-                  </li>
+                  </div>
                 );
               })}
-            </ul>
+            </div>
           </motion.div>
         </motion.div>
       )}
