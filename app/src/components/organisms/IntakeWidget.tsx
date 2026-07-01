@@ -10,12 +10,17 @@ import type { YcDelivery } from "@/types";
 type IntakeMode = "drop" | "yc";
 
 /**
- * The dashboard's primary intake (J3) — one widget, two modes behind a segmented
- * toggle: drop an appraisal PDF, or pick one from the YouConnect pipeline. Either
- * path opens the run flow (S-E → S-A). The 90%-user entry point: get from "I have a
+ * The primary intake (J3) — one widget, two modes behind a segmented toggle:
+ * drop an appraisal PDF, or pick one from the YouConnect pipeline. Either path
+ * opens the run flow (S-E → S-A). The 90%-user entry point: get from "I have a
  * document" to "here's the workbook" in one move. Defaults to Drop (the common path).
+ *
+ * `variant`:
+ *  - "hero"  — the Launchpad landing page: larger, accent-forward, the app's
+ *              front door (F-119 — its own route, primary CTA, not buried).
+ *  - "card"  — the compact embed used elsewhere.
  */
-export function IntakeWidget() {
+export function IntakeWidget({ variant = "card" }: { variant?: "card" | "hero" }) {
   const openRun = useRunStore((s) => s.openRun);
   const { deliveries, loadDeliveries } = useOrderStore();
   const [mode, setMode] = useState<IntakeMode>("drop");
@@ -76,12 +81,12 @@ export function IntakeWidget() {
   });
   const totalNew = deliveries.filter((d) => d.status === "new").length;
 
+  const hero = variant === "hero";
+
   return (
-    <section className="intake" aria-label="Start a review">
+    <section className={cn("intake", hero && "intake--hero")} aria-label="Start a review">
       <div className="intake-head">
-        <span className="intake-title">
-          <Icon name="rocket" size={16} /> Start a review
-        </span>
+        <span className="intake-title">Start a review</span>
         <SegmentedControl<IntakeMode>
           value={mode}
           onChange={setMode}
@@ -120,7 +125,7 @@ export function IntakeWidget() {
             ) : (
               <>
                 <span className="intake-drop-ic">
-                  <Icon name="upload" size={26} />
+                  <Icon name="upload" size={hero ? 32 : 26} />
                 </span>
                 <div className="intake-drop-title">Drop an appraisal to start</div>
                 <p>

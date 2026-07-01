@@ -14,7 +14,7 @@ export default function LoginPage() {
   // card opens with one filled primary (YouConnect) and the form tucked away.
   const [showEmail, setShowEmail] = useState(false);
 
-  const signIn = () => router.push("/dashboard");
+  const signIn = () => router.push("/launchpad");
 
   return (
     <div
