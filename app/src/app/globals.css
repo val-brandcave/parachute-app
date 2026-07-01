@@ -1582,6 +1582,140 @@ textarea {
   color: var(--md-info);
 }
 
+/* ---- FindingDecisionBar (F-118 shared decision core) ---- */
+/* Accept · Edit · Reject inline + ⋯ overflow (Remove/Comment/Condition/Flag) +
+   trailing status. Two variants, same actions — spatial difference only: --focus
+   pins it as the routed FindingFocus footer; --accordion inlines it in the run
+   flow's accordion body. */
+.fdb {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.fdb--focus {
+  flex: 0 0 auto;
+  padding: 14px 26px;
+  border-top: 1px solid var(--md-outline);
+  background: var(--md-surface-1);
+}
+.fdb--accordion {
+  gap: 10px;
+}
+.fdb-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.fdb-act {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 40px;
+  padding: 0 15px;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  border: 1px solid var(--md-outline);
+  background: var(--md-surface);
+  color: var(--md-on-surface);
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+.fdb--accordion .fdb-act {
+  height: 34px;
+  padding: 0 12px;
+  font-size: 13px;
+}
+.fdb-act:hover {
+  background: var(--md-surface-1);
+  border-color: var(--md-on-surface-v);
+}
+.fdb-act--accept {
+  border-color: var(--md-success);
+  color: var(--md-success);
+}
+.fdb-act--accept:hover {
+  background: var(--md-success-c);
+}
+.fdb-act--accept.on {
+  background: var(--md-success);
+  border-color: var(--md-success);
+  color: #fff;
+}
+.fdb-act--edit {
+  border-color: var(--md-warn);
+  color: var(--md-warn);
+}
+.fdb-act--edit:hover {
+  background: var(--md-warn-c);
+}
+.fdb-act--edit.on {
+  background: var(--md-warn);
+  border-color: var(--md-warn);
+  color: #fff;
+}
+.fdb-act--reject {
+  border-color: var(--md-error);
+  color: var(--md-error);
+}
+.fdb-act--reject:hover {
+  background: var(--md-error-c);
+}
+.fdb-act--reject.on {
+  background: var(--md-error);
+  border-color: var(--md-error);
+  color: #fff;
+}
+.fdb-status {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.fdb-pip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 999px;
+}
+.fdb-pip--cond {
+  color: var(--md-info);
+  background: var(--md-info-c);
+}
+.fdb-pip--flag {
+  color: var(--md-warn);
+  background: var(--md-warn-c);
+}
+.fdb-disp {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.fdb-disp--pass {
+  color: var(--md-success);
+}
+.fdb-disp--fail {
+  color: var(--md-error);
+}
+.fdb-disp--flag {
+  color: var(--md-warn);
+}
+.fdb-disp--info {
+  color: var(--md-info);
+}
+.fdb-disp--muted {
+  color: var(--md-on-surface-t);
+}
+
 /* ---- attestation decision bar (Administrative review) ---- */
 /* Shares the bottom-anchored .fm-actions footer + .fm-actions-row grammar with
    Findings. The 3-way answer toggle sits left; clicking the AI-suggested answer
@@ -2569,6 +2703,14 @@ textarea {
 }
 .wb-muted {
   color: var(--md-on-surface-v);
+}
+/* audit footnote for findings excluded via Remove (F-118) */
+.wb-excluded-note {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--paper-line, var(--paper-ink-3));
+  font-size: 0.86em;
+  font-style: italic;
 }
 
 /* value summary */
@@ -6863,6 +7005,13 @@ label.field {
   position: relative;
   z-index: 1;
 }
+/* Optional leading adornment (e.g. the run flow's per-type status glyph). */
+.qtab-lead {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+}
 .qtab .cnt {
   position: relative;
   z-index: 1;
@@ -9378,6 +9527,142 @@ select.qfilter {
   display: flex;
 }
 
+/* ---- Two-type shell (F-118): review-type tabs above the per-type rail+body ---- */
+.run-types {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--md-outline-v);
+  background: var(--md-surface);
+}
+/* Per-type status glyph folded into each tab: check (signed) · spinner
+   (processing) · hollow ring (pending). */
+.run-type-ic {
+  display: inline-flex;
+  align-items: center;
+}
+.run-type-ic--done {
+  color: var(--md-success);
+}
+/* living breathing-dot glyph (pending = calm slow pulse; processing = faster + halo) */
+.run-type-dot {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+}
+.run-type-core {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--md-on-surface-t);
+}
+.run-type-dot.is-proc .run-type-core {
+  background: var(--md-accent-d);
+}
+.run-type-halo {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--md-accent) 45%, transparent);
+}
+/* on the active (navy) pill, lift the dot to the on-selected ink for contrast */
+.qtab.on .run-type-core {
+  background: var(--md-on-selected);
+}
+.qtab.on .run-type-dot.is-proc .run-type-core {
+  background: #fff;
+}
+.qtab.on .run-type-halo {
+  background: color-mix(in srgb, #fff 40%, transparent);
+}
+/* gated Return (another ordered type still unsigned) */
+.run-foot-gate {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--md-on-surface-t);
+}
+
+/* ---- Administrative in-tab processing + slide-in ---- */
+/* In-tab processing reuses the Technical `.run-progress` hero for identical
+   spacing + scan animation; the ready state slides rail + body in together. */
+.run-admin-ready {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+}
+.run-admin-railwrap {
+  flex: none;
+  display: flex;
+}
+
+/* ---- Attestation accordion extras ---- */
+.run-ex-att-ai {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--md-on-surface-t);
+}
+.run-ex-attneeds {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 7px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 999px;
+  color: var(--md-warn);
+  background: var(--md-warn-c);
+}
+.run-ex-state--att-attested {
+  background: var(--md-success);
+}
+.run-ex-state--att-needs {
+  background: var(--md-warn);
+}
+.run-ex-state--att-pending {
+  background: var(--md-outline);
+}
+
+/* ---- AttestationDecisionBar (F-118 Administrative decision core) ---- */
+.adb {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.adb--focus {
+  flex: 0 0 auto;
+  padding: 14px 26px;
+  border-top: 1px solid var(--md-outline);
+  background: var(--md-surface-1);
+}
+.adb-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.adb .att-ai-sug {
+  margin-left: auto;
+}
+.adb .fm-disp {
+  margin-left: auto;
+}
+
 /* ---- Confirm gate (pre-review) — source-aware fast-confirm card ---- */
 .run-cf {
   flex: 1;
@@ -9906,14 +10191,25 @@ select.qfilter {
   position: absolute;
   left: 12%;
   right: 12%;
-  /* Anchored to the tile's vertical centre (line is 2px tall); Framer animates
-     `y` around this — no centering transform to fight (AGENTS Motion rule). */
+  /* Anchored to the tile's vertical centre (line is 2px tall). The sweep is a
+     CSS keyframe animation (not Framer) so it runs reliably regardless of the
+     surrounding AnimatePresence context — same approach as .run-scan-glow. */
   top: calc(50% - 1px);
   height: 2px;
   border-radius: 2px;
   z-index: 2;
   background: linear-gradient(90deg, transparent, var(--md-accent), transparent);
   box-shadow: 0 0 8px color-mix(in srgb, var(--md-accent) 60%, transparent);
+  animation: run-scan-sweep 2.1s ease-in-out infinite;
+}
+@keyframes run-scan-sweep {
+  0%,
+  100% {
+    transform: translateY(-18px);
+  }
+  50% {
+    transform: translateY(18px);
+  }
 }
 
 .run-progress-title {
@@ -10168,6 +10464,42 @@ select.qfilter {
 }
 .run-callout-x:hover {
   background: color-mix(in srgb, var(--md-warn) 14%, transparent);
+}
+/* Dirty/regenerate banner (D5) — petrol/accent tone to read as an AI-compile cue,
+   distinct from the amber low-confidence callout above it. */
+.run-dirty {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--md-accent-d);
+  background: var(--md-accent-c);
+  border: 1px solid color-mix(in srgb, var(--md-accent) 32%, transparent);
+  border-radius: 10px;
+  padding: 10px 12px 10px 14px;
+  margin-bottom: 12px;
+}
+.run-dirty-text {
+  flex: 1;
+}
+.run-dirty-text b {
+  color: var(--md-accent-d);
+}
+.run-dirty-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--md-on-primary);
+  background: var(--grad-primary);
+  border: none;
+  border-radius: 7px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+.run-dirty-cta:hover {
+  filter: brightness(1.06);
 }
 .run-foot {
   flex: none;
@@ -10666,42 +10998,102 @@ select.qfilter {
   color: var(--paper-ink-2);
 }
 
-/* Inline annotation = severity-tinted highlight + colored left edge */
+/* Inline annotation (F-118/D8/F4) = a severity-tinted highlight carrying an
+   inline number badge at its leading edge. All highlights sit CALM by default
+   (a soft tint, no edge bar); the SELECTED one goes full-strength + accent ring
+   so it reads without hiding the rest. Enlarged from the old 1px treatment.
+   `box-decoration-break: clone` keeps the padding + rounded ends across line
+   wraps. */
 .run-anno {
-  border-radius: 2px;
-  padding: 1px 2px 1px 5px;
+  border-radius: 4px;
+  padding: 2px 5px 2px 4px;
   color: var(--paper-ink);
   cursor: pointer;
-  background: var(--paper-warn-c);
-  box-shadow: inset 3px 0 0 var(--paper-warn);
-  transition: filter 0.15s ease;
+  background: color-mix(in srgb, var(--paper-warn-c) 52%, var(--paper-bg));
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
 }
 .run-anno--crit {
-  background: var(--paper-crit-c);
-  box-shadow: inset 3px 0 0 var(--paper-crit);
+  background: color-mix(in srgb, var(--paper-crit-c) 52%, var(--paper-bg));
 }
 .run-anno--fail {
-  background: var(--paper-err-c);
-  box-shadow: inset 3px 0 0 var(--paper-err);
+  background: color-mix(in srgb, var(--paper-err-c) 52%, var(--paper-bg));
 }
 .run-anno--flag {
-  background: var(--paper-warn-c);
-  box-shadow: inset 3px 0 0 var(--paper-warn);
+  background: color-mix(in srgb, var(--paper-warn-c) 52%, var(--paper-bg));
 }
 .run-anno--pass {
-  background: var(--paper-ok-c);
-  box-shadow: inset 3px 0 0 var(--paper-ok);
+  background: color-mix(in srgb, var(--paper-ok-c) 52%, var(--paper-bg));
 }
 .run-anno--na {
   background: var(--paper-bg-2);
-  box-shadow: inset 3px 0 0 var(--paper-ink-3);
 }
 .run-anno:hover {
-  filter: brightness(0.97);
+  background: color-mix(in srgb, var(--paper-warn-c) 78%, var(--paper-bg));
 }
+.run-anno--crit:hover {
+  background: color-mix(in srgb, var(--paper-crit-c) 78%, var(--paper-bg));
+}
+.run-anno--fail:hover {
+  background: color-mix(in srgb, var(--paper-err-c) 78%, var(--paper-bg));
+}
+.run-anno--pass:hover {
+  background: color-mix(in srgb, var(--paper-ok-c) 78%, var(--paper-bg));
+}
+/* selected → full-strength tint + ring */
 .run-anno.active {
-  outline: 2px solid var(--md-accent);
-  outline-offset: 1px;
+  box-shadow: 0 0 0 2px var(--paper-bg), 0 0 0 4px var(--md-accent);
+}
+.run-anno.active,
+.run-anno--flag.active {
+  background: var(--paper-warn-c);
+}
+.run-anno--crit.active {
+  background: var(--paper-crit-c);
+}
+.run-anno--fail.active {
+  background: var(--paper-err-c);
+}
+.run-anno--pass.active {
+  background: var(--paper-ok-c);
+}
+.run-anno--na.active {
+  background: var(--paper-bg-2);
+}
+/* leading-edge number badge riding on the highlight */
+.run-anno-badge {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  margin-right: 6px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  color: #fff;
+  background: var(--paper-warn);
+  vertical-align: 1px;
+  transform: translateY(-1px);
+}
+.run-anno--crit .run-anno-badge {
+  background: var(--paper-crit);
+}
+.run-anno--fail .run-anno-badge {
+  background: var(--paper-err);
+}
+.run-anno--flag .run-anno-badge {
+  background: var(--paper-warn);
+  color: var(--paper-ink);
+}
+.run-anno--pass .run-anno-badge {
+  background: var(--paper-ok);
+}
+.run-anno--na .run-anno-badge {
+  background: var(--paper-ink-3);
 }
 
 /* Numbered tag in the right margin, aligned to the cited line */
@@ -10786,6 +11178,7 @@ select.qfilter {
 .run-ex-item {
   border-left: 3px solid transparent;
   border-bottom: 1px solid var(--md-hairline, var(--md-outline-v));
+  transition: background 0.18s ease;
 }
 .run-ex-item.active {
   background: var(--md-surface-1);
@@ -10963,6 +11356,225 @@ select.qfilter {
   border-color: var(--md-accent);
   color: var(--md-accent-d);
 }
+
+/* ---- Enriched accordion body (F-118: zoned anatomy + audit chain) ---- */
+/* Collapsed-row confidence read-out, sitting before the disposition dot. */
+.run-ex-headconf {
+  flex: none;
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--md-on-surface-t);
+}
+.run-ex-state--removed {
+  background: var(--md-on-surface-t);
+}
+.run-ex-item.is-removed .run-ex-item-title {
+  color: var(--md-on-surface-t);
+  text-decoration: line-through;
+}
+/* zones — FINDING / EVIDENCE / AI AUDIT TRAIL / YOUR DECISION, hairline-divided */
+.run-ex-zone {
+  margin-bottom: 13px;
+}
+.run-ex-zt {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--md-on-surface-t);
+  margin-bottom: 7px;
+}
+.run-ex-zt--ai {
+  color: var(--md-accent-d);
+}
+.run-ex-zt .run-ex-sev {
+  margin-left: 1px;
+}
+.run-ex-zcite {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--md-accent-d);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+.run-ex-zcite:hover {
+  text-decoration: underline;
+}
+.run-ex-hair {
+  height: 1px;
+  background: var(--md-outline-v);
+  margin: 0 0 13px;
+}
+/* multi-stage reasoning timeline */
+.run-ex-audit {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.run-ex-astage {
+  display: flex;
+  gap: 10px;
+}
+.run-ex-astage-rail {
+  flex: none;
+  position: relative;
+  width: 12px;
+  display: flex;
+  justify-content: center;
+}
+.run-ex-astage-rail::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--md-outline-v);
+}
+.run-ex-astage:first-child .run-ex-astage-rail::before {
+  top: 7px;
+}
+.run-ex-astage:last-child .run-ex-astage-rail::before {
+  bottom: calc(100% - 9px);
+}
+.run-ex-astage-dot {
+  position: relative;
+  z-index: 1;
+  margin-top: 3px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid var(--md-surface);
+  background: var(--md-on-surface-t);
+}
+.run-ex-astage-dot--info {
+  background: var(--md-info);
+}
+.run-ex-astage-dot--pass {
+  background: var(--md-success);
+}
+.run-ex-astage-dot--flag {
+  background: var(--md-warn);
+}
+.run-ex-astage-dot--fail {
+  background: var(--md-error);
+}
+.run-ex-astage-main {
+  flex: 1;
+  padding-bottom: 11px;
+}
+.run-ex-astage:last-child .run-ex-astage-main {
+  padding-bottom: 0;
+}
+.run-ex-astage-h {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 2px;
+}
+.run-ex-astage-step {
+  font-size: 10px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--md-on-surface-t);
+}
+.run-ex-astage-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--md-on-surface);
+}
+.run-ex-averdict {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 1px 6px;
+  border-radius: 999px;
+}
+.run-ex-averdict--info {
+  background: var(--md-info-c);
+  color: var(--md-info);
+}
+.run-ex-averdict--pass {
+  background: var(--md-success-c);
+  color: var(--md-success);
+}
+.run-ex-averdict--flag {
+  background: var(--md-warn-c);
+  color: var(--md-warn);
+}
+.run-ex-averdict--fail {
+  background: var(--md-error-c);
+  color: var(--md-error);
+}
+.run-ex-astage-t {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--md-on-surface-v);
+}
+/* your-decision summary (above the decision bar) */
+.run-ex-decision-empty {
+  font-size: 12px;
+  font-style: italic;
+  color: var(--md-on-surface-t);
+}
+.run-ex-decision {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+.run-ex-decision-tag {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+.run-ex-decision-tag--pass {
+  background: var(--md-success-c);
+  color: var(--md-success);
+}
+.run-ex-decision-tag--flag {
+  background: var(--md-warn-c);
+  color: var(--md-warn);
+}
+.run-ex-decision-tag--fail {
+  background: var(--md-error-c);
+  color: var(--md-error);
+}
+.run-ex-decision-tag--info {
+  background: var(--md-info-c);
+  color: var(--md-info);
+}
+.run-ex-decision-tag--muted {
+  background: var(--md-surface-2);
+  color: var(--md-on-surface-v);
+}
+.run-ex-decision-text {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--md-on-surface);
+}
+.run-ex-decision-tpl {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--md-on-surface-t);
+}
+
 .run-ex-foot {
   flex: none;
   padding: 12px 14px;
@@ -11527,6 +12139,63 @@ select.qfilter {
 .intake-yc-item-sub {
   font-size: 11px;
   color: var(--md-on-surface-t);
+}
+
+/* ---- Launchpad landing (F-119 / D4) ----
+   The app's front door: the intake widget promoted from a mid-dashboard card to
+   a full-width hero on its own route. Bigger, lifted, and accent-lit so it reads
+   as "the primary action," not the anxious blank space Ed flagged. */
+.launchpad {
+  display: flex;
+  flex-direction: column;
+}
+.intake--hero {
+  border-radius: 18px;
+  box-shadow: var(--md-elev-2);
+  background: var(--md-surface);
+}
+.intake--hero .intake-head {
+  padding: 15px 20px;
+}
+.intake--hero .intake-title {
+  font-size: 17px;
+}
+.intake--hero .intake-body {
+  padding: 22px;
+  /* Sized so the drop zone (which flexes to fill) matches the taller
+     From-YouConnect state (search bar + ~360px list) — no height jump when
+     toggling between the two modes. */
+  min-height: 430px;
+}
+.intake--hero .intake-drop {
+  min-height: 300px;
+  border-width: 2px;
+  gap: 9px;
+  background: transparent;
+}
+.intake--hero .intake-drop:hover,
+.intake--hero .intake-drop:focus-visible,
+.intake--hero .intake-drop.drag {
+  background: var(--md-accent-c);
+}
+.intake--hero .intake-drop-ic {
+  width: 66px;
+  height: 66px;
+  border-radius: 18px;
+  margin-bottom: 8px;
+  box-shadow: var(--md-elev-1);
+}
+.intake--hero .intake-drop-title {
+  font-size: 22px;
+}
+.intake--hero .intake-drop p {
+  font-size: 13.5px;
+}
+.intake--hero .intake-yc-list {
+  max-height: 360px;
+}
+.intake--hero .intake-yc-item {
+  padding: 12px 14px;
 }
 
 /* ---- Entry fork (/start) ---- */

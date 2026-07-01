@@ -15,9 +15,9 @@ const COPY: Record<ComposerMode, { title: string; placeholder: string; cta: stri
     cta: "Reject & request revision",
   },
   override: {
-    title: "Your correction",
-    placeholder: "Your corrected wording or basis for disagreeing with the finding…",
-    cta: "Save override",
+    title: "Your edit",
+    placeholder: "Your corrected wording — the finding stands, phrased in your words…",
+    cta: "Save edit",
   },
   commented: {
     title: "Comment",
@@ -40,6 +40,7 @@ export function ResponseComposer({
   initialText,
   onSave,
   onCancel,
+  showAppliedHint = true,
 }: {
   mode: ComposerMode;
   finding: Finding;
@@ -48,6 +49,9 @@ export function ResponseComposer({
   initialText: string;
   onSave: (text: string, templateId?: string) => void;
   onCancel: () => void;
+  /** Show the "Template applied — edit freely" hint. Off where a decision zone
+   *  already surfaces the template used (the run-flow accordion). */
+  showAppliedHint?: boolean;
 }) {
   const [text, setText] = useState(initialText);
   const [templateId, setTemplateId] = useState<string | undefined>(undefined);
@@ -77,7 +81,7 @@ export function ResponseComposer({
         }}
       />
       <div className="fm-composer-foot">
-        {templateId && (
+        {templateId && showAppliedHint && (
           <span className="fm-composer-applied">Template applied — edit freely</span>
         )}
         <div className="fm-composer-actions">

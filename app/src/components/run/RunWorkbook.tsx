@@ -5,6 +5,7 @@ import { Button, Icon } from "@/components/atoms";
 import { useWorkspaceStore } from "@/store";
 import { WorkbookPreview } from "@/components/review/WorkbookPreview";
 import type { Review } from "@/types";
+import type { RunReviewType } from "@/store";
 import type { RunContext } from "./RunModal";
 import { RunCustomizePanel } from "./RunCustomize";
 
@@ -20,6 +21,9 @@ export function RunWorkbook({
   ctx,
   embedded,
   returnLabel,
+  reviewType = "technical",
+  canFinish = true,
+  pendingTypeLabel = null,
   onSign,
   onReviewFindings,
   onReturn,
@@ -28,11 +32,19 @@ export function RunWorkbook({
   ctx: RunContext;
   embedded: boolean;
   returnLabel: string | null;
+  /** Which review type this workbook belongs to (scope only; two-type shell). */
+  reviewType?: RunReviewType;
+  /** False while another ordered review type is still unsigned — gates Return. */
+  canFinish?: boolean;
+  /** Label of the still-unsigned type, for the gated-Return note. */
+  pendingTypeLabel?: string | null;
   onSign: () => void;
   onReviewFindings: () => void;
   onReturn: () => void;
 }) {
   const { findings, states, exhibits, workbook, signature, filing } = useWorkspaceStore();
+  const workbookDirty = useWorkspaceStore((s) => s.workbookDirty);
+  const regenerate = useWorkspaceStore((s) => s.regenerate);
   const [dismissed, setDismissed] = useState(false);
   const [customizing, setCustomizing] = useState(false);
 
@@ -86,7 +98,7 @@ export function RunWorkbook({
   };
 
   return (
-    <div className="run-wb">
+    <div className="run-wb" data-review-type={reviewType}>
       <div className="run-wb-bar">
         <span className="run-wb-bar-label">
           Workbook
@@ -152,6 +164,19 @@ export function RunWorkbook({
             </div>
           )}
 
+          {workbookDirty && !signed && (
+            <div className="run-dirty" role="status">
+              <Icon name="refresh" size={16} />
+              <span className="run-dirty-text">
+                <b>Findings changed</b> since this workbook was compiled — regenerate to fold
+                your latest decisions in.
+              </span>
+              <button className="run-dirty-cta" onClick={regenerate}>
+                <Icon name="refresh" size={14} /> Regenerate
+              </button>
+            </div>
+          )}
+
           {showCallout && (
             <div className="run-callout" role="status">
               <Icon name="warn" size={16} />
@@ -199,14 +224,21 @@ export function RunWorkbook({
               <Button variant="outline" size="sm" iconLeft="download">
                 Download
               </Button>
-              <Button
-                variant="primary"
-                size="sm"
-                iconLeft={embedded ? "forward" : "reviews"}
-                onClick={onReturn}
-              >
-                {embedded ? `Return to ${returnLabel ?? "YouConnect"}` : "Go to reviews"}
-              </Button>
+              {canFinish ? (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  iconLeft={embedded ? "forward" : "reviews"}
+                  onClick={onReturn}
+                >
+                  {embedded ? `Return to ${returnLabel ?? "YouConnect"}` : "Go to reviews"}
+                </Button>
+              ) : (
+                <span className="run-foot-gate">
+                  <Icon name="clock" size={14} />
+                  Sign {pendingTypeLabel ?? "all review types"} to finish
+                </span>
+              )}
             </>
           ) : (
             <>

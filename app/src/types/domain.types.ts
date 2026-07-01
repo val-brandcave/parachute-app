@@ -83,7 +83,8 @@ export type Disposition =
   | "accepted"
   | "override"
   | "rejected"
-  | "commented";
+  | "commented"
+  | "removed"; // not a concern — dropped from the workbook, kept for audit (F-118)
 
 export interface Finding extends BaseEntity {
   reviewId: UUID;

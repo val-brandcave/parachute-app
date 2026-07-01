@@ -57,6 +57,17 @@ interface RunState {
   display: RunDisplay | null;
   source: RunSource | null;
   reviewTypes: RunReviewType[];
+  /** Per-type sign status (F-118). Each ordered review type owns its own output
+   *  + independent sign, signed in any order; the run-level status reads from
+   *  this ("Technical ✓ · Administrative ○"). Return/Finish is gated until every
+   *  selected type is signed. Reset whenever `setReviewTypes` changes the set. */
+  signedTypes: RunReviewType[];
+  /** Administrative processing runs on its OWN timeline: the shared progress
+   *  screen lands the reviewer on Technical while the Admin type is still being
+   *  pre-filled. `adminReady` flips true when that in-tab processing completes,
+   *  swapping the Admin tab from its scanning animation to its surfaces. Reset
+   *  per-run + whenever the ordered set changes. */
+  adminReady: boolean;
   /** Compliance checklist chosen at the confirm gate (Administrative only).
    *  Null = use the org-default. Defaults live in Templates; an explicit pick is
    *  a per-order override (audited), same rule as the Order flow. */
@@ -74,6 +85,10 @@ interface RunState {
   setDisplay: (display: RunDisplay) => void;
   setReviewTypes: (types: RunReviewType[]) => void;
   setChecklistId: (id: string | null) => void;
+  /** Mark one review type signed / re-open it (idempotent). */
+  signType: (type: RunReviewType) => void;
+  unsignType: (type: RunReviewType) => void;
+  setAdminReady: (ready: boolean) => void;
   go: (spoke: RunSpoke) => void;
   close: () => void;
 }
@@ -86,6 +101,8 @@ export const useRunStore = create<RunState>((set) => ({
   display: null,
   source: null,
   reviewTypes: ["technical"],
+  signedTypes: [],
+  adminReady: false,
   checklistId: null,
   openRun: (reviewId, opts) =>
     set({
@@ -96,11 +113,22 @@ export const useRunStore = create<RunState>((set) => ({
       display: opts?.display ?? null,
       source: opts?.source ?? null,
       reviewTypes: ["technical"],
+      signedTypes: [],
+      adminReady: false,
       checklistId: null,
     }),
   setDisplay: (display) => set({ display }),
-  setReviewTypes: (reviewTypes) => set({ reviewTypes }),
+  // Changing the selected set invalidates any prior per-type signatures + resets
+  // Admin processing.
+  setReviewTypes: (reviewTypes) => set({ reviewTypes, signedTypes: [], adminReady: false }),
   setChecklistId: (checklistId) => set({ checklistId }),
+  signType: (type) =>
+    set((s) =>
+      s.signedTypes.includes(type) ? {} : { signedTypes: [...s.signedTypes, type] },
+    ),
+  unsignType: (type) =>
+    set((s) => ({ signedTypes: s.signedTypes.filter((t) => t !== type) })),
+  setAdminReady: (adminReady) => set({ adminReady }),
   go: (spoke) => set({ spoke }),
   close: () => set({ open: false }),
 }));

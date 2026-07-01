@@ -79,7 +79,12 @@ export function WorkbookPreview({
   const riskWording = settings.riskWording[risk] || riskMeta.wording;
 
   const disp = (id: string) => states[id]?.disposition ?? "pending";
-  const conditions = findings.filter((f) => states[f.id]?.condition);
+  // Removed findings are excluded from the workbook everywhere but retained for
+  // the audit trail (F-118). `removed` powers an optional "excluded" footnote.
+  const removed = findings.filter((f) => disp(f.id) === "removed");
+  const conditions = findings.filter(
+    (f) => states[f.id]?.condition && disp(f.id) !== "removed",
+  );
   const returned = settings.hideRejected
     ? []
     : findings.filter((f) => disp(f.id) === "rejected");
@@ -257,6 +262,13 @@ export function WorkbookPreview({
             ) : (
               <p className="wb-prose wb-muted">
                 No outstanding action items — all findings were reconciled without conditions.
+              </p>
+            )}
+            {removed.length > 0 && (
+              <p className="wb-prose wb-muted wb-excluded-note">
+                {removed.length} finding{removed.length === 1 ? "" : "s"} {removed.length === 1 ? "was" : "were"}{" "}
+                reviewed and excluded from this workbook as not material to the value conclusion;{" "}
+                {removed.length === 1 ? "it is" : "they are"} retained in the review audit log.
               </p>
             )}
           </>
