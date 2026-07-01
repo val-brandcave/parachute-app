@@ -54,6 +54,13 @@ interface WorkspaceState {
    *  layout (`ensureWorkbook`); reset on `loadReview` so it never leaks across
    *  reviews. Drives what the compiled doc renders. */
   workbook: WorkbookConfig | null;
+  /** Regenerate model (D5 — the workbook reflects finding edits only after an
+   *  explicit Regenerate). `compiledAt` is stamped when the workbook is first
+   *  derived; any finding change after that flips `workbookDirty`, which drives
+   *  the "Findings changed — regenerate" callout + the Findings footer's
+   *  "Regenerate workbook" affordance. Reset per-review on `loadReview`. */
+  workbookDirty: boolean;
+  compiledAt: number | null;
 
   loadReview: (reviewId: string) => Promise<void>;
   setDisposition: (
@@ -86,6 +93,8 @@ interface WorkspaceState {
   ensureWorkbook: (config: WorkbookConfig) => void;
   /** Re-derive the config from the inherited default, discarding edits. */
   resetWorkbook: (config: WorkbookConfig) => void;
+  /** Recompile: clear the dirty flag and re-stamp `compiledAt` (D5 Regenerate). */
+  regenerate: () => void;
   /** Move a section up/down within the order. */
   moveSection: (id: string, dir: -1 | 1) => void;
   /** Replace the whole section order (drag-to-reorder in the Builder). */
@@ -107,6 +116,8 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   signature: null,
   filing: null,
   workbook: null,
+  workbookDirty: false,
+  compiledAt: null,
 
   loadReview: async (reviewId) => {
     if (get().reviewId === reviewId && get().findings.length) return;
@@ -130,6 +141,8 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       signature: null,
       filing: null,
       workbook: null,
+      workbookDirty: false,
+      compiledAt: null,
       isLoading: false,
     });
   },
@@ -140,6 +153,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         ...s.states,
         [findingId]: { ...s.states[findingId], disposition: disp, reason, templateId },
       },
+      workbookDirty: s.compiledAt != null ? true : s.workbookDirty,
     })),
 
   setComment: (findingId, comment) =>
@@ -148,6 +162,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         ...s.states,
         [findingId]: { ...s.states[findingId], comment },
       },
+      workbookDirty: s.compiledAt != null ? true : s.workbookDirty,
     })),
 
   toggleCondition: (findingId) =>
@@ -159,6 +174,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
           condition: !s.states[findingId]?.condition,
         },
       },
+      workbookDirty: s.compiledAt != null ? true : s.workbookDirty,
     })),
 
   toggleFlag: (findingId) =>
@@ -170,6 +186,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
           flagged: !s.states[findingId]?.flagged,
         },
       },
+      workbookDirty: s.compiledAt != null ? true : s.workbookDirty,
     })),
 
   acceptAllPasses: () =>
@@ -181,7 +198,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
           if (states[f.id].disposition === "pending")
             states[f.id] = { ...states[f.id], disposition: "accepted" };
         });
-      return { states };
+      return { states, workbookDirty: s.compiledAt != null ? true : s.workbookDirty };
     }),
 
   addReviewerFinding: (input) =>
@@ -208,6 +225,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       return {
         findings: [...s.findings, f],
         states: { ...s.states, [f.id]: { disposition: "pending" } },
+        workbookDirty: s.compiledAt != null ? true : s.workbookDirty,
       };
     }),
 
@@ -217,8 +235,12 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   reopenWorkbook: () => set({ signature: null, filing: null }),
 
   // ---- Workbook layout config (the Builder) ----
-  ensureWorkbook: (config) => set((s) => (s.workbook ? {} : { workbook: config })),
+  // First derivation counts as the initial compile → stamp `compiledAt` so later
+  // finding edits register as dirty (D5). Idempotent: only seeds once.
+  ensureWorkbook: (config) =>
+    set((s) => (s.workbook ? {} : { workbook: config, compiledAt: Date.now() })),
   resetWorkbook: (config) => set({ workbook: config }),
+  regenerate: () => set({ workbookDirty: false, compiledAt: Date.now() }),
 
   moveSection: (id, dir) =>
     set((s) => {
@@ -295,7 +317,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
 
 /** Workbook tally derived from current dispositions. */
 export function tally(states: Record<string, FindingState>) {
-  const t = { accepted: 0, override: 0, rejected: 0, commented: 0, pending: 0 };
+  const t = { accepted: 0, override: 0, rejected: 0, commented: 0, removed: 0, pending: 0 };
   Object.values(states).forEach((s) => {
     t[s.disposition] = (t[s.disposition] ?? 0) + 1;
   });

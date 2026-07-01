@@ -203,6 +203,7 @@ const DISP_TAG: Record<
   override: { label: "Reviewer override", tone: "flag" },
   rejected: { label: "Revision required", tone: "fail" },
   commented: { label: "Commented", tone: "info" },
+  removed: { label: "Excluded (audit)", tone: "info" },
   pending: { label: "Open", tone: "info" },
 };
 
@@ -223,6 +224,9 @@ export function dispositionLine(state: FindingState): string {
       return state.reason || "Returned to the appraiser for revision (see return letter).";
     case "commented":
       return state.comment || state.reason || "Comment recorded for the file.";
+    case "removed":
+      // Excluded from the workbook body entirely; retained only in the audit log.
+      return "";
     default:
       return "";
   }
@@ -296,6 +300,59 @@ export function aiBasisLine(f: Finding): string {
   return `AI basis: ${f.status} · confidence ${Math.round(f.confidence * 100)}% · ${tag} · p.${f.page}`;
 }
 
+/* ---------- AI audit trail: multi-stage reasoning chain ---------- */
+
+export interface AuditStage {
+  n: number;
+  label: string;
+  verdict: string;
+  tone: "info" | "pass" | "flag" | "fail";
+  text: string;
+}
+
+/** A presentational reasoning chain (Screen → Verify → Adjudicate) derived from
+ *  the finding's single `auditTag`/`auditText` — surfaces *how* the AI reached
+ *  the tag, not just the tag (F-118 §3/§6). This is the SEAM for Ed's real
+ *  5-stage output + per-stage citations (F3): swap the body here once that lands,
+ *  no call-site change. Stage 3 carries the real `auditText`; 1–2 are framed. */
+export function auditStages(f: Finding): AuditStage[] {
+  const verify =
+    f.auditTag === "CONFIRMED"
+      ? { verdict: "Consistent", tone: "pass" as const }
+      : f.auditTag === "CORRECTED"
+        ? { verdict: "Discrepancy", tone: "flag" as const }
+        : { verdict: "Needs review", tone: "fail" as const };
+  const adjudicate =
+    f.auditTag === "CONFIRMED"
+      ? { verdict: "Confirmed", tone: "pass" as const }
+      : f.auditTag === "CORRECTED"
+        ? { verdict: "Corrected", tone: "flag" as const }
+        : { verdict: "Flagged", tone: "fail" as const };
+  return [
+    {
+      n: 1,
+      label: "Screen",
+      verdict: "Matched",
+      tone: "info",
+      text: `Located the ${f.category.toLowerCase()} passage on p.${f.page} and matched it to the review checklist item.`,
+    },
+    {
+      n: 2,
+      label: "Verify",
+      verdict: verify.verdict,
+      tone: verify.tone,
+      text: "Cross-checked the figure against the report's other approaches, comparable sales and stated policy limits.",
+    },
+    {
+      n: 3,
+      label: "Adjudicate",
+      verdict: adjudicate.verdict,
+      tone: adjudicate.tone,
+      text: f.auditText,
+    },
+  ];
+}
+
 /* ---------- Conclusion action items (derived from dispositions) ---------- */
 
 export interface ActionItem {
@@ -314,6 +371,8 @@ export function actionItems(
   return findings
     .filter((f) => {
       const st = states[f.id];
+      // Removed findings are dropped from the workbook — never a tracked ask.
+      if (st?.disposition === "removed") return false;
       return st?.disposition === "rejected" || st?.condition;
     })
     .map((f, i) => ({

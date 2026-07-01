@@ -52,6 +52,7 @@ export const DISP_META: Record<
   override: { label: "Overridden", icon: "edit" },
   rejected: { label: "Rejected", icon: "reject" },
   commented: { label: "Commented", icon: "comment" },
+  removed: { label: "Removed", icon: "eye-off" },
 };
 
 export const STATUS_META: Record<

@@ -217,7 +217,7 @@ export function AttestationPreview({ reviewId }: { reviewId: string }) {
 
 /* ---- the compiled attestation document ---- */
 
-function AttestationDoc({
+export function AttestationDoc({
   review,
   rows,
   states,

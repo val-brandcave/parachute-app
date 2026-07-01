@@ -1,6 +1,6 @@
 "use client";
 
-import { useId } from "react";
+import { useId, type ReactNode } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -18,7 +18,7 @@ export function Tabs<T extends string>({
   value,
   onChange,
 }: {
-  tabs: { value: T; label: string; count?: number }[];
+  tabs: { value: T; label: string; count?: number; leading?: ReactNode }[];
   value: T;
   onChange: (v: T) => void;
 }) {
@@ -48,6 +48,7 @@ export function Tabs<T extends string>({
                   transition={SPRING}
                 />
               )}
+              {t.leading != null && <span className="qtab-lead">{t.leading}</span>}
               <span className="qtab-lb">{t.label}</span>
               {t.count != null && <span className="cnt">{t.count}</span>}
             </motion.button>

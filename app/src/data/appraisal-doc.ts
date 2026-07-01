@@ -15,10 +15,14 @@
  * analytical content (comps, statements, rates) is representative seed data.
  */
 
-/** An inline run of body text. `anchor` (a finding id) marks the cited span. */
+/** An inline run of body text. `anchor` (a finding id) marks the span cited by a
+ *  Technical finding; `attAnchor` (a checklist item id) marks the span cited by
+ *  an Administrative attestation. A run may carry both when the same span is
+ *  cited on each track; each viewer reads only its own field. */
 export interface DocRun {
   text: string;
   anchor?: string;
+  attAnchor?: string;
 }
 
 export type DocBlock =
@@ -103,15 +107,24 @@ export function buildAppraisalDoc(c: AppraisalCtx): DocPage[] {
           type: "p",
           runs: [
             t(
-              `In accordance with your request, we have appraised the above-referenced property for ${c.bank} for mortgage lending purposes. The subject is a ${c.propertyType.toLowerCase()} property held in fee simple. Based on the analysis that follows, and subject to the assumptions and limiting conditions of this report, our opinion of market value as of ${c.effectiveDate} is stated below.`,
+              `In accordance with your request, we have appraised the above-referenced property for ${c.bank} for mortgage lending purposes. The subject is a ${c.propertyType.toLowerCase()} property held in fee simple. Based on the analysis that follows, and subject to the assumptions and limiting conditions of this report, `,
             ),
+            {
+              attAnchor: "ci-05",
+              text: `our opinion of market value as of ${c.effectiveDate} is stated below.`,
+            },
           ],
         },
         {
           type: "p",
           runs: [
+            t(`The subject is identified as ${c.address}. `),
+            {
+              attAnchor: "ci-02",
+              text: `The intended use of this appraisal is to assist ${c.bank} in a mortgage-lending decision; the intended users are ${c.bank}, its participants, and its regulators.`,
+            },
             t(
-              `The subject is identified as ${c.address}. The intended use of this appraisal is to assist ${c.bank} in a mortgage-lending decision; the intended users are ${c.bank}, its participants, and its regulators. Use by any other party is neither intended nor authorized. A reasonable exposure time of nine to twelve months is estimated as of the effective date of value.`,
+              ` Use by any other party is neither intended nor authorized. A reasonable exposure time of nine to twelve months is estimated as of the effective date of value.`,
             ),
           ],
         },
@@ -170,8 +183,13 @@ export function buildAppraisalDoc(c: AppraisalCtx): DocPage[] {
         {
           type: "p",
           runs: [
+            t(`This appraisal was prepared for ${c.bank} for mortgage lending purposes and `),
+            {
+              attAnchor: "ci-04",
+              text: "conforms to the Uniform Standards of Professional Appraisal Practice (USPAP), the Interagency Appraisal and Evaluation Guidelines, and the bank's appraisal policy.",
+            },
             t(
-              `This appraisal was prepared for ${c.bank} for mortgage lending purposes and conforms to the Uniform Standards of Professional Appraisal Practice (USPAP), the Interagency Appraisal and Evaluation Guidelines, and the bank's appraisal policy. The appraiser conducted an interior and exterior inspection of the subject, photographed the improvements, and confirmed site characteristics against public records.`,
+              ` The appraiser conducted an interior and exterior inspection of the subject, photographed the improvements, and confirmed site characteristics against public records.`,
             ),
           ],
         },
@@ -193,8 +211,12 @@ export function buildAppraisalDoc(c: AppraisalCtx): DocPage[] {
         {
           type: "note",
           runs: [
+            {
+              attAnchor: "ci-06",
+              text: "Extraordinary assumptions: none. Hypothetical conditions: none.",
+            },
             t(
-              "Extraordinary assumptions: none. Hypothetical conditions: none. The value opinion assumes the improvements are free of undisclosed structural or environmental defects.",
+              " The value opinion assumes the improvements are free of undisclosed structural or environmental defects.",
             ),
           ],
         },
@@ -327,6 +349,7 @@ export function buildAppraisalDoc(c: AppraisalCtx): DocPage[] {
             ),
             {
               anchor: "finding-002",
+              attAnchor: "ci-07",
               text: "A capitalization rate of 5.25% was selected",
             },
             t(

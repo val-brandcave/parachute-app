@@ -29,7 +29,7 @@ export default function LaunchPage() {
       setTimeout(() => setStep(2), 1700),
       setTimeout(() => setStep(3), 2500), // all checked → arrival beat
       setTimeout(() => setLeaving(true), 3100), // morph out
-      setTimeout(() => router.push("/dashboard"), 3600),
+      setTimeout(() => router.push("/launchpad"), 3600),
     ];
     return () => timers.forEach(clearTimeout);
   }, [router]);

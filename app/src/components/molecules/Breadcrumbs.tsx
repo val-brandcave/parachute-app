@@ -8,6 +8,7 @@ import { useReviewsStore } from "@/store";
 type Crumb = { label: string; href?: string };
 
 const TOP_LABELS: Record<string, string> = {
+  launchpad: "Launchpad",
   dashboard: "Dashboard",
   reviews: "Reviews",
   templates: "Templates",

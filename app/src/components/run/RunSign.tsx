@@ -1,42 +1,72 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button, Icon, IconButton } from "@/components/atoms";
-import { useWorkspaceStore } from "@/store";
 import { CURRENT_USER } from "@/lib/current-user";
-import { RECOMMENDATION_META, RISK_META, formatLongDate } from "@/lib/workbook";
-import type { RunContext } from "./RunModal";
+import { formatLongDate } from "@/lib/workbook";
+
+/** One summary row shown above the signature pad (e.g. Recommendation / Risk, or
+ *  Items attested / Changes). */
+export interface SignRow {
+  label: string;
+  value: string;
+  valueColor?: string;
+}
+
+/** The sealed signature payload (shared shape across workbook + attestation). */
+export interface SignSeal {
+  name: string;
+  designation: string;
+  at: number;
+  sha: string;
+}
 
 /**
- * Sign & finalize — a floating two-step modal over the workbook (the document stays
- * visible behind a scrim). Step 1 "Sign": review summary + a Type/Draw signature
- * pad, gated until every finding is dispositioned. Step 2 "Finalized": the sealed
- * result (signer · timestamp · SHA-256) + Download + Return. Sealing flips the
- * workbook behind it to FINAL; which step shows is derived from the signature.
+ * Sign & seal — a floating two-step modal over the document (which stays visible
+ * behind a scrim). Step 1 "Sign": a summary + a Type/Draw signature pad, gated
+ * until the work is complete. Step 2 "Finalized": the sealed result (signer ·
+ * timestamp · SHA-256) + Download + Return. Fully config-driven so BOTH the
+ * Technical workbook and the Administrative attestation share the identical seal
+ * experience — the caller supplies the copy, summary rows, blocked gate + seal.
  */
 export function RunSignModal({
   open,
-  ctx,
+  sealed,
+  signature,
   embedded,
   returnLabel,
   signing,
+  blocked,
+  blockedNote,
+  title,
+  statement,
+  rows,
+  sealedTitle,
+  sealedNote,
+  signCta,
   onSign,
   onClose,
   onReturn,
 }: {
   open: boolean;
-  ctx: RunContext;
+  sealed: boolean;
+  signature: SignSeal | null;
   embedded: boolean;
   returnLabel: string | null;
   signing: boolean;
+  blocked: boolean;
+  blockedNote: ReactNode;
+  title: string;
+  statement: ReactNode;
+  rows: SignRow[];
+  sealedTitle: string;
+  sealedNote: ReactNode;
+  signCta: string;
   onSign: () => void;
   onClose: () => void;
   onReturn: () => void;
 }) {
-  const signature = useWorkspaceStore((s) => s.signature);
-  const sealed = !!signature;
-  const blocked = ctx.pendingCount > 0;
 
   // Signature pad state (lifted so the footer can gate on it).
   const [mode, setMode] = useState<"type" | "draw">("type");
@@ -128,73 +158,46 @@ export function RunSignModal({
             onClick={(e) => e.stopPropagation()}
           >
             <header className="run-sm-head">
-              <h2>Sign &amp; finalize</h2>
+              <h2>{title}</h2>
               <IconButton name="close" onClick={onClose} aria-label="Close" />
             </header>
 
             <div className="run-sm-body scroll">
-              {sealed ? (
+              {sealed && signature ? (
                 <div className="run-final">
                   <div className="run-final-seal">
                     <Icon name="check-circle" size={30} />
                   </div>
-                  <h3 className="run-seal-title">Workbook signed — FINAL</h3>
-                  <p className="run-seal-stmt run-final-stmt">
-                    {embedded ? (
-                      <>
-                        The signed workbook and audit trail have been{" "}
-                        <b>pushed back to {returnLabel ?? "YouConnect"}</b> and attached to the
-                        originating record.
-                      </>
-                    ) : (
-                      <>
-                        A tamper-evident SHA-256 seal and timestamp are applied. The workbook is
-                        now <b>FINAL</b>.
-                      </>
-                    )}
-                  </p>
+                  <h3 className="run-seal-title">{sealedTitle}</h3>
+                  <p className="run-seal-stmt run-final-stmt">{sealedNote}</p>
                   <div className="run-seal-rows run-final-rows">
                     <div className="run-seal-row">
                       <span>Signed by</span>
                       <b>
-                        {signature!.name} · {signature!.designation}
+                        {signature.name} · {signature.designation}
                       </b>
                     </div>
                     <div className="run-seal-row">
                       <span>Timestamp</span>
-                      <b>{formatLongDate(signature!.at)}</b>
+                      <b>{formatLongDate(signature.at)}</b>
                     </div>
                     <div className="run-seal-row">
                       <span>SHA-256 seal</span>
-                      <b title={signature!.sha}>{signature!.sha.slice(0, 24)}…</b>
+                      <b title={signature.sha}>{signature.sha.slice(0, 24)}…</b>
                     </div>
                   </div>
                 </div>
               ) : (
                 <>
-                  <p className="run-sm-stmt">
-                    Signing certifies this review under USPAP Standard 3 and applies a
-                    tamper-evident SHA-256 seal and timestamp — <b>DRAFT → FINAL</b>, with the
-                    full audit trail.
-                  </p>
+                  <p className="run-sm-stmt">{statement}</p>
 
                   <div className="run-seal-rows">
-                    <div className="run-seal-row">
-                      <span>Recommendation</span>
-                      <b>{RECOMMENDATION_META[ctx.recommendation].label}</b>
-                    </div>
-                    <div className="run-seal-row">
-                      <span>Risk rating</span>
-                      <b style={{ color: RISK_META[ctx.risk].color }}>
-                        {RISK_META[ctx.risk].label}
-                      </b>
-                    </div>
-                    <div className="run-seal-row">
-                      <span>Reviewer</span>
-                      <b>
-                        {CURRENT_USER.signatureName} · {CURRENT_USER.designation}
-                      </b>
-                    </div>
+                    {rows.map((r) => (
+                      <div className="run-seal-row" key={r.label}>
+                        <span>{r.label}</span>
+                        <b style={r.valueColor ? { color: r.valueColor } : undefined}>{r.value}</b>
+                      </div>
+                    ))}
                   </div>
 
                   <div className="run-seal-pad-wrap">
@@ -252,9 +255,7 @@ export function RunSignModal({
 
                   {blocked && (
                     <p className="run-seal-block">
-                      <Icon name="clock" size={14} /> {ctx.pendingCount} finding
-                      {ctx.pendingCount === 1 ? "" : "s"} still need a decision — open Findings to
-                      resolve them before signing.
+                      <Icon name="clock" size={14} /> {blockedNote}
                     </p>
                   )}
                 </>
@@ -281,7 +282,7 @@ export function RunSignModal({
                   <span className="run-sm-foot-note">
                     {blocked ? (
                       <>
-                        <Icon name="clock" size={14} /> {ctx.pendingCount} to resolve first
+                        <Icon name="clock" size={14} /> Resolve first
                       </>
                     ) : (
                       <>
@@ -296,7 +297,7 @@ export function RunSignModal({
                     disabled={signing || blocked || !hasSignature}
                     onClick={onSign}
                   >
-                    {signing ? "Sealing…" : "Sign & seal workbook"}
+                    {signing ? "Sealing…" : signCta}
                   </Button>
                 </>
               )}

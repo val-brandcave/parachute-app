@@ -65,6 +65,12 @@ interface AdminState {
   isLoading: boolean;
   /** null = DRAFT; set = signed. Per-review; reset on load. */
   signature: AttestationSignature | null;
+  /** Regenerate model (mirrors the Technical workbook, D5). `compiledAt` is
+   *  stamped when the attestation is first compiled (processing completes); any
+   *  attestation change after that flips `attDirty`, driving the "Attestations
+   *  changed — regenerate" callout on the Preview + the Checklist footer. */
+  attDirty: boolean;
+  compiledAt: number | null;
 
   loadAdmin: (reviewId: string) => Promise<void>;
   /** Set the reviewer's answer. Changing it away from the confirmed value
@@ -84,6 +90,12 @@ interface AdminState {
   // ---- Attestation lifecycle ----
   signAttestation: (sig: AttestationSignature) => void;
   reopenAttestation: () => void;
+
+  // ---- Regenerate / dirty ----
+  /** Stamp the initial compile (attestation processing done). Idempotent. */
+  markAttCompiled: () => void;
+  /** Recompile: clear the dirty flag + re-stamp compiledAt (D5 Regenerate). */
+  regenerateAtt: () => void;
 }
 
 export const useAdminStore = create<AdminState>((set, get) => ({
@@ -94,6 +106,8 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   states: {},
   isLoading: false,
   signature: null,
+  attDirty: false,
+  compiledAt: null,
 
   loadAdmin: async (reviewId) => {
     if (get().reviewId === reviewId && get().rows.length) return;
@@ -138,6 +152,8 @@ export const useAdminStore = create<AdminState>((set, get) => ({
       rows,
       states,
       signature: null,
+      attDirty: false,
+      compiledAt: null,
       isLoading: false,
     });
   },
@@ -150,13 +166,17 @@ export const useAdminStore = create<AdminState>((set, get) => ({
       if (prev.answer === answer) return {};
       return {
         states: { ...s.states, [itemId]: { ...prev, answer, confirmed: false } },
+        attDirty: s.compiledAt != null ? true : s.attDirty,
       };
     }),
 
   setReason: (itemId, reason) =>
     set((s) =>
       s.states[itemId]
-        ? { states: { ...s.states, [itemId]: { ...s.states[itemId], reason } } }
+        ? {
+            states: { ...s.states, [itemId]: { ...s.states[itemId], reason } },
+            attDirty: s.compiledAt != null ? true : s.attDirty,
+          }
         : {},
     ),
 
@@ -167,13 +187,19 @@ export const useAdminStore = create<AdminState>((set, get) => ({
       if (!st || !row) return {};
       const changed = st.answer !== row.aiAnswer;
       if (changed && !st.reason?.trim()) return {}; // reason required — UI gates this
-      return { states: { ...s.states, [itemId]: { ...st, confirmed: true } } };
+      return {
+        states: { ...s.states, [itemId]: { ...st, confirmed: true } },
+        attDirty: s.compiledAt != null ? true : s.attDirty,
+      };
     }),
 
   unconfirm: (itemId) =>
     set((s) =>
       s.states[itemId]
-        ? { states: { ...s.states, [itemId]: { ...s.states[itemId], confirmed: false } } }
+        ? {
+            states: { ...s.states, [itemId]: { ...s.states[itemId], confirmed: false } },
+            attDirty: s.compiledAt != null ? true : s.attDirty,
+          }
         : {},
     ),
 
@@ -186,9 +212,12 @@ export const useAdminStore = create<AdminState>((set, get) => ({
           states[row.itemId] = { ...st, confirmed: true };
         }
       });
-      return { states };
+      return { states, attDirty: s.compiledAt != null ? true : s.attDirty };
     }),
 
   signAttestation: (sig) => set({ signature: sig }),
   reopenAttestation: () => set({ signature: null }),
+
+  markAttCompiled: () => set((s) => (s.compiledAt ? {} : { compiledAt: Date.now(), attDirty: false })),
+  regenerateAtt: () => set({ attDirty: false, compiledAt: Date.now() }),
 }));

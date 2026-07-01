@@ -8,6 +8,7 @@ import { usePrefsStore } from "@/store";
 import type { IconName } from "@/components/atoms";
 
 const PRIMARY: { href: string; icon: IconName; label: string }[] = [
+  { href: "/launchpad", icon: "rocket", label: "Launchpad" },
   { href: "/dashboard", icon: "dashboard", label: "Dashboard" },
   { href: "/reviews", icon: "reviews", label: "Reviews" },
   { href: "/templates", icon: "templates", label: "Templates" },

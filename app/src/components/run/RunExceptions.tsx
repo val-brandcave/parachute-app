@@ -1,12 +1,13 @@
 "use client";
 
 import { Fragment, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { Button, Icon } from "@/components/atoms";
-import { ActionMenu } from "@/components/molecules";
-import { useWorkspaceStore } from "@/store";
+import { ActionMenu, FindingDecisionBar } from "@/components/molecules";
+import { useWorkspaceStore, useTemplatesStore, type RunReviewType } from "@/store";
 import { buildAppraisalDoc, type DocBlock, type DocRun } from "@/data/appraisal-doc";
-import { valueSummary, formatLongDate } from "@/lib/workbook";
-import type { Finding, Review, Severity } from "@/types";
+import { valueSummary, formatLongDate, auditStages } from "@/lib/workbook";
+import type { Finding, FindingState, Review, Severity, ResponseTemplate } from "@/types";
 
 const SEV_META: Record<Severity, { label: string; tone: string; color: string }> = {
   crit: { label: "Critical", tone: "crit", color: "var(--md-crit)" },
@@ -25,6 +26,11 @@ function rank(f: Finding) {
 /** Base page width (px) at 100%; zoom scales it (text stays crisp, reflows). */
 const PAGE_W = 760;
 
+/** Vector PDFs (the default) pin the finding number INLINE on the highlighted
+ *  span. The measured right-margin tag column is the scanned/OCR-PDF fallback
+ *  only (F-118/D8/F4) — kept behind this flag until rasterized sources land. */
+const SCANNED = false;
+
 /**
  * S-B Exceptions — the proofing view. The ORIGINAL appraisal is the hero: a
  * continuous scroll of white Letter pages (a real third-party PDF, so the paper
@@ -34,8 +40,21 @@ const PAGE_W = 760;
  * right. Selecting a finding (tag, highlight, or thread row) scrolls to and
  * focuses its highlight; Agree / Override / Flag write back to the workbook live.
  */
-export function RunExceptions({ review, onBack }: { review: Review; onBack: () => void }) {
-  const { findings, states, setDisposition, toggleFlag } = useWorkspaceStore();
+export function RunExceptions({
+  review,
+  reviewType = "technical",
+  onBack,
+}: {
+  review: Review;
+  /** Which review type this findings surface belongs to (scope only). */
+  reviewType?: RunReviewType;
+  onBack: () => void;
+}) {
+  const { findings, states, setDisposition, setComment, toggleCondition, toggleFlag } =
+    useWorkspaceStore();
+  const workbookDirty = useWorkspaceStore((s) => s.workbookDirty);
+  const regenerate = useWorkspaceStore((s) => s.regenerate);
+  const responses = useTemplatesStore((s) => s.responses);
 
   const exceptions = useMemo(() => [...findings].sort((a, b) => rank(a) - rank(b)), [findings]);
   const numberOf = useMemo(() => {
@@ -174,6 +193,9 @@ export function RunExceptions({ review, onBack }: { review: Review; onBack: () =
         className={`run-anno run-anno--${tone}${active ? " active" : ""}`}
         onClick={() => selectFinding(r.anchor!)}
       >
+        <span className={`run-anno-badge run-anno-badge--${tone}`} aria-hidden="true">
+          {numberOf[r.anchor]}
+        </span>
         {r.text}
       </mark>
     );
@@ -257,7 +279,7 @@ export function RunExceptions({ review, onBack }: { review: Review; onBack: () =
   }
 
   return (
-    <div className="run-ex">
+    <div className="run-ex" data-review-type={reviewType}>
       {/* ---- Document viewer (hero) ---- */}
       <div className="run-ex-doc">
         <div className="run-ex-bar">
@@ -352,24 +374,26 @@ export function RunExceptions({ review, onBack }: { review: Review; onBack: () =
                   {p.blocks.map(renderBlock)}
                 </div>
 
-                {/* Right-margin annotation tags, aligned to their cited line */}
-                {(anchorsByPage[p.n] ?? []).map((fid) => {
-                  const top = tagTops[fid];
-                  if (top == null) return null;
-                  const f = findingById[fid];
-                  const tone = SEV_META[f.severity].tone;
-                  return (
-                    <button
-                      key={fid}
-                      className={`run-anno-tag run-anno-tag--${tone}${selectedId === fid ? " active" : ""}`}
-                      style={{ top }}
-                      onClick={() => selectFinding(fid)}
-                      aria-label={`Finding ${numberOf[fid]}: ${f.category}`}
-                    >
-                      {numberOf[fid]}
-                    </button>
-                  );
-                })}
+                {/* Scanned/OCR fallback only: right-margin tags aligned to the
+                    cited line. Vector PDFs use the inline highlight badge above. */}
+                {SCANNED &&
+                  (anchorsByPage[p.n] ?? []).map((fid) => {
+                    const top = tagTops[fid];
+                    if (top == null) return null;
+                    const f = findingById[fid];
+                    const tone = SEV_META[f.severity].tone;
+                    return (
+                      <button
+                        key={fid}
+                        className={`run-anno-tag run-anno-tag--${tone}${selectedId === fid ? " active" : ""}`}
+                        style={{ top }}
+                        onClick={() => selectFinding(fid)}
+                        aria-label={`Finding ${numberOf[fid]}: ${f.category}`}
+                      >
+                        {numberOf[fid]}
+                      </button>
+                    );
+                  })}
 
                 <div className="run-ex-page-foot">
                   <span>Confidential · prepared for {review.bank}</span>
@@ -392,20 +416,21 @@ export function RunExceptions({ review, onBack }: { review: Review; onBack: () =
           </span>
           <ActionMenu
             tooltip="More actions"
-            items={[{ label: "Agree with all", icon: "check-all", onClick: agreeAll }]}
+            items={[{ label: "Accept all pending", icon: "check-all", onClick: agreeAll }]}
           />
         </div>
 
         <div className="run-ex-list scroll">
           {exceptions.map((f, i) => {
             const active = f.id === selectedId;
-            const disp = states[f.id]?.disposition ?? "pending";
-            const flagged = !!states[f.id]?.flagged;
+            const state: FindingState = states[f.id] ?? { disposition: "pending" };
+            const disp = state.disposition;
             const sev = SEV_META[f.severity];
+            const removed = disp === "removed";
             return (
               <div
                 key={f.id}
-                className={`run-ex-item${active ? " active" : ""}`}
+                className={`run-ex-item${active ? " active" : ""}${removed ? " is-removed" : ""}`}
                 style={{ borderLeftColor: sev.color }}
               >
                 <button
@@ -415,7 +440,12 @@ export function RunExceptions({ review, onBack }: { review: Review; onBack: () =
                 >
                   <span className={`run-ex-num run-ex-num--${sev.tone}`}>{i + 1}</span>
                   <span className="run-ex-item-title">{f.category}</span>
-                  <span className={`run-ex-state run-ex-state--${disp}`} aria-hidden="true" />
+                  <span className="run-ex-headconf">{Math.round(f.confidence * 100)}%</span>
+                  <span
+                    className={`run-ex-state run-ex-state--${disp}`}
+                    aria-hidden="true"
+                    title={disp === "pending" ? "No decision yet" : disp}
+                  />
                   <Icon
                     name="chevron-down"
                     size={16}
@@ -423,61 +453,176 @@ export function RunExceptions({ review, onBack }: { review: Review; onBack: () =
                   />
                 </button>
 
-                {active && (
-                  <div className="run-ex-item-body">
-                    <div className="run-ex-item-tags">
-                      <span className={`run-ex-sev run-ex-sev--${sev.tone}`}>{sev.label}</span>
-                      <span className="run-ex-conf">
-                        <span className="run-ex-conf-bar">
-                          <span style={{ width: `${Math.round(f.confidence * 100)}%` }} />
-                        </span>
-                        {Math.round(f.confidence * 100)}%
-                      </span>
-                      <span className="run-ex-cite">report p.{f.page}</span>
+                <AnimatePresence initial={false}>
+                  {active && (
+                    <motion.div
+                      key="body"
+                      className="run-ex-item-body"
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.24, ease: [0.4, 0, 0.2, 1] }}
+                      style={{ overflow: "hidden" }}
+                    >
+                    {/* FINDING */}
+                    <div className="run-ex-zone">
+                      <div className="run-ex-zt">
+                        Finding
+                        <span className={`run-ex-sev run-ex-sev--${sev.tone}`}>{sev.label}</span>
+                      </div>
+                      <p className="run-ex-q">{f.question}</p>
+                      <p className="run-ex-analysis">{f.analysis}</p>
                     </div>
 
-                    <p className="run-ex-q">{f.question}</p>
-                    <p className="run-ex-analysis">{f.analysis}</p>
-                    <blockquote className="run-ex-evidence">
-                      <Icon name="quote" size={13} /> {f.evidence}
-                    </blockquote>
+                    <div className="run-ex-hair" />
 
-                    <div className="run-ex-divider" />
-
-                    <div className="run-ex-actions">
-                      <button
-                        className={`run-ex-act${disp === "accepted" ? " on on--pass" : ""}`}
-                        onClick={() => setDisposition(f.id, "accepted")}
-                      >
-                        <Icon name="check" size={14} /> Agree
-                      </button>
-                      <button
-                        className={`run-ex-act${disp === "override" || disp === "rejected" ? " on on--fail" : ""}`}
-                        onClick={() => setDisposition(f.id, "override")}
-                      >
-                        <Icon name="edit" size={14} /> Override
-                      </button>
-                      <button
-                        className={`run-ex-act${flagged ? " on on--flag" : ""}`}
-                        onClick={() => toggleFlag(f.id)}
-                      >
-                        <Icon name="flag" size={14} /> Flag
-                      </button>
+                    {/* EVIDENCE */}
+                    <div className="run-ex-zone">
+                      <div className="run-ex-zt">
+                        Evidence
+                        <button
+                          className="run-ex-zcite"
+                          onClick={() => selectFinding(f.id)}
+                          aria-label={`Jump to the cited span on page ${f.page}`}
+                        >
+                          p.{f.page}
+                          <Icon name="forward" size={12} />
+                        </button>
+                      </div>
+                      <blockquote className="run-ex-evidence">
+                        <Icon name="quote" size={13} /> {f.evidence}
+                      </blockquote>
                     </div>
-                  </div>
-                )}
+
+                    <div className="run-ex-hair" />
+
+                    {/* AI AUDIT TRAIL — multi-stage reasoning chain */}
+                    <div className="run-ex-zone">
+                      <div className="run-ex-zt run-ex-zt--ai">
+                        <Icon name="ai" size={13} />
+                        AI audit trail
+                      </div>
+                      <ol className="run-ex-audit">
+                        {auditStages(f).map((s) => (
+                          <li key={s.n} className="run-ex-astage">
+                            <span className="run-ex-astage-rail" aria-hidden="true">
+                              <span className={`run-ex-astage-dot run-ex-astage-dot--${s.tone}`} />
+                            </span>
+                            <div className="run-ex-astage-main">
+                              <span className="run-ex-astage-h">
+                                <span className="run-ex-astage-step">S{s.n}</span>
+                                <span className="run-ex-astage-label">{s.label}</span>
+                                <span className={`run-ex-averdict run-ex-averdict--${s.tone}`}>
+                                  {s.verdict}
+                                </span>
+                              </span>
+                              <p className="run-ex-astage-t">{s.text}</p>
+                            </div>
+                          </li>
+                        ))}
+                      </ol>
+                      {/* Citation / proof-point seam (F3) — awaiting Ed's raw 5-stage output. */}
+                    </div>
+
+                    <div className="run-ex-hair" />
+
+                    {/* YOUR DECISION */}
+                    <div className="run-ex-zone">
+                      <div className="run-ex-zt">Your decision</div>
+                      <YourDecision state={state} responses={responses} />
+                    </div>
+
+                    <FindingDecisionBar
+                      finding={f}
+                      state={state}
+                      property={review.propertyAddress}
+                      responseTemplates={responses}
+                      variant="accordion"
+                      keyboard={active}
+                      onDisposition={(d, reason, templateId) =>
+                        setDisposition(f.id, d, reason, templateId)
+                      }
+                      onComment={(comment) => setComment(f.id, comment)}
+                      onToggleCondition={() => toggleCondition(f.id)}
+                      onToggleFlag={() => toggleFlag(f.id)}
+                    />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             );
           })}
         </div>
 
         <div className="run-ex-foot">
-          <Button variant="primary" size="sm" iconLeft="back" block onClick={onBack}>
-            Back to workbook
+          <Button
+            variant="primary"
+            size="sm"
+            iconLeft={workbookDirty ? "refresh" : "back"}
+            block
+            onClick={() => {
+              if (workbookDirty) regenerate();
+              onBack();
+            }}
+          >
+            {workbookDirty ? "Regenerate workbook" : "Back to workbook"}
           </Button>
-          <p className="run-ex-foot-note">Decisions write to the workbook live.</p>
+          <p className="run-ex-foot-note">
+            {workbookDirty
+              ? "Findings changed — regenerate to fold them into the workbook."
+              : "The workbook reflects your decisions as compiled."}
+          </p>
         </div>
       </aside>
+    </div>
+  );
+}
+
+/* ------------------------------ Your decision ----------------------------- */
+
+const DECISION_META: Record<
+  Exclude<FindingState["disposition"], "pending">,
+  { label: string; tone: string }
+> = {
+  accepted: { label: "Accepted — kept as written", tone: "pass" },
+  override: { label: "Edited", tone: "flag" },
+  rejected: { label: "Rejected — returns to appraiser", tone: "fail" },
+  commented: { label: "Comment recorded", tone: "info" },
+  removed: { label: "Removed from workbook — kept for audit", tone: "muted" },
+};
+
+/** The reviewer's recorded decision (reason / edited wording / comment + the
+ *  response template used), shown above the decision bar. Empty prompt until a
+ *  decision is made. */
+function YourDecision({
+  state,
+  responses,
+}: {
+  state: FindingState;
+  responses: ResponseTemplate[];
+}) {
+  if (state.disposition === "pending") {
+    return <p className="run-ex-decision-empty">No decision yet — choose below.</p>;
+  }
+  const meta = DECISION_META[state.disposition];
+  const detail =
+    state.disposition === "commented"
+      ? state.comment || state.reason
+      : state.reason;
+  const template = state.templateId
+    ? responses.find((r) => r.id === state.templateId)?.name
+    : undefined;
+  return (
+    <div className="run-ex-decision">
+      <span className={`run-ex-decision-tag run-ex-decision-tag--${meta.tone}`}>
+        {meta.label}
+      </span>
+      {detail && <p className="run-ex-decision-text">“{detail}”</p>}
+      {template && (
+        <span className="run-ex-decision-tpl">
+          <Icon name="templates" size={12} /> {template}
+        </span>
+      )}
     </div>
   );
 }
