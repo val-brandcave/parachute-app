@@ -12263,6 +12263,9 @@ select.qfilter {
   width: 78px;
   height: 78px;
 }
+/* solid navy in BOTH themes (Jul 2) — a theme-stable brand anchor like the
+   workbook's navy cover band; rhymes with the nav CTA and /start tiles. The
+   old accent tint went near-invisible on the dark canvas. */
 .ih-emblem-core {
   position: absolute;
   inset: 3px;
@@ -12270,13 +12273,31 @@ select.qfilter {
   display: grid;
   place-items: center;
   overflow: hidden;
-  background: var(--md-accent-c);
-  border: 1px solid color-mix(in srgb, var(--md-accent) 35%, transparent);
-  color: var(--md-accent-d);
+  background: var(--grad-primary);
+  border: 1px solid color-mix(in srgb, #fff 22%, transparent);
+  color: var(--md-on-primary);
+}
+/* inner seal ring — a light ring a touch inside the edge, leaving a navy rim
+   visible around it, so the emblem reads as a badge/seal rather than a giant
+   primary icon button */
+.ih-emblem-core::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  border: 1.5px solid color-mix(in srgb, #fff 55%, transparent);
+  pointer-events: none;
 }
 /* speed lines — a -45deg-rotated layer inside the badge; streaks travel its
-   local x axis (reads as top-right → bottom-left past the rocket). The core's
-   circle clips them; they render behind the icon. */
+   local x axis (reads as top-right → bottom-left past the rocket). They clip
+   to the SEAL RING's circle (not the badge edge), so nothing crosses the navy
+   rim; they render behind the icon. */
+.ih-emblem-clip {
+  position: absolute;
+  inset: 6px; /* just inside the ring stroke (ring: inset 4px, 1.5px wide) */
+  border-radius: 50%;
+  overflow: hidden;
+}
 .ih-emblem-streaks {
   position: absolute;
   inset: -20%;
@@ -12286,7 +12307,8 @@ select.qfilter {
   position: absolute;
   left: 50%;
   border-radius: 999px;
-  background: var(--md-accent);
+  /* light streaks on the navy fill — motion lines against a night sky */
+  background: color-mix(in srgb, #fff 85%, var(--md-accent));
   opacity: 0;
 }
 .ih-title {
@@ -12416,6 +12438,7 @@ select.qfilter {
   border-color: var(--md-accent);
   background: var(--md-surface-1);
 }
+/* one shared dark-fill tile for BOTH entry options (Jul 2 — no per-path styling) */
 .start-opt-ic {
   flex: none;
   width: 42px;
@@ -12425,10 +12448,6 @@ select.qfilter {
   place-items: center;
   background: var(--md-primary-c, var(--md-surface-2));
   color: var(--md-on-primary);
-}
-.start-opt-ic--yc {
-  background: var(--md-accent-c);
-  color: var(--md-accent-d);
 }
 .start-opt-body {
   flex: 1;

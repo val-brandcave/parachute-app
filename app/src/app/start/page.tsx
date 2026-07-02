@@ -39,7 +39,7 @@ export default function StartPage() {
 
         <div className="start-options">
           <button className="start-opt" onClick={goEmbedded}>
-            <span className="start-opt-ic start-opt-ic--yc">
+            <span className="start-opt-ic">
               <YouConnectGlyph size={20} />
             </span>
             <span className="start-opt-body">

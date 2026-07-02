@@ -121,8 +121,10 @@ export function IntakeWidget() {
             presence dot: Parachute's AI is a pipeline, not a persona-agent. */}
         <span className="ih-emblem" aria-hidden="true">
           <span className="ih-emblem-core">
-            <span className="ih-emblem-streaks">
-              {STREAKS.map((s, i) => (
+            {/* streaks clip to the seal ring's circle — never the navy rim */}
+            <span className="ih-emblem-clip">
+              <span className="ih-emblem-streaks">
+                {STREAKS.map((s, i) => (
                 <motion.span
                   key={i}
                   className="ih-emblem-line"
@@ -141,7 +143,8 @@ export function IntakeWidget() {
                     ease: "linear",
                   }}
                 />
-              ))}
+                ))}
+              </span>
             </span>
             <Icon name="rocket" size={26} strokeWidth={1.9} />
           </span>
