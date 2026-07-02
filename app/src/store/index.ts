@@ -17,6 +17,8 @@ export {
 } from "./order.store";
 export type { OrderDraft, OrderProperty, OrderPrefill } from "./order.store";
 export { useTemplatesStore } from "./templates.store";
+export { useOrgStore } from "./org.store";
+export type { BankPolicyDoc } from "./org.store";
 export { useIdentityStore } from "./identity.store";
 export { useSessionStore } from "./session.store";
 export type { AppMode } from "./session.store";

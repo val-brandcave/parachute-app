@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Button, Icon, ParachuteGlyph } from "@/components/atoms";
 import {
   useAdminStore,
@@ -48,7 +48,25 @@ export function RunAttestationPreview({
   const { rows, states, checklistName, checklistVersion, signature } = useAdminStore();
   const attDirty = useAdminStore((s) => s.attDirty);
   const regenerateAtt = useAdminStore((s) => s.regenerateAtt);
+  const attRegeneratedAt = useAdminStore((s) => s.attRegeneratedAt);
   const { byId } = useUsersStore();
+
+  // Compile sweep (D5 feedback, Jul 2): a fresh Regenerate plays a ~1.2s
+  // "recompiling" beat before the fresh document settles. Mount freshness via
+  // lazy init; in-place regenerate via adjust-during-render on the stamp.
+  const [compiling, setCompiling] = useState(
+    () => attRegeneratedAt != null && Date.now() - attRegeneratedAt < 2500,
+  );
+  const [prevStamp, setPrevStamp] = useState(attRegeneratedAt);
+  if (attRegeneratedAt !== prevStamp) {
+    setPrevStamp(attRegeneratedAt);
+    if (attRegeneratedAt != null) setCompiling(true);
+  }
+  useEffect(() => {
+    if (!compiling) return;
+    const t = setTimeout(() => setCompiling(false), 1250);
+    return () => clearTimeout(t);
+  }, [compiling]);
 
   const stageRef = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState(1);
@@ -58,12 +76,6 @@ export function RunAttestationPreview({
 
   const t = attTally(states);
   const canSign = rows.length > 0 && t.pending === 0;
-  const changed = useMemo(
-    () =>
-      rows.filter((r) => states[r.itemId]?.confirmed && states[r.itemId]?.answer !== r.aiAnswer)
-        .length,
-    [rows, states],
-  );
   const reviewerName = byId(review.assigneeId)?.signatureName || CURRENT_USER.signatureName;
   const signed = !!signature;
 
@@ -158,7 +170,17 @@ export function RunAttestationPreview({
       </div>
 
       <div className="run-wb-main">
-        <div className="run-wb-stage scroll" ref={stageRef} onScroll={onStageScroll}>
+        <div
+          className={`run-wb-stage scroll${compiling ? " is-compiling" : ""}`}
+          ref={stageRef}
+          onScroll={onStageScroll}
+        >
+          {compiling && (
+            <div className="run-compile" role="status">
+              <span className="ui-spinner" aria-hidden="true" />
+              Folding your attestations in…
+            </div>
+          )}
           {attDirty && !signed && (
             <div className="run-dirty" role="status">
               <Icon name="refresh" size={16} />
@@ -180,7 +202,6 @@ export function RunAttestationPreview({
               checklistName={checklistName}
               checklistVersion={checklistVersion}
               reviewerName={reviewerName}
-              changed={changed}
               signature={signature}
             />
           </div>
@@ -261,7 +282,6 @@ function AttestationBook({
   checklistName,
   checklistVersion,
   reviewerName,
-  changed,
   signature,
 }: {
   review: Review;
@@ -270,13 +290,10 @@ function AttestationBook({
   checklistName: string | null;
   checklistVersion: number | null;
   reviewerName: string;
-  changed: number;
   signature: AttestationSignature | null;
 }) {
   const value = useMemo(() => valueSummary(review), [review]);
   const draft = !signature;
-  const attested = rows.filter((r) => states[r.itemId]?.confirmed).length;
-  const pending = rows.length - attested;
 
   // Group rows in first-seen order → one section each, plus the certification.
   const sections: Sec[] = useMemo(() => {
@@ -444,21 +461,8 @@ function AttestationBook({
             {checklistVersion ? ` v${checklistVersion}` : ""} · Prepared for {review.bank}
           </div>
 
-          <div className="wb-band-bars wb-cover-bars">
-            <div className={`wb-pill wb-rec-pill wb-rec-pill--${pending ? "info" : "pass"}`}>
-              <Icon name={pending ? "clock" : "check-circle"} size={16} />
-              <span className="wb-pill-text">
-                {pending
-                  ? `${attested} of ${rows.length} items attested — complete the checklist before signing`
-                  : `All ${rows.length} items attested`}
-                {!pending && changed > 0 && (
-                  <span className="wb-rec-count">
-                    {changed} change{changed === 1 ? "" : "s"} with reason
-                  </span>
-                )}
-              </span>
-            </div>
-          </div>
+          {/* Process status (N of M attested) deliberately does NOT print on the
+              document (F-125) — that's viewer/app state; the Sign gate carries it. */}
         </div>
 
         <div className="wb-cover-bottom">

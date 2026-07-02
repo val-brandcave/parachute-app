@@ -146,10 +146,26 @@ export function RunExceptions({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [doc, zoom]);
 
-  const selectFinding = (id: string) => {
+  /** Two-way sync (Jul 2, mirrors RunAttestations). From the RAIL: scroll the
+   *  doc to the finding's span, falling back to its evidence page when no span
+   *  exists. From the DOC: also scroll the rail to the expanding accordion item
+   *  (after the previous item's collapse settles). */
+  const itemRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const selectFinding = (id: string, from: "rail" | "doc" = "rail") => {
     setPicked(id);
+    if (from === "doc") {
+      setTimeout(() => {
+        itemRefs.current[id]?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }, 280);
+      return;
+    }
     const el = scrollRef.current?.querySelector<HTMLElement>(`#anno-${id}`);
-    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+    } else {
+      const p = findings.find((f) => f.id === id)?.page ?? 0;
+      if (p > 0) goPage(p);
+    }
   };
 
   // Bulk action — accept every finding that hasn't been decided yet (leaves
@@ -191,7 +207,7 @@ export function RunExceptions({
         key={key}
         id={`anno-${r.anchor}`}
         className={`run-anno run-anno--${tone}${active ? " active" : ""}`}
-        onClick={() => selectFinding(r.anchor!)}
+        onClick={() => selectFinding(r.anchor!, "doc")}
       >
         <span className={`run-anno-badge run-anno-badge--${tone}`} aria-hidden="true">
           {numberOf[r.anchor]}
@@ -387,7 +403,7 @@ export function RunExceptions({
                         key={fid}
                         className={`run-anno-tag run-anno-tag--${tone}${selectedId === fid ? " active" : ""}`}
                         style={{ top }}
-                        onClick={() => selectFinding(fid)}
+                        onClick={() => selectFinding(fid, "doc")}
                         aria-label={`Finding ${numberOf[fid]}: ${f.category}`}
                       >
                         {numberOf[fid]}
@@ -430,6 +446,9 @@ export function RunExceptions({
             return (
               <div
                 key={f.id}
+                ref={(el) => {
+                  itemRefs.current[f.id] = el;
+                }}
                 className={`run-ex-item${active ? " active" : ""}${removed ? " is-removed" : ""}`}
                 style={{ borderLeftColor: sev.color }}
               >

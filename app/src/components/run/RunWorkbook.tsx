@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Button, Icon } from "@/components/atoms";
 import { useWorkspaceStore } from "@/store";
 import { WorkbookPreview } from "@/components/review/WorkbookPreview";
@@ -45,8 +45,27 @@ export function RunWorkbook({
   const { findings, states, exhibits, workbook, signature, filing } = useWorkspaceStore();
   const workbookDirty = useWorkspaceStore((s) => s.workbookDirty);
   const regenerate = useWorkspaceStore((s) => s.regenerate);
+  const regeneratedAt = useWorkspaceStore((s) => s.regeneratedAt);
   const [dismissed, setDismissed] = useState(false);
   const [customizing, setCustomizing] = useState(false);
+
+  // Compile sweep (D5 feedback, Jul 2): a fresh Regenerate — whether we just
+  // arrived from Findings (mount, lazy init checks freshness) or clicked the
+  // inline callout (stamp changes while mounted → adjust-during-render) —
+  // plays a ~1.2s "recompiling" beat before the fresh document settles.
+  const [compiling, setCompiling] = useState(
+    () => regeneratedAt != null && Date.now() - regeneratedAt < 2500,
+  );
+  const [prevStamp, setPrevStamp] = useState(regeneratedAt);
+  if (regeneratedAt !== prevStamp) {
+    setPrevStamp(regeneratedAt);
+    if (regeneratedAt != null) setCompiling(true);
+  }
+  useEffect(() => {
+    if (!compiling) return;
+    const t = setTimeout(() => setCompiling(false), 1250);
+    return () => clearTimeout(t);
+  }, [compiling]);
 
   // Document-toolbar state — zoom + a page indicator that tracks scroll.
   const stageRef = useRef<HTMLDivElement>(null);
@@ -153,7 +172,17 @@ export function RunWorkbook({
       </div>
 
       <div className="run-wb-main">
-        <div className="run-wb-stage scroll" ref={stageRef} onScroll={onStageScroll}>
+        <div
+          className={`run-wb-stage scroll${compiling ? " is-compiling" : ""}`}
+          ref={stageRef}
+          onScroll={onStageScroll}
+        >
+          {compiling && (
+            <div className="run-compile" role="status">
+              <span className="ui-spinner" aria-hidden="true" />
+              Folding your decisions in…
+            </div>
+          )}
           {embedded && (
             <div className="run-trust">
               <Icon name="sso" size={15} />

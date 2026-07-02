@@ -4,9 +4,17 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Tabs, AvatarUpload } from "@/components/molecules";
 import { Card, Input, Label, Chip, Divider, Button, Icon } from "@/components/atoms";
-import { useIdentityStore, useTemplatesStore } from "@/store";
+import { useIdentityStore, useOrgStore, useTemplatesStore } from "@/store";
 import { publishedVersion } from "@/lib/template-versions";
 import { CURRENT_ORG } from "@/lib/current-user";
+import { formatShortDate } from "@/lib/utils";
+
+/** Human-readable file size for the bank-policy row. */
+function formatBytes(n: number): string {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${Math.round(n / 1024)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 type TabKey = "org" | "defaults" | "compliance";
 
@@ -57,6 +65,20 @@ export default function SettingsPage() {
   const defaultPub = defaultChecklist
     ? publishedVersion(defaultChecklist.versions)
     : undefined;
+
+  // Org bank policy (F-123) — Settings is the single upload/replace surface;
+  // the run confirm gate only references it.
+  const { bankPolicy, setBankPolicy, removeBankPolicy } = useOrgStore();
+  const onPolicyPick = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (f)
+      setBankPolicy({
+        name: f.name,
+        sizeLabel: formatBytes(f.size),
+        updatedAt: formatShortDate(Date.now()),
+      });
+    e.target.value = ""; // allow re-picking the same file
+  };
 
   return (
     <>
@@ -199,9 +221,43 @@ export default function SettingsPage() {
             </Section>
             <Section
               title="Bank policy"
-              desc="A short policy document whose rules are applied on the final pass (e.g. “satisfies 26 of 30 rules”)."
+              desc="A short policy document whose rules are applied on the final pass (e.g. “satisfies 26 of 30 rules”). Uploaded once here — every run references it automatically."
             >
-              <Button variant="outline" iconLeft="download" size="sm">Upload policy (PDF/DOCX)</Button>
+              <div className="field">
+                {bankPolicy ? (
+                  <div className="run-cf-file-row">
+                    <span className="run-cf-ic run-cf-ic--file" aria-hidden="true">
+                      <Icon name="pdf" size={18} />
+                    </span>
+                    <span className="run-cf-file-row-info">
+                      <span className="run-cf-file-row-name">{bankPolicy.name}</span>
+                      <span className="run-cf-file-row-size">
+                        {bankPolicy.sizeLabel} · updated {bankPolicy.updatedAt}
+                      </span>
+                    </span>
+                    <span className="run-cf-file-row-act">
+                      <label className="run-cf-file-act">
+                        Replace
+                        <input type="file" accept=".pdf,.docx" hidden onChange={onPolicyPick} />
+                      </label>
+                      <button
+                        type="button"
+                        className="run-cf-file-act run-cf-file-act--remove"
+                        onClick={removeBankPolicy}
+                      >
+                        Remove
+                      </button>
+                    </span>
+                  </div>
+                ) : (
+                  <label className="run-cf-upload">
+                    <input type="file" accept=".pdf,.docx" hidden onChange={onPolicyPick} />
+                    <Icon name="upload" size={20} />
+                    <span className="run-cf-upload-label">Upload policy document</span>
+                    <span className="run-cf-upload-hint">PDF or DOCX — applied to every run</span>
+                  </label>
+                )}
+              </div>
             </Section>
           </>
         )}

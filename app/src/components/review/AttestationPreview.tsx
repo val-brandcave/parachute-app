@@ -161,7 +161,6 @@ export function AttestationPreview({ reviewId }: { reviewId: string }) {
           checklistName={checklistName}
           checklistVersion={checklistVersion}
           reviewerName={reviewerName}
-          changed={changed}
           signature={signature}
         />
       </div>
@@ -224,7 +223,6 @@ export function AttestationDoc({
   checklistName,
   checklistVersion,
   reviewerName,
-  changed,
   signature,
 }: {
   review: Review;
@@ -233,13 +231,10 @@ export function AttestationDoc({
   checklistName: string | null;
   checklistVersion: number | null;
   reviewerName: string;
-  changed: number;
   signature: AttestationSignature | null;
 }) {
   const value = useMemo(() => valueSummary(review), [review]);
   const groups = useMemo(() => [...new Set(rows.map((r) => r.group))], [rows]);
-  const attested = rows.filter((r) => states[r.itemId]?.confirmed).length;
-  const pending = rows.length - attested;
   const draft = !signature;
 
   let n = 0;
@@ -264,20 +259,8 @@ export function AttestationDoc({
           {checklistVersion ? ` v${checklistVersion}` : ""} · AI pre-filled, reviewer attested
         </div>
 
-        <div className="wb-band-bars">
-          <div className={`wb-rec-pill wb-rec-pill--${pending ? "info" : "pass"}`}>
-            <Icon name={pending ? "clock" : "check-circle"} size={17} />
-            {pending
-              ? `${pending} item${pending === 1 ? "" : "s"} not yet attested — complete the checklist before signing`
-              : `All ${rows.length} items attested`}
-            {!pending && changed > 0 && (
-              <span className="wb-rec-count">
-                {changed} change{changed === 1 ? "" : "s"} with reason
-              </span>
-            )}
-          </div>
-        </div>
-
+        {/* Process status (N of M attested) deliberately does NOT print on the
+            document (F-125) — that's viewer/app state; the Sign gate carries it. */}
         <div className="wb-band-meta">
           <Meta label="Loan #" value={review.loanNo} />
           <Meta label="Effective Date" value={formatLongDate(value.effectiveDate)} />

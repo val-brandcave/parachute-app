@@ -136,9 +136,9 @@ export function RunModal() {
 
   const [signing, setSigning] = useState(false);
   const [signOpen, setSignOpen] = useState(false);
-  // Which review type's surface is showing. Only meaningful when both types were
-  // ordered (Technical is always present + the built path; Administrative is the
-  // stub). Kept local — the store just owns the ordered set + sign status.
+  // Which review type's surface is showing. Only meaningful when MULTIPLE types
+  // were ordered (any single type — Technical OR Administrative — renders alone,
+  // no tabs). Kept local — the store just owns the ordered set + sign status.
   const [activeType, setActiveType] = useState<RunReviewType>("technical");
   // Admin sub-view (its own rail: Preview home + Attestations), parallel to the
   // Technical `spoke`. Local — the store owns the ordered set + sign status.
@@ -150,9 +150,10 @@ export function RunModal() {
 
   const twoType = reviewTypes.length > 1;
   const adminOrdered = reviewTypes.includes("administrative");
-  // A single-type run always shows Technical, regardless of any stale `activeType`
-  // left over from a previous two-type run (RunModal is always mounted).
-  const effectiveType: RunReviewType = twoType ? activeType : "technical";
+  // A single-type run shows THAT type's surface with no tab bar (an admin-only
+  // order lands straight on the attestation); `activeType` only steers the tabs
+  // of a multi-type run, so stale values from a previous run can't leak in.
+  const effectiveType: RunReviewType = twoType ? activeType : (reviewTypes[0] ?? "technical");
   const allSigned = reviewTypes.every((t) => signedTypes.includes(t));
 
   // Load the review's findings/exhibits + supporting data when the flow opens.
@@ -170,14 +171,22 @@ export function RunModal() {
     if (open && reviewId && adminOrdered) loadAdmin(reviewId);
   }, [open, reviewId, adminOrdered, loadAdmin]);
 
-  // Administrative processing starts a ONE-SHOT timer the first time the reviewer
-  // opens the Admin tab (prototype: so the process + state change are visible),
-  // flipping `adminReady` + stamping the initial compile. Kept in a ref (no
+  // Administrative processing starts AUTOMATICALLY on arrival in the review
+  // view (Jul 2 — it must not wait for the Admin tab click; the tab's spinner
+  // narrates the background run). Two-type runs: a ONE-SHOT 6.2s timer flips
+  // `adminReady` + stamps the initial compile — kept in a ref (no
   // effect-cleanup) so it isn't restarted on re-render; cleared on close.
+  // ADMIN-ONLY runs: the initial pipeline progress IS the processing beat —
+  // arrive on the attestation compiled and ready, no second loader.
   const adminTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     if (!open || !adminOrdered || adminReady) return;
-    if (activeType !== "administrative") return; // only once the Admin tab is entered
+    if (spoke !== "workbook" && spoke !== "exceptions") return; // pipeline still playing
+    if (!twoType) {
+      setAdminReady(true);
+      markAttCompiled();
+      return;
+    }
     if (adminTimerRef.current) return;
     setAdminStarted(true);
     adminTimerRef.current = setTimeout(() => {
@@ -185,7 +194,7 @@ export function RunModal() {
       setAdminReady(true);
       markAttCompiled();
     }, 6200);
-  }, [open, adminOrdered, adminReady, activeType, setAdminReady, markAttCompiled]);
+  }, [open, adminOrdered, adminReady, twoType, spoke, setAdminReady, markAttCompiled]);
   useEffect(() => {
     if (!open && adminTimerRef.current) {
       clearTimeout(adminTimerRef.current);
@@ -314,14 +323,15 @@ export function RunModal() {
   // Attestations still pending → the Admin rail badge + Preview gate read from it.
   const attPending = attRows.filter((r) => !attStates[r.itemId]?.confirmed).length;
 
-  // The leading status glyph folded into each review-type tab: a check once
-  // signed, else a "living" breathing dot — a faster pulse + halo while that type
-  // is processing, a calm slow pulse while pending.
+  // The leading status glyph folded into each review-type tab. Meaningful-state
+  // only (F-124 — the old always-on breathing dot had no readable semantics):
+  // a check once signed, a small spinner while that type is actually
+  // processing, nothing while it's simply pending.
   const typeLeading = (t: RunReviewType) => {
     if (signedTypes.includes(t))
       return <Icon name="check-circle" size={14} className="run-type-ic run-type-ic--done" />;
     const processing = t === "administrative" && adminOrdered && adminStarted && !adminReady;
-    return <TypeDot processing={processing} />;
+    return processing ? <span className="run-type-spin" aria-hidden="true" /> : null;
   };
 
   // Config for the shared sign modal — the active type decides which document is
@@ -696,33 +706,6 @@ function RunNav<T extends string>({
         })}
       </div>
     </nav>
-  );
-}
-
-/** The tab's living status glyph (F-118) — a breathing dot with an expanding
- *  halo while its review type is processing, a calm slow pulse while pending.
- *  Framer keyframe loops; replaces the old static spinner icon. */
-function TypeDot({ processing }: { processing: boolean }) {
-  return (
-    <span className={`run-type-dot${processing ? " is-proc" : ""}`} aria-hidden="true">
-      {processing && (
-        <motion.span
-          className="run-type-halo"
-          initial={{ scale: 0.5, opacity: 0.55 }}
-          animate={{ scale: [0.5, 1.7], opacity: [0.55, 0] }}
-          transition={{ duration: 1.2, repeat: Infinity, ease: "easeOut" }}
-        />
-      )}
-      <motion.span
-        className="run-type-core"
-        animate={
-          processing
-            ? { scale: [1, 0.55, 1], opacity: [1, 0.65, 1] }
-            : { scale: [1, 0.78, 1], opacity: [0.75, 0.45, 0.75] }
-        }
-        transition={{ duration: processing ? 1.0 : 2.2, repeat: Infinity, ease: "easeInOut" }}
-      />
-    </span>
   );
 }
 

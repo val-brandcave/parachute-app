@@ -96,6 +96,9 @@ interface AdminState {
   markAttCompiled: () => void;
   /** Recompile: clear the dirty flag + re-stamp compiledAt (D5 Regenerate). */
   regenerateAtt: () => void;
+  /** Stamped ONLY by an explicit Regenerate (not the initial compile) — drives
+   *  the preview's one-shot "compile sweep" feedback. */
+  attRegeneratedAt: number | null;
 }
 
 export const useAdminStore = create<AdminState>((set, get) => ({
@@ -108,6 +111,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   signature: null,
   attDirty: false,
   compiledAt: null,
+  attRegeneratedAt: null,
 
   loadAdmin: async (reviewId) => {
     if (get().reviewId === reviewId && get().rows.length) return;
@@ -219,5 +223,6 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   reopenAttestation: () => set({ signature: null }),
 
   markAttCompiled: () => set((s) => (s.compiledAt ? {} : { compiledAt: Date.now(), attDirty: false })),
-  regenerateAtt: () => set({ attDirty: false, compiledAt: Date.now() }),
+  regenerateAtt: () =>
+    set({ attDirty: false, compiledAt: Date.now(), attRegeneratedAt: Date.now() }),
 }));

@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, type ChangeEvent } from "react";
+import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button, Icon, YouConnectGlyph } from "@/components/atoms";
-import { useTemplatesStore } from "@/store";
+import { useOrgStore, useTemplatesStore } from "@/store";
 import { inheritedLayout, profileFor } from "@/lib/workbook";
 import type { Review } from "@/types";
 import type { RunDisplay, RunReviewType, RunSource } from "@/store";
@@ -25,13 +25,6 @@ const PROP_TYPES = [
 /** Mock source-document length for the parsed-file chip. */
 const MOCK_PAGES = 74;
 
-/** Human-readable file size for the attached-document row. */
-function formatBytes(n: number): string {
-  if (n < 1024) return `${n} B`;
-  if (n < 1024 * 1024) return `${Math.round(n / 1024)} KB`;
-  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
-}
-
 /**
  * Which field-group a review type contributes to the confirm form. The form
  * renders the UNION of groups across the selected *live* types (deduping the
@@ -46,7 +39,6 @@ interface ReviewTypeSpec {
   label: string;
   status: "live" | "soon";
   propertyBased: boolean;
-  locked?: boolean; // always-on, can't be toggled off (Technical, MVP)
   defaultOn?: boolean; // selected by default
   fieldGroups: FieldGroup[];
 }
@@ -63,7 +55,6 @@ const REVIEW_TYPES: ReviewTypeSpec[] = [
     label: "Technical",
     status: "live",
     propertyBased: true,
-    locked: true,
     defaultOn: true,
     fieldGroups: ["identity", "technical"],
   },
@@ -72,6 +63,8 @@ const REVIEW_TYPES: ReviewTypeSpec[] = [
     label: "Administrative",
     status: "live",
     propertyBased: true,
+    // Pre-checked with Technical — Ed (Jun 30): "80% of us order both."
+    defaultOn: true,
     fieldGroups: ["identity", "administrative"],
   },
   {
@@ -105,11 +98,13 @@ const ITEM_V = {
  * single centered card.
  *
  * Type-first (D2): the **review type drives the inputs**, not the other way
- * round. You pick what to review (name-only pills — Technical locked-on,
- * Administrative a toggle, a couple "coming soon"); the form below is the union
- * of the selected types' field groups — shared Property identity once, plus a
- * per-type setup section that fades in. Lean scope: identity + type + checklist
- * only; assignee/due/priority stay in the heavier Order flow.
+ * round. You pick what to review (name-only pills — Technical + Administrative
+ * both pre-checked per Ed's "80% order both", each freely untickable, a couple
+ * "coming soon"); Start gates on ≥1 selected (an inline note explains when
+ * zero). The form below is the union of the selected types' field groups —
+ * shared Property identity once, plus a per-type setup section that fades in.
+ * Lean scope: identity + type + checklist only; assignee/due/priority stay in
+ * the heavier Order flow.
  */
 export function RunConfirm({
   review,
@@ -139,9 +134,10 @@ export function RunConfirm({
   const [loanNo, setLoanNo] = useState(review.loanNo ?? "");
   const [firm, setFirm] = useState(review.appraisalFirm ?? "");
 
-  // Selected *live* types (Technical locked-on by default).
+  // Selected *live* types — both pre-checked (the 80% case); every type can be
+  // unticked, and Start gates on at least one remaining.
   const [selected, setSelected] = useState<RunReviewType[]>(
-    REVIEW_TYPES.filter((s) => s.status === "live" && (s.locked || s.defaultOn)).map((s) => s.id),
+    REVIEW_TYPES.filter((s) => s.status === "live" && s.defaultOn).map((s) => s.id),
   );
 
   // Compliance checklist pick (Administrative). Null falls back to org-default.
@@ -149,17 +145,13 @@ export function RunConfirm({
   const [checklistId, setChecklistId] = useState<string | null>(null);
   const effectiveChecklistId = checklistId ?? defaultChecklist?.id ?? null;
 
-  // Optional bank policy doc (the fine-tuning context banks supply). Cosmetic.
-  const [policyDoc, setPolicyDoc] = useState<{ name: string; size: number } | null>(null);
-  const onPolicyPick = (e: ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
-    if (f) setPolicyDoc({ name: f.name, size: f.size });
-    e.target.value = ""; // allow re-picking the same file
-  };
+  // Org bank policy (the fine-tuning context banks supply) — read-only here;
+  // Settings → Compliance owns upload/replace (F-123).
+  const bankPolicy = useOrgStore((s) => s.bankPolicy);
 
   const isSel = (id: RunReviewType) => selected.includes(id);
   const toggle = (spec: ReviewTypeSpec) => {
-    if (spec.locked || spec.status !== "live") return;
+    if (spec.status !== "live") return;
     setSelected((prev) =>
       prev.includes(spec.id) ? prev.filter((x) => x !== spec.id) : [...prev, spec.id],
     );
@@ -175,7 +167,8 @@ export function RunConfirm({
   // (read-only here; authored in Templates) — same model as the Order flow.
   const layout = inheritedLayout(layouts, profileFor(propertyType));
 
-  const canStart = !showIdentity || address.trim().length > 0;
+  // Start gates on ≥1 review type; identity only matters if a selected type asks for it.
+  const canStart = selected.length > 0 && (!showIdentity || address.trim().length > 0);
 
   const start = () => {
     if (!canStart) return;
@@ -231,9 +224,7 @@ export function RunConfirm({
             {REVIEW_TYPES.map((spec) => {
               const soon = spec.status === "soon";
               const on = !soon && isSel(spec.id);
-              const cls = `run-cf-opt${on ? " is-on" : ""}${
-                spec.locked ? " is-locked" : ""
-              }${soon ? " is-soon" : ""}`;
+              const cls = `run-cf-opt${on ? " is-on" : ""}${soon ? " is-soon" : ""}`;
               const body = (
                 <>
                   <span className="run-cf-opt-box" aria-hidden="true">
@@ -243,7 +234,6 @@ export function RunConfirm({
                     {spec.label}
                     {soon && <span className="run-cf-opt-soon">(coming soon)</span>}
                   </span>
-                  {spec.locked && <span className="run-cf-opt-tag">Always included</span>}
                 </>
               );
               return soon ? (
@@ -257,7 +247,6 @@ export function RunConfirm({
                   className={cls}
                   role="checkbox"
                   aria-checked={on}
-                  aria-disabled={spec.locked || undefined}
                   onClick={() => toggle(spec)}
                 >
                   {body}
@@ -265,6 +254,11 @@ export function RunConfirm({
               );
             })}
           </div>
+          {selected.length === 0 && (
+            <p className="run-cf-opt-note" role="status">
+              Select at least one review type to start.
+            </p>
+          )}
         </motion.div>
 
         {/* Card — property details (shared identity group). */}
@@ -350,38 +344,36 @@ export function RunConfirm({
                   ))}
                 </select>
               </label>
+              {/* Bank policy is ORG CONFIG (F-123) — uploaded once in Settings →
+                  Compliance, applied on the final pass of every run. The gate
+                  only references it, exactly like the inherited workbook layout. */}
               <div className="field">
-                <span>Bank policy document (optional)</span>
-                {policyDoc ? (
-                  <div className="run-cf-file-row">
-                    <span className="run-cf-ic run-cf-ic--file" aria-hidden="true">
+                <span>Bank policy</span>
+                {bankPolicy ? (
+                  <div className="run-cf-inh">
+                    <span className="run-cf-inh-ic">
                       <Icon name="pdf" size={18} />
                     </span>
-                    <span className="run-cf-file-row-info">
-                      <span className="run-cf-file-row-name">{policyDoc.name}</span>
-                      <span className="run-cf-file-row-size">{formatBytes(policyDoc.size)}</span>
-                    </span>
-                    <span className="run-cf-file-row-act">
-                      <label className="run-cf-file-act">
-                        Replace
-                        <input type="file" hidden onChange={onPolicyPick} />
-                      </label>
-                      <button
-                        type="button"
-                        className="run-cf-file-act run-cf-file-act--remove"
-                        onClick={() => setPolicyDoc(null)}
-                      >
-                        Remove
-                      </button>
-                    </span>
+                    <div className="run-cf-inh-body">
+                      <span className="run-cf-inh-val">{bankPolicy.name}</span>
+                      <span className="run-cf-inh-meta">
+                        Applied on the final pass · managed in Settings → Compliance
+                      </span>
+                    </div>
+                    <span className="run-cf-inh-badge">From Settings</span>
                   </div>
                 ) : (
-                  <label className="run-cf-upload">
-                    <input type="file" hidden onChange={onPolicyPick} />
-                    <Icon name="upload" size={20} />
-                    <span className="run-cf-upload-label">Upload document</span>
-                    <span className="run-cf-upload-hint">PDF or DOCX</span>
-                  </label>
+                  <div className="run-cf-inh run-cf-inh--empty">
+                    <span className="run-cf-inh-ic">
+                      <Icon name="pdf" size={18} />
+                    </span>
+                    <div className="run-cf-inh-body">
+                      <span className="run-cf-inh-val">No bank policy on file</span>
+                      <span className="run-cf-inh-meta">
+                        Add one in Settings → Compliance to apply it on every run.
+                      </span>
+                    </div>
+                  </div>
                 )}
               </div>
             </motion.div>

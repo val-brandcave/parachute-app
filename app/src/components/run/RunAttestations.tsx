@@ -105,11 +105,28 @@ export function RunAttestations({
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const pageRefs = useRef<Record<number, HTMLElement | null>>({});
+  const itemRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
-  const selectItem = (id: string) => {
+  /** Two-way sync (fixed Jul 2). From the RAIL: scroll the doc to the item's
+   *  highlighted span — or, since only some items have on-page spans, fall back
+   *  to its evidence page so EVERY item navigates somewhere meaningful. From
+   *  the DOC: also scroll the rail to the (now expanding) accordion item —
+   *  after the previous item's collapse settles, so the target doesn't drift. */
+  const selectItem = (id: string, from: "rail" | "doc" = "rail") => {
     setPicked(id);
+    if (from === "doc") {
+      setTimeout(() => {
+        itemRefs.current[id]?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }, 280);
+      return;
+    }
     const el = scrollRef.current?.querySelector<HTMLElement>(`#att-anno-${id}`);
-    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+    } else {
+      const p = rowByItem[id]?.page ?? 0;
+      if (p > 0) goPage(p);
+    }
   };
 
   const attested = rows.filter((r) => states[r.itemId]?.confirmed).length;
@@ -142,7 +159,7 @@ export function RunAttestations({
         key={key}
         id={`att-anno-${r.attAnchor}`}
         className={`run-anno run-anno--${tone}${active ? " active" : ""}`}
-        onClick={() => selectItem(r.attAnchor!)}
+        onClick={() => selectItem(r.attAnchor!, "doc")}
       >
         <span className={`run-anno-badge run-anno-badge--${tone}`} aria-hidden="true">
           {numberOf[r.attAnchor]}
@@ -366,6 +383,9 @@ export function RunAttestations({
             return (
               <div
                 key={r.itemId}
+                ref={(el) => {
+                  itemRefs.current[r.itemId] = el;
+                }}
                 className={`run-ex-item${active ? " active" : ""}`}
                 style={{ borderLeftColor: `var(--md-${tone === "na" ? "outline" : tone === "pass" ? "success" : "warn"})` }}
               >

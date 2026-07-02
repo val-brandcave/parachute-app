@@ -61,6 +61,9 @@ interface WorkspaceState {
    *  "Regenerate workbook" affordance. Reset per-review on `loadReview`. */
   workbookDirty: boolean;
   compiledAt: number | null;
+  /** Stamped ONLY by an explicit Regenerate (not the initial compile) — drives
+   *  the preview's one-shot "compile sweep" feedback. */
+  regeneratedAt: number | null;
 
   loadReview: (reviewId: string) => Promise<void>;
   setDisposition: (
@@ -118,6 +121,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   workbook: null,
   workbookDirty: false,
   compiledAt: null,
+  regeneratedAt: null,
 
   loadReview: async (reviewId) => {
     if (get().reviewId === reviewId && get().findings.length) return;
@@ -143,6 +147,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       workbook: null,
       workbookDirty: false,
       compiledAt: null,
+      regeneratedAt: null,
       isLoading: false,
     });
   },
@@ -240,7 +245,8 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   ensureWorkbook: (config) =>
     set((s) => (s.workbook ? {} : { workbook: config, compiledAt: Date.now() })),
   resetWorkbook: (config) => set({ workbook: config }),
-  regenerate: () => set({ workbookDirty: false, compiledAt: Date.now() }),
+  regenerate: () =>
+    set({ workbookDirty: false, compiledAt: Date.now(), regeneratedAt: Date.now() }),
 
   moveSection: (id, dir) =>
     set((s) => {

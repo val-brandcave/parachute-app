@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { Icon, Chip } from "@/components/atoms";
 import { SegmentedControl } from "@/components/molecules";
 import { cn, formatShortDate } from "@/lib/utils";
@@ -9,18 +10,39 @@ import type { YcDelivery } from "@/types";
 
 type IntakeMode = "drop" | "yc";
 
+const HERO_WRAP = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.07, delayChildren: 0.05 } },
+} as const;
+const HERO_ITEM = {
+  hidden: { opacity: 0, y: 14 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.42, ease: "easeOut" } },
+} as const;
+
 /**
- * The primary intake (J3) — one widget, two modes behind a segmented toggle:
- * drop an appraisal PDF, or pick one from the YouConnect pipeline. Either path
- * opens the run flow (S-E → S-A). The 90%-user entry point: get from "I have a
- * document" to "here's the workbook" in one move. Defaults to Drop (the common path).
+ * The primary intake (J3) — the Launchpad's hero (F-119 / F-126), scale-matched
+ * to Cody's scientist reference (Jul 2): a compact centered column — layered
+ * animated emblem → modest headline → copy → ONE fixed-footprint stage that
+ * both modes (drop a PDF / pick from YouConnect) render into, so toggling never
+ * moves the layout and the mode toggle never leaves the fold. Either path opens
+ * the run flow (S-E → S-A). Defaults to Drop (the common path).
  *
- * `variant`:
- *  - "hero"  — the Launchpad landing page: larger, accent-forward, the app's
- *              front door (F-119 — its own route, primary CTA, not buried).
- *  - "card"  — the compact embed used elsewhere.
+ * Motion: staggered load; SPEED LINES on the emblem — thin petrol streaks pass
+ * diagonally behind the static rocket, top-right → bottom-left (the rocket is
+ * in flight through them; the world moves, the rocket doesn't — deliberately
+ * no bubbles/float, no orbit dot, no shimmer, no persona-presence dot);
+ * cross-fade between modes; the upload glyph bobs and springs on drag-over.
  */
-export function IntakeWidget({ variant = "card" }: { variant?: "card" | "hero" }) {
+
+/** Emblem speed lines — offbeat lengths/speeds/rests so passes never sync.
+ *  Live in a -45°-rotated layer inside the badge (clipped by the circle), so
+ *  each streak just travels its local x axis. */
+const STREAKS = [
+  { top: "30%", w: 16, h: 2, span: 46, dur: 2.6, delay: 0.3, rest: 1.7, peak: 0.45 },
+  { top: "50%", w: 22, h: 2, span: 52, dur: 2.2, delay: 1.5, rest: 2.1, peak: 0.5 },
+  { top: "68%", w: 12, h: 1.5, span: 44, dur: 3.0, delay: 2.5, rest: 1.3, peak: 0.4 },
+] as const;
+export function IntakeWidget() {
   const openRun = useRunStore((s) => s.openRun);
   const { deliveries, loadDeliveries } = useOrderStore();
   const [mode, setMode] = useState<IntakeMode>("drop");
@@ -81,12 +103,197 @@ export function IntakeWidget({ variant = "card" }: { variant?: "card" | "hero" }
   });
   const totalNew = deliveries.filter((d) => d.status === "new").length;
 
-  const hero = variant === "hero";
+  const drop = mode === "drop";
 
   return (
-    <section className={cn("intake", hero && "intake--hero")} aria-label="Start a review">
-      <div className="intake-head">
-        <span className="intake-title">Start a review</span>
+    <motion.section
+      className="intake-hero"
+      variants={HERO_WRAP}
+      initial="hidden"
+      animate="show"
+      aria-label="Start a review"
+    >
+      <motion.div className="ih-head" variants={HERO_ITEM}>
+        {/* Emblem — speed lines: thin streaks pass diagonally BEHIND the
+            static rocket, top-right → bottom-left (the rocket flies through
+            them; the world moves, not the rocket). Streaks render before the
+            icon so they pass behind it; the circular core clips them. No
+            presence dot: Parachute's AI is a pipeline, not a persona-agent. */}
+        <span className="ih-emblem" aria-hidden="true">
+          <span className="ih-emblem-core">
+            <span className="ih-emblem-streaks">
+              {STREAKS.map((s, i) => (
+                <motion.span
+                  key={i}
+                  className="ih-emblem-line"
+                  style={{
+                    top: s.top,
+                    width: s.w,
+                    height: s.h,
+                    marginLeft: -s.w / 2,
+                  }}
+                  animate={{ x: [s.span, -s.span], opacity: [0, s.peak, 0] }}
+                  transition={{
+                    duration: s.dur,
+                    delay: s.delay,
+                    repeat: Infinity,
+                    repeatDelay: s.rest,
+                    ease: "linear",
+                  }}
+                />
+              ))}
+            </span>
+            <Icon name="rocket" size={26} strokeWidth={1.9} />
+          </span>
+        </span>
+
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={mode}
+            className="ih-head-copy"
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+          >
+            <h1 className="ih-title">
+              {drop ? "Drop an appraisal to start" : "Pull one from YouConnect"}
+            </h1>
+            <p className="ih-sub">
+              {drop
+                ? "Parachute reads it, runs the review, and compiles your workbook."
+                : `Search and pick one of the ${totalNew} new deliveries to start.`}
+            </p>
+          </motion.div>
+        </AnimatePresence>
+      </motion.div>
+
+      <motion.div className="ih-stage" variants={HERO_ITEM}>
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={mode}
+            className="ih-stage-mode"
+            initial={{ opacity: 0, x: drop ? -12 : 12 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: drop ? 12 : -12 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+          >
+            {drop ? (
+              <div
+                className={cn("intake-drop ih-drop", dragging && "drag", parsing && "busy")}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  if (!parsing) setDragging(true);
+                }}
+                onDragLeave={() => setDragging(false)}
+                onDrop={onDrop}
+                role="button"
+                tabIndex={0}
+                onClick={() => !parsing && fileRef.current?.click()}
+                onKeyDown={(e) => {
+                  if ((e.key === "Enter" || e.key === " ") && !parsing) fileRef.current?.click();
+                }}
+                aria-label="Drop an appraisal PDF or browse to upload"
+              >
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="application/pdf"
+                  hidden
+                  onChange={onPick}
+                />
+                {parsing ? (
+                  <>
+                    <span className="ui-spinner" />
+                    <div className="intake-drop-title">Reading the appraisal…</div>
+                    <p>Extracting property, lender and loan details.</p>
+                  </>
+                ) : (
+                  <>
+                    <motion.span
+                      className="intake-drop-ic"
+                      animate={dragging ? { y: -5, scale: 1.06 } : { y: [0, -3, 0] }}
+                      transition={
+                        dragging
+                          ? { type: "spring", stiffness: 320, damping: 18 }
+                          : { duration: 2.6, repeat: Infinity, ease: "easeInOut" }
+                      }
+                    >
+                      <Icon name="upload" size={24} />
+                    </motion.span>
+                    <div className="intake-drop-title">Drop your file here</div>
+                    <p>
+                      PDF · or <span className="intake-link">click to browse</span>
+                    </p>
+                  </>
+                )}
+              </div>
+            ) : (
+              <div className="ih-yc">
+                <label className="intake-search">
+                  <Icon name="search" size={15} />
+                  <input
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Search address, loan #, firm…"
+                    aria-label="Search YouConnect deliveries"
+                  />
+                  {query && (
+                    <button
+                      type="button"
+                      className="intake-search-x"
+                      onClick={() => setQuery("")}
+                      aria-label="Clear search"
+                    >
+                      <Icon name="close" size={14} />
+                    </button>
+                  )}
+                </label>
+                <div className="intake-yc-list scroll">
+                  {newDeliveries.length === 0 ? (
+                    <div className="intake-yc-empty">
+                      {totalNew === 0
+                        ? "No new deliveries right now."
+                        : `No deliveries match “${query.trim()}”.`}
+                    </div>
+                  ) : (
+                    newDeliveries.map((d) => (
+                      <button
+                        key={d.id}
+                        className="intake-yc-item"
+                        onClick={() =>
+                          start(
+                            d.propertyAddress,
+                            {
+                              address: d.propertyAddress,
+                              propertyType: d.propertyType,
+                              bank: d.bank,
+                              loanNo: d.loanNo,
+                              firm: d.appraisalFirm,
+                            },
+                            "yc",
+                          )
+                        }
+                        disabled={parsing}
+                      >
+                        <span className="intake-yc-item-main">
+                          <span className="intake-yc-item-title">{d.propertyAddress}</span>
+                          <span className="intake-yc-item-sub">
+                            Loan #{d.loanNo} · {deliveredLabel(d)}
+                          </span>
+                        </span>
+                        <Chip tone="info">New</Chip>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </motion.div>
+
+      <motion.div className="ih-toggle" variants={HERO_ITEM}>
         <SegmentedControl<IntakeMode>
           value={mode}
           onChange={setMode}
@@ -95,114 +302,8 @@ export function IntakeWidget({ variant = "card" }: { variant?: "card" | "hero" }
             { value: "yc", label: "From YouConnect" },
           ]}
         />
-      </div>
-
-      <div className="intake-body">
-        {mode === "drop" ? (
-          <div
-            className={cn("intake-drop", dragging && "drag", parsing && "busy")}
-            onDragOver={(e) => {
-              e.preventDefault();
-              if (!parsing) setDragging(true);
-            }}
-            onDragLeave={() => setDragging(false)}
-            onDrop={onDrop}
-            role="button"
-            tabIndex={0}
-            onClick={() => !parsing && fileRef.current?.click()}
-            onKeyDown={(e) => {
-              if ((e.key === "Enter" || e.key === " ") && !parsing) fileRef.current?.click();
-            }}
-            aria-label="Drop an appraisal PDF or browse to upload"
-          >
-            <input ref={fileRef} type="file" accept="application/pdf" hidden onChange={onPick} />
-            {parsing ? (
-              <>
-                <span className="ui-spinner" />
-                <div className="intake-drop-title">Reading the appraisal…</div>
-                <p>Extracting property, lender and loan details.</p>
-              </>
-            ) : (
-              <>
-                <span className="intake-drop-ic">
-                  <Icon name="upload" size={hero ? 32 : 26} />
-                </span>
-                <div className="intake-drop-title">Drop an appraisal to start</div>
-                <p>
-                  Drag &amp; drop the PDF, or <span className="intake-link">browse</span> — you go
-                  straight to the workbook.
-                </p>
-              </>
-            )}
-          </div>
-        ) : (
-          <>
-            <div className="intake-yc-bar">
-              <p className="intake-yc-sub">
-                {totalNew} delivered from YouConnect, ready to run.
-              </p>
-              <label className="intake-search">
-                <Icon name="search" size={15} />
-                <input
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search address, loan #, firm…"
-                  aria-label="Search YouConnect deliveries"
-                />
-                {query && (
-                  <button
-                    type="button"
-                    className="intake-search-x"
-                    onClick={() => setQuery("")}
-                    aria-label="Clear search"
-                  >
-                    <Icon name="close" size={14} />
-                  </button>
-                )}
-              </label>
-            </div>
-            <div className="intake-yc-list scroll">
-              {newDeliveries.length === 0 ? (
-                <div className="intake-yc-empty">
-                  {totalNew === 0
-                    ? "No new deliveries right now."
-                    : `No deliveries match “${query.trim()}”.`}
-                </div>
-              ) : (
-                newDeliveries.map((d) => (
-                  <button
-                    key={d.id}
-                    className="intake-yc-item"
-                    onClick={() =>
-                      start(
-                        d.propertyAddress,
-                        {
-                          address: d.propertyAddress,
-                          propertyType: d.propertyType,
-                          bank: d.bank,
-                          loanNo: d.loanNo,
-                          firm: d.appraisalFirm,
-                        },
-                        "yc",
-                      )
-                    }
-                    disabled={parsing}
-                  >
-                    <span className="intake-yc-item-main">
-                      <span className="intake-yc-item-title">{d.propertyAddress}</span>
-                      <span className="intake-yc-item-sub">
-                        Loan #{d.loanNo} · {deliveredLabel(d)}
-                      </span>
-                    </span>
-                    <Chip tone="info">New</Chip>
-                  </button>
-                ))
-              )}
-            </div>
-          </>
-        )}
-      </div>
-    </section>
+      </motion.div>
+    </motion.section>
   );
 }
 

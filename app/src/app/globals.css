@@ -4729,6 +4729,65 @@ textarea {
   padding: 12px 0;
   overflow-y: auto;
 }
+/* Docked primary action (F-127) — the one filled element in the rail. A CTA,
+   not a NavItem: no active pill, standing imperative above the page list.
+   Geometry mirrors .ui-navitem (margin 2/12, padding 0/12, gap 12, h 42) so the
+   rocket sits in the SAME icon column as the nav rows below. Motion = flat-safe
+   micro-interactions only (hover lift + icon launch-nudge, press scale). */
+.sb-cta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  height: 42px;
+  margin: 2px 12px 0;
+  padding: 0 12px;
+  border-radius: 10px;
+  background: var(--grad-primary);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.1px;
+  box-shadow: var(--md-elev-1);
+  transition:
+    background 0.15s ease,
+    transform 0.16s ease,
+    box-shadow 0.16s ease;
+}
+.sb-cta:hover {
+  background: var(--md-primary-c);
+  transform: translateY(-1px);
+  box-shadow: var(--md-elev-2);
+}
+/* tactile press — the button sinks like a key; shadow flattens */
+.sb-cta:active {
+  transform: translateY(1px);
+  box-shadow: none;
+}
+.sb-cta:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-accent);
+}
+/* framer owns the icon's spring nudge (Sidebar CTA_ICON_SPRING) */
+.sb-cta-ic {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+/* hairline marking the action zone off from the wayfinding list */
+.sb-cta-sep {
+  height: 1px;
+  margin: 12px 14px;
+  background: var(--md-outline-v);
+}
+.sb-cta.collapsed {
+  width: 40px;
+  height: 40px;
+  justify-content: center;
+  padding: 0;
+  margin: 2px auto 0;
+  border-radius: 12px;
+}
 .sb-foot {
   padding: 10px;
   border-top: 1px solid var(--md-outline-v);
@@ -9546,39 +9605,22 @@ select.qfilter {
 .run-type-ic--done {
   color: var(--md-success);
 }
-/* living breathing-dot glyph (pending = calm slow pulse; processing = faster + halo) */
-.run-type-dot {
-  position: relative;
-  display: inline-grid;
-  place-items: center;
-  width: 14px;
-  height: 14px;
-}
-.run-type-core {
-  width: 9px;
-  height: 9px;
+/* processing spinner (F-124 — glyphs are meaningful-state only: spinner while
+   that type processes, check when signed, nothing while simply pending) */
+.run-type-spin {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
-  background: var(--md-on-surface-t);
+  border: 2px solid color-mix(in srgb, var(--md-accent) 30%, transparent);
+  border-top-color: var(--md-accent-d);
+  animation: ui-spin 0.7s linear infinite;
 }
-.run-type-dot.is-proc .run-type-core {
-  background: var(--md-accent-d);
-}
-.run-type-halo {
-  position: absolute;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--md-accent) 45%, transparent);
-}
-/* on the active (navy) pill, lift the dot to the on-selected ink for contrast */
-.qtab.on .run-type-core {
-  background: var(--md-on-selected);
-}
-.qtab.on .run-type-dot.is-proc .run-type-core {
-  background: #fff;
-}
-.qtab.on .run-type-halo {
-  background: color-mix(in srgb, #fff 40%, transparent);
+/* on the active pill, use the selected-surface ink (NOT white — the pill is a
+   light navy tint in light mode, where a white spinner disappears) */
+.qtab.on .run-type-spin {
+  border-color: color-mix(in srgb, var(--md-on-selected) 30%, transparent);
+  border-top-color: var(--md-on-selected);
 }
 /* gated Return (another ordered type still unsigned) */
 .run-foot-gate {
@@ -9809,7 +9851,7 @@ select.qfilter {
     border-color 0.14s ease,
     color 0.14s ease;
 }
-.run-cf-opt:hover:not(.is-on):not(.is-locked):not(.is-soon) {
+.run-cf-opt:hover:not(.is-on):not(.is-soon) {
   background: var(--md-surface-1);
   border-color: var(--md-on-surface-t);
 }
@@ -9817,9 +9859,6 @@ select.qfilter {
   border-color: var(--md-primary);
   background: var(--md-selected);
   color: var(--md-on-selected);
-}
-.run-cf-opt.is-locked {
-  cursor: default;
 }
 .run-cf-opt.is-soon {
   cursor: default;
@@ -9860,15 +9899,11 @@ select.qfilter {
   font-weight: 500;
   color: var(--md-on-surface-t);
 }
-.run-cf-opt-tag {
-  flex: none;
-  font-size: 11px;
-  font-weight: 600;
+/* zero-types-selected helper — Start is disabled until ≥1 type is picked */
+.run-cf-opt-note {
+  margin-top: 10px;
+  font-size: 12.5px;
   color: var(--md-on-surface-t);
-}
-.run-cf-opt.is-on .run-cf-opt-tag {
-  color: var(--md-on-selected);
-  opacity: 0.7;
 }
 /* Inherited-config tile (Technical review setup → workbook layout). */
 .run-cf-inh {
@@ -9921,6 +9956,17 @@ select.qfilter {
   border-radius: 999px;
   background: var(--md-selected);
   color: var(--md-on-selected);
+}
+/* nothing-on-file variant of the inherited row (bank policy not yet uploaded) */
+.run-cf-inh--empty {
+  border-style: dashed;
+  background: transparent;
+}
+.run-cf-inh--empty .run-cf-inh-ic {
+  color: var(--md-on-surface-t);
+}
+.run-cf-inh--empty .run-cf-inh-val {
+  color: var(--md-on-surface-v);
 }
 /* File upload (Bank policy document) — empty dropzone + attached row w/ replace/remove.
    Scoped under `.field` to beat the generic `.field label` rule (0,1,1), which
@@ -10386,6 +10432,60 @@ select.qfilter {
   flex-direction: column;
   gap: 14px;
   align-items: center;
+}
+/* ---- Regenerate compile sweep (D5 feedback, Jul 2) ----
+   A fresh Regenerate dims the sheets and sweeps one skeleton band across each
+   for ~1.2s while a sticky "folding in" chip narrates, then the fresh document
+   settles. Loading affordance (skeleton convention), not decoration. */
+.run-wb-stage .wb-page {
+  transition: opacity 0.3s ease;
+}
+.run-wb-stage.is-compiling .wb-page {
+  opacity: 0.45;
+}
+.run-wb-stage.is-compiling .wb-page::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 35%,
+    color-mix(in srgb, var(--md-accent) 14%, transparent) 50%,
+    transparent 65%
+  );
+  background-size: 220% 100%;
+  animation: compile-sweep 1.1s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes compile-sweep {
+  0% {
+    background-position: 160% 0;
+  }
+  100% {
+    background-position: -60% 0;
+  }
+}
+.run-compile {
+  position: sticky;
+  top: 42%;
+  z-index: 6;
+  width: auto !important; /* opt out of the stage's full-width children rule */
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 16px;
+  border-radius: 999px;
+  background: var(--md-surface);
+  border: 1px solid var(--md-outline-v);
+  box-shadow: var(--md-elev-2);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--md-on-surface-v);
+}
+.run-compile .ui-spinner {
+  width: 14px;
+  height: 14px;
 }
 .run-wb-stage > * {
   width: 100%;
@@ -11180,9 +11280,9 @@ select.qfilter {
   border-bottom: 1px solid var(--md-hairline, var(--md-outline-v));
   transition: background 0.18s ease;
 }
-.run-ex-item.active {
-  background: var(--md-surface-1);
-}
+/* The OPEN item carries NO fill (Jul 2) — expansion + the severity bar +
+   rotated chevron are the emphasis; a full grey slab read dingy in light mode.
+   Hover grey stays on closed rows only (transient). */
 .run-ex-item:not(.active):hover {
   background: var(--md-surface-1);
 }
@@ -11949,35 +12049,8 @@ select.qfilter {
 }
 
 /* ---- Dashboard intake widget (one card, two modes via a segmented toggle) ---- */
-.intake {
-  background: var(--md-surface);
-  border: 1px solid var(--md-outline-v);
-  border-radius: 14px;
-  overflow: hidden;
-}
-.intake-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 12px 14px;
-  border-bottom: 1px solid var(--md-hairline, var(--md-outline-v));
-}
-.intake-title {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-family: var(--font-display);
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--md-on-surface);
-}
-.intake-body {
-  padding: 14px;
-  min-height: 190px;
-  display: flex;
-  flex-direction: column;
-}
+/* Intake internals — the drop zone, YouConnect search + list. Shared by the
+   Launchpad hero (the old dashboard card shell was retired with F-126). */
 .intake-drop {
   flex: 1;
   display: flex;
@@ -12141,61 +12214,149 @@ select.qfilter {
   color: var(--md-on-surface-t);
 }
 
-/* ---- Launchpad landing (F-119 / D4) ----
-   The app's front door: the intake widget promoted from a mid-dashboard card to
-   a full-width hero on its own route. Bigger, lifted, and accent-lit so it reads
-   as "the primary action," not the anxious blank space Ed flagged. */
+/* ---- Launchpad landing (F-119 / D4 · F-126, rescaled Jul 2) ----
+   The app's front door, scale-matched to the scientist reference: a
+   VIEWPORT-LOCKED page (never grows past the fold) with a compact centered
+   column — layered animated emblem → 21px headline → copy → one
+   FIXED-FOOTPRINT stage both intake modes render into (the YouConnect list
+   scrolls inside it; zero height jump between modes). A faint accent wash up
+   top gives the canvas atmosphere in both themes. */
 .launchpad {
+  height: 100%;
+  overflow: auto;
+  display: flex;
+  padding: 18px clamp(20px, 5vw, 56px);
+  background: radial-gradient(
+    90% 55% at 50% -8%,
+    var(--md-accent-c) 0%,
+    transparent 60%
+  );
+}
+.intake-hero {
+  margin: auto; /* centered when it fits, scrolls gracefully when it can't */
+  min-width: 0;
+  width: 100%;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  gap: 16px;
 }
-.intake--hero {
-  border-radius: 18px;
-  box-shadow: var(--md-elev-2);
-  background: var(--md-surface);
+.ih-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
 }
-.intake--hero .intake-head {
-  padding: 15px 20px;
+.ih-head-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
 }
-.intake--hero .intake-title {
-  font-size: 17px;
+/* emblem — orbiting satellite: one petrol dot on a slow concentric track
+   around the static badge (framer rotates the full-size wrapper; the dot
+   rides its top edge). No ring, no shimmer, no bubbles, no presence dot (our
+   AI is a pipeline, not a persona-agent). */
+.ih-emblem {
+  position: relative;
+  width: 78px;
+  height: 78px;
 }
-.intake--hero .intake-body {
-  padding: 22px;
-  /* Sized so the drop zone (which flexes to fill) matches the taller
-     From-YouConnect state (search bar + ~360px list) — no height jump when
-     toggling between the two modes. */
-  min-height: 430px;
-}
-.intake--hero .intake-drop {
-  min-height: 300px;
-  border-width: 2px;
-  gap: 9px;
-  background: transparent;
-}
-.intake--hero .intake-drop:hover,
-.intake--hero .intake-drop:focus-visible,
-.intake--hero .intake-drop.drag {
+.ih-emblem-core {
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
   background: var(--md-accent-c);
+  border: 1px solid color-mix(in srgb, var(--md-accent) 35%, transparent);
+  color: var(--md-accent-d);
 }
-.intake--hero .intake-drop-ic {
-  width: 66px;
-  height: 66px;
+/* speed lines — a -45deg-rotated layer inside the badge; streaks travel its
+   local x axis (reads as top-right → bottom-left past the rocket). The core's
+   circle clips them; they render behind the icon. */
+.ih-emblem-streaks {
+  position: absolute;
+  inset: -20%;
+  transform: rotate(-45deg);
+}
+.ih-emblem-line {
+  position: absolute;
+  left: 50%;
+  border-radius: 999px;
+  background: var(--md-accent);
+  opacity: 0;
+}
+.ih-title {
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+  color: var(--md-on-surface);
+}
+.ih-sub {
+  font-size: 14px;
+  color: var(--md-on-surface-v);
+  white-space: nowrap; /* the subs are written short enough to hold one line */
+}
+/* the stage — one FIXED footprint both modes render into (no height jump) */
+.ih-stage {
+  flex: none;
+  width: min(100%, 640px);
+  height: clamp(240px, 34vh, 320px);
+  display: flex;
+}
+.ih-stage-mode {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+}
+.ih-drop {
+  flex: 1;
+  min-height: 0;
+  border-width: 1.6px;
+  border-color: color-mix(in srgb, var(--md-accent) 30%, transparent);
   border-radius: 18px;
-  margin-bottom: 8px;
-  box-shadow: var(--md-elev-1);
+  gap: 7px;
 }
-.intake--hero .intake-drop-title {
-  font-size: 22px;
+.ih-drop .intake-drop-ic {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  margin-bottom: 4px;
 }
-.intake--hero .intake-drop p {
-  font-size: 13.5px;
+.ih-drop .intake-drop-title {
+  font-size: 15px;
 }
-.intake--hero .intake-yc-list {
-  max-height: 360px;
+.ih-drop p {
+  font-size: 12.5px;
 }
-.intake--hero .intake-yc-item {
-  padding: 12px 14px;
+/* From-YouConnect mode fills the same stage: a surface panel, list scrolls inside */
+.ih-yc {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  background: var(--md-surface);
+  border: 1px solid var(--md-outline-v);
+  border-radius: 18px;
+}
+.ih-yc .intake-search {
+  width: 100%;
+  max-width: none;
+}
+.ih-yc .intake-yc-list {
+  max-height: none;
+}
+.ih-toggle {
+  display: flex;
+  justify-content: center;
 }
 
 /* ---- Entry fork (/start) ---- */
