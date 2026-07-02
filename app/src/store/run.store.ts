@@ -72,6 +72,10 @@ interface RunState {
    *  Null = use the org-default. Defaults live in Templates; an explicit pick is
    *  a per-order override (audited), same rule as the Order flow. */
   checklistId: string | null;
+  /** Workbook layout chosen at the confirm gate (Technical only). Null = inherit
+   *  the org-default layout for the property's profile; a non-null id is a
+   *  per-review override, mirroring `checklistId`. */
+  layoutId: string | null;
   openRun: (
     reviewId: string,
     opts?: {
@@ -85,6 +89,7 @@ interface RunState {
   setDisplay: (display: RunDisplay) => void;
   setReviewTypes: (types: RunReviewType[]) => void;
   setChecklistId: (id: string | null) => void;
+  setLayoutId: (id: string | null) => void;
   /** Mark one review type signed / re-open it (idempotent). */
   signType: (type: RunReviewType) => void;
   unsignType: (type: RunReviewType) => void;
@@ -104,6 +109,7 @@ export const useRunStore = create<RunState>((set) => ({
   signedTypes: [],
   adminReady: false,
   checklistId: null,
+  layoutId: null,
   openRun: (reviewId, opts) =>
     set({
       open: true,
@@ -116,12 +122,14 @@ export const useRunStore = create<RunState>((set) => ({
       signedTypes: [],
       adminReady: false,
       checklistId: null,
+      layoutId: null,
     }),
   setDisplay: (display) => set({ display }),
   // Changing the selected set invalidates any prior per-type signatures + resets
   // Admin processing.
   setReviewTypes: (reviewTypes) => set({ reviewTypes, signedTypes: [], adminReady: false }),
   setChecklistId: (checklistId) => set({ checklistId }),
+  setLayoutId: (layoutId) => set({ layoutId }),
   signType: (type) =>
     set((s) =>
       s.signedTypes.includes(type) ? {} : { signedTypes: [...s.signedTypes, type] },
