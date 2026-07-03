@@ -12350,10 +12350,9 @@ select.qfilter {
 }
 .ih-cloud {
   position: absolute;
-  /* `top` (height) set inline; framer animates `left` right → left + opacity.
-     A static translate(-50%,-50%) centers the cloud on (left, top) and never
-     conflicts since no transform is animated. */
-  transform: translate(-50%, -50%);
+  /* Centered on its (left:50%, top) point via negative margins (inline), so
+     framer owns the `transform` outright and drives a smooth right → left
+     translateX (transforms are GPU-composited; animating `left` is not). */
   color: #fff;
   opacity: 0;
   filter: blur(0.2px);

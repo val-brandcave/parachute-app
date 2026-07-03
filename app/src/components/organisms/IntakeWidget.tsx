@@ -125,9 +125,9 @@ export function IntakeWidget() {
                 <motion.span
                   key={i}
                   className="ih-cloud"
-                  style={{ top: c.top }}
-                  initial={{ left: "114%", opacity: 0 }}
-                  animate={{ left: ["114%", "88%", "0%", "-20%"], opacity: [0, c.op, c.op, 0] }}
+                  style={{ top: c.top, left: "50%", marginLeft: -c.size / 2, marginTop: -c.size / 2 }}
+                  initial={{ x: 42, opacity: 0 }}
+                  animate={{ x: [42, 24, -24, -42], opacity: [0, c.op, c.op, 0] }}
                   transition={{
                     duration: c.dur,
                     delay: c.delay,
