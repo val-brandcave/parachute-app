@@ -12350,7 +12350,10 @@ select.qfilter {
 }
 .ih-cloud {
   position: absolute;
-  top: 50%; /* framer animates y (transform) from here */
+  /* `top` (height) set inline; framer animates `left` right → left + opacity.
+     A static translate(-50%,-50%) centers the cloud on (left, top) and never
+     conflicts since no transform is animated. */
+  transform: translate(-50%, -50%);
   color: #fff;
   opacity: 0;
   filter: blur(0.2px);

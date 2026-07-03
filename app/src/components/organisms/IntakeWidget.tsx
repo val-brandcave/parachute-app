@@ -29,19 +29,19 @@ const HERO_ITEM = {
  * the run flow (S-E → S-A). Defaults to Drop (the common path).
  *
  * Motion (F-133): the brand PARACHUTE (logomark-as-canopy) sways gently while
- * soft CLOUDS drift UP past it inside the seal — so the canopy reads as floating
- * down through the sky (the world rises, the parachute glides). Replaces the
- * old rocket + speed lines. Cross-fade between modes; the upload glyph bobs and
- * springs on drag-over.
+ * soft CLOUDS drift sideways (right → left) past it inside the seal — the canopy
+ * glides across the sky. Replaces the old rocket + speed lines. Cross-fade
+ * between modes; the upload glyph bobs and springs on drag-over.
  */
 
-/** Emblem clouds — soft filled clouds at a few scales, offbeat durations/delays
- *  so passes never sync. Each rises from below the canopy to above it, fading in
- *  and out; clipped to the seal ring's circle, rendered behind the parachute. */
+/** Emblem clouds — soft filled clouds at a few scales/heights, offbeat
+ *  durations/delays so passes never sync. Each drifts right → left across the
+ *  seal, fading in and out; clipped to the seal ring's circle, behind the
+ *  parachute. */
 const CLOUDS = [
-  { left: "26%", size: 15, dur: 7.5, delay: 0, op: 0.5 },
-  { left: "62%", size: 20, dur: 9, delay: 2.4, op: 0.4 },
-  { left: "44%", size: 12, dur: 6.2, delay: 4.6, op: 0.55 },
+  { top: "32%", size: 15, dur: 7.5, delay: 0, op: 0.5 },
+  { top: "58%", size: 20, dur: 9, delay: 2.4, op: 0.4 },
+  { top: "46%", size: 12, dur: 6.2, delay: 4.6, op: 0.55 },
 ] as const;
 export function IntakeWidget() {
   const openRun = useRunStore((s) => s.openRun);
@@ -115,9 +115,9 @@ export function IntakeWidget() {
       aria-label="Start a review"
     >
       <motion.div className="ih-head" variants={HERO_ITEM}>
-        {/* Emblem — the brand parachute sways while clouds drift UP behind it
-            (clipped to the seal ring's circle). The canopy floats down through
-            the rising sky. No presence dot: Parachute's AI is a pipeline. */}
+        {/* Emblem — the brand parachute sways while clouds drift right → left
+            behind it (clipped to the seal ring's circle), so the canopy glides
+            across the sky. No presence dot: Parachute's AI is a pipeline. */}
         <span className="ih-emblem" aria-hidden="true">
           <span className="ih-emblem-core">
             <span className="ih-emblem-clip">
@@ -125,9 +125,9 @@ export function IntakeWidget() {
                 <motion.span
                   key={i}
                   className="ih-cloud"
-                  style={{ left: c.left, x: "-50%" }}
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: [20, 10, -14, -24], opacity: [0, c.op, c.op, 0] }}
+                  style={{ top: c.top }}
+                  initial={{ left: "114%", opacity: 0 }}
+                  animate={{ left: ["114%", "88%", "0%", "-20%"], opacity: [0, c.op, c.op, 0] }}
                   transition={{
                     duration: c.dur,
                     delay: c.delay,
