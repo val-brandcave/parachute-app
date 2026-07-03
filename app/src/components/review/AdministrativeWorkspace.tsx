@@ -141,14 +141,14 @@ export function AdministrativeWorkspace({
       <div className="fm-state">
         <div className="fm-state-card">
           <div className="fm-state-icon">
-            <Icon name="rocket" size={24} />
+            <Icon name="parachute" size={24} />
           </div>
           <h3>Administrative review not started</h3>
           <p>
             Order the Administrative review to pre-fill your bank&rsquo;s checklist with evidence and
             page cites — then attest each item and sign.
           </p>
-          <Button variant="primary" iconLeft="rocket">
+          <Button variant="primary" iconLeft="parachute">
             Order Administrative Review
           </Button>
         </div>

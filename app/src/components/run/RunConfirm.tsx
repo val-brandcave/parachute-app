@@ -357,7 +357,7 @@ export function RunConfirm({
           <Button
             variant="primary"
             size="sm"
-            iconLeft="rocket"
+            iconLeft="parachute"
             disabled={!canStart}
             onClick={start}
           >

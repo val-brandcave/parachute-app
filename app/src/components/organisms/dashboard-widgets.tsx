@@ -117,7 +117,7 @@ export function NewFromYouConnect({ reviews }: { reviews: Review[] }) {
               <Button
                 size="sm"
                 variant="outline"
-                iconLeft="rocket"
+                iconLeft="parachute"
                 onClick={() => runReview(r)}
               >
                 Run

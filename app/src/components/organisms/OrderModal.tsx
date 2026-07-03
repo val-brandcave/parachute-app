@@ -161,7 +161,7 @@ export function OrderModal() {
       onNext={() => setStep(Math.min(STEPS.length - 1, step + 1))}
       onSubmit={submit}
       submitLabel="Run"
-      submitIcon="rocket"
+      submitIcon="parachute"
       submitIconSide="left"
       nextDisabled={!canContinue}
       submitting={submitting}

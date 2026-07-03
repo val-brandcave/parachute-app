@@ -150,14 +150,14 @@ export function TechnicalWorkspace({
       <div className="fm-state">
         <div className="fm-state-card">
           <div className="fm-state-icon">
-            <Icon name="rocket" size={24} />
+            <Icon name="parachute" size={24} />
           </div>
           <h3>Technical review not started</h3>
           <p>
             This appraisal hasn’t been run through the technical pipeline yet. Order it to generate
             findings for disposition.
           </p>
-          <Button variant="primary" iconLeft="rocket">
+          <Button variant="primary" iconLeft="parachute">
             Order Technical Review
           </Button>
         </div>

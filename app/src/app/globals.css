@@ -12307,10 +12307,9 @@ select.qfilter {
   text-align: center;
   gap: 6px;
 }
-/* emblem — orbiting satellite: one petrol dot on a slow concentric track
-   around the static badge (framer rotates the full-size wrapper; the dot
-   rides its top edge). No ring, no shimmer, no bubbles, no presence dot (our
-   AI is a pipeline, not a persona-agent). */
+/* emblem (F-133) — the brand parachute sways while soft clouds drift up behind
+   it, clipped to the seal ring. Solid navy seal in both themes (a theme-stable
+   brand anchor). No presence dot (our AI is a pipeline, not a persona-agent). */
 .ih-emblem {
   position: relative;
   width: 78px;
@@ -12341,28 +12340,30 @@ select.qfilter {
   border: 1.5px solid color-mix(in srgb, #fff 55%, transparent);
   pointer-events: none;
 }
-/* speed lines — a -45deg-rotated layer inside the badge; streaks travel its
-   local x axis (reads as top-right → bottom-left past the rocket). They clip
-   to the SEAL RING's circle (not the badge edge), so nothing crosses the navy
-   rim; they render behind the icon. */
+/* cloud layer — clips to the SEAL RING's circle (not the badge edge), so
+   nothing crosses the navy rim; renders behind the parachute glyph. */
 .ih-emblem-clip {
   position: absolute;
   inset: 6px; /* just inside the ring stroke (ring: inset 4px, 1.5px wide) */
   border-radius: 50%;
   overflow: hidden;
 }
-.ih-emblem-streaks {
+.ih-cloud {
   position: absolute;
-  inset: -20%;
-  transform: rotate(-45deg);
-}
-.ih-emblem-line {
-  position: absolute;
-  left: 50%;
-  border-radius: 999px;
-  /* light streaks on the navy fill — motion lines against a night sky */
-  background: color-mix(in srgb, #fff 85%, var(--md-accent));
+  top: 50%; /* framer animates y (transform) from here */
+  color: #fff;
   opacity: 0;
+  filter: blur(0.2px);
+  line-height: 0;
+}
+/* the swaying parachute — sits above the clouds, centered in the seal */
+.ih-emblem-glyph {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--md-on-primary);
+  z-index: 1;
 }
 .ih-title {
   font-family: var(--font-display);
