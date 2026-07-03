@@ -18,7 +18,7 @@ type Cmd = {
 };
 
 const NAV: { label: string; href: string; icon: IconName }[] = [
-  { label: "Start a review", href: "/launchpad", icon: "rocket" },
+  { label: "Start a review", href: "/launchpad", icon: "parachute" },
   { label: "Dashboard", href: "/dashboard", icon: "dashboard" },
   { label: "Reviews", href: "/reviews", icon: "reviews" },
   { label: "Templates", href: "/templates", icon: "templates" },

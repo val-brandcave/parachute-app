@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button, Icon, YouConnectGlyph } from "@/components/atoms";
-import { useOrgStore, useTemplatesStore } from "@/store";
+import { useTemplatesStore } from "@/store";
 import { inheritedLayout, profileFor } from "@/lib/workbook";
+import { InheritedTemplateField } from "./InheritedTemplateField";
 import type { Review } from "@/types";
 import type { RunDisplay, RunReviewType, RunSource } from "@/store";
 
@@ -119,7 +120,7 @@ export function RunConfirm({
   onStart: (
     display: RunDisplay,
     types: RunReviewType[],
-    opts?: { checklistId?: string | null },
+    opts?: { checklistId?: string | null; layoutId?: string | null },
   ) => void;
   onCancel: () => void;
 }) {
@@ -140,14 +141,15 @@ export function RunConfirm({
     REVIEW_TYPES.filter((s) => s.status === "live" && s.defaultOn).map((s) => s.id),
   );
 
-  // Compliance checklist pick (Administrative). Null falls back to org-default.
+  // Per-review template overrides. Both default to the org-inherited template
+  // (null) and can be overridden *for this review only* via the shared
+  // InheritedTemplateField control — same "audited per-order override" rule as
+  // the Order flow. Bank policy is NOT here: it's org policy owned by Settings →
+  // Compliance (F-123), applied to every run, never a per-review pick.
   const defaultChecklist = checklists.find((c) => c.isDefault) ?? checklists[0];
   const [checklistId, setChecklistId] = useState<string | null>(null);
+  const [layoutId, setLayoutId] = useState<string | null>(null);
   const effectiveChecklistId = checklistId ?? defaultChecklist?.id ?? null;
-
-  // Org bank policy (the fine-tuning context banks supply) — read-only here;
-  // Settings → Compliance owns upload/replace (F-123).
-  const bankPolicy = useOrgStore((s) => s.bankPolicy);
 
   const isSel = (id: RunReviewType) => selected.includes(id);
   const toggle = (spec: ReviewTypeSpec) => {
@@ -163,9 +165,12 @@ export function RunConfirm({
   const showTechnical = isSel("technical");
   const showAdmin = isSel("administrative");
 
-  // Technical config = the inherited org workbook layout for this property's profile
-  // (read-only here; authored in Templates) — same model as the Order flow.
-  const layout = inheritedLayout(layouts, profileFor(propertyType));
+  // Technical config = the org workbook layout inherited from this property's
+  // profile (authored in Templates). It's the *default*; the reviewer can
+  // override it for this review from the layouts library — same model as the
+  // Order flow.
+  const profile = profileFor(propertyType);
+  const defaultLayout = inheritedLayout(layouts, profile);
 
   // Start gates on ≥1 review type; identity only matters if a selected type asks for it.
   const canStart = selected.length > 0 && (!showIdentity || address.trim().length > 0);
@@ -181,7 +186,10 @@ export function RunConfirm({
         firm: firm.trim(),
       },
       selected,
-      { checklistId: showAdmin ? effectiveChecklistId : null },
+      {
+        checklistId: showAdmin ? effectiveChecklistId : null,
+        layoutId: showTechnical ? layoutId : null,
+      },
     );
   };
 
@@ -294,25 +302,20 @@ export function RunConfirm({
           </motion.div>
         )}
 
-        {/* Card — technical review setup. */}
+        {/* Card — technical review setup (its own type-gated section — a
+            Technical-only run never renders Administrative config). */}
         {showTechnical && (
           <motion.div className="run-cf-card" variants={ITEM_V}>
             <span className="run-cf-card-head">Technical review setup</span>
-            <div className="field">
-              <span>Workbook layout</span>
-              <div className="run-cf-inh">
-                <span className="run-cf-inh-ic">
-                  <Icon name="book" size={18} />
-                </span>
-                <div className="run-cf-inh-body">
-                  <span className="run-cf-inh-val">{layout?.name ?? "Org default"}</span>
-                  <span className="run-cf-inh-meta">
-                    From the {profileFor(propertyType)} profile · authored in Templates
-                  </span>
-                </div>
-                <span className="run-cf-inh-badge">Inherited</span>
-              </div>
-            </div>
+            <InheritedTemplateField
+              icon="book"
+              label="Workbook layout"
+              defaultId={defaultLayout?.id ?? null}
+              defaultMeta={`Org default · from the ${profile} profile`}
+              options={layouts.map((l) => ({ id: l.id, name: l.name }))}
+              value={layoutId}
+              onChange={setLayoutId}
+            />
           </motion.div>
         )}
 
@@ -329,53 +332,20 @@ export function RunConfirm({
               style={{ overflow: "hidden" }}
             >
               <span className="run-cf-card-head">Administrative review setup</span>
-              <label className="field">
-                <span>Compliance checklist</span>
-                <select
-                  value={effectiveChecklistId ?? ""}
-                  onChange={(e) => setChecklistId(e.target.value || null)}
-                >
-                  {checklists.length === 0 && <option value="">Org default</option>}
-                  {checklists.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                      {c.isDefault ? " (default)" : ""}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              {/* Bank policy is ORG CONFIG (F-123) — uploaded once in Settings →
-                  Compliance, applied on the final pass of every run. The gate
-                  only references it, exactly like the inherited workbook layout. */}
-              <div className="field">
-                <span>Bank policy</span>
-                {bankPolicy ? (
-                  <div className="run-cf-inh">
-                    <span className="run-cf-inh-ic">
-                      <Icon name="pdf" size={18} />
-                    </span>
-                    <div className="run-cf-inh-body">
-                      <span className="run-cf-inh-val">{bankPolicy.name}</span>
-                      <span className="run-cf-inh-meta">
-                        Applied on the final pass · managed in Settings → Compliance
-                      </span>
-                    </div>
-                    <span className="run-cf-inh-badge">From Settings</span>
-                  </div>
-                ) : (
-                  <div className="run-cf-inh run-cf-inh--empty">
-                    <span className="run-cf-inh-ic">
-                      <Icon name="pdf" size={18} />
-                    </span>
-                    <div className="run-cf-inh-body">
-                      <span className="run-cf-inh-val">No bank policy on file</span>
-                      <span className="run-cf-inh-meta">
-                        Add one in Settings → Compliance to apply it on every run.
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </div>
+              {/* Compliance checklist is a TEMPLATE (org default, overridable per
+                  review) — same control as the workbook layout above. Bank policy
+                  is intentionally absent: it's org policy owned by Settings →
+                  Compliance (F-123), applied automatically to every run, so it has
+                  no per-review knob to show here. */}
+              <InheritedTemplateField
+                icon="checklist"
+                label="Compliance checklist"
+                defaultId={defaultChecklist?.id ?? null}
+                defaultMeta="Org default · authored in Templates"
+                options={checklists.map((c) => ({ id: c.id, name: c.name }))}
+                value={checklistId}
+                onChange={setChecklistId}
+              />
             </motion.div>
           )}
         </AnimatePresence>
@@ -387,7 +357,7 @@ export function RunConfirm({
           <Button
             variant="primary"
             size="sm"
-            iconLeft="rocket"
+            iconLeft="parachute"
             disabled={!canStart}
             onClick={start}
           >

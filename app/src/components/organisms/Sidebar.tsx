@@ -18,8 +18,8 @@ const PRIMARY: { href: string; icon: IconName; label: string }[] = [
 
 const MotionLink = motion.create(Link);
 
-/** Spring with a touch of overshoot — the icon nudges past and settles. */
-const CTA_ICON_SPRING = { type: "spring", stiffness: 550, damping: 12, mass: 0.6 } as const;
+/** Spring with a touch of overshoot — the parachute dips and settles like it caught air. */
+const CTA_ICON_SPRING = { type: "spring", stiffness: 480, damping: 14, mass: 0.6 } as const;
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -31,7 +31,7 @@ export function Sidebar() {
   // The docked primary action (F-127 / D4): a CTA, not a nav row — it opts out
   // of the rail's you-are-here state (the breadcrumb names the page instead).
   // Click = /launchpad, the full-page drop-file route. Motion = tactile press
-  // (the button sinks, CSS) + a spring launch-nudge on the rocket (framer).
+  // (the button sinks, CSS) + a spring "catch-air" dip+sway on the parachute (F-133).
   const cta = (
     <MotionLink
       href="/launchpad"
@@ -43,13 +43,14 @@ export function Sidebar() {
     >
       <motion.span
         className="sb-cta-ic"
+        style={{ transformOrigin: "50% 15%" }}
         variants={{
-          rest: { x: 0, y: 0, rotate: 0 },
-          hover: { x: 2, y: -2, rotate: -6 },
+          rest: { y: 0, rotate: 0 },
+          hover: { y: 1.5, rotate: -5 },
         }}
         transition={CTA_ICON_SPRING}
       >
-        <Icon name="rocket" size={19} strokeWidth={2.2} />
+        <Icon name="parachute" size={19} strokeWidth={2} />
       </motion.span>
       {!navCollapsed && <span>Start a review</span>}
     </MotionLink>

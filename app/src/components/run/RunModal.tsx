@@ -89,6 +89,8 @@ export function RunModal() {
     setDisplay,
     setReviewTypes,
     setChecklistId,
+    setLayoutId,
+    layoutId,
   } = useRunStore();
   const loadAdmin = useAdminStore((s) => s.loadAdmin);
   const markAttCompiled = useAdminStore((s) => s.markAttCompiled);
@@ -202,10 +204,13 @@ export function RunModal() {
     }
   }, [open]);
 
-  const layout = useMemo(
-    () => (review ? inheritedLayout(layouts, profileFor(review.propertyType)) : undefined),
-    [layouts, review],
-  );
+  // The layout that seeds the workbook: a per-review override (chosen at the
+  // confirm gate) wins over the profile-inherited org default.
+  const layout = useMemo(() => {
+    if (!review) return undefined;
+    const override = layoutId ? layouts.find((l) => l.id === layoutId) : undefined;
+    return override ?? inheritedLayout(layouts, profileFor(review.propertyType));
+  }, [layouts, review, layoutId]);
 
   // Seed the per-review workbook config from the inherited org layout once loaded.
   useEffect(() => {
@@ -308,11 +313,12 @@ export function RunModal() {
   const startReview = (
     d: RunDisplay,
     types: RunReviewType[],
-    opts?: { checklistId?: string | null },
+    opts?: { checklistId?: string | null; layoutId?: string | null },
   ) => {
     setDisplay(d);
     setReviewTypes(types);
     setChecklistId(opts?.checklistId ?? null);
+    setLayoutId(opts?.layoutId ?? null);
     setAdminStarted(false); // fresh run — Admin re-processes on next tab entry
     go("progress");
   };
