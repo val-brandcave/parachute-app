@@ -53,7 +53,7 @@ export default function StartPage() {
 
           <button className="start-opt" onClick={goStandalone}>
             <span className="start-opt-ic">
-              <Icon name="rocket" size={19} />
+              <Icon name="parachute" size={19} />
             </span>
             <span className="start-opt-body">
               <span className="start-opt-title">Standalone sign-in</span>

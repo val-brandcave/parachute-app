@@ -34,3 +34,6 @@ desktop.ini
 
 # Windows reserved-name guard (see ~/CLAUDE.md)
 **/nul
+
+# Local-only design prototypes (kept for reference, never shipped)
+/prototype-icons/

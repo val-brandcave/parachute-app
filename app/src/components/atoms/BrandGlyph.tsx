@@ -36,6 +36,52 @@ export function ParachuteGlyph({
   );
 }
 
+/**
+ * The launchpad hero glyph (F-133): the brand mark reused *as a parachute canopy*
+ * — the real logomark paths scaled into the top of a 24-unit space, with two thin
+ * shroud lines and a payload box attached. It says "our logo, in flight." Drawn
+ * with `currentColor` so it inherits the emblem's white ink on navy. The canopy
+ * is the actual `ParachuteGlyph` artwork (single source of truth for the mark).
+ */
+export function ChuteEmblem({
+  size = 44,
+  className,
+  style,
+}: {
+  size?: number;
+  className?: string;
+  style?: React.CSSProperties;
+}) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+      focusable="false"
+      className={className}
+      style={style}
+    >
+      {/* canopy = the logomark, scaled into the top ~55% and centered */}
+      <g transform="translate(3 0.6) scale(0.01735)" fill="currentColor">
+        <path d="M183.616 701.001C183.616 701.001 178.511 372.403 401.702 295.845C401.702 295.845 143.312 145.229 29.5019 334.599C-88.044 530.186 183.616 701.001 183.616 701.001Z" />
+        <path d="M887.396 800C887.396 800 1262.66 228.668 804.498 50.9707C404.447 -104.208 159.707 144.439 159.707 144.439C159.707 144.439 671.268 92.415 887.396 800Z" />
+      </g>
+      {/* two thin shrouds to the payload */}
+      <g stroke="currentColor" strokeWidth={1.05} strokeLinecap="round">
+        <path d="M6.3 12.4 12 19.3" />
+        <path d="M18 14 12 19.3" />
+      </g>
+      {/* payload box */}
+      <path
+        d="M10.85 19.3h2.3a.6 .6 0 0 1 .6 .6v1.15a.6 .6 0 0 1 -.6 .6h-2.3a.6 .6 0 0 1 -.6 -.6v-1.15a.6 .6 0 0 1 .6 -.6Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
 export function MicrosoftGlyph({ size = 18 }: { size?: number }) {
   return (
     <svg

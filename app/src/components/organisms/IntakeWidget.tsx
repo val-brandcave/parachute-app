@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Icon, Chip } from "@/components/atoms";
+import { IconCloudFilled } from "@tabler/icons-react";
+import { Icon, Chip, ChuteEmblem } from "@/components/atoms";
 import { SegmentedControl } from "@/components/molecules";
 import { cn, formatShortDate } from "@/lib/utils";
 import { useRunStore, useOrderStore, DEMO_RUN_REVIEW_ID, type RunDisplay } from "@/store";
@@ -27,20 +28,20 @@ const HERO_ITEM = {
  * moves the layout and the mode toggle never leaves the fold. Either path opens
  * the run flow (S-E → S-A). Defaults to Drop (the common path).
  *
- * Motion: staggered load; SPEED LINES on the emblem — thin petrol streaks pass
- * diagonally behind the static rocket, top-right → bottom-left (the rocket is
- * in flight through them; the world moves, the rocket doesn't — deliberately
- * no bubbles/float, no orbit dot, no shimmer, no persona-presence dot);
- * cross-fade between modes; the upload glyph bobs and springs on drag-over.
+ * Motion (F-133): the brand PARACHUTE (logomark-as-canopy) sways gently while
+ * soft CLOUDS drift sideways (right → left) past it inside the seal — the canopy
+ * glides across the sky. Replaces the old rocket + speed lines. Cross-fade
+ * between modes; the upload glyph bobs and springs on drag-over.
  */
 
-/** Emblem speed lines — offbeat lengths/speeds/rests so passes never sync.
- *  Live in a -45°-rotated layer inside the badge (clipped by the circle), so
- *  each streak just travels its local x axis. */
-const STREAKS = [
-  { top: "30%", w: 16, h: 2, span: 46, dur: 2.6, delay: 0.3, rest: 1.7, peak: 0.45 },
-  { top: "50%", w: 22, h: 2, span: 52, dur: 2.2, delay: 1.5, rest: 2.1, peak: 0.5 },
-  { top: "68%", w: 12, h: 1.5, span: 44, dur: 3.0, delay: 2.5, rest: 1.3, peak: 0.4 },
+/** Emblem clouds — soft filled clouds at a few scales/heights, offbeat
+ *  durations/delays so passes never sync. Each drifts right → left across the
+ *  seal, fading in and out; clipped to the seal ring's circle, behind the
+ *  parachute. */
+const CLOUDS = [
+  { top: "32%", size: 15, dur: 7.5, delay: 0, op: 0.5 },
+  { top: "58%", size: 20, dur: 9, delay: 2.4, op: 0.4 },
+  { top: "46%", size: 12, dur: 6.2, delay: 4.6, op: 0.55 },
 ] as const;
 export function IntakeWidget() {
   const openRun = useRunStore((s) => s.openRun);
@@ -114,39 +115,39 @@ export function IntakeWidget() {
       aria-label="Start a review"
     >
       <motion.div className="ih-head" variants={HERO_ITEM}>
-        {/* Emblem — speed lines: thin streaks pass diagonally BEHIND the
-            static rocket, top-right → bottom-left (the rocket flies through
-            them; the world moves, not the rocket). Streaks render before the
-            icon so they pass behind it; the circular core clips them. No
-            presence dot: Parachute's AI is a pipeline, not a persona-agent. */}
+        {/* Emblem — the brand parachute sways while clouds drift right → left
+            behind it (clipped to the seal ring's circle), so the canopy glides
+            across the sky. No presence dot: Parachute's AI is a pipeline. */}
         <span className="ih-emblem" aria-hidden="true">
           <span className="ih-emblem-core">
-            {/* streaks clip to the seal ring's circle — never the navy rim */}
             <span className="ih-emblem-clip">
-              <span className="ih-emblem-streaks">
-                {STREAKS.map((s, i) => (
+              {CLOUDS.map((c, i) => (
                 <motion.span
                   key={i}
-                  className="ih-emblem-line"
-                  style={{
-                    top: s.top,
-                    width: s.w,
-                    height: s.h,
-                    marginLeft: -s.w / 2,
-                  }}
-                  animate={{ x: [s.span, -s.span], opacity: [0, s.peak, 0] }}
+                  className="ih-cloud"
+                  style={{ top: c.top }}
+                  initial={{ left: "114%", opacity: 0 }}
+                  animate={{ left: ["114%", "88%", "0%", "-20%"], opacity: [0, c.op, c.op, 0] }}
                   transition={{
-                    duration: s.dur,
-                    delay: s.delay,
+                    duration: c.dur,
+                    delay: c.delay,
                     repeat: Infinity,
-                    repeatDelay: s.rest,
                     ease: "linear",
+                    times: [0, 0.16, 0.84, 1],
                   }}
-                />
-                ))}
-              </span>
+                >
+                  <IconCloudFilled size={c.size} />
+                </motion.span>
+              ))}
             </span>
-            <Icon name="rocket" size={26} strokeWidth={1.9} />
+            <motion.span
+              className="ih-emblem-glyph"
+              style={{ transformOrigin: "50% 16%" }}
+              animate={{ rotate: [-4.5, 4.5, -4.5], y: [0, 2.5, 0] }}
+              transition={{ duration: 4.8, repeat: Infinity, ease: "easeInOut" }}
+            >
+              <ChuteEmblem size={44} />
+            </motion.span>
           </span>
         </span>
 

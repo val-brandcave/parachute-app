@@ -214,7 +214,7 @@ export function nextActionView(r: Review): NextActionView {
       return {
         label: "Run",
         tone: "primary",
-        icon: "rocket",
+        icon: "parachute",
         kind: "order",
         iconOnly: true,
       };

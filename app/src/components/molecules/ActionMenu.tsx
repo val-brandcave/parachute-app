@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Icon, Tooltip, type IconName } from "@/components/atoms";
@@ -28,10 +28,18 @@ export type ActionItem = {
 export function ActionMenu({
   items,
   tooltip,
+  trigger,
+  menuClassName,
 }: {
   items: ActionItem[];
   /** When set, the ⋯ trigger gets a hover tooltip (and this as its aria-label). */
   tooltip?: string;
+  /** Replace the default ⋯ trigger. Given the live `open` state + a `toggle`,
+   *  so callers can render any control (a "Change" pill, a field row, …) and
+   *  reflect the open state without re-implementing the portal/dismiss logic. */
+  trigger?: (o: { open: boolean; toggle: () => void }) => ReactNode;
+  /** Extra class on the popover (e.g. a wider min-width for long option labels). */
+  menuClassName?: string;
 }) {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null); // in-flow trigger wrapper
@@ -87,10 +95,12 @@ export function ActionMenu({
     };
   }, [open]);
 
-  const trigger = (
+  const toggle = () => setOpen((o) => !o);
+
+  const defaultTrigger = (
     <button
       className="ui-iconbtn"
-      onClick={() => setOpen((o) => !o)}
+      onClick={toggle}
       aria-haspopup="menu"
       aria-expanded={open}
       aria-label={tooltip ?? "More options"}
@@ -101,12 +111,14 @@ export function ActionMenu({
 
   return (
     <div className="ui-menu" ref={wrapRef}>
-      {tooltip ? (
+      {trigger ? (
+        trigger({ open, toggle })
+      ) : tooltip ? (
         <Tooltip content={tooltip} compact disabled={open}>
-          {trigger}
+          {defaultTrigger}
         </Tooltip>
       ) : (
-        trigger
+        defaultTrigger
       )}
       {typeof document !== "undefined" &&
         createPortal(
@@ -114,7 +126,7 @@ export function ActionMenu({
             {open && (
               <motion.div
                 ref={popRef}
-                className="ui-menu-pop"
+                className={"ui-menu-pop" + (menuClassName ? ` ${menuClassName}` : "")}
                 role="menu"
                 // Until measured, park offscreen (invisible anyway via opacity 0)
                 // so the first commit can't show an unpositioned flash.
