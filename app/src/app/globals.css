@@ -4775,23 +4775,11 @@ textarea {
   outline: none;
   box-shadow: var(--ring-accent);
 }
-/* Icon-tile treatment (F-135): the brand glyph sits in a subtle inset tile for
-   flagship presence. The tile is static; framer owns the inner glyph's spring
-   "catch-air" nudge (Sidebar CTA_ICON_SPRING). */
+/* framer owns the icon's spring nudge (Sidebar CTA_ICON_SPRING) */
 .sb-cta-ic {
   display: grid;
   place-items: center;
   flex-shrink: 0;
-}
-.sb-cta:not(.collapsed) .sb-cta-ic {
-  width: 30px;
-  height: 30px;
-  border-radius: 9px;
-  background: rgba(255, 255, 255, 0.15);
-}
-.sb-cta-glyph {
-  display: grid;
-  place-items: center;
 }
 /* hairline marking the action zone off from the wayfinding list */
 .sb-cta-sep {

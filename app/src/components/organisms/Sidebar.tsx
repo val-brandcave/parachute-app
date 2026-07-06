@@ -41,19 +41,17 @@ export function Sidebar() {
       animate="rest"
       whileHover="hover"
     >
-      <span className="sb-cta-ic">
-        <motion.span
-          className="sb-cta-glyph"
-          style={{ transformOrigin: "50% 15%" }}
-          variants={{
-            rest: { y: 0, rotate: 0 },
-            hover: { y: 1.5, rotate: -5 },
-          }}
-          transition={CTA_ICON_SPRING}
-        >
-          <Icon name="parachute" size={19} />
-        </motion.span>
-      </span>
+      <motion.span
+        className="sb-cta-ic"
+        style={{ transformOrigin: "50% 15%" }}
+        variants={{
+          rest: { y: 0, rotate: 0 },
+          hover: { y: 1.5, rotate: -5 },
+        }}
+        transition={CTA_ICON_SPRING}
+      >
+        <Icon name="parachute" size={19} />
+      </motion.span>
       {!navCollapsed && <span>Start a review</span>}
     </MotionLink>
   );
