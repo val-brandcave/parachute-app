@@ -45,6 +45,11 @@
   --md-success-c: #e3f5ea;
   --md-warn: #c98a12;
   --md-warn-c: #fcf1d8;
+  /* Deeper amber for SOLID badges/pins that carry white numerals. --md-warn is
+     mid-luminance (great as text on the --md-warn-c tint, too light behind white
+     text). This is the one severity where neither white nor black reads on the
+     base hue, so solid fills use this darker step. White on #8a5e0d ≈ 5.7:1 (AA). */
+  --md-warn-solid: #8a5e0d;
   --md-crit: #7e1d1d;
   --md-crit-c: #f6dcdc;
   --md-info: #2d6ca6;
@@ -91,6 +96,7 @@
   --paper-ok-c: #e3f5ea;
   --paper-warn: #c98a12;
   --paper-warn-c: #fcf1d8;
+  --paper-warn-solid: #8a5e0d; /* deeper amber for solid tags carrying white numerals on paper */
   --paper-err: #d23f34;
   --paper-err-c: #fce7e5;
   --paper-crit: #7e1d1d;
@@ -154,6 +160,7 @@
   --md-success-c: #11301e;
   --md-warn: #e2b25c;
   --md-warn-c: #33270f;
+  --md-warn-solid: #e2b25c; /* dark: keep the light pastel fill — numerals flip to dark ink */
   --md-crit: #ff968b;
   --md-crit-c: #3a1714;
   --md-info: #7cb7de;
@@ -10203,10 +10210,13 @@ select.qfilter {
   place-items: center;
   font-size: 11px;
   font-weight: 700;
-  /* dark ink reads on the gold/warn fill in both themes (white was low-contrast,
-     esp. in dark mode where warn is a light tint); matches .run-ex-num--flag */
-  color: #3a2c08;
-  background: var(--md-warn);
+  /* white numerals on the deeper amber solid (light); flipped to dark ink in dark
+     mode, where warn-solid is a light pastel. Matches .run-ex-num--flag. */
+  color: #fff;
+  background: var(--md-warn-solid);
+}
+:root[data-theme="dark"] .run-nav-badge {
+  color: var(--md-surface);
 }
 .run-nav-status {
   border-top: 1px solid var(--md-outline-v);
@@ -11277,7 +11287,7 @@ select.qfilter {
 }
 .run-anno-tag--crit { background: var(--paper-crit); }
 .run-anno-tag--fail { background: var(--paper-err); }
-.run-anno-tag--flag { background: var(--paper-warn); color: var(--paper-ink); }
+.run-anno-tag--flag { background: var(--paper-warn-solid); color: #fff; }
 .run-anno-tag--pass { background: var(--paper-ok); }
 .run-anno-tag--na { background: var(--paper-ink-3); }
 
@@ -11363,7 +11373,7 @@ select.qfilter {
 }
 .run-ex-num--crit { background: var(--md-crit); }
 .run-ex-num--fail { background: var(--md-error); }
-.run-ex-num--flag { background: var(--md-warn); color: #3a2c08; }
+.run-ex-num--flag { background: var(--md-warn-solid); color: #fff; }
 .run-ex-num--pass { background: var(--md-success); }
 .run-ex-num--na { background: var(--md-on-surface-t); }
 /* In dark mode the severity fills are light pastels (success/error/crit/warn),
