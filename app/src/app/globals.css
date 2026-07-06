@@ -4158,6 +4158,17 @@ textarea {
   background: var(--md-surface-1);
   border-color: var(--md-on-surface-v);
 }
+/* Tone-inheriting outline — reads `--btn-tone` set by the host banner so one
+   variant matches any banner colour. Falls back to neutral ink. */
+.ui-btn--tonal {
+  background: transparent;
+  color: var(--btn-tone, var(--md-on-surface));
+  border-color: color-mix(in srgb, var(--btn-tone, var(--md-on-surface)) 42%, transparent);
+}
+.ui-btn--tonal:hover {
+  background: color-mix(in srgb, var(--btn-tone, var(--md-on-surface)) 12%, transparent);
+  border-color: var(--btn-tone, var(--md-on-surface));
+}
 .ui-btn--ghost {
   background: transparent;
   color: var(--md-on-surface-v);
@@ -4249,6 +4260,60 @@ textarea {
   height: 7px;
   border-radius: 50%;
   flex-shrink: 0;
+}
+/* ---- StatusPill (molecule) ----
+   `bare` = inline status (indicator + quiet label, no wrapper) for use inside
+   another container (the run type tabs); default = a Chip pill for flat surfaces
+   (workbook toolbar). The indicator carries the colour so the label stays calm. */
+.status-pill-bare {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: inherit; /* reads on the active tab pill AND the inactive tab */
+  white-space: nowrap;
+}
+/* Chip form gets a hairline so the neutral "Draft" pill reads crisp on white. */
+.ui-chip.status-chip {
+  border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+}
+.status-pill-ic {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+.status-pill-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+/* Indicator tone (colours only the dot / check / spinner). */
+.status-pill-ic--accent {
+  color: var(--md-accent);
+}
+.status-pill-ic--info {
+  color: var(--md-info);
+}
+.status-pill-ic--pass {
+  color: var(--md-success);
+}
+.status-pill-ic--warn {
+  color: var(--md-warn-solid);
+}
+.status-pill-ic--fail {
+  color: var(--md-error);
+}
+/* Leading spinner — currentColor so it inherits the indicator tone. */
+.status-pill-spin {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 1.6px solid currentColor;
+  border-top-color: transparent;
+  flex-shrink: 0;
+  animation: ui-spin 0.7s linear infinite;
 }
 
 /* ---- atom: Input / Textarea / Label (inputs always white) ---- */
@@ -7077,6 +7142,17 @@ label.field {
   z-index: 1;
   display: inline-flex;
   align-items: center;
+}
+/* Trailing inline status (run flow: Processing / Ready to review / Signed per
+   type). Sits above the sliding pill; inherits the tab's ink so the quiet label
+   reads on both the active pill and the inactive tab. */
+.qtab-trail {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  margin-left: 3px;
+  color: inherit;
 }
 .qtab .cnt {
   position: relative;
@@ -10454,12 +10530,18 @@ select.qfilter {
 }
 .run-wb-bar-label {
   display: inline-flex;
-  align-items: baseline;
-  gap: 7px;
+  align-items: center;
+  gap: 8px;
   font-family: var(--font-display);
   font-size: 13px;
   font-weight: 700;
   color: var(--md-on-surface);
+}
+.run-wb-bar-label .ui-chip {
+  height: 20px;
+  padding: 0 8px;
+  font-size: 11px;
+  gap: 5px;
 }
 .run-wb-bar-state {
   font-family: var(--font-sans);
@@ -10592,27 +10674,21 @@ select.qfilter {
   align-items: center;
   gap: 10px;
   font-size: 13px;
-  color: var(--md-warn);
+  /* Amber-solid drives the icon, border, and `--btn-tone` (readable on the tint);
+     the body text is neutral ink so it passes AA (base --md-warn was ~2.6:1). */
+  color: var(--md-warn-solid);
+  --btn-tone: var(--md-warn-solid);
   background: var(--md-warn-c);
-  border: 1px solid color-mix(in srgb, var(--md-warn) 32%, transparent);
+  border: 1px solid color-mix(in srgb, var(--md-warn) 38%, transparent);
   border-radius: 10px;
   padding: 10px 12px 10px 14px;
 }
 .run-callout-text {
   flex: 1;
+  color: var(--md-on-surface);
 }
 .run-callout-text b {
-  color: var(--md-warn);
-}
-.run-callout-cta {
-  font-size: 12.5px;
-  font-weight: 700;
-  color: var(--md-on-primary);
-  background: var(--grad-primary);
-  border: none;
-  border-radius: 7px;
-  padding: 6px 12px;
-  cursor: pointer;
+  color: var(--md-warn-solid);
 }
 .run-callout-x {
   display: grid;

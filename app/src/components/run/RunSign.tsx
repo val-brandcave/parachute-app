@@ -45,9 +45,11 @@ export function RunSignModal({
   sealedTitle,
   sealedNote,
   signCta,
+  nextType,
   onSign,
   onClose,
   onReturn,
+  onGoToNext,
 }: {
   open: boolean;
   sealed: boolean;
@@ -63,9 +65,15 @@ export function RunSignModal({
   sealedTitle: string;
   sealedNote: ReactNode;
   signCta: string;
+  /** The OTHER ordered review type still awaiting the reviewer (null when every
+   *  type is signed). Drives the post-seal "what next" action so the modal walks
+   *  a two-type run to completion instead of dead-ending at "Go to reviews". */
+  nextType?: { label: string; processing: boolean } | null;
   onSign: () => void;
   onClose: () => void;
   onReturn: () => void;
+  /** Close the seal + switch to `nextType` (its tab / processing view). */
+  onGoToNext?: () => void;
 }) {
 
   // Signature pad state (lifted so the footer can gate on it).
@@ -268,14 +276,24 @@ export function RunSignModal({
                   <Button variant="outline" size="sm" iconLeft="download">
                     Download PDF
                   </Button>
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    iconRight="forward"
-                    onClick={onReturn}
-                  >
-                    {embedded ? `Return to ${returnLabel ?? "YouConnect"}` : "Go to reviews"}
-                  </Button>
+                  {nextType ? (
+                    // A type is still open — send the reviewer there rather than
+                    // dead-ending at "Go to reviews". Processing = watch it run.
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      iconRight={nextType.processing ? undefined : "forward"}
+                      onClick={onGoToNext}
+                    >
+                      {nextType.processing
+                        ? `Go to ${nextType.label}`
+                        : `Review ${nextType.label}`}
+                    </Button>
+                  ) : (
+                    <Button variant="primary" size="sm" iconRight="forward" onClick={onReturn}>
+                      {embedded ? `Return to ${returnLabel ?? "YouConnect"}` : "Go to reviews"}
+                    </Button>
+                  )}
                 </>
               ) : (
                 <>
