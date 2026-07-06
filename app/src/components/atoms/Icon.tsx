@@ -75,7 +75,7 @@ import {
   IconScan,
   type Icon as TablerIcon,
 } from "@tabler/icons-react";
-import { ParachuteGlyph } from "./BrandGlyph";
+import { ParachuteGlyph, ChuteActionMark } from "./BrandGlyph";
 
 export const ICONS = {
   dashboard: IconLayoutDashboard,
@@ -170,9 +170,16 @@ export function Icon({
   className?: string;
   style?: React.CSSProperties;
 }) {
-  // The AI cue is the Parachute brand mark (currentColor), not a stroke icon.
+  // The AI cue is the pure-canopy Parachute brand mark (currentColor), not a stroke icon.
   if (name === "ai") {
     return <ParachuteGlyph size={size} className={className} style={style} />;
+  }
+  // Every ACTION spot uses the brand canopy "in flight" (canopy + shrouds +
+  // payload) instead of the generic Tabler parachute — on-brand, and a distinct
+  // object from both the logo and the AI cue. strokeWidth is intentionally ignored
+  // (the mark is fill-based with fixed-width shrouds).
+  if (name === "parachute") {
+    return <ChuteActionMark size={size} className={className} style={style} />;
   }
   const Cmp = ICONS[name];
   return (

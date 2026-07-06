@@ -18,7 +18,13 @@ export function Tabs<T extends string>({
   value,
   onChange,
 }: {
-  tabs: { value: T; label: string; count?: number; leading?: ReactNode }[];
+  tabs: {
+    value: T;
+    label: string;
+    count?: number;
+    leading?: ReactNode;
+    trailing?: ReactNode;
+  }[];
   value: T;
   onChange: (v: T) => void;
 }) {
@@ -51,6 +57,7 @@ export function Tabs<T extends string>({
               {t.leading != null && <span className="qtab-lead">{t.leading}</span>}
               <span className="qtab-lb">{t.label}</span>
               {t.count != null && <span className="cnt">{t.count}</span>}
+              {t.trailing != null && <span className="qtab-trail">{t.trailing}</span>}
             </motion.button>
           );
         })}

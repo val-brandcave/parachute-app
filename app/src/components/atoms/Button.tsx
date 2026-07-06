@@ -1,7 +1,10 @@
 import { cn } from "@/lib/utils";
 import { Icon, type IconName } from "./Icon";
 
-type Variant = "primary" | "accent" | "outline" | "ghost" | "danger";
+// `tonal` = an outline button that inherits its host's tone via the `--btn-tone`
+// CSS var (falls back to neutral ink). Built for in-banner actions so one variant
+// works across every banner colour (warn, petrol regenerate, etc.).
+type Variant = "primary" | "accent" | "outline" | "ghost" | "danger" | "tonal";
 type Size = "sm" | "md" | "lg";
 
 export function Button({

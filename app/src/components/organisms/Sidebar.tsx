@@ -50,7 +50,7 @@ export function Sidebar() {
         }}
         transition={CTA_ICON_SPRING}
       >
-        <Icon name="parachute" size={19} strokeWidth={2} />
+        <Icon name="parachute" size={19} />
       </motion.span>
       {!navCollapsed && <span>Start a review</span>}
     </MotionLink>

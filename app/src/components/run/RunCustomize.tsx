@@ -1,9 +1,12 @@
 "use client";
 
+import { useState } from "react";
+import { Reorder, useDragControls } from "framer-motion";
 import { Icon, IconButton } from "@/components/atoms";
 import { useWorkspaceStore } from "@/store";
 import { WB_THEMES, WB_FONTS } from "@/lib/workbook";
-import type { WbDocSettings } from "@/lib/workbook-config";
+import type { WbDocSettings, WbSection } from "@/lib/workbook-config";
+import { cn } from "@/lib/utils";
 
 const SCALES: WbDocSettings["scale"][] = ["compact", "normal", "spacious"];
 
@@ -24,10 +27,23 @@ const TOGGLES: { key: keyof WbDocSettings; label: string; hint: string }[] = [
  * immediately). Close returns to plain reading view.
  */
 export function RunCustomizePanel({ onClose }: { onClose: () => void }) {
-  const { workbook, updateSettings, toggleSection } = useWorkspaceStore();
+  const {
+    workbook,
+    updateSettings,
+    toggleSection,
+    reorderSections,
+    resetSectionOrder,
+    defaultSectionOrder,
+  } = useWorkspaceStore();
   if (!workbook) return null;
 
   const s = workbook.settings;
+  const sections = workbook.sections;
+  const shownCount = sections.filter((sec) => sec.enabled).length;
+  // Reset is only meaningful once the order actually diverges from the default.
+  const orderIsDefault =
+    sections.length === defaultSectionOrder.length &&
+    sections.every((sec, i) => sec.id === defaultSectionOrder[i]);
 
   return (
     <aside className="run-wb-dock scroll" aria-label="Customize workbook">
@@ -112,25 +128,71 @@ export function RunCustomizePanel({ onClose }: { onClose: () => void }) {
       </section>
 
       <section className="run-cz-sec">
-        <h3 className="run-cz-h">Sections</h3>
-        <div className="run-cz-sections">
-          {workbook.sections.map((sec) => (
-            <button
-              key={sec.id}
-              className="run-cz-section"
-              role="switch"
-              aria-checked={sec.enabled}
-              onClick={() => toggleSection(sec.id)}
-            >
-              <Icon name={sec.enabled ? "check-circle" : "x-circle"} size={16} />
-              <span>{sec.title}</span>
-              <span className={`run-cz-switch run-cz-switch--sm${sec.enabled ? " on" : ""}`}>
-                <span className="run-cz-switch-thumb" />
-              </span>
-            </button>
-          ))}
+        <div className="run-cz-sec-head">
+          <h3 className="run-cz-h">Sections</h3>
+          <span className="run-cz-count">
+            {shownCount} of {sections.length} shown
+          </span>
+          <button
+            type="button"
+            className="run-cz-reset"
+            onClick={resetSectionOrder}
+            disabled={orderIsDefault}
+          >
+            Reset order
+          </button>
         </div>
+        <Reorder.Group
+          as="ol"
+          axis="y"
+          values={sections}
+          onReorder={reorderSections}
+          className="run-cz-sections"
+        >
+          {sections.map((sec) => (
+            <SectionRow key={sec.id} section={sec} onToggle={() => toggleSection(sec.id)} />
+          ))}
+        </Reorder.Group>
       </section>
     </aside>
+  );
+}
+
+/** A draggable section row: grip handle · title (struck + dimmed when off) ·
+ *  on/off switch. Drag is handle-only (`dragListener={false}`) so the switch and
+ *  row body stay clickable. Mirrors the review-details Builder's SectionRow. */
+function SectionRow({ section, onToggle }: { section: WbSection; onToggle: () => void }) {
+  const controls = useDragControls();
+  const [dragging, setDragging] = useState(false);
+  return (
+    <Reorder.Item
+      value={section}
+      dragListener={false}
+      dragControls={controls}
+      className={cn("run-cz-section", !section.enabled && "is-off", dragging && "is-dragging")}
+      whileDrag={{ scale: 1.015 }}
+      onDragStart={() => setDragging(true)}
+      onDragEnd={() => setDragging(false)}
+    >
+      <button
+        type="button"
+        className="run-cz-grip"
+        aria-label={`Drag to reorder ${section.title}`}
+        onPointerDown={(e) => controls.start(e)}
+      >
+        <Icon name="grip" size={16} />
+      </button>
+      <span className="run-cz-sec-title">{section.title}</span>
+      <button
+        type="button"
+        className={`run-cz-switch run-cz-switch--sm${section.enabled ? " on" : ""}`}
+        role="switch"
+        aria-checked={section.enabled}
+        aria-label={`Toggle ${section.title}`}
+        onClick={onToggle}
+      >
+        <span className="run-cz-switch-thumb" />
+      </button>
+    </Reorder.Item>
   );
 }

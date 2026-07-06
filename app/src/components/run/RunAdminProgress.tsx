@@ -13,9 +13,9 @@ const ADMIN_STAGES = [
   "Flagging items that need a closer look",
 ];
 
-/** Per-stage dwell (ms) — paces the in-tab animation while the Administrative
- *  type finishes processing on its own timeline. Cosmetic: readiness is flipped
- *  by the run shell's timer; this holds on the last stage until then. */
+/** Per-stage dwell (ms). The animation OWNS the reveal: it walks every stage,
+ *  then fires `onDone` (+700ms to admire the final check) so the run shell flips
+ *  `adminReady` and swaps in the surfaces. Nothing can populate mid-run. */
 const STAGE_MS = 1400;
 
 const WRAP_V = {
@@ -32,16 +32,25 @@ const ITEM_V = {
  * compliance pipeline runs on its own timeline — no side rail yet (the rail +
  * surfaces slide in once processing completes, matching the initial full-screen
  * progress pattern). A compact sibling of the Technical `RunProgress` hero.
+ *
+ * `onDone` fires once, after every stage has visibly completed — the run shell
+ * uses it to flip `adminReady`, so the attestations never reveal mid-animation.
  */
-export function RunAdminProgress() {
+export function RunAdminProgress({ onDone }: { onDone?: () => void }) {
   const [stage, setStage] = useState(0);
 
+  // `onDone` must be stable (the caller memoizes it) so a parent re-render can't
+  // restart the stage timers. Mirrors the Technical RunProgress.
   useEffect(() => {
     const timers = ADMIN_STAGES.map((_, i) =>
       setTimeout(() => setStage(i + 1), STAGE_MS * (i + 1)),
     );
-    return () => timers.forEach(clearTimeout);
-  }, []);
+    const done = setTimeout(() => onDone?.(), STAGE_MS * ADMIN_STAGES.length + 700);
+    return () => {
+      timers.forEach(clearTimeout);
+      clearTimeout(done);
+    };
+  }, [onDone]);
 
   return (
     <div className="run-progress">
