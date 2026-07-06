@@ -2,6 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Button, Icon } from "@/components/atoms";
+import { StatusPill } from "@/components/molecules";
 import { useWorkspaceStore } from "@/store";
 import { WorkbookPreview } from "@/components/review/WorkbookPreview";
 import type { Review } from "@/types";
@@ -121,9 +122,13 @@ export function RunWorkbook({
       <div className="run-wb-bar">
         <span className="run-wb-bar-label">
           Workbook
-          <span className={`run-wb-bar-state run-wb-bar-state--${signed ? "final" : "draft"}`}>
-            · {signed ? "FINAL" : "DRAFT"}
-          </span>
+          <StatusPill
+            tone="neutral"
+            icon={signed ? "check-circle" : undefined}
+            indicatorTone={signed ? "pass" : undefined}
+          >
+            {signed ? "Final" : "Draft"}
+          </StatusPill>
         </span>
         <div className="run-ex-tools">
           <div className="run-ex-ctl" role="group" aria-label="Zoom">
@@ -213,9 +218,9 @@ export function RunWorkbook({
                 <b>{ctx.lowConfidenceCount} item{ctx.lowConfidenceCount === 1 ? "" : "s"}</b>{" "}
                 need a closer look before you sign — review them?
               </span>
-              <button className="run-callout-cta" onClick={onReviewFindings}>
+              <Button variant="tonal" size="sm" onClick={onReviewFindings}>
                 Review findings
-              </button>
+              </Button>
               <button
                 className="run-callout-x"
                 onClick={() => setDismissed(true)}

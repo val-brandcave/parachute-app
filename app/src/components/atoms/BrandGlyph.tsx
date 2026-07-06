@@ -82,6 +82,56 @@ export function ChuteEmblem({
   );
 }
 
+/**
+ * The action glyph (F-135): the brand canopy "in flight" — the logomark scaled as
+ * the canopy + two shrouds + a payload box — the same story as the launchpad
+ * `ChuteEmblem`, but tuned for small sizes (thicker shrouds + a larger payload) so
+ * it stays crisp at ~18–24px. Wired through the `Icon` atom as `name="parachute"`,
+ * replacing the generic Tabler parachute on every action spot (nav CTA, Run/Order
+ * submit, workspace CTAs, command palette…). It shares the canopy artwork with
+ * `ParachuteGlyph` (single source of truth) but reads as a distinct object — "a
+ * review descending safely" — so it never collides with the pure-canopy logo or
+ * the pure-canopy AI cue (`name="ai"`). Drawn with `currentColor` to inherit ink.
+ */
+export function ChuteActionMark({
+  size = 19,
+  className,
+  style,
+}: {
+  size?: number;
+  className?: string;
+  style?: React.CSSProperties;
+}) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+      focusable="false"
+      className={className}
+      style={style}
+    >
+      {/* canopy = the logomark, scaled into the top ~55% and centered */}
+      <g transform="translate(3 0.6) scale(0.01735)" fill="currentColor">
+        <path d="M183.616 701.001C183.616 701.001 178.511 372.403 401.702 295.845C401.702 295.845 143.312 145.229 29.5019 334.599C-88.044 530.186 183.616 701.001 183.616 701.001Z" />
+        <path d="M887.396 800C887.396 800 1262.66 228.668 804.498 50.9707C404.447 -104.208 159.707 144.439 159.707 144.439C159.707 144.439 671.268 92.415 887.396 800Z" />
+      </g>
+      {/* two shrouds to the payload — thicker than the hero emblem so they read small */}
+      <g stroke="currentColor" strokeWidth={1.5} strokeLinecap="round">
+        <path d="M6.3 12.4 12 19.3" />
+        <path d="M18 14 12 19.3" />
+      </g>
+      {/* payload box — enlarged vs. the hero emblem for legibility at button scale */}
+      <path
+        d="M10.55 19.1h2.9a.7 .7 0 0 1 .7 .7v1.45a.7 .7 0 0 1 -.7 .7h-2.9a.7 .7 0 0 1 -.7 -.7v-1.45a.7 .7 0 0 1 .7 -.7Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
 export function MicrosoftGlyph({ size = 18 }: { size?: number }) {
   return (
     <svg

@@ -54,6 +54,9 @@ interface WorkspaceState {
    *  layout (`ensureWorkbook`); reset on `loadReview` so it never leaks across
    *  reviews. Drives what the compiled doc renders. */
   workbook: WorkbookConfig | null;
+  /** Section id order captured when the workbook was first seeded — the canonical
+   *  order that "Reset order" (in Customize) restores after drag-reordering. */
+  defaultSectionOrder: string[];
   /** Regenerate model (D5 — the workbook reflects finding edits only after an
    *  explicit Regenerate). `compiledAt` is stamped when the workbook is first
    *  derived; any finding change after that flips `workbookDirty`, which drives
@@ -100,8 +103,10 @@ interface WorkspaceState {
   regenerate: () => void;
   /** Move a section up/down within the order. */
   moveSection: (id: string, dir: -1 | 1) => void;
-  /** Replace the whole section order (drag-to-reorder in the Builder). */
+  /** Replace the whole section order (drag-to-reorder in the Builder / Customize). */
   reorderSections: (sections: WbSection[]) => void;
+  /** Restore the section order captured when the workbook was first seeded. */
+  resetSectionOrder: () => void;
   toggleSection: (id: string) => void;
   deleteSection: (id: string) => void;
   /** Append a new section (id stamped here). Returns the new id. */
@@ -119,6 +124,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   signature: null,
   filing: null,
   workbook: null,
+  defaultSectionOrder: [],
   workbookDirty: false,
   compiledAt: null,
   regeneratedAt: null,
@@ -243,7 +249,15 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   // First derivation counts as the initial compile → stamp `compiledAt` so later
   // finding edits register as dirty (D5). Idempotent: only seeds once.
   ensureWorkbook: (config) =>
-    set((s) => (s.workbook ? {} : { workbook: config, compiledAt: Date.now() })),
+    set((s) =>
+      s.workbook
+        ? {}
+        : {
+            workbook: config,
+            defaultSectionOrder: config.sections.map((sec) => sec.id),
+            compiledAt: Date.now(),
+          },
+    ),
   resetWorkbook: (config) => set({ workbook: config }),
   regenerate: () =>
     set({ workbookDirty: false, compiledAt: Date.now(), regeneratedAt: Date.now() }),
@@ -262,6 +276,20 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
 
   reorderSections: (sections) =>
     set((s) => (s.workbook ? { workbook: { ...s.workbook, sections } } : {})),
+
+  resetSectionOrder: () =>
+    set((s) => {
+      if (!s.workbook) return {};
+      const order = s.defaultSectionOrder;
+      const byId = new Map(s.workbook.sections.map((sec) => [sec.id, sec]));
+      // Sections in the captured default order, then any created since (not in the
+      // snapshot) appended so nothing is dropped.
+      const ordered = [
+        ...order.map((id) => byId.get(id)).filter((sec): sec is WbSection => !!sec),
+        ...s.workbook.sections.filter((sec) => !order.includes(sec.id)),
+      ];
+      return { workbook: { ...s.workbook, sections: ordered } };
+    }),
 
   toggleSection: (id) =>
     set((s) =>

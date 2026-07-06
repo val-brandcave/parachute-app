@@ -1,4 +1,5 @@
 export { SeverityChip } from "./SeverityChip";
+export { StatusPill } from "./StatusPill";
 export { ConfidenceMeter } from "./ConfidenceMeter";
 export { StatCard } from "./StatCard";
 export { SegmentedControl } from "./SegmentedControl";

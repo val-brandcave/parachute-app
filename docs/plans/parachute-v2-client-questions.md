@@ -16,6 +16,7 @@ to act on the answer.
 | Q4 | Is the 90% experience **queue management** or really **change management / a notification hub**? | 🔴 Open | 2026-06-23 |
 | Q5 | **Registration / PLG** — deprioritized for bank vendor-approval? Does the fee-appraiser vertical reopen it? | 🔴 Open | 2026-06-23 |
 | Q6 | **End-of-July MVP scope** — admin + technical only, first non-YouConnect client live — still firm? | 🔴 Open | 2026-06-23 |
+| Q7 | **Customize on the Administrative (compliance) workbook** — allow presentation-only theming, or keep it fully locked/standardized? | 🔴 Open | 2026-07-06 |
 
 > Q3–Q6 came out of the Jun 23 demo. Full context:
 > `docs/meetings/processed-calls/parachute-jun-23-2026-processed.md`.
@@ -130,3 +131,37 @@ now so the queue only shows states the team owns:
 
 **To undo if the client says "keep them":** re-add the seed object, re-add the tab
 entry, bump `SEED_VERSION`. No lifecycle code changes needed.
+
+---
+
+## Q7 — Should the Administrative (compliance) workbook be customizable?
+
+**Status:** 🔴 Open — awaiting client
+**Raised:** 2026-07-06
+
+**Question.** The Technical workbook has a Customize panel (theme accent, heading
+font, density, what-the-doc-shows toggles, and drag-reorder / enable-disable of
+sections). The Administrative side is an **attestation document derived from a
+compliance checklist**, so its *structure* is mandated — sections can't be reordered
+or dropped. Should we still offer a **limited** Customize on the Administrative doc for
+**presentation only** (theme accent / colour + density), with the section structure
+clearly marked as locked by the compliance checklist? Or does a compliance attestation
+need to stay a fully standardized, non-customizable document?
+
+**Why it's open.** Two tensions: (a) brand consistency — a bank may want both
+deliverables (technical workbook + attestation) to share one look; vs. (b) compliance
+rigor — an attestation is often expected to be a fixed, standardized artifact, and
+presentation controls may be unwanted or even a compliance concern. Client/domain
+call, not an internal design choice.
+
+**What we did in the prototype (interim).** Deferred — the Administrative doc has
+**no Customize** today (matches "structure is fixed by the checklist"). Note: the
+attestation preview (`app/src/components/run/RunAttestationPreview.tsx`) currently has
+**no settings/theme/density model at all**, so adding even a limited Customize would
+require a settings slice on `admin.store.ts` plus wiring the `.wb-doc` render to
+consume it — a real feature, not a toggle. Held pending the client answer.
+
+**To build if the client says "yes, presentation-only":** add a theme/density settings
+slice to `admin.store.ts`, thread it into `RunAttestationPreview` / `AttestationBook`,
+and reuse `RunCustomizePanel` in a "compliance" mode (theme + density only; the
+Sections list shown read-only with a "defined by the compliance checklist" note).

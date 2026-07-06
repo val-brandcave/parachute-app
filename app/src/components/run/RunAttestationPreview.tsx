@@ -2,6 +2,7 @@
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Button, Icon, ParachuteGlyph } from "@/components/atoms";
+import { StatusPill } from "@/components/molecules";
 import {
   useAdminStore,
   useUsersStore,
@@ -73,6 +74,7 @@ export function RunAttestationPreview({
   const [page, setPage] = useState(1);
   const [pageCount, setPageCount] = useState(1);
   const [exported, setExported] = useState(false);
+  const [calloutDismissed, setCalloutDismissed] = useState(false);
 
   const t = attTally(states);
   const canSign = rows.length > 0 && t.pending === 0;
@@ -119,9 +121,13 @@ export function RunAttestationPreview({
       <div className="run-wb-bar">
         <span className="run-wb-bar-label">
           Attestation
-          <span className={`run-wb-bar-state run-wb-bar-state--${signed ? "final" : "draft"}`}>
-            · {signed ? "SIGNED" : "DRAFT"}
-          </span>
+          <StatusPill
+            tone="neutral"
+            icon={signed ? "check-circle" : undefined}
+            indicatorTone={signed ? "pass" : undefined}
+          >
+            {signed ? "Signed" : "Draft"}
+          </StatusPill>
         </span>
         <div className="run-ex-tools">
           <div className="run-ex-ctl" role="group" aria-label="Zoom">
@@ -190,6 +196,28 @@ export function RunAttestationPreview({
               </span>
               <button className="run-dirty-cta" onClick={regenerateAtt}>
                 <Icon name="refresh" size={14} /> Regenerate
+              </button>
+            </div>
+          )}
+
+          {!signed && t.pending > 0 && !calloutDismissed && (
+            <div className="run-callout" role="status">
+              <Icon name="warn" size={16} />
+              <span className="run-callout-text">
+                <b>
+                  {t.pending} attestation{t.pending === 1 ? "" : "s"}
+                </b>{" "}
+                still need answering before you sign — review them?
+              </span>
+              <Button variant="tonal" size="sm" onClick={onReviewChecklist}>
+                Review checklist
+              </Button>
+              <button
+                className="run-callout-x"
+                onClick={() => setCalloutDismissed(true)}
+                aria-label="Dismiss"
+              >
+                <Icon name="close" size={15} />
               </button>
             </div>
           )}
