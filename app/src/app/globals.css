@@ -11816,6 +11816,50 @@ select.qfilter {
   flex-direction: column;
   gap: 7px;
 }
+.run-cz-sections {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+/* Sections header: title + count badge + reset-order affordance. */
+.run-cz-sec-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 9px;
+}
+.run-cz-sec-head .run-cz-h {
+  margin-bottom: 0;
+}
+.run-cz-count {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--md-on-selected);
+  background: var(--md-selected);
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-variant-numeric: tabular-nums;
+}
+.run-cz-reset {
+  margin-left: auto;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--md-accent-d);
+  background: none;
+  border: 0;
+  padding: 2px 4px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.run-cz-reset:hover:not(:disabled) {
+  text-decoration: underline;
+}
+.run-cz-reset:disabled {
+  color: var(--md-on-surface-dis);
+  cursor: default;
+}
 .run-cz-toggle {
   display: flex;
   align-items: center;
@@ -11887,15 +11931,52 @@ select.qfilter {
   padding: 8px 11px;
   font-size: 12.5px;
   color: var(--md-on-surface);
-  cursor: pointer;
   text-align: left;
 }
-.run-cz-section > span:nth-child(2) {
-  flex: 1;
+/* Lift only while actively dragging — a CSS class (not whileDrag) so the shadow
+   is cleanly removed on drop instead of lingering on every dragged row. */
+.run-cz-section.is-dragging {
+  position: relative;
+  z-index: 2;
+  border-color: transparent;
+  box-shadow: 0 8px 24px rgba(16, 24, 33, 0.16);
 }
-.run-cz-section .ui-icon,
-.run-cz-section > svg {
+/* Drag handle — the row's only drag initiator (grip cursor). */
+.run-cz-grip {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 0;
+  background: none;
   color: var(--md-on-surface-t);
+  border-radius: 6px;
+  cursor: grab;
+  touch-action: none;
+}
+.run-cz-grip:hover {
+  color: var(--md-on-surface-v);
+  background: var(--md-surface-2);
+}
+.run-cz-grip:active {
+  cursor: grabbing;
+}
+/* Title — dimmed + struck when the section is toggled off. Both states stay
+   legible (enabled #1A1D21 / off #565C64, ~7:1) and clearly distinct. */
+.run-cz-sec-title {
+  flex: 1;
+  min-width: 0;
+  color: var(--md-on-surface);
+}
+.run-cz-section.is-off .run-cz-sec-title {
+  color: var(--md-on-surface-v);
+  text-decoration: line-through;
+}
+.run-cz-section .run-cz-switch {
+  cursor: pointer;
+  border: 0;
+  padding: 0;
 }
 /* Active Customize toggle in the workbook footer. */
 .run-foot-actions .ui-btn.is-active {
