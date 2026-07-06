@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { Icon, IconButton, type IconName } from "@/components/atoms";
@@ -145,10 +145,6 @@ export function RunModal() {
   // Admin sub-view (its own rail: Preview home + Attestations), parallel to the
   // Technical `spoke`. Local — the store owns the ordered set + sign status.
   const [adminSpoke, setAdminSpoke] = useState<"attestation" | "checklist">("attestation");
-  // Admin processing kicks off the FIRST time the reviewer opens the Admin tab
-  // (prototype: so they watch it run), not in the background. `adminStarted`
-  // drives the tab's live indicator (pending → processing).
-  const [adminStarted, setAdminStarted] = useState(false);
 
   const twoType = reviewTypes.length > 1;
   const adminOrdered = reviewTypes.includes("administrative");
@@ -156,6 +152,15 @@ export function RunModal() {
   // order lands straight on the attestation); `activeType` only steers the tabs
   // of a multi-type run, so stale values from a previous run can't leak in.
   const effectiveType: RunReviewType = twoType ? activeType : (reviewTypes[0] ?? "technical");
+  // Admin processing is DERIVED (no state to reset): a two-type run is processing
+  // its Administrative side from the moment it lands in the review view until
+  // readiness flips. Drives the Admin tab's live spinner whether the reviewer is
+  // watching it (in-tab animation) or it's pre-processing in the background.
+  const adminProcessing =
+    adminOrdered &&
+    twoType &&
+    !adminReady &&
+    (spoke === "workbook" || spoke === "exceptions");
   const allSigned = reviewTypes.every((t) => signedTypes.includes(t));
 
   // Load the review's findings/exhibits + supporting data when the flow opens.
@@ -189,14 +194,35 @@ export function RunModal() {
       markAttCompiled();
       return;
     }
+    // While the Admin tab is being VIEWED, the in-tab RunAdminProgress animation
+    // owns completion (its onDone flips adminReady), so it always plays every step
+    // and can never be truncated. Cancel any background pre-processing timer that
+    // was scheduled while the reviewer was on Technical, or it would fire
+    // mid-animation and pop the surfaces in early.
+    if (effectiveType === "administrative") {
+      if (adminTimerRef.current) {
+        clearTimeout(adminTimerRef.current);
+        adminTimerRef.current = null;
+      }
+      return;
+    }
+    // Reviewer is elsewhere (Technical) — pre-process in the BACKGROUND so Admin is
+    // already done if/when they open it (they then see the surfaces immediately, no
+    // spinner). One-shot ref timer so re-renders don't restart it.
     if (adminTimerRef.current) return;
-    setAdminStarted(true);
     adminTimerRef.current = setTimeout(() => {
       adminTimerRef.current = null;
       setAdminReady(true);
       markAttCompiled();
     }, 6200);
-  }, [open, adminOrdered, adminReady, twoType, spoke, setAdminReady, markAttCompiled]);
+  }, [open, adminOrdered, adminReady, twoType, spoke, effectiveType, setAdminReady, markAttCompiled]);
+  // Stable so RunAdminProgress's timers survive parent re-renders. When the in-tab
+  // animation finishes all its stages, IT owns the reveal — flip readiness + stamp
+  // the compile (mirrors the background timer's completion).
+  const handleAdminDone = useCallback(() => {
+    setAdminReady(true);
+    markAttCompiled();
+  }, [setAdminReady, markAttCompiled]);
   useEffect(() => {
     if (!open && adminTimerRef.current) {
       clearTimeout(adminTimerRef.current);
@@ -319,7 +345,8 @@ export function RunModal() {
     setReviewTypes(types);
     setChecklistId(opts?.checklistId ?? null);
     setLayoutId(opts?.layoutId ?? null);
-    setAdminStarted(false); // fresh run — Admin re-processes on next tab entry
+    // Admin re-processes on the next run — `adminProcessing` is derived from the
+    // spoke + adminReady, and go("progress") resets both, so nothing to clear here.
     go("progress");
   };
 
@@ -336,7 +363,7 @@ export function RunModal() {
   const typeLeading = (t: RunReviewType) => {
     if (signedTypes.includes(t))
       return <Icon name="check-circle" size={14} className="run-type-ic run-type-ic--done" />;
-    const processing = t === "administrative" && adminOrdered && adminStarted && !adminReady;
+    const processing = t === "administrative" && adminProcessing;
     return processing ? <span className="run-type-spin" aria-hidden="true" /> : null;
   };
 
@@ -573,7 +600,7 @@ export function RunModal() {
                             exit={{ opacity: 0 }}
                             transition={{ duration: 0.2 }}
                           >
-                            <RunAdminProgress />
+                            <RunAdminProgress onDone={handleAdminDone} />
                           </motion.div>
                         ) : (
                           <motion.div
