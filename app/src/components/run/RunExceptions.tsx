@@ -1,11 +1,11 @@
 "use client";
 
-import { Fragment, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button, Icon } from "@/components/atoms";
 import { ActionMenu, FindingDecisionBar } from "@/components/molecules";
 import { useWorkspaceStore, useTemplatesStore, type RunReviewType } from "@/store";
-import { buildAppraisalDoc, type DocBlock, type DocRun } from "@/data/appraisal-doc";
+import { buildAppraisalDoc, docPageIndex, type DocBlock, type DocRun } from "@/data/appraisal-doc";
 import { valueSummary, formatLongDate, auditStages } from "@/lib/workbook";
 import type { Finding, FindingState, Review, Severity, ResponseTemplate } from "@/types";
 
@@ -83,6 +83,11 @@ export function RunExceptions({
       }),
     [review, value],
   );
+
+  // Rendered page (1..N) each finding's cited span sits on in THIS doc — drives
+  // the citation chip + navigation so they're truthful to the pages on screen
+  // (the seed `page` is the original report's pagination, used elsewhere).
+  const annoPage = useMemo(() => docPageIndex(doc), [doc]);
 
   // Appraisal-firm letterhead bits (monogram initials + a slug for the email).
   const firmInitials = useMemo(
@@ -163,10 +168,32 @@ export function RunExceptions({
     if (el) {
       el.scrollIntoView({ behavior: "smooth", block: "center" });
     } else {
-      const p = findings.find((f) => f.id === id)?.page ?? 0;
+      const p = annoPage[id] ?? 0;
       if (p > 0) goPage(p);
     }
   };
+
+  // On landing, point the document at the first finding so the open accordion,
+  // its active highlight, and the visible page all agree (instant jump — the
+  // view arrives via a cross-fade, so an animated scroll would fight it).
+  const didInitialScroll = useRef(false);
+  useEffect(() => {
+    if (didInitialScroll.current) return;
+    const first = exceptions[0]?.id;
+    if (!first) return;
+    const raf = requestAnimationFrame(() => {
+      const sc = scrollRef.current;
+      if (!sc) return;
+      didInitialScroll.current = true;
+      const el = sc.querySelector<HTMLElement>(`#anno-${first}`);
+      if (el) el.scrollIntoView({ behavior: "auto", block: "center" });
+      else {
+        const p = annoPage[first] ?? 0;
+        if (p > 0) pageRefs.current[p]?.scrollIntoView({ behavior: "auto", block: "start" });
+      }
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [exceptions, annoPage]);
 
   // Bulk action — accept every finding that hasn't been decided yet (leaves
   // any already overridden/flagged untouched).
@@ -502,9 +529,9 @@ export function RunExceptions({
                         <button
                           className="run-ex-zcite"
                           onClick={() => selectFinding(f.id)}
-                          aria-label={`Jump to the cited span on page ${f.page}`}
+                          aria-label={`Jump to the cited span on page ${annoPage[f.id]}`}
                         >
-                          p.{f.page}
+                          p.{annoPage[f.id]}
                           <Icon name="forward" size={12} />
                         </button>
                       </div>

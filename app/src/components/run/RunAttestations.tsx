@@ -1,11 +1,11 @@
 "use client";
 
-import { Fragment, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button, Icon, Chip, type ChipTone } from "@/components/atoms";
 import { ActionMenu, ConfidenceMeter, AttestationDecisionBar } from "@/components/molecules";
 import { useAdminStore, attNeedsAttention, type AttestationRow } from "@/store";
-import { buildAppraisalDoc, type DocBlock, type DocRun } from "@/data/appraisal-doc";
+import { buildAppraisalDoc, docPageIndex, type DocBlock, type DocRun } from "@/data/appraisal-doc";
 import { valueSummary, formatLongDate } from "@/lib/workbook";
 import type { AttAnswer, AttestationState, Review } from "@/types";
 import type { RunReviewType } from "@/store";
@@ -83,6 +83,11 @@ export function RunAttestations({
     [review, value],
   );
 
+  // Rendered page (1..N) each item's cited span sits on in THIS doc — drives the
+  // citation chip + navigation so they're truthful to the pages on screen (the
+  // seed `page` is the original report's pagination, used elsewhere).
+  const annoPage = useMemo(() => docPageIndex(doc), [doc]);
+
   const firmInitials = useMemo(
     () =>
       review.appraisalFirm
@@ -124,10 +129,32 @@ export function RunAttestations({
     if (el) {
       el.scrollIntoView({ behavior: "smooth", block: "center" });
     } else {
-      const p = rowByItem[id]?.page ?? 0;
+      const p = annoPage[id] ?? 0;
       if (p > 0) goPage(p);
     }
   };
+
+  // On landing, point the document at the first item so the open accordion, its
+  // active highlight, and the visible page all agree (instant jump — the view
+  // arrives via a cross-fade, so an animated scroll would fight it).
+  const didInitialScroll = useRef(false);
+  useEffect(() => {
+    if (didInitialScroll.current) return;
+    const first = ordered[0]?.itemId;
+    if (!first) return;
+    const raf = requestAnimationFrame(() => {
+      const sc = scrollRef.current;
+      if (!sc) return;
+      didInitialScroll.current = true;
+      const el = sc.querySelector<HTMLElement>(`#att-anno-${first}`);
+      if (el) el.scrollIntoView({ behavior: "auto", block: "center" });
+      else {
+        const p = annoPage[first] ?? 0;
+        if (p > 0) pageRefs.current[p]?.scrollIntoView({ behavior: "auto", block: "start" });
+      }
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [ordered, annoPage]);
 
   const attested = rows.filter((r) => states[r.itemId]?.confirmed).length;
 
@@ -359,7 +386,7 @@ export function RunAttestations({
       <aside className="run-ex-thread">
         <div className="run-ex-thread-head">
           <span className="run-ex-thread-title">
-            Attestations
+            Checklist
             <span className="run-ex-count">
               {attested}/{rows.length}
             </span>
@@ -444,13 +471,13 @@ export function RunAttestations({
                       <div className="run-ex-zone">
                         <div className="run-ex-zt">
                           Evidence
-                          {r.page > 0 && (
+                          {annoPage[r.itemId] > 0 && (
                             <button
                               className="run-ex-zcite"
                               onClick={() => selectItem(r.itemId)}
-                              aria-label={`Jump to the cited span on page ${r.page}`}
+                              aria-label={`Jump to the cited span on page ${annoPage[r.itemId]}`}
                             >
-                              p.{r.page}
+                              p.{annoPage[r.itemId]}
                               <Icon name="forward" size={12} />
                             </button>
                           )}
