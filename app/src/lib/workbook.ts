@@ -200,9 +200,8 @@ const DISP_TAG: Record<
   { label: string; tone: "pass" | "flag" | "fail" | "info" }
 > = {
   accepted: { label: "Concur", tone: "pass" },
-  override: { label: "Reviewer override", tone: "flag" },
+  edited: { label: "Edited", tone: "flag" },
   rejected: { label: "Revision required", tone: "fail" },
-  commented: { label: "Commented", tone: "info" },
   removed: { label: "Excluded (audit)", tone: "info" },
   pending: { label: "Open", tone: "info" },
 };
@@ -212,18 +211,17 @@ export function dispTag(disposition: string) {
 }
 
 /** The reviewer's wording that prints under a finding in the workbook. Accepted
- *  findings carry a default concurrence; overridden/rejected/commented carry the
- *  reviewer's merge-filled response from the composer. */
+ *  findings carry a default concurrence; `edited` prints the reviewer's rewritten
+ *  wording; `rejected` carries the return reason. A free `comment` is rendered
+ *  separately (it's independent of the disposition), not here. */
 export function dispositionLine(state: FindingState): string {
   switch (state.disposition) {
     case "accepted":
       return "Reviewer concurs. The appraiser's treatment is adequately supported; no exception taken.";
-    case "override":
-      return state.reason || "Reviewer override applied; the finding is resolved in the appraiser's favour.";
+    case "edited":
+      return state.reason || "Reviewer revised the finding wording.";
     case "rejected":
       return state.reason || "Returned to the appraiser for revision (see return letter).";
-    case "commented":
-      return state.comment || state.reason || "Comment recorded for the file.";
     case "removed":
       // Excluded from the workbook body entirely; retained only in the audit log.
       return "";

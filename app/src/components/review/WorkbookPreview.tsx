@@ -93,8 +93,8 @@ export function WorkbookPreview({
   // Which dispositions belong in the findings body (rejected go to "Returned";
   // overridden can be hidden via settings).
   const bodyDisps = settings.hideOverridden
-    ? ["accepted", "commented", "pending"]
-    : ["accepted", "override", "commented", "pending"];
+    ? ["accepted", "pending"]
+    : ["accepted", "edited", "pending"];
 
   // Build each enabled section to a node (null = auto section with no content,
   // skipped without consuming a number).
@@ -665,6 +665,7 @@ function FindingEntry({
         )}
       </div>
       <p className="wb-find-resp">{dispositionLine(state)}</p>
+      {state.comment && <p className="wb-find-comment">Reviewer note: {state.comment}</p>}
       {showConfidence && <div className="wb-find-ai">{aiBasisLine(f)}</div>}
     </div>
   );

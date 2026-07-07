@@ -67,7 +67,7 @@ const rows: Row[] = [
     confidence: 0.82,
     page: 7,
     evidence:
-      "An extraordinary assumption regarding the environmental condition is noted on p.7 — confirm it is carried consistently into the value conclusion.",
+      "An extraordinary assumption regarding the environmental condition is noted in the scope section — confirm it is carried consistently into the value conclusion.",
   },
   /* ---- Valuation Approaches ---- */
   {
@@ -77,7 +77,7 @@ const rows: Row[] = [
     confidence: 0.84,
     page: 61,
     evidence:
-      "Sales-comparison support is adequate, but the selected 5.25% cap rate (p.61) falls below the appraiser's own surveyed 6.0%–7.5% range (p.60). The cap-rate leg of this item is not supported.",
+      "Sales-comparison support is adequate, but the selected 5.25% cap rate falls below the appraiser's own surveyed 6.0%–7.5% range. The cap-rate leg of this item is not supported.",
   },
   {
     id: "att-008",
@@ -85,7 +85,7 @@ const rows: Row[] = [
     aiAnswer: "YES",
     confidence: 0.99,
     page: 45,
-    evidence: "Five closed comparable sales are presented in the adjustment grid (pp.45–47).",
+    evidence: "Five closed comparable sales are presented in the adjustment grid.",
   },
   {
     id: "att-009",
@@ -156,7 +156,7 @@ const rows: Row[] = [
     confidence: 0.9,
     page: 5,
     evidence:
-      "The subject is under contract at $4,650,000 against a concluded value of $4,200,000. The 10.7% divergence is disclosed but not explained.",
+      "The subject is under contract; the divergence between the contract price and the concluded market value is disclosed but not explained.",
   },
   {
     id: "att-017",
@@ -172,7 +172,7 @@ const rows: Row[] = [
     aiAnswer: "YES",
     confidence: 0.94,
     page: 4,
-    evidence: "Flood Zone X determined via InterFlood, cited under Data Sources (p.4).",
+    evidence: "Flood Zone X determined via InterFlood, cited under Data Sources.",
   },
   {
     id: "att-019",
@@ -180,7 +180,7 @@ const rows: Row[] = [
     aiAnswer: "YES",
     confidence: 1,
     page: 12,
-    evidence: "Subject photographs appear on pp.12–15; comparable data sheets are in the addenda.",
+    evidence: "The appraiser photographed the subject improvements; comparable data sheets are in the addenda.",
   },
   {
     id: "att-020",

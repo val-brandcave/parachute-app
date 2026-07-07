@@ -6,7 +6,7 @@ import { fillTemplate } from "@/lib/utils";
 import { ResponseTemplatePicker } from "./ResponseTemplatePicker";
 import type { Finding, ResponseTemplate } from "@/types";
 
-export type ComposerMode = "override" | "rejected" | "commented";
+export type ComposerMode = "edit" | "rejected" | "comment";
 
 const COPY: Record<ComposerMode, { title: string; placeholder: string; cta: string }> = {
   rejected: {
@@ -14,14 +14,14 @@ const COPY: Record<ComposerMode, { title: string; placeholder: string; cta: stri
     placeholder: "Why the appraiser must revise this — batched into the return letter…",
     cta: "Reject & request revision",
   },
-  override: {
-    title: "Your edit",
-    placeholder: "Your corrected wording — the finding stands, phrased in your words…",
+  edit: {
+    title: "Rewrite the finding",
+    placeholder: "Rewrite the finding in your words — this replaces the wording shown in the workbook…",
     cta: "Save edit",
   },
-  commented: {
+  comment: {
     title: "Comment",
-    placeholder: "A note recorded against this finding in the workbook…",
+    placeholder: "A note recorded against this finding — kept alongside your decision…",
     cta: "Save comment",
   },
 };
@@ -56,7 +56,7 @@ export function ResponseComposer({
   const [text, setText] = useState(initialText);
   const [templateId, setTemplateId] = useState<string | undefined>(undefined);
   const copy = COPY[mode];
-  const reasonRequired = mode !== "commented";
+  const reasonRequired = mode !== "comment";
   const canSave = reasonRequired ? text.trim().length > 0 : true;
 
   const applyTemplate = (t: ResponseTemplate) => {

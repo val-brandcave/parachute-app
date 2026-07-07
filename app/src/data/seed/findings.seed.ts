@@ -14,9 +14,9 @@ export const seedFindings: Finding[] = [
     question:
       "Are the sales comparables consistently adjusted across the Sales Comparison Approach?",
     analysis:
-      "Comparable 2 is adjusted to a price of $500,000 in the adjustment grid (p.47) but is summarized at $800,000 in the reconciliation narrative (p.52). A $300,000 unreconciled discrepancy materially affects the indicated value via the Sales Comparison Approach.",
+      "Comparable 2 is adjusted to a price of $500,000 in the adjustment grid but is summarized at $800,000 in the reconciliation narrative. A $300,000 unreconciled discrepancy materially affects the indicated value via the Sales Comparison Approach.",
     evidence:
-      "“After adjustments, Comparable 2 indicates $500,000 …” (grid, p.47) vs. “Comparable 2, at $800,000, supports the concluded value…” (p.52)",
+      "“After adjustments, Comparable 2 indicates $500,000 …” (adjustment grid) vs. “Comparable 2, at $800,000, supports the concluded value…” (reconciliation narrative)",
     auditTag: "CORRECTED",
     auditText:
       "S3 Consistency cross-checked the adjustment grid against the reconciliation narrative and flagged a value mismatch on Comparable 2.",
@@ -35,14 +35,14 @@ export const seedFindings: Finding[] = [
     question:
       "Is the capitalization rate supported and within the market-derived range?",
     analysis:
-      "The applied overall cap rate of 5.25% falls below the market-derived range of 6.0%–7.5% cited from the appraiser's own survey on p.60. The unsupported compression overstates value by an estimated 12–18%.",
+      "The applied overall cap rate of 5.25% falls below the market-derived range of 6.0%–7.5% cited from the appraiser's own survey. The unsupported compression overstates value by an estimated 12–18%.",
     evidence:
-      "“A capitalization rate of 5.25% was selected…” (p.61), while the survey table on p.60 reports a range of 6.0%–7.5%.",
+      "“A capitalization rate of 5.25% was selected…”, while the appraiser's own survey reports a range of 6.0%–7.5%.",
     auditTag: "FLAGGED",
     auditText:
       "S4 Analytics compared the selected cap rate against the report's cited survey range and the regional dataset.",
     material: true,
-    suggestedDisposition: "override",
+    suggestedDisposition: "edited",
     createdAt: NOW,
   },
   {
@@ -58,12 +58,12 @@ export const seedFindings: Finding[] = [
     analysis:
       "The H&BU conclusion of “continued medical office” does not reference the recently adopted MX-2 overlay that permits higher-density mixed use. Worth confirming whether the as-improved conclusion still holds.",
     evidence:
-      "“The highest and best use, as improved, is continued use as a medical office building.” (p.33)",
+      "“The highest and best use, as improved, is continued use as a medical office building.” (Highest & Best Use)",
     auditTag: "FLAGGED",
     auditText:
       "S2 Validation matched the parcel against the municipal zoning layer and noted an overlay not discussed in the report.",
     material: false,
-    suggestedDisposition: "commented",
+    suggestedDisposition: "accepted",
     createdAt: NOW,
   },
   {
@@ -76,9 +76,9 @@ export const seedFindings: Finding[] = [
     page: 58,
     question: "Do the net operating income calculations foot correctly?",
     analysis:
-      "Effective Gross Income of $1,284,000 less Operating Expenses of $462,000 should yield NOI of $822,000; the report states $842,000 (p.58). A $20,000 arithmetic error flows through to the Income Approach conclusion.",
+      "Effective Gross Income of $1,284,000 less Operating Expenses of $462,000 should yield NOI of $822,000; the report states $842,000 in the operating statement. A $20,000 arithmetic error flows through to the Income Approach conclusion.",
     evidence:
-      "“EGI $1,284,000 − OpEx $462,000 = NOI $842,000” (p.58)",
+      "“EGI $1,284,000 − OpEx $462,000 = NOI $842,000” (operating statement)",
     auditTag: "CORRECTED",
     auditText:
       "S3 Consistency recomputed the income statement and detected a footing error.",
@@ -97,9 +97,9 @@ export const seedFindings: Finding[] = [
     question:
       "Does the report contain a compliant Scope of Work and signed certification?",
     analysis:
-      "Scope of Work is clearly stated (p.6) and the certification on p.8 is signed and dated by the appraiser with an active credential. No exceptions noted.",
+      "Scope of Work is clearly stated and the certification is signed and dated by the appraiser with an active credential. No exceptions noted.",
     evidence:
-      "“I certify that, to the best of my knowledge and belief…” — signed, dated, license #CG-44120 (p.8)",
+      "“I certify that, to the best of my knowledge and belief…” — signed, dated, license #CG-44120 (Certification)",
     auditTag: "CONFIRMED",
     auditText:
       "S1 Checklist confirmed presence and completeness of the USPAP certification.",
@@ -119,7 +119,7 @@ export const seedFindings: Finding[] = [
     analysis:
       "Physical depreciation of 22% is consistent with the reported effective age of 11 years against a 50-year economic life. Method and figures reconcile.",
     evidence:
-      "“Effective age 11 years; total economic life 50 years; 22% physical depreciation applied.” (p.64)",
+      "“Effective age 11 years; total economic life 50 years; 22% physical depreciation applied.” (Cost Approach)",
     auditTag: "CONFIRMED",
     auditText: "S4 Analytics validated the age-life depreciation computation.",
     material: false,
@@ -139,12 +139,12 @@ export const seedFindings: Finding[] = [
     analysis:
       "Two of five sale comparables closed 24 and 27 months prior to the effective date, exceeding the bank's 18-month recency policy. Permitted with commentary, but commentary is absent.",
     evidence:
-      "Comparable 4 closed 24 months prior; Comparable 5 closed 27 months prior (grid, p.47).",
+      "Comparable 4 closed 24 months prior; Comparable 5 closed 27 months prior (adjustment grid).",
     auditTag: "FLAGGED",
     auditText:
       "S5 Policy applied Meridian Trust Bank's uploaded policy rules and flagged a recency exception lacking the required commentary.",
     material: false,
-    suggestedDisposition: "commented",
+    suggestedDisposition: "accepted",
     createdAt: NOW,
   },
 ];
