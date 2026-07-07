@@ -8,8 +8,7 @@ import type { Finding, FindingState } from "@/types";
 const DISP_DOT: Record<string, string> = {
   accepted: "pass",
   rejected: "fail",
-  override: "flag",
-  commented: "info",
+  edited: "flag",
   pending: "pending",
 };
 
@@ -86,7 +85,7 @@ export function FindingList({
             <b>{t.accepted}</b> accepted
           </span>
           <span className="fm-wb-stat fm-wb-stat--flag">
-            <b>{t.override}</b> overridden
+            <b>{t.edited}</b> edited
           </span>
           <span className="fm-wb-stat fm-wb-stat--fail">
             <b>{t.rejected}</b> rejected

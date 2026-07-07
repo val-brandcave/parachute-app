@@ -13,9 +13,8 @@ const DISP_TAG: Record<
   { label: string; tone: "pass" | "flag" | "fail" | "info" | "muted"; icon: IconName }
 > = {
   accepted: { label: "In workbook", tone: "pass", icon: "check-circle" },
-  override: { label: "Edited", tone: "flag", icon: "edit" },
+  edited: { label: "Edited", tone: "flag", icon: "edit" },
   rejected: { label: "Returns to appraiser", tone: "fail", icon: "x-circle" },
-  commented: { label: "Commented", tone: "info", icon: "comment" },
   removed: { label: "Removed from workbook", tone: "muted", icon: "eye-off" },
 };
 
@@ -78,13 +77,13 @@ export function FindingDecisionBar({
           accept();
           break;
         case "e":
-          openComposer("override");
+          openComposer("edit");
           break;
         case "r":
           openComposer("rejected");
           break;
         case "c":
-          openComposer("commented");
+          openComposer("comment");
           break;
       }
     };
@@ -95,11 +94,12 @@ export function FindingDecisionBar({
 
   const saveComposer = (text: string, templateId?: string) => {
     if (!composer) return;
-    if (composer === "commented") {
+    if (composer === "comment") {
+      // A comment is an independent note — it does NOT set a disposition (F-140),
+      // so it can accompany any decision (Accept + comment, Reject + comment, …).
       onComment(text, templateId);
-      onDisposition("commented", text, templateId);
     } else {
-      onDisposition(composer, text, templateId);
+      onDisposition(composer === "edit" ? "edited" : "rejected", text, templateId);
     }
     setComposer(null);
   };
@@ -110,7 +110,7 @@ export function FindingDecisionBar({
       icon: removed ? "eye" : "eye-off",
       onClick: () => onDisposition(removed ? "pending" : "removed"),
     },
-    { label: "Comment", icon: "comment", onClick: () => openComposer("commented") },
+    { label: "Comment", icon: "comment", onClick: () => openComposer("comment") },
     { divider: true },
     {
       label: state.condition ? "Remove from conditions" : "Add to conditions",
@@ -142,9 +142,9 @@ export function FindingDecisionBar({
         </button>
         <button
           className={`fdb-act fdb-act--edit${
-            composer === "override" || (!composer && disp === "override") ? " on" : ""
+            composer === "edit" || (!composer && disp === "edited") ? " on" : ""
           }`}
-          onClick={() => openComposer("override")}
+          onClick={() => openComposer("edit")}
         >
           <Icon name="edit" size={variant === "accordion" ? 15 : 17} />
           Edit
@@ -160,27 +160,38 @@ export function FindingDecisionBar({
         </button>
         <ActionMenu items={overflow} tooltip="More actions" />
 
-        {(tag || state.condition || state.flagged) && (
+        {tag && (
           <span className="fdb-status">
-            {state.condition && (
-              <span className="fdb-pip fdb-pip--cond">
-                <Icon name="checklist" size={12} /> Condition
-              </span>
-            )}
-            {state.flagged && (
-              <span className="fdb-pip fdb-pip--flag">
-                <Icon name="flag" size={12} /> Flagged
-              </span>
-            )}
-            {tag && (
-              <span className={`fdb-disp fdb-disp--${tag.tone}`}>
-                <Icon name={tag.icon} size={15} />
-                {tag.label}
-              </span>
-            )}
+            <span className={`fdb-disp fdb-disp--${tag.tone}`}>
+              <Icon name={tag.icon} size={15} />
+              {tag.label}
+            </span>
           </span>
         )}
       </div>
+
+      {/* Condition / flag / comment are callouts, not decisions — shown in the
+          decision zone in the accordion variant; the focus pane has no such zone,
+          so surface them here (F-142). Visible even with no disposition yet. */}
+      {variant === "focus" && (state.condition || state.flagged || state.comment) && (
+        <div className="fdb-notes">
+          {state.condition && (
+            <p className="fdb-note">
+              <Icon name="checklist" size={13} /> Added to conditions
+            </p>
+          )}
+          {state.flagged && (
+            <p className="fdb-note fdb-note--flag">
+              <Icon name="flag" size={13} /> Flagged for follow-up
+            </p>
+          )}
+          {state.comment && (
+            <p className="fdb-note">
+              <Icon name="comment" size={13} /> {state.comment}
+            </p>
+          )}
+        </div>
+      )}
 
       {composer && (
         <ResponseComposer
@@ -189,7 +200,7 @@ export function FindingDecisionBar({
           property={property}
           responses={responseTemplates}
           initialText={
-            composer === "rejected" || composer === "override"
+            composer === "rejected" || composer === "edit"
               ? state.reason ?? ""
               : state.comment ?? ""
           }

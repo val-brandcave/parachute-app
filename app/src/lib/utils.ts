@@ -49,9 +49,8 @@ export const DISP_META: Record<
 > = {
   pending: { label: "Pending", icon: "clock" },
   accepted: { label: "Accepted", icon: "check" },
-  override: { label: "Overridden", icon: "edit" },
+  edited: { label: "Edited", icon: "edit" },
   rejected: { label: "Rejected", icon: "reject" },
-  commented: { label: "Commented", icon: "comment" },
   removed: { label: "Removed", icon: "eye-off" },
 };
 

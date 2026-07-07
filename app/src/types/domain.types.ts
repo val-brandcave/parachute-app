@@ -81,9 +81,8 @@ export type Severity = "crit" | "fail" | "flag" | "pass" | "na";
 export type Disposition =
   | "pending"
   | "accepted"
-  | "override"
+  | "edited" // reviewer rewrote the finding's wording (F-140); the edited text replaces the AI analysis
   | "rejected"
-  | "commented"
   | "removed"; // not a concern — dropped from the workbook, kept for audit (F-118)
 
 export interface Finding extends BaseEntity {
@@ -106,7 +105,11 @@ export interface Finding extends BaseEntity {
 /* Per-finding reviewer state (lives in the workspace store). */
 export interface FindingState {
   disposition: Disposition;
+  /** The reviewer's text for the current disposition: the rewritten finding
+   *  wording when `edited`, or the return reason when `rejected`. */
   reason?: string;
+  /** A free note, INDEPENDENT of the disposition (F-140) — a reviewer can Accept /
+   *  Edit / Reject and still attach a comment; it is not itself a decision. */
   comment?: string;
   /** Secondary, disposition-independent flags from the ⋯ overflow (decision #4):
    *  `condition` rolls the finding into the workbook's batched conditions list;

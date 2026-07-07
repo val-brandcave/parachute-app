@@ -645,8 +645,8 @@ function DocumentSettings({
         onChange={(v) => update({ colorCoding: v })}
       />
       <ToggleRow
-        label="Hide overridden findings"
-        hint="Omit reviewer-overridden findings from the body"
+        label="Hide edited findings"
+        hint="Omit reviewer-edited findings from the body"
         checked={settings.hideOverridden}
         onChange={(v) => update({ hideOverridden: v })}
       />

@@ -1,11 +1,11 @@
 "use client";
 
-import { Fragment, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button, Icon } from "@/components/atoms";
 import { ActionMenu, FindingDecisionBar } from "@/components/molecules";
 import { useWorkspaceStore, useTemplatesStore, type RunReviewType } from "@/store";
-import { buildAppraisalDoc, type DocBlock, type DocRun } from "@/data/appraisal-doc";
+import { buildAppraisalDoc, docPageIndex, type DocBlock, type DocRun } from "@/data/appraisal-doc";
 import { valueSummary, formatLongDate, auditStages } from "@/lib/workbook";
 import type { Finding, FindingState, Review, Severity, ResponseTemplate } from "@/types";
 
@@ -66,6 +66,12 @@ export function RunExceptions({
     () => Object.fromEntries(findings.map((f) => [f.id, f])) as Record<string, Finding>,
     [findings],
   );
+  // How many findings have a disposition — the rail count reads decided/total as
+  // the reviewer works, mirroring the Checklist's attested/total.
+  const decided = useMemo(
+    () => exceptions.filter((f) => (states[f.id]?.disposition ?? "pending") !== "pending").length,
+    [exceptions, states],
+  );
 
   // The appraisal document, with the review's identity woven into the cover/
   // transmittal so it's cohesive with the rest of the run.
@@ -83,6 +89,11 @@ export function RunExceptions({
       }),
     [review, value],
   );
+
+  // Rendered page (1..N) each finding's cited span sits on in THIS doc — drives
+  // the citation chip + navigation so they're truthful to the pages on screen
+  // (the seed `page` is the original report's pagination, used elsewhere).
+  const annoPage = useMemo(() => docPageIndex(doc), [doc]);
 
   // Appraisal-firm letterhead bits (monogram initials + a slug for the email).
   const firmInitials = useMemo(
@@ -163,10 +174,32 @@ export function RunExceptions({
     if (el) {
       el.scrollIntoView({ behavior: "smooth", block: "center" });
     } else {
-      const p = findings.find((f) => f.id === id)?.page ?? 0;
+      const p = annoPage[id] ?? 0;
       if (p > 0) goPage(p);
     }
   };
+
+  // On landing, point the document at the first finding so the open accordion,
+  // its active highlight, and the visible page all agree (instant jump — the
+  // view arrives via a cross-fade, so an animated scroll would fight it).
+  const didInitialScroll = useRef(false);
+  useEffect(() => {
+    if (didInitialScroll.current) return;
+    const first = exceptions[0]?.id;
+    if (!first) return;
+    const raf = requestAnimationFrame(() => {
+      const sc = scrollRef.current;
+      if (!sc) return;
+      didInitialScroll.current = true;
+      const el = sc.querySelector<HTMLElement>(`#anno-${first}`);
+      if (el) el.scrollIntoView({ behavior: "auto", block: "center" });
+      else {
+        const p = annoPage[first] ?? 0;
+        if (p > 0) pageRefs.current[p]?.scrollIntoView({ behavior: "auto", block: "start" });
+      }
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [exceptions, annoPage]);
 
   // Bulk action — accept every finding that hasn't been decided yet (leaves
   // any already overridden/flagged untouched).
@@ -428,7 +461,9 @@ export function RunExceptions({
         <div className="run-ex-thread-head">
           <span className="run-ex-thread-title">
             Findings
-            <span className="run-ex-count">{exceptions.length}</span>
+            <span className="run-ex-count">
+              {decided}/{exceptions.length}
+            </span>
           </span>
           <ActionMenu
             tooltip="More actions"
@@ -490,7 +525,14 @@ export function RunExceptions({
                         <span className={`run-ex-sev run-ex-sev--${sev.tone}`}>{sev.label}</span>
                       </div>
                       <p className="run-ex-q">{f.question}</p>
-                      <p className="run-ex-analysis">{f.analysis}</p>
+                      <p className="run-ex-analysis">
+                        {disp === "edited" && state.reason ? state.reason : f.analysis}
+                      </p>
+                      {disp === "edited" && state.reason && (
+                        <span className="run-ex-edited">
+                          <Icon name="edit" size={11} /> Rewritten by reviewer
+                        </span>
+                      )}
                     </div>
 
                     <div className="run-ex-hair" />
@@ -502,9 +544,9 @@ export function RunExceptions({
                         <button
                           className="run-ex-zcite"
                           onClick={() => selectFinding(f.id)}
-                          aria-label={`Jump to the cited span on page ${f.page}`}
+                          aria-label={`Jump to the cited span on page ${annoPage[f.id]}`}
                         >
-                          p.{f.page}
+                          p.{annoPage[f.id]}
                           <Icon name="forward" size={12} />
                         </button>
                       </div>
@@ -604,9 +646,8 @@ const DECISION_META: Record<
   { label: string; tone: string }
 > = {
   accepted: { label: "Accepted — kept as written", tone: "pass" },
-  override: { label: "Edited", tone: "flag" },
+  edited: { label: "Edited — rewritten by reviewer", tone: "flag" },
   rejected: { label: "Rejected — returns to appraiser", tone: "fail" },
-  commented: { label: "Comment recorded", tone: "info" },
   removed: { label: "Removed from workbook — kept for audit", tone: "muted" },
 };
 
@@ -620,23 +661,44 @@ function YourDecision({
   state: FindingState;
   responses: ResponseTemplate[];
 }) {
-  if (state.disposition === "pending") {
+  const hasComment = !!state.comment;
+  // Condition / flag / comment are callouts, not decisions — surface them even
+  // before a disposition is made (F-142).
+  const hasCallouts = hasComment || !!state.condition || !!state.flagged;
+  if (state.disposition === "pending" && !hasCallouts) {
     return <p className="run-ex-decision-empty">No decision yet — choose below.</p>;
   }
-  const meta = DECISION_META[state.disposition];
-  const detail =
-    state.disposition === "commented"
-      ? state.comment || state.reason
-      : state.reason;
+  const meta = state.disposition !== "pending" ? DECISION_META[state.disposition] : null;
+  // The edited wording now shows in the Finding zone above, so the decision line
+  // only quotes a rejection reason; comment/condition/flag are rendered separately
+  // since they're independent of the disposition (F-140/F-142).
+  const detail = state.disposition === "rejected" ? state.reason : undefined;
   const template = state.templateId
     ? responses.find((r) => r.id === state.templateId)?.name
     : undefined;
   return (
     <div className="run-ex-decision">
-      <span className={`run-ex-decision-tag run-ex-decision-tag--${meta.tone}`}>
-        {meta.label}
-      </span>
+      {meta && (
+        <span className={`run-ex-decision-tag run-ex-decision-tag--${meta.tone}`}>
+          {meta.label}
+        </span>
+      )}
       {detail && <p className="run-ex-decision-text">“{detail}”</p>}
+      {state.condition && (
+        <p className="run-ex-decision-note">
+          <Icon name="checklist" size={12} /> Added to conditions
+        </p>
+      )}
+      {state.flagged && (
+        <p className="run-ex-decision-note run-ex-decision-note--flag">
+          <Icon name="flag" size={12} /> Flagged for follow-up
+        </p>
+      )}
+      {hasComment && (
+        <p className="run-ex-decision-note">
+          <Icon name="comment" size={12} /> {state.comment}
+        </p>
+      )}
       {template && (
         <span className="run-ex-decision-tpl">
           <Icon name="templates" size={12} /> {template}

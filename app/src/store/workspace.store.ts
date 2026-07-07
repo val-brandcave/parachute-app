@@ -229,7 +229,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         auditTag: "FLAGGED",
         auditText: "Added manually by the reviewer.",
         material: true,
-        suggestedDisposition: "commented",
+        suggestedDisposition: "accepted",
         byReviewer: true,
         createdAt: Date.now(),
       };
@@ -351,7 +351,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
 
 /** Workbook tally derived from current dispositions. */
 export function tally(states: Record<string, FindingState>) {
-  const t = { accepted: 0, override: 0, rejected: 0, commented: 0, removed: 0, pending: 0 };
+  const t = { accepted: 0, edited: 0, rejected: 0, removed: 0, pending: 0 };
   Object.values(states).forEach((s) => {
     t[s.disposition] = (t[s.disposition] ?? 0) + 1;
   });

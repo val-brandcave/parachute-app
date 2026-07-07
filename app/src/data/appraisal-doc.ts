@@ -66,6 +66,28 @@ const LOAN_AMOUNT = "$6,400,000";
 /** Plain run helper. */
 const t = (text: string): DocRun => ({ text });
 
+/**
+ * Map every anchor id — a finding's `anchor` and an attestation's `attAnchor` —
+ * to the RENDERED page (1..N) its cited span sits on in THIS document. Viewers
+ * use this to show a citation ("p.N") and drive navigation that are truthful to
+ * the pages actually on screen. (The seed `page` field carries the original
+ * full-length report's pagination, consumed only by the separate review-details
+ * `source-pages` model; it must not be used to cite against this 6-page render.)
+ */
+export function docPageIndex(doc: DocPage[]): Record<string, number> {
+  const map: Record<string, number> = {};
+  for (const p of doc) {
+    for (const b of p.blocks) {
+      const runs = b.type === "p" || b.type === "note" ? b.runs : [];
+      for (const r of runs) {
+        if (r.anchor) map[r.anchor] = p.n;
+        if (r.attAnchor) map[r.attAnchor] = p.n;
+      }
+    }
+  }
+  return map;
+}
+
 /** Build the 6-page appraisal for a given review context. */
 export function buildAppraisalDoc(c: AppraisalCtx): DocPage[] {
   return [
@@ -123,9 +145,15 @@ export function buildAppraisalDoc(c: AppraisalCtx): DocPage[] {
               attAnchor: "ci-02",
               text: `The intended use of this appraisal is to assist ${c.bank} in a mortgage-lending decision; the intended users are ${c.bank}, its participants, and its regulators.`,
             },
-            t(
-              ` Use by any other party is neither intended nor authorized. A reasonable exposure time of nine to twelve months is estimated as of the effective date of value.`,
-            ),
+            t(` Use by any other party is neither intended nor authorized.`),
+            {
+              attAnchor: "ci-03",
+              text: ` The effective date of value is ${c.effectiveDate}; the report is dated ${c.reportDate}.`,
+            },
+            {
+              attAnchor: "ci-13",
+              text: ` A reasonable exposure time and marketing time of nine to twelve months are estimated as of the effective date of value.`,
+            },
           ],
         },
         { type: "h", text: "Salient Facts & Property Identification" },
@@ -154,8 +182,16 @@ export function buildAppraisalDoc(c: AppraisalCtx): DocPage[] {
         {
           type: "p",
           runs: [
+            {
+              attAnchor: "ci-10",
+              text: "The Cost Approach is afforded limited weight given the effective age of the improvements and the limited number of recent land sales; its exclusion from primary reliance is expressly justified on these grounds.",
+            },
+            {
+              attAnchor: "ci-16",
+              text: " The subject is under contract; the divergence between the contract price and the concluded market value is disclosed but not further reconciled in the narrative.",
+            },
             t(
-              "The Cost Approach is afforded limited weight given the effective age of the improvements and the limited number of recent land sales. The reconciled opinion of value and the principal terms of the engagement are summarized below.",
+              " The reconciled opinion of value and the principal terms of the engagement are summarized below.",
             ),
           ],
         },
@@ -188,9 +224,15 @@ export function buildAppraisalDoc(c: AppraisalCtx): DocPage[] {
               attAnchor: "ci-04",
               text: "conforms to the Uniform Standards of Professional Appraisal Practice (USPAP), the Interagency Appraisal and Evaluation Guidelines, and the bank's appraisal policy.",
             },
-            t(
-              ` The appraiser conducted an interior and exterior inspection of the subject, photographed the improvements, and confirmed site characteristics against public records.`,
-            ),
+            t(` The appraiser conducted an interior and exterior inspection of the subject, `),
+            {
+              attAnchor: "ci-19",
+              text: "photographed the subject improvements and comparables,",
+            },
+            {
+              attAnchor: "ci-18",
+              text: " and confirmed site characteristics — including a flood-zone determination (Zone X) — against public records.",
+            },
           ],
         },
         {
@@ -215,9 +257,10 @@ export function buildAppraisalDoc(c: AppraisalCtx): DocPage[] {
               attAnchor: "ci-06",
               text: "Extraordinary assumptions: none. Hypothetical conditions: none.",
             },
-            t(
-              " The value opinion assumes the improvements are free of undisclosed structural or environmental defects.",
-            ),
+            {
+              attAnchor: "ci-15",
+              text: " The value opinion assumes the improvements are free of undisclosed structural or environmental defects; a Phase I environmental report in the addenda notes no recognized environmental conditions.",
+            },
           ],
         },
         { type: "h", text: "Highest & Best Use" },
@@ -225,10 +268,16 @@ export function buildAppraisalDoc(c: AppraisalCtx): DocPage[] {
           type: "p",
           runs: [
             t(
-              "Highest and best use is the reasonably probable use of property that is legally permissible, physically possible, financially feasible, and maximally productive. The site is zoned O-1 (Office), which permits the existing improvements as a conforming use. ",
+              "Highest and best use is the reasonably probable use of property that is legally permissible, physically possible, financially feasible, and maximally productive. ",
             ),
             {
+              attAnchor: "ci-20",
+              text: "The site is zoned O-1 (Office), which permits the existing improvements as a legal-conforming use.",
+            },
+            t(" "),
+            {
               anchor: "finding-003",
+              attAnchor: "ci-11",
               text: "The highest and best use, as improved, is continued use as a medical office building.",
             },
             t(
@@ -257,8 +306,13 @@ export function buildAppraisalDoc(c: AppraisalCtx): DocPage[] {
           type: "p",
           runs: [
             t(
-              "The Sales Comparison Approach analyzes recent arm's-length transactions of properties comparable to the subject. Five improved sales were selected, verified, and adjusted to the subject for property rights conveyed, financing terms, conditions of sale, market conditions (time), location, and physical characteristics. The adjustment grid below summarizes the unadjusted and adjusted indications.",
+              "The Sales Comparison Approach analyzes recent arm's-length transactions of properties comparable to the subject. ",
             ),
+            {
+              attAnchor: "ci-08",
+              text: "Five improved sales — well above the three-comparable minimum — were selected, verified, and adjusted to the subject for property rights conveyed, financing terms, conditions of sale, market conditions (time), location, and physical characteristics.",
+            },
+            t(" The adjustment grid below summarizes the unadjusted and adjusted indications."),
           ],
         },
         {
@@ -276,8 +330,12 @@ export function buildAppraisalDoc(c: AppraisalCtx): DocPage[] {
         {
           type: "p",
           runs: [
+            {
+              attAnchor: "ci-12",
+              text: "Time adjustments were applied to the older transactions at approximately 3% per annum to reflect improving market conditions, and each physical and locational adjustment is itemized and supported by paired-sales analysis.",
+            },
             t(
-              "Time adjustments were applied to the older transactions at approximately 3% per annum to reflect improving market conditions. Comparables 1 and 3 are the most similar in size, age, and tenancy and required the smallest net adjustments; they are afforded the greatest weight. After all adjustments, the comparables indicate a tight range of $588 to $605 per square foot.",
+              " Comparables 1 and 3 are the most similar in size, age, and tenancy and required the smallest net adjustments; they are afforded the greatest weight. After all adjustments, the comparables indicate a tight range of $588 to $605 per square foot.",
             ),
           ],
         },
@@ -373,7 +431,8 @@ export function buildAppraisalDoc(c: AppraisalCtx): DocPage[] {
             t("Replacement cost new was estimated and depreciated for age and condition. "),
             {
               anchor: "finding-006",
-              text: "Effective age 11 years; total economic life 50 years; 22% physical depreciation applied.",
+              attAnchor: "ci-17",
+              text: "Effective age 11 years; total economic life 50 years (well beyond any 25-year SBA threshold); 22% physical depreciation applied.",
             },
             t(
               " External and functional obsolescence were considered and found negligible.",
@@ -392,8 +451,12 @@ export function buildAppraisalDoc(c: AppraisalCtx): DocPage[] {
         {
           type: "p",
           runs: [
+            {
+              attAnchor: "ci-09",
+              text: "Greatest weight is given to the Sales Comparison Approach, supported by the Income Approach; the reconciliation explains the weighting across the developed approaches.",
+            },
             t(
-              `Greatest weight is given to the Sales Comparison Approach, supported by the Income Approach. The reconciled opinion of market value of the fee simple interest, as improved, as of ${c.effectiveDate}, is ${CONCLUDED_VALUE}.`,
+              ` The reconciled opinion of market value of the fee simple interest, as improved, as of ${c.effectiveDate}, is ${CONCLUDED_VALUE}.`,
             ),
           ],
         },
@@ -404,6 +467,14 @@ export function buildAppraisalDoc(c: AppraisalCtx): DocPage[] {
             t(
               "This appraisal is subject to the following, among others: title is assumed marketable; no responsibility is assumed for matters legal in nature; the property is assumed to comply with applicable zoning and environmental regulations; information furnished by others is believed reliable but is not guaranteed; and the appraiser is not required to give testimony unless arrangements have been made in advance.",
             ),
+            {
+              attAnchor: "ci-21",
+              text: " No personal property or FF&E is included in the opinion of value; the value reflects the real property only.",
+            },
+            {
+              attAnchor: "ci-14",
+              text: " No bank-policy special considerations were identified for this property type beyond those addressed above.",
+            },
           ],
         },
         { type: "h", text: "Certification" },
@@ -412,11 +483,16 @@ export function buildAppraisalDoc(c: AppraisalCtx): DocPage[] {
           runs: [
             {
               anchor: "finding-005",
+              attAnchor: "ci-01",
               text: "I certify that, to the best of my knowledge and belief, the statements of fact contained in this report are true and correct.",
             },
             t(
-              ` The reported analyses, opinions, and conclusions are my personal, impartial, and unbiased professional analyses. Appraiser: ${APPRAISER}. Effective date: ${c.effectiveDate}.`,
+              ` The reported analyses, opinions, and conclusions are my personal, impartial, and unbiased professional analyses. Signed by ${APPRAISER}, a state-certified general appraiser, as of the effective date of ${c.effectiveDate}.`,
             ),
+            {
+              attAnchor: "ci-22",
+              text: " No exceptions to the bank's appraisal policy are taken in this report.",
+            },
           ],
         },
       ],
