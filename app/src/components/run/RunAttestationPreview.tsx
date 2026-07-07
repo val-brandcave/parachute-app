@@ -267,7 +267,7 @@ export function RunAttestationPreview({
           ) : (
             <>
               <Button variant="outline" size="sm" iconLeft="checklist" onClick={onReviewChecklist}>
-                Complete checklist
+                {canSign ? "Review checklist" : "Complete checklist"}
               </Button>
               <Button
                 variant="primary"

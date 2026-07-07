@@ -14,10 +14,10 @@ const TOGGLES: { key: keyof WbDocSettings; label: string; hint: string }[] = [
   { key: "showHeader", label: "Running header", hint: "Bank name + title on each page" },
   { key: "showFooter", label: "Confidential footer", hint: "Engagement / internal-use line" },
   { key: "showLogo", label: "Show logo", hint: "Org mark on the cover" },
-  { key: "showStatus", label: "Disposition badges", hint: "Accepted / overridden on findings" },
+  { key: "showStatus", label: "Disposition badges", hint: "Accepted / edited on findings" },
   { key: "showConfidence", label: "AI-basis footnote", hint: "Confidence + page under findings" },
   { key: "colorCoding", label: "Severity colour", hint: "Coloured left border by severity" },
-  { key: "hideOverridden", label: "Hide overridden", hint: "Drop overridden findings from the body" },
+  { key: "hideOverridden", label: "Hide edited", hint: "Drop edited findings from the body" },
 ];
 
 /**

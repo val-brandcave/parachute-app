@@ -65,8 +65,17 @@ export function FindingFocus({
         </header>
 
         <section className="fm-sec">
-          <div className="fm-sec-t">Finding</div>
-          <p className="fm-prose">{finding.analysis}</p>
+          <div className="fm-sec-t">
+            Finding
+            {state.disposition === "edited" && state.reason && (
+              <span className="fm-sec-edited">
+                <Icon name="edit" size={11} /> Rewritten by reviewer
+              </span>
+            )}
+          </div>
+          <p className="fm-prose">
+            {state.disposition === "edited" && state.reason ? state.reason : finding.analysis}
+          </p>
         </section>
 
         <section className="fm-sec">

@@ -42,7 +42,7 @@ export const seedFindings: Finding[] = [
     auditText:
       "S4 Analytics compared the selected cap rate against the report's cited survey range and the regional dataset.",
     material: true,
-    suggestedDisposition: "override",
+    suggestedDisposition: "edited",
     createdAt: NOW,
   },
   {
@@ -63,7 +63,7 @@ export const seedFindings: Finding[] = [
     auditText:
       "S2 Validation matched the parcel against the municipal zoning layer and noted an overlay not discussed in the report.",
     material: false,
-    suggestedDisposition: "commented",
+    suggestedDisposition: "accepted",
     createdAt: NOW,
   },
   {
@@ -144,7 +144,7 @@ export const seedFindings: Finding[] = [
     auditText:
       "S5 Policy applied Meridian Trust Bank's uploaded policy rules and flagged a recency exception lacking the required commentary.",
     material: false,
-    suggestedDisposition: "commented",
+    suggestedDisposition: "accepted",
     createdAt: NOW,
   },
 ];
