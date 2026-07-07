@@ -161,7 +161,7 @@ export function IntakeWidget() {
             transition={{ duration: 0.18, ease: "easeOut" }}
           >
             <h1 className="ih-title">
-              {drop ? "Drop an appraisal to start" : "Pull one from YouConnect"}
+              {drop ? "Drop a report to start" : "Pull one from YouConnect"}
             </h1>
             <p className="ih-sub">
               {drop

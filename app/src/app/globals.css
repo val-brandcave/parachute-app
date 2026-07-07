@@ -9909,6 +9909,13 @@ select.qfilter {
   font-weight: 700;
   color: var(--md-on-surface);
 }
+/* Helper line under a card head (e.g. Review type multi-select hint). Pulled
+   tight under the head, above the card's 13px child gap. */
+.run-cf-card-sub {
+  margin-top: -8px;
+  font-size: 12.5px;
+  color: var(--md-on-surface-v);
+}
 /* Review type — full-row selectable checklist. */
 .run-cf-opts {
   display: flex;
@@ -9917,7 +9924,7 @@ select.qfilter {
 }
 .run-cf-opt {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 11px;
   width: 100%;
   padding: 12px 14px;
@@ -9974,8 +9981,35 @@ select.qfilter {
 .run-cf-opt.is-soon .run-cf-opt-box {
   border-style: dashed;
 }
-.run-cf-opt-label {
+/* Stacked label + description (Cody, Jul 7: each type carries a one-liner). */
+.run-cf-opt-body {
   flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  /* nudge so the label baseline centers against the 20px check box's first line */
+  padding-top: 1px;
+}
+.run-cf-opt-label {
+  line-height: 1.25;
+}
+.run-cf-opt-desc {
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--md-on-surface-v);
+}
+/* On the selected (navy-tint) row, the description follows the on-selected ink
+   at a slightly softer weight so the label still leads. */
+.run-cf-opt.is-on .run-cf-opt-desc {
+  color: var(--md-on-selected);
+  opacity: 0.82;
+}
+/* Coming-soon rows are already muted at the row level; keep the description a
+   touch lighter than the label. */
+.run-cf-opt.is-soon .run-cf-opt-desc {
+  color: var(--md-on-surface-dis);
 }
 .run-cf-opt-soon {
   margin-left: 6px;

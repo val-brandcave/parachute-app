@@ -38,6 +38,11 @@ type FieldGroup = "identity" | "technical" | "administrative";
 interface ReviewTypeSpec {
   id: RunReviewType;
   label: string;
+  /** One-line "what it does / what it produces" — mirrors the Order flow's
+   *  output-first framing (Cody, Jul 7: "each of these could use a description").
+   *  Generic language ("the report's", not "the appraisal's") so it reads true
+   *  for non-property types too. */
+  description: string;
   status: "live" | "soon";
   propertyBased: boolean;
   defaultOn?: boolean; // selected by default
@@ -46,14 +51,15 @@ interface ReviewTypeSpec {
 
 /**
  * Generic review-type registry. Only the two `live` specs are selectable today;
- * a short "coming soon" tail names the next types on Ed's roadmap. Names only —
- * no icons/descriptions in the picker. Add a type by adding a spec (the picker,
- * union form, and store id-space all follow).
+ * a short "coming soon" tail names the next types on Ed's roadmap. Each carries a
+ * one-line description (rendered under the label). Add a type by adding a spec
+ * (the picker, union form, and store id-space all follow).
  */
 const REVIEW_TYPES: ReviewTypeSpec[] = [
   {
     id: "technical",
     label: "Technical",
+    description: "Checks the report's methodology, comps, and value conclusion. Output: a reviewer workbook.",
     status: "live",
     propertyBased: true,
     defaultOn: true,
@@ -62,6 +68,7 @@ const REVIEW_TYPES: ReviewTypeSpec[] = [
   {
     id: "administrative",
     label: "Administrative",
+    description: "Verifies the report against policy and regulatory requirements. Output: a signed attestation.",
     status: "live",
     propertyBased: true,
     // Pre-checked with Technical — Ed (Jun 30): "80% of us order both."
@@ -71,6 +78,7 @@ const REVIEW_TYPES: ReviewTypeSpec[] = [
   {
     id: "evaluation",
     label: "Evaluation",
+    description: "A lighter valuation review for loans below the appraisal threshold.",
     status: "soon",
     propertyBased: true,
     fieldGroups: ["identity"],
@@ -78,6 +86,7 @@ const REVIEW_TYPES: ReviewTypeSpec[] = [
   {
     id: "vendor_short",
     label: "Vendor short form",
+    description: "A brief, standardized review that isn't tied to a property.",
     status: "soon",
     propertyBased: false,
     fieldGroups: [],
@@ -227,7 +236,8 @@ export function RunConfirm({
 
         {/* Card — review type (drives the inputs below). */}
         <motion.div className="run-cf-card" variants={ITEM_V}>
-          <span className="run-cf-card-head">What do you want to review?</span>
+          <span className="run-cf-card-head">Review type</span>
+          <p className="run-cf-card-sub">Select one or more — each adds its own setup below.</p>
           <div className="run-cf-opts">
             {REVIEW_TYPES.map((spec) => {
               const soon = spec.status === "soon";
@@ -238,9 +248,12 @@ export function RunConfirm({
                   <span className="run-cf-opt-box" aria-hidden="true">
                     {on && <Icon name="check" size={14} />}
                   </span>
-                  <span className="run-cf-opt-label">
-                    {spec.label}
-                    {soon && <span className="run-cf-opt-soon">(coming soon)</span>}
+                  <span className="run-cf-opt-body">
+                    <span className="run-cf-opt-label">
+                      {spec.label}
+                      {soon && <span className="run-cf-opt-soon">(coming soon)</span>}
+                    </span>
+                    <span className="run-cf-opt-desc">{spec.description}</span>
                   </span>
                 </>
               );
