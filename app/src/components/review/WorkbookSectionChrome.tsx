@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { motion, useMotionValue, useSpring, type MotionValue } from "framer-motion";
 import { Icon } from "@/components/atoms";
 import { ActionMenu, type ActionItem } from "@/components/molecules/ActionMenu";
 import {
@@ -298,6 +300,11 @@ export function useSectionDrag(
   const dragRef = useRef<string | null>(null);
   const dropRef = useRef<string | null>(null);
   const onDropRef = useRef(onDrop);
+  // The drag ghost trails the pointer on springs — the "thing in hand" cue.
+  const ghostRawX = useMotionValue(0);
+  const ghostRawY = useMotionValue(0);
+  const ghostX = useSpring(ghostRawX, { stiffness: 650, damping: 42, mass: 0.55 });
+  const ghostY = useSpring(ghostRawY, { stiffness: 650, damping: 42, mass: 0.55 });
 
   // Keep refs in sync (post-render) so the window listeners read fresh values
   // without the drag effect re-subscribing on every render mid-drag.
@@ -310,6 +317,8 @@ export function useSectionDrag(
   useEffect(() => {
     if (!dragId) return;
     const move = (ev: PointerEvent) => {
+      ghostRawX.set(ev.clientX + 16);
+      ghostRawY.set(ev.clientY + 12);
       const shells = Array.from(
         document.querySelectorAll<HTMLElement>("[data-wb-sec]"),
       );
@@ -340,12 +349,50 @@ export function useSectionDrag(
       window.removeEventListener("pointerup", up);
       document.body.classList.remove("wb-reordering");
     };
-  }, [dragId]);
+    // Motion values are stable references — safe in deps.
+  }, [dragId, ghostRawX, ghostRawY]);
 
   const startDrag = (id: string) => (e: React.PointerEvent) => {
     e.preventDefault();
+    // Park the ghost at the grab point instantly (no fly-in from 0,0).
+    ghostRawX.jump(e.clientX + 16);
+    ghostRawY.jump(e.clientY + 12);
     setDragId(id);
   };
 
-  return { dragId, dropId, startDrag };
+  return { dragId, dropId, startDrag, ghostX, ghostY };
+}
+
+/** The cursor-following drag ghost — a lifted paper chip carrying the dragged
+ *  section's number + title, trailing the pointer on a spring. Portaled to
+ *  body (chrome context) so page overflow can never clip it. */
+export function SectionDragGhost({
+  label,
+  title,
+  x,
+  y,
+}: {
+  label: string;
+  title: string;
+  x: MotionValue<number>;
+  y: MotionValue<number>;
+}) {
+  if (typeof document === "undefined") return null;
+  return createPortal(
+    <motion.div
+      className="wb-dragghost"
+      style={{ x, y }}
+      initial={{ opacity: 0, scale: 0.85, rotate: 0 }}
+      animate={{ opacity: 1, scale: 1, rotate: -2.5 }}
+      transition={{ type: "spring", stiffness: 500, damping: 30 }}
+      aria-hidden="true"
+    >
+      <span className="wb-dragghost-grip">
+        <Icon name="grip" size={13} />
+      </span>
+      {label && <span className="wb-dragghost-n">{label}</span>}
+      <span className="wb-dragghost-t">{title}</span>
+    </motion.div>,
+    document.body,
+  );
 }

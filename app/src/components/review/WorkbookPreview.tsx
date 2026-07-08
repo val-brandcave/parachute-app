@@ -31,6 +31,7 @@ import {
   HiddenSectionStub,
   AddDivider,
   FactGridEditor,
+  SectionDragGhost,
   useSectionDrag,
 } from "./WorkbookSectionChrome";
 import {
@@ -121,8 +122,9 @@ export function WorkbookPreview({
     : ["accepted", "edited", "pending"];
 
   // On-canvas drag-to-reorder (section chrome). The hook is inert until a
-  // handle starts a drag; drops route to the host's moveSectionBefore.
-  const { dragId, dropId, startDrag } = useSectionDrag((id, beforeId) => {
+  // handle starts a drag; drops route to the host's moveSectionBefore. While
+  // dragging, a spring-following ghost chip carries the section in hand.
+  const { dragId, dropId, startDrag, ghostX, ghostY } = useSectionDrag((id, beforeId) => {
     editing?.onMoveSectionBefore(id, beforeId);
   });
 
@@ -851,6 +853,15 @@ export function WorkbookPreview({
           </div>
         </section>
       )}
+
+      {/* Drag ghost — the section "in hand", trailing the pointer */}
+      {dragId &&
+        (() => {
+          const it = labeled.find((l) => l.s.id === dragId);
+          return it ? (
+            <SectionDragGhost label={it.label} title={it.s.title} x={ghostX} y={ghostY} />
+          ) : null;
+        })()}
 
       {/* Content pages — sections packed onto Letter sheets. In edit mode each
           section wears the canvas chrome (outline + toolbar + drag handle) with
