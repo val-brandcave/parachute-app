@@ -118,6 +118,9 @@ export interface FindingState {
   flagged?: boolean;
   /** Response template last applied to the composer (for the "applied" hint). */
   templateId?: string;
+  /** When the current disposition was set — the inline workbook block prints it
+   *  on its decided line ("Concurred · J. Rivera · 2:14 PM", F-143). */
+  decidedAt?: number;
 }
 
 /* ============ Administrative review (checklist attestation) ============ */

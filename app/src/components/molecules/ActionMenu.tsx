@@ -12,6 +12,8 @@ export type ActionItem = {
   danger?: boolean;
   /** Radio/checkbox-style option — reserves a check gutter; shows a tick when true. */
   selected?: boolean;
+  /** Keep the menu open after clicking (multi-toggle checkbox menus). */
+  keepOpen?: boolean;
   /** Render a hairline separator instead of a button (label/onClick ignored). */
   divider?: boolean;
   /** Render a small non-clickable section header. */
@@ -152,7 +154,7 @@ export function ActionMenu({
                       className={cnItem(it.danger)}
                       onClick={() => {
                         it.onClick?.();
-                        setOpen(false);
+                        if (!it.keepOpen) setOpen(false);
                       }}
                     >
                       {it.selected !== undefined ? (

@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
+import { Icon } from "@/components/atoms";
 import { formatMoney } from "@/lib/workbook";
-import type { WorkbookExhibits } from "@/types";
+import type { WbAdjustmentRow, WorkbookExhibits } from "@/types";
 
 /**
  * The workbook's analytical exhibits — the "evidence of property" the reviewer
@@ -13,35 +15,182 @@ import type { WorkbookExhibits } from "@/types";
 
 const pct = (n: number) => `${n > 0 ? "+" : ""}${n}%`;
 
-export function AdjustmentTable({ rows }: { rows: WorkbookExhibits["adjustmentGrid"] }) {
+/** Row tools for the comp-grid repeater (inline workbook editing, F-144):
+ *  instant add row, per-row delete, click-any-cell-to-edit. Structured controls
+ *  only — the adjusted $/SF re-derives in the store, so the table never breaks. */
+export interface CompGridTools {
+  onAdd: () => void;
+  onDelete: (comp: string) => void;
+  onUpdate: (comp: string, patch: Partial<WbAdjustmentRow>) => void;
+}
+
+export function AdjustmentTable({
+  rows,
+  tools,
+}: {
+  rows: WorkbookExhibits["adjustmentGrid"];
+  tools?: CompGridTools | null;
+}) {
   return (
-    <table className="wb-exh-table">
-      <thead>
-        <tr>
-          <th>Comparable</th>
-          <th className="num">Unadj. $/SF</th>
-          <th className="num">Location</th>
-          <th className="num">Condition</th>
-          <th className="num">Quality</th>
-          <th className="num">Adj. $/SF</th>
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((r) => (
-          <tr key={r.comp} className={r.flag ? "is-flag" : undefined}>
-            <td>
-              {r.comp}
-              {r.flag && <span className="wb-exh-flag">discrepancy — see finding</span>}
-            </td>
-            <td className="num">${r.unadj.toFixed(2)}</td>
-            <td className="num">{pct(r.location)}</td>
-            <td className="num">{pct(r.condition)}</td>
-            <td className="num">{pct(r.quality)}</td>
-            <td className="num strong">${r.adj.toFixed(2)}</td>
+    <>
+      <table className={`wb-exh-table${tools ? " is-editable" : ""}`}>
+        <thead>
+          <tr>
+            <th>Comparable</th>
+            <th className="num">Unadj. $/SF</th>
+            <th className="num">Location</th>
+            <th className="num">Condition</th>
+            <th className="num">Quality</th>
+            <th className="num">Adj. $/SF</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.comp} className={r.flag ? "is-flag" : undefined}>
+              <td>
+                {tools ? (
+                  <GridCell
+                    raw={r.comp}
+                    display={r.comp}
+                    onCommit={(v) => v.trim() && tools.onUpdate(r.comp, { comp: v.trim() })}
+                  />
+                ) : (
+                  r.comp
+                )}
+                {r.flag && <span className="wb-exh-flag">discrepancy — see finding</span>}
+              </td>
+              <NumCell
+                value={r.unadj}
+                display={`$${r.unadj.toFixed(2)}`}
+                tools={tools}
+                onCommit={(n) => tools?.onUpdate(r.comp, { unadj: n })}
+              />
+              <NumCell
+                value={r.location}
+                display={pct(r.location)}
+                tools={tools}
+                onCommit={(n) => tools?.onUpdate(r.comp, { location: n })}
+              />
+              <NumCell
+                value={r.condition}
+                display={pct(r.condition)}
+                tools={tools}
+                onCommit={(n) => tools?.onUpdate(r.comp, { condition: n })}
+              />
+              <NumCell
+                value={r.quality}
+                display={pct(r.quality)}
+                tools={tools}
+                onCommit={(n) => tools?.onUpdate(r.comp, { quality: n })}
+              />
+              <td className="num strong">
+                ${r.adj.toFixed(2)}
+                {tools && (
+                  <button
+                    className="wb-rowdel"
+                    onClick={() => tools.onDelete(r.comp)}
+                    aria-label={`Delete ${r.comp}`}
+                    title={`Delete ${r.comp}`}
+                  >
+                    <Icon name="trash" size={13} />
+                  </button>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {tools && (
+        <button className="wb-addrow" onClick={tools.onAdd}>
+          <Icon name="add" size={13} /> Add row
+        </button>
+      )}
+    </>
+  );
+}
+
+/** A numeric grid cell — renders formatted, flips to an input on click. The
+ *  adjusted column stays derived (read-only), so edits can't break the math. */
+function NumCell({
+  value,
+  display,
+  tools,
+  onCommit,
+}: {
+  value: number;
+  display: string;
+  tools?: CompGridTools | null;
+  onCommit: (n: number) => void;
+}) {
+  return (
+    <td className="num">
+      {tools ? (
+        <GridCell
+          raw={String(value)}
+          display={display}
+          numeric
+          onCommit={(v) => {
+            const n = parseFloat(v.replace(/[$,%\s,]/g, ""));
+            if (!Number.isNaN(n)) onCommit(n);
+          }}
+        />
+      ) : (
+        display
+      )}
+    </td>
+  );
+}
+
+/** Click-to-edit cell: a button showing the formatted value; clicking swaps in
+ *  an input seeded with the raw value. Enter/blur commits, Esc cancels.
+ *  Exported — the fact grid and SWOT cards reuse the same cell mechanic. */
+export function GridCell({
+  raw,
+  display,
+  numeric,
+  onCommit,
+}: {
+  raw: string;
+  display: string;
+  numeric?: boolean;
+  onCommit: (v: string) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [val, setVal] = useState(raw);
+
+  if (!editing)
+    return (
+      <button
+        className="wb-cell"
+        title="Click to edit"
+        onClick={() => {
+          setVal(raw);
+          setEditing(true);
+        }}
+      >
+        {display}
+      </button>
+    );
+
+  return (
+    <input
+      className={`wb-cell-in${numeric ? " num" : ""}`}
+      autoFocus
+      value={val}
+      onFocus={(e) => e.target.select()}
+      onChange={(e) => setVal(e.target.value)}
+      onBlur={() => {
+        setEditing(false);
+        onCommit(val);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") e.currentTarget.blur();
+        if (e.key === "Escape") {
+          e.stopPropagation();
+          setEditing(false);
+        }
+      }}
+    />
   );
 }
 
@@ -66,7 +215,16 @@ export function PsfBarChart({ psf }: { psf: WorkbookExhibits["psf"] }) {
   );
 }
 
-export function CapRateScale({ cap }: { cap: WorkbookExhibits["capRate"] }) {
+export function CapRateScale({
+  cap,
+  tools,
+}: {
+  cap: WorkbookExhibits["capRate"];
+  /** Structured point/band editing (edit mode): the chart itself is evidence —
+   *  never free-drawn — so edits go through a mini-table and the scale redraws. */
+  tools?: { onUpdate: (patch: Partial<WorkbookExhibits["capRate"]>) => void } | null;
+}) {
+  const [editingData, setEditingData] = useState(false);
   const values = cap.points.map((p) => p.value).concat([cap.bandMin, cap.bandMax]);
   const lo = Math.min(...values);
   const hi = Math.max(...values);
@@ -96,6 +254,150 @@ export function CapRateScale({ cap }: { cap: WorkbookExhibits["capRate"] }) {
         ))}
       </div>
       <p className="wb-exh-note">{cap.note}</p>
+
+      {tools && !editingData && (
+        <button className="wb-addrow" onClick={() => setEditingData(true)}>
+          <Icon name="edit" size={13} /> Edit cap-rate data
+        </button>
+      )}
+      {tools && editingData && (
+        <CapRateDataEditor
+          cap={cap}
+          onUpdate={tools.onUpdate}
+          onClose={() => setEditingData(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+/** The structured cap-rate editor: label · value · selected · delete per point,
+ *  ＋ Add point, and the market band min/max. Every commit redraws the scale. */
+function CapRateDataEditor({
+  cap,
+  onUpdate,
+  onClose,
+}: {
+  cap: WorkbookExhibits["capRate"];
+  onUpdate: (patch: Partial<WorkbookExhibits["capRate"]>) => void;
+  onClose: () => void;
+}) {
+  const points = cap.points;
+  const parseNum = (v: string) => {
+    const n = parseFloat(v.replace(/[%\s]/g, ""));
+    return Number.isNaN(n) ? null : n;
+  };
+
+  return (
+    <div className="wb-capedit">
+      <table className="wb-exh-table is-editable wb-capedit-table">
+        <thead>
+          <tr>
+            <th>Point</th>
+            <th className="num">Rate ({cap.unit})</th>
+            <th>Selected</th>
+            <th aria-label="Row actions" />
+          </tr>
+        </thead>
+        <tbody>
+          {points.map((p, i) => (
+            <tr key={`${i}-${p.label}`}>
+              <td>
+                <GridCell
+                  raw={p.label}
+                  display={p.label}
+                  onCommit={(v) =>
+                    v.trim() &&
+                    onUpdate({
+                      points: points.map((x, j) =>
+                        j === i ? { ...x, label: v.trim() } : x,
+                      ),
+                    })
+                  }
+                />
+              </td>
+              <td className="num">
+                <GridCell
+                  raw={String(p.value)}
+                  display={`${p.value}${cap.unit}`}
+                  numeric
+                  onCommit={(v) => {
+                    const n = parseNum(v);
+                    if (n != null)
+                      onUpdate({
+                        points: points.map((x, j) => (j === i ? { ...x, value: n } : x)),
+                      });
+                  }}
+                />
+              </td>
+              <td>
+                <button
+                  className={`wb-capedit-radio${p.selected ? " on" : ""}`}
+                  aria-label={`Mark ${p.label} as the selected rate`}
+                  onClick={() =>
+                    onUpdate({
+                      points: points.map((x, j) => ({ ...x, selected: j === i })),
+                    })
+                  }
+                >
+                  <span />
+                </button>
+              </td>
+              <td>
+                {!p.selected && points.length > 2 && (
+                  <button
+                    className="wb-rowdel is-shown"
+                    onClick={() => onUpdate({ points: points.filter((_, j) => j !== i) })}
+                    aria-label={`Delete ${p.label}`}
+                  >
+                    <Icon name="trash" size={12} />
+                  </button>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div className="wb-capedit-foot">
+        <button
+          className="wb-addrow"
+          onClick={() =>
+            onUpdate({
+              points: [
+                ...points,
+                { label: `Point ${points.length + 1}`, value: cap.bandMax },
+              ],
+            })
+          }
+        >
+          <Icon name="add" size={13} /> Add point
+        </button>
+        <span className="wb-capedit-band">
+          Market band
+          <GridCell
+            raw={String(cap.bandMin)}
+            display={`${cap.bandMin}${cap.unit}`}
+            numeric
+            onCommit={(v) => {
+              const n = parseNum(v);
+              if (n != null) onUpdate({ bandMin: n });
+            }}
+          />
+          –
+          <GridCell
+            raw={String(cap.bandMax)}
+            display={`${cap.bandMax}${cap.unit}`}
+            numeric
+            onCommit={(v) => {
+              const n = parseNum(v);
+              if (n != null) onUpdate({ bandMax: n });
+            }}
+          />
+        </span>
+        <button className="wb-capedit-done" onClick={onClose}>
+          <Icon name="check" size={13} /> Done
+        </button>
+      </div>
     </div>
   );
 }
@@ -154,19 +456,64 @@ const SWOT_QUADRANTS = [
   { key: "threats", label: "Threats", cls: "t" },
 ] as const;
 
-export function SwotGrid({ swot }: { swot: WorkbookExhibits["swot"] }) {
+export function SwotGrid({
+  swot,
+  onUpdateQuadrant,
+}: {
+  swot: WorkbookExhibits["swot"];
+  /** When set (edit mode), quadrant items are click-to-edit with per-item
+   *  delete and a per-quadrant add — the "cards" get the same structured
+   *  editing as the repeater tables (§5 matrix). */
+  onUpdateQuadrant?: ((q: keyof WorkbookExhibits["swot"], items: string[]) => void) | null;
+}) {
   return (
     <div className="wb-swot">
-      {SWOT_QUADRANTS.map((q) => (
-        <div key={q.key} className={`wb-swot-q wb-swot-q--${q.cls}`}>
-          <h5>{q.label}</h5>
-          <ul>
-            {swot[q.key].map((item, i) => (
-              <li key={i}>{item}</li>
-            ))}
-          </ul>
-        </div>
-      ))}
+      {SWOT_QUADRANTS.map((q) => {
+        const items = swot[q.key];
+        const commit = (next: string[]) => onUpdateQuadrant?.(q.key, next);
+        return (
+          <div key={q.key} className={`wb-swot-q wb-swot-q--${q.cls}`}>
+            <h5>{q.label}</h5>
+            <ul>
+              {items.map((item, i) =>
+                onUpdateQuadrant ? (
+                  <li key={`${i}-${item}`} className="wb-swot-li">
+                    <GridCell
+                      raw={item}
+                      display={item}
+                      onCommit={(v) =>
+                        commit(
+                          v.trim()
+                            ? items.map((it, j) => (j === i ? v.trim() : it))
+                            : items.filter((_, j) => j !== i),
+                        )
+                      }
+                    />
+                    <button
+                      className="wb-rowdel"
+                      onClick={() => commit(items.filter((_, j) => j !== i))}
+                      aria-label={`Delete "${item}"`}
+                      title="Delete item"
+                    >
+                      <Icon name="trash" size={12} />
+                    </button>
+                  </li>
+                ) : (
+                  <li key={i}>{item}</li>
+                ),
+              )}
+            </ul>
+            {onUpdateQuadrant && (
+              <button
+                className="wb-swot-add"
+                onClick={() => commit([...items, "New point — click to edit"])}
+              >
+                <Icon name="add" size={12} /> Add
+              </button>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

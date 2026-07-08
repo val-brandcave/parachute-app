@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Parachute — Inline Workbook Editing · Wireframes (Jul 7 direction)</title>
+<style>
+  :root{
+    --navy:#1c2b45; --navy-soft:#2b3d5e; --petrol:#0f766e; --petrol-soft:#e4f2f0;
+    --ink:#22293a; --ink-2:#5b647a; --ink-3:#98a0b3;
+    --paper:#ffffff; --canvas:#eef0f4; --line:#dfe3ea; --line-2:#cdd3dd;
+    --amber:#b45309; --amber-bg:#fdf3e3; --red:#b3372f; --red-bg:#fbeae8;
+    --green:#1a7f4b; --green-bg:#e6f4ec;
+    --note:#c2410c; --note-bg:#fff1e8;
+    --chip:#f1f3f7;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{font-family:"Segoe UI", system-ui, -apple-system, sans-serif; background:#f6f7f9; color:var(--ink); padding:48px 24px 120px; line-height:1.45;}
+  .board{max-width:1180px; margin:0 auto;}
+
+  /* board header */
+  .bh{margin-bottom:14px;}
+  .bh h1{font-size:26px; font-weight:650; color:var(--navy); letter-spacing:-.01em;}
+  .bh p{color:var(--ink-2); font-size:14.5px; max-width:860px; margin-top:8px;}
+  .bh .meta{font-size:12.5px; color:var(--ink-3); margin-top:10px;}
+  .legendbar{display:flex; gap:18px; flex-wrap:wrap; margin:22px 0 46px; padding:14px 18px; background:#fff; border:1px solid var(--line); border-radius:12px; font-size:12.5px; color:var(--ink-2);}
+  .legendbar b{color:var(--ink);}
+  .tagdemo{display:inline-flex; align-items:center; justify-content:center; min-width:20px; height:20px; padding:0 5px; border-radius:10px; background:var(--note); color:#fff; font-size:11.5px; font-weight:700;}
+
+  /* screen frames */
+  .screen{margin:0 0 74px;}
+  .screen > h2{font-size:19px; font-weight:650; color:var(--navy); margin-bottom:4px;}
+  .screen > .sub{font-size:13.5px; color:var(--ink-2); margin-bottom:16px; max-width:880px;}
+  .frame{background:var(--canvas); border:1px solid var(--line-2); border-radius:14px; overflow:hidden; box-shadow:0 10px 30px rgba(28,43,69,.08);}
+  .chrome{display:flex; align-items:center; gap:8px; background:#fff; border-bottom:1px solid var(--line); padding:10px 16px;}
+  .dot{width:10px; height:10px; border-radius:50%; background:var(--line-2);}
+  .chrome .url{margin-left:10px; background:var(--chip); border-radius:7px; font-size:12px; color:var(--ink-3); padding:4px 14px;}
+
+  /* app top bar */
+  .appbar{display:flex; align-items:center; gap:14px; padding:12px 22px; background:var(--navy); color:#fff;}
+  .appbar .logo{font-weight:700; font-size:14px; letter-spacing:.02em;}
+  .appbar .crumb{font-size:12.5px; opacity:.75;}
+  .tabs{display:flex; gap:4px; margin-left:26px; background:rgba(255,255,255,.10); padding:4px; border-radius:9px;}
+  .tab{font-size:12.5px; padding:5px 16px; border-radius:6px; color:#e8ecf4;}
+  .tab.on{background:#fff; color:var(--navy); font-weight:650;}
+  .tab .cnt{opacity:.65; font-size:11px;}
+  .appbar .right{margin-left:auto; display:flex; gap:10px; align-items:center;}
+  .btn{font-size:12.5px; padding:7px 14px; border-radius:8px; border:1px solid transparent; display:inline-flex; gap:7px; align-items:center; white-space:nowrap;}
+  .btn.ghosty{border-color:rgba(255,255,255,.35); color:#fff;}
+  .btn.solid{background:#fff; color:var(--navy); font-weight:650;}
+
+  /* toolbar under appbar */
+  .toolbar{display:flex; align-items:center; gap:10px; padding:10px 22px; background:#fff; border-bottom:1px solid var(--line); font-size:12.5px; color:var(--ink-2);}
+  .toolbar .grp{display:flex; gap:6px; align-items:center;}
+  .toolbar .sep{width:1px; height:20px; background:var(--line);}
+  .tbtn{border:1px solid var(--line); background:#fff; border-radius:8px; padding:6px 12px; color:var(--ink); font-size:12.5px; display:inline-flex; gap:7px; align-items:center;}
+  .tbtn.primary{background:var(--navy); border-color:var(--navy); color:#fff; font-weight:600;}
+  .tbtn.quiet{border-style:dashed;}
+
+  /* workspace layout */
+  .work{display:flex; justify-content:center; padding:34px 20px 44px; gap:22px;}
+  .pagecol{display:flex; flex-direction:column; gap:20px; width:660px; max-width:100%;}
+  .page{background:var(--paper); border:1px solid var(--line-2); border-radius:4px; box-shadow:0 4px 18px rgba(28,43,69,.10); padding:34px 38px 38px; position:relative;}
+  .page .pgnum{position:absolute; bottom:10px; right:16px; font-size:10.5px; color:var(--ink-3);}
+
+  /* doc typography */
+  .sec{position:relative; padding:10px 12px 14px; margin:0 -12px 10px; border-radius:8px;}
+  .sec h3{font-size:14px; font-weight:700; color:var(--navy); letter-spacing:.02em; display:flex; align-items:center; gap:9px; margin-bottom:9px;}
+  .sec h3 .num{display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:5px; background:var(--navy); color:#fff; font-size:11px;}
+  .sec .rule{height:2px; background:var(--navy); opacity:.85; margin-bottom:12px;}
+  .prose{font-size:12.5px; color:var(--ink); max-width:100%;}
+  .prose.dim{color:var(--ink-2);}
+
+  /* HOVER CHROME on a section */
+  .sec.hovered{outline:2px solid var(--petrol); outline-offset:2px; background:#fbfdfd;}
+  .secactions{position:absolute; top:-14px; right:8px; display:flex; gap:4px; background:var(--navy); border-radius:8px; padding:4px 6px; box-shadow:0 4px 12px rgba(0,0,0,.22);}
+  .secactions span{font-size:11px; color:#fff; padding:3px 8px; border-radius:5px; background:rgba(255,255,255,.12);}
+  .draghandle{position:absolute; top:12px; left:-26px; width:18px; height:26px; border-radius:5px; background:#fff; border:1px solid var(--line-2); color:var(--ink-3); display:flex; align-items:center; justify-content:center; font-size:12px; box-shadow:0 2px 6px rgba(0,0,0,.08);}
+  .addbelow{display:flex; align-items:center; gap:10px; margin:2px -12px 12px; opacity:.9;}
+  .addbelow .l{flex:1; height:1px; background:var(--petrol); opacity:.4;}
+  .addbelow .b{font-size:11.5px; color:var(--petrol); border:1px dashed var(--petrol); padding:3px 12px; border-radius:999px; background:var(--petrol-soft);}
+
+  /* fact grid */
+  .facts{display:grid; grid-template-columns:1fr 1fr; gap:8px 22px; font-size:12.5px;}
+  .fact{display:flex; justify-content:space-between; border-bottom:1px solid var(--line); padding:5px 2px;}
+  .fact b{font-weight:650;}
+  .fact .k{color:var(--ink-2);}
+
+  /* table */
+  table{width:100%; border-collapse:collapse; font-size:12px;}
+  th{text-align:left; font-size:10.5px; letter-spacing:.06em; color:var(--ink-2); border-bottom:2px solid var(--line-2); padding:6px 8px; text-transform:uppercase;}
+  td{padding:7px 8px; border-bottom:1px solid var(--line);}
+  td.r, th.r{text-align:right;}
+  tr.flag td{background:var(--amber-bg);}
+  tr.flag .fl{display:block; font-size:10px; color:var(--amber); font-weight:700; letter-spacing:.04em;}
+  tr.rowhover td{background:var(--petrol-soft);}
+  .rowtools{display:inline-flex; gap:4px; float:right;}
+  .rowtools span{font-size:10.5px; background:#fff; border:1px solid var(--line-2); border-radius:5px; padding:1px 7px; color:var(--ink-2);}
+  .addrow{margin-top:8px; font-size:11.5px; color:var(--petrol); border:1px dashed var(--petrol); display:inline-block; padding:4px 14px; border-radius:999px; background:var(--petrol-soft);}
+  .tblnote{font-size:10.5px; color:var(--ink-3); font-style:italic; margin-top:7px;}
+
+  /* finding blocks */
+  .finding{border:1px solid var(--line-2); border-left:4px solid var(--amber); border-radius:9px; padding:13px 15px 12px; margin:12px 0; background:#fffdf9; position:relative;}
+  .finding.red{border-left-color:var(--red); background:#fffbfb;}
+  .finding.usermade{border-left-color:var(--petrol); background:#fbfdfd;}
+  .fhead{display:flex; align-items:center; gap:8px; margin-bottom:6px; flex-wrap:wrap;}
+  .sev{font-size:10px; font-weight:700; letter-spacing:.05em; padding:2px 9px; border-radius:999px;}
+  .sev.y{background:var(--amber-bg); color:var(--amber);}
+  .sev.r{background:var(--red-bg); color:var(--red);}
+  .fhead b{font-size:12.5px;}
+  .cite{font-size:10.5px; color:var(--petrol); background:var(--petrol-soft); border:1px solid #bcdcd7; border-radius:999px; padding:2px 10px; font-weight:650;}
+  .ftext{font-size:12px; color:var(--ink); margin-bottom:10px;}
+  .fbar{display:flex; gap:6px; align-items:center; flex-wrap:wrap;}
+  .fbtn{font-size:11.5px; border:1px solid var(--line-2); background:#fff; padding:4px 13px; border-radius:7px; color:var(--ink);}
+  .fbtn.go{background:var(--green-bg); border-color:#b5dcc5; color:var(--green); font-weight:650;}
+  .fbtn.no{color:var(--red);}
+  .fmore{font-size:13px; color:var(--ink-3); padding:2px 8px;}
+  .pip{font-size:10px; font-weight:700; letter-spacing:.04em; color:#fff; background:var(--navy-soft); padding:2px 9px; border-radius:999px;}
+  .pip.user{background:var(--petrol);}
+  .decided{display:flex; gap:8px; align-items:center; margin-top:9px; font-size:11px; color:var(--green); font-weight:600;}
+
+  /* prose edit state */
+  .editing{border:2px solid var(--petrol); border-radius:8px; padding:10px 12px; background:#fff; position:relative;}
+  .editing .caret{display:inline-block; width:1.5px; height:13px; background:var(--petrol); vertical-align:-2px;}
+  .editctl{position:absolute; right:8px; bottom:-13px; display:flex; gap:5px;}
+  .editctl span{font-size:10.5px; background:var(--navy); color:#fff; border-radius:6px; padding:3px 10px; box-shadow:0 3px 8px rgba(0,0,0,.2);}
+
+  /* annotations (numbered callouts) */
+  .anno{position:absolute; display:flex; align-items:center; justify-content:center; min-width:22px; height:22px; padding:0 6px; border-radius:11px; background:var(--note); color:#fff; font-size:12px; font-weight:700; box-shadow:0 2px 8px rgba(194,65,12,.4); z-index:5;}
+  .callouts{margin-top:16px; background:var(--note-bg); border:1px solid #f6cdb4; border-radius:12px; padding:16px 20px;}
+  .callouts h4{font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--note); margin-bottom:9px;}
+  .callouts ol{list-style:none; display:grid; grid-template-columns:1fr 1fr; gap:7px 26px; font-size:12.5px; color:var(--ink);}
+  .callouts li{display:flex; gap:9px;}
+  .callouts li .n{flex:none; display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:10px; background:var(--note); color:#fff; font-size:11px; font-weight:700; margin-top:1px;}
+
+  /* customize panel */
+  .panel{width:250px; flex:none; background:#fff; border:1px solid var(--line-2); border-radius:12px; padding:16px; height:fit-content; box-shadow:0 8px 24px rgba(28,43,69,.10);}
+  .panel h4{font-size:13px; font-weight:700; color:var(--navy); display:flex; justify-content:space-between; margin-bottom:12px;}
+  .panel .x{color:var(--ink-3); font-weight:400;}
+  .pgroup{margin-bottom:14px;}
+  .pgroup .lbl{font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-2); margin-bottom:7px;}
+  .swatches{display:flex; gap:7px;}
+  .sw{width:26px; height:26px; border-radius:7px; border:1px solid var(--line-2);}
+  .sw.on{outline:2px solid var(--petrol); outline-offset:2px;}
+  .selrow{border:1px solid var(--line); border-radius:8px; padding:7px 11px; font-size:12px; display:flex; justify-content:space-between; color:var(--ink); margin-bottom:6px;}
+  .selrow .c{color:var(--ink-3);}
+  .seclist{display:flex; flex-direction:column; gap:5px;}
+  .secitem{display:flex; align-items:center; gap:8px; border:1px solid var(--line); border-radius:8px; padding:6px 10px; font-size:12px;}
+  .secitem .h{color:var(--ink-3); font-size:11px;}
+  .secitem .eye{margin-left:auto; font-size:11px; color:var(--ink-3);}
+  .secitem.off{opacity:.45;}
+
+  /* source view */
+  .srcwrap{display:flex; gap:20px; padding:30px 24px 40px; justify-content:center; background:#232a3a;}
+  .srcdoc{width:560px; max-width:100%; display:flex; flex-direction:column; gap:16px;}
+  .srcpage{background:#fff; border-radius:3px; padding:30px 34px; box-shadow:0 6px 18px rgba(0,0,0,.35); position:relative; font-size:11.5px; color:#3a4256;}
+  .srcpage h5{font-size:12px; color:var(--navy); margin-bottom:8px; letter-spacing:.04em;}
+  .ln{height:7px; background:#e8ebf1; border-radius:3px; margin:7px 0;}
+  .ln.w80{width:80%;} .ln.w60{width:60%;} .ln.w90{width:90%;} .ln.w70{width:70%;}
+  .hl{background:var(--amber-bg); outline:1px solid #ecc98f; border-radius:3px; padding:2px 5px; display:block; margin:7px 0; font-size:11px; color:#6b4a12;}
+  .hl.red{background:var(--red-bg); outline-color:#e5a9a4; color:#7c2a25;}
+  .mtag{position:absolute; right:-13px; width:26px; height:26px; border-radius:13px; background:var(--amber); color:#fff; display:flex; align-items:center; justify-content:center; font-size:11.5px; font-weight:700; box-shadow:0 2px 8px rgba(0,0,0,.3);}
+  .mtag.red{background:var(--red);}
+  .srcrail{width:250px; flex:none; background:#fff; border-radius:12px; padding:14px; height:fit-content;}
+  .srcrail h4{font-size:12.5px; font-weight:700; color:var(--navy); margin-bottom:4px;}
+  .srcrail .hint{font-size:10.5px; color:var(--ink-3); margin-bottom:11px;}
+  .srcitem{border:1px solid var(--line); border-radius:9px; padding:8px 11px; font-size:11.5px; margin-bottom:6px; display:flex; gap:8px; align-items:flex-start;}
+  .srcitem .sd{flex:none; width:8px; height:8px; border-radius:4px; margin-top:4px; background:var(--amber);}
+  .srcitem .sd.red{background:var(--red);}
+  .srcitem .pg{margin-left:auto; font-size:10px; color:var(--ink-3); white-space:nowrap;}
+  .srcitem.on{border-color:var(--petrol); background:var(--petrol-soft);}
+
+  /* strip of supporting pieces */
+  .strip{display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:20px; padding:28px 22px 36px;}
+  .piece{background:#fff; border:1px solid var(--line-2); border-radius:12px; padding:18px; position:relative;}
+  .piece h4{font-size:13px; font-weight:700; color:var(--navy); margin-bottom:12px;}
+  .field{border:1px solid var(--line-2); background:#fff; border-radius:8px; padding:8px 11px; font-size:12px; color:var(--ink); margin-bottom:8px;}
+  .field .ph{color:var(--ink-3);}
+  .fl2{display:flex; gap:8px;}
+  .fl2 .field{flex:1;}
+  .mini{font-size:10.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--ink-2); margin:4px 0 6px;}
+  .sevpick{display:flex; gap:6px; margin-bottom:10px;}
+  .sevpick span{font-size:11px; border:1px solid var(--line-2); border-radius:999px; padding:3px 13px; color:var(--ink-2);}
+  .sevpick .on{background:var(--amber-bg); border-color:#ecc98f; color:var(--amber); font-weight:650;}
+  .composerbar{display:flex; justify-content:flex-end; gap:8px; margin-top:4px;}
+  .ledger{font-size:11.5px;}
+  .ledger .row{display:flex; gap:10px; padding:7px 2px; border-bottom:1px solid var(--line);}
+  .ledger .t{flex:none; width:62px; color:var(--ink-3);}
+  .ledger .who{font-weight:650; color:var(--navy);}
+  .ledger .diff{color:var(--ink-2);}
+  .dlog{font-size:11.5px; color:var(--ink);}
+  .dlog .drow{display:flex; gap:9px; padding:6px 0; border-bottom:1px solid var(--line); align-items:baseline;}
+  .dlog .st{flex:none; font-size:10px; font-weight:700; letter-spacing:.04em; padding:2px 8px; border-radius:999px;}
+  .st.ok{background:var(--green-bg); color:var(--green);}
+  .st.ed{background:#e8ecfb; color:#3b4fa0;}
+  .st.rj{background:var(--red-bg); color:var(--red);}
+  .st.ua{background:var(--petrol-soft); color:var(--petrol);}
+  .foot{margin-top:60px; text-align:center; font-size:12px; color:var(--ink-3);}
+</style>
+</head>
+<body>
+<div class="board">
+
+  <div class="bh">
+    <h1>Inline Workbook Editing — Wireframes</h1>
+    <p>Static screens for the <b>Jul 7 direction</b>: the workbook is the workspace — findings with inline decisions, section-specific edit tools (HubSpot-canvas pattern, crayons-simple), customization tucked behind one button. <b>Amended Jul 8:</b> findings live in <b>both</b> the Workbook and the Source view and are editable from either — one shared state; only the source <i>document</i> itself is read-only.</p>
+    <div class="meta">Companion to <b>docs/plans/parachute-inline-workbook-plan.md</b> · feedback-log F-143–F-149 · Non-interactive — hover/edit states are drawn in place.</div>
+  </div>
+
+  <div class="legendbar">
+    <span><span class="tagdemo">1</span>&nbsp; orange tags = annotation callouts (explained under each screen)</span>
+    <span><b>Teal outlines</b> = hover/selected chrome (shown frozen)</span>
+    <span><b>Yellow / red</b> = finding severity (validated Jul 7 — keep)</span>
+    <span>Doc content mirrors Cody's Loom still (comp-grid repeater)</span>
+  </div>
+
+  <!-- ══════════════════ SCREEN 1 ══════════════════ -->
+  <div class="screen">
+    <h2>1 · Workbook = the workspace (default landing, edit chrome shown)</h2>
+    <div class="sub">Where the reviewer lives. Every block is directly workable; three states are frozen for illustration — a hovered section (§3), an in-place text edit (§4), and decided/undecided finding blocks.</div>
+    <div class="frame">
+      <div class="chrome"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="url">parachute.app · review R-2214 · Technical</span></div>
+      <div class="appbar">
+        <span class="logo">◠ Parachute</span><span class="crumb">Reviews / 4407 Meridian Ave</span>
+        <div class="tabs">
+          <span class="tab on">Workbook</span>
+          <span class="tab">Source <span class="cnt">6 pgs</span></span>
+        </div>
+        <div class="right"><span class="btn ghosty">Download ▾</span><span class="btn solid">Sign &amp; finalize</span></div>
+      </div>
+      <div class="toolbar">
+        <div class="grp"><span class="tbtn">− 100% +</span><span>Page 3 of 6</span></div>
+        <div class="sep"></div>
+        <div class="grp"><span class="tbtn">🕘 Activity</span><span style="position:relative"><span class="tbtn quiet">Save as template</span><span class="anno" style="top:-12px; right:-12px; position:absolute;">8</span></span></div>
+        <div class="grp" style="margin-left:auto; position:relative;"><span class="tbtn">Customize ▸</span><span class="anno" style="top:-12px; right:-12px;">7</span></div>
+      </div>
+      <div class="work">
+        <div class="pagecol">
+          <div class="page">
+            <!-- §2 value summary -->
+            <div class="sec">
+              <h3><span class="num">2</span> PROPERTY VALUE SUMMARY</h3>
+              <div class="rule"></div>
+              <div class="facts">
+                <div class="fact"><span class="k">Appraised value</span><b>$4,850,000</b></div>
+                <div class="fact"><span class="k">Value per SF</span><b>$394.00</b></div>
+                <div class="fact"><span class="k">Cap rate (selected)</span><b>6.25%</b></div>
+                <div class="fact"><span class="k">Effective date</span><b>Jun 14, 2026</b></div>
+              </div>
+            </div>
+
+            <!-- §3 exhibits — HOVERED, with repeater tools -->
+            <div class="sec hovered" style="position:relative;">
+              <div class="draghandle">⠿</div>
+              <div class="secactions"><span>✎ Edit</span><span>👁 Hide</span><span>⧉ Duplicate</span><span>🗑 Delete</span></div>
+              <span class="anno" style="top:-14px; left:-14px;">1</span>
+              <h3><span class="num">3</span> ANALYTICAL EXHIBITS</h3>
+              <div class="rule"></div>
+              <div class="prose dim" style="margin-bottom:8px; font-size:11px; letter-spacing:.05em;">SALES COMPARISON ADJUSTMENT GRID</div>
+              <table>
+                <tr><th>Comparable</th><th class="r">Unadj. $/SF</th><th class="r">Location</th><th class="r">Condition</th><th class="r">Adj. $/SF</th></tr>
+                <tr><td>Comparable 1</td><td class="r">$372.00</td><td class="r">+5%</td><td class="r">0%</td><td class="r"><b>$394.00</b></td></tr>
+                <tr class="flag"><td>Comparable 2 <span class="fl">DISCREPANCY — SEE FINDING</span></td><td class="r">$340.00</td><td class="r">−5%</td><td class="r">−5%</td><td class="r"><b>$307.00</b></td></tr>
+                <tr><td>Comparable 3</td><td class="r">$310.00</td><td class="r">+3%</td><td class="r">+3%</td><td class="r"><b>$328.00</b></td></tr>
+                <tr class="rowhover"><td style="position:relative;">Comparable 5 <span class="anno" style="top:-4px; left:-40px;">2</span></td><td class="r">$366.00</td><td class="r">+4%</td><td class="r">+1%</td><td class="r"><b>$391.00</b> <span class="rowtools"><span>✎</span><span>🗑</span></span></td></tr>
+              </table>
+              <span class="addrow">＋ Add row</span>
+              <div class="tblnote">Abbreviated grid — the full grid appears in the appraisal (p.47).</div>
+            </div>
+
+            <div class="addbelow"><span class="l"></span><span class="b" style="position:relative;">＋ Add section&nbsp; · &nbsp;＋ Add finding <span class="anno" style="top:-13px; right:-13px;">6</span></span><span class="l"></span></div>
+            <span class="pgnum">Page 3</span>
+          </div>
+
+          <div class="page">
+            <!-- §4 findings -->
+            <div class="sec">
+              <h3><span class="num">4</span> REVIEW FINDINGS</h3>
+              <div class="rule"></div>
+
+              <!-- undecided AI finding -->
+              <div class="finding" style="position:relative;">
+                <span class="anno" style="top:-13px; left:-13px;">3</span>
+                <div class="fhead"><span class="sev y">MODERATE</span><b>Comp 2 adjustment discrepancy</b><span class="cite" style="position:relative;">Cited · p.47 ↗<span class="anno" style="top:-13px; right:-40px;">5</span></span></div>
+                <div class="ftext">The appraiser applied a −5% condition adjustment to Comparable 2 while describing its condition as "superior to subject" in the narrative. The direction of the adjustment contradicts the stated comparison.</div>
+                <div class="fbar"><span class="fbtn go">✓ Concur</span><span class="fbtn">✎ Edit</span><span class="fbtn no">✗ Reject</span><span class="fbtn">🗑 Delete</span><span class="fmore">💬 ⚑ ⋯</span></div>
+              </div>
+
+              <!-- decided + edited finding -->
+              <div class="finding red">
+                <div class="fhead"><span class="sev r">HIGH</span><b>Cap-rate support insufficient</b><span class="cite">Cited · p.52 ↗</span><span class="pip">✎ Rewritten by reviewer</span></div>
+                <div class="ftext">The selected 6.25% rate relies on two dated comparables. Reviewer requires current survey support or a sensitivity band before concurrence. <span style="color:var(--ink-3)">(reworded — hover pip for original)</span></div>
+                <div class="decided">✓ Concurred with edits · J. Rivera · 2:14 PM &nbsp;<span style="color:var(--ink-3); font-weight:400;">Undo</span></div>
+              </div>
+
+              <!-- reviewer-added finding -->
+              <div class="finding usermade" style="position:relative;">
+                <span class="anno" style="top:-13px; left:-13px;">4</span>
+                <div class="fhead"><span class="sev y">MODERATE</span><b>Flood-zone note missing from exhibit</b><span class="cite">Cited · p.31 ↗</span><span class="pip user">Reviewer-added</span></div>
+                <div class="ftext">Parcel sits partially in Zone AE; the site exhibit omits the FEMA panel reference. Added for the credit file — not flagged by the model.</div>
+                <div class="fbar"><span class="fbtn">✎ Edit</span><span class="fbtn">🗑 Delete</span><span class="fmore">💬 ⋯</span></div>
+              </div>
+            </div>
+
+            <!-- §5 conclusion with prose edit state -->
+            <div class="sec">
+              <h3><span class="num">5</span> CONCLUSION</h3>
+              <div class="rule"></div>
+              <div class="editing" style="position:relative;">
+                <span class="anno" style="top:-13px; left:-13px;">9</span>
+                <div class="prose">The appraisal is generally credible and well supported. Acceptance is conditioned on resolution of the cap-rate support noted above; all other findings were reviewed and dispositioned by the undersigned.<span class="caret"></span></div>
+                <div class="editctl"><span>✓ Done</span><span>Esc</span></div>
+              </div>
+            </div>
+            <span class="pgnum">Page 4</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="callouts">
+      <h4>Callouts — screen 1</h4>
+      <ol>
+        <li><span class="n">1</span><span><b>Section hover chrome</b> — teal outline + floating actions (Edit / Hide / Duplicate / Delete) + ⠿ drag-reorder handle. One system for every section; only the actions vary by type.</span></li>
+        <li><span class="n">2</span><span><b>Repeater row tools</b> — hover a comp-grid row → edit / delete that row; "＋ Add row" under the table. Jeff's "delete Comparable 5" in two clicks, table never breaks.</span></li>
+        <li><span class="n">3</span><span><b>Finding block, undecided</b> — the finding lives IN the document with Concur / Edit / Reject / Delete inline. Below it: a decided one (green record + Undo) — decisions apply instantly.</span></li>
+        <li><span class="n">4</span><span><b>Reviewer-added finding</b> — first-class block, teal spine + "Reviewer-added" pip so it's never confused with AI output.</span></li>
+        <li><span class="n">5</span><span><b>Citation chip</b> — every finding cites the source ("p.47 ↗"); click → Source tab scrolled to the highlighted span (screen 3).</span></li>
+        <li><span class="n">6</span><span><b>Add affordance between sections</b> — "＋ Add section / ＋ Add finding" as distinct choices (content vs. first-class finding object).</span></li>
+        <li><span class="n">7</span><span><b>Customize ▸ closed by default</b> — the whole 20% lives behind this one quiet button (screen 2). Demos never open it.</span></li>
+        <li><span class="n">8</span><span><b>Save as template</b> — captures structure + theme (not content) so next run comes out their way. <b>Activity</b> = full audit ledger (screen 4).</span></li>
+        <li><span class="n">9</span><span><b>Prose edit-in-place</b> — click text → caret, type, ✓/blur commits. No toolbar, no formatting — crayons.</span></li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- ══════════════════ SCREEN 2 ══════════════════ -->
+  <div class="screen">
+    <h2>2 · Customize panel open (the 20%)</h2>
+    <div class="sub">Same screen after clicking <b>Customize ▸</b>. Theme, fonts, density and the section list dock on the right; canvas stays live. Nothing here is needed to finish a review.</div>
+    <div class="frame">
+      <div class="chrome"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="url">parachute.app · review R-2214 · Technical</span></div>
+      <div class="appbar">
+        <span class="logo">◠ Parachute</span><span class="crumb">Reviews / 4407 Meridian Ave</span>
+        <div class="tabs"><span class="tab on">Workbook</span><span class="tab">Source</span></div>
+        <div class="right"><span class="btn ghosty">Download ▾</span><span class="btn solid">Sign &amp; finalize</span></div>
+      </div>
+      <div class="toolbar">
+        <div class="grp"><span class="tbtn">− 100% +</span></div>
+        <div class="grp" style="margin-left:auto;"><span class="tbtn primary">Customize ✕</span></div>
+      </div>
+      <div class="work">
+        <div class="pagecol" style="width:520px;">
+          <div class="page" style="padding:26px 30px;">
+            <div class="sec"><h3><span class="num">2</span> PROPERTY VALUE SUMMARY</h3><div class="rule"></div>
+              <div class="facts"><div class="fact"><span class="k">Appraised value</span><b>$4,850,000</b></div><div class="fact"><span class="k">Cap rate</span><b>6.25%</b></div></div>
+            </div>
+            <div class="sec"><h3><span class="num">3</span> ANALYTICAL EXHIBITS</h3><div class="rule"></div>
+              <div class="ln w90"></div><div class="ln w80"></div><div class="ln w60"></div>
+            </div>
+            <div class="sec"><h3><span class="num">4</span> REVIEW FINDINGS</h3><div class="rule"></div><div class="ln w90"></div><div class="ln w70"></div></div>
+            <span class="pgnum">Page 3</span>
+          </div>
+        </div>
+        <div class="panel" style="position:relative;">
+          <span class="anno" style="top:-13px; left:-13px;">1</span>
+          <h4>Customize <span class="x">✕</span></h4>
+          <div class="pgroup"><div class="lbl">Theme</div><div class="swatches"><span class="sw on" style="background:#1c2b45;"></span><span class="sw" style="background:#0f766e;"></span><span class="sw" style="background:#3f3f46;"></span><span class="sw" style="background:#7c2d12;"></span></div></div>
+          <div class="pgroup"><div class="lbl">Heading font</div><div class="selrow">Source Serif <span class="c">▾</span></div><div class="lbl" style="margin-top:10px;">Density</div><div class="selrow">Normal <span class="c">▾</span></div></div>
+          <div class="pgroup" style="position:relative;">
+            <div class="lbl">Sections</div>
+            <span class="anno" style="top:-8px; right:-13px;">2</span>
+            <div class="seclist">
+              <div class="secitem"><span class="h">⠿</span> Review summary <span class="eye">👁</span></div>
+              <div class="secitem"><span class="h">⠿</span> Property value summary <span class="eye">👁</span></div>
+              <div class="secitem"><span class="h">⠿</span> Analytical exhibits <span class="eye">👁</span></div>
+              <div class="secitem"><span class="h">⠿</span> Review findings <span class="eye">👁</span></div>
+              <div class="secitem off"><span class="h">⠿</span> SWOT analysis <span class="eye">◡</span></div>
+              <div class="secitem"><span class="h">⠿</span> Conclusion <span class="eye">👁</span></div>
+            </div>
+          </div>
+          <div class="pgroup" style="margin-bottom:0;"><div class="selrow" style="border-style:dashed; color:var(--petrol);">Save as template…</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="callouts">
+      <h4>Callouts — screen 2</h4>
+      <ol>
+        <li><span class="n">1</span><span><b>Dockable panel, not a rail</b> — appears only on demand (current RunCustomize pattern), closes back to a clean canvas. Kills the "HubSpot CRO feel."</span></li>
+        <li><span class="n">2</span><span><b>Section list = same objects as the canvas</b> — reorder/hide here mirrors the on-canvas drag/hide chrome; the panel is a remote control, not a second model. SWOT shown toggled off.</span></li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- ══════════════════ SCREEN 3 ══════════════════ -->
+  <div class="screen">
+    <h2>3 · Source tab — the evidence view, findings actionable <span style="font-weight:500; font-size:13px; color:var(--ink-2);">(amended Jul 8)</span></h2>
+    <div class="sub">The former Findings surface: full appraisal, severity highlights, numbered tags — and the findings rail keeps its <b>full decision bar</b>. The same findings as the Workbook, backed by one shared state: concur here, it's concurred there. <b>Only the document itself is locked</b> — the appraisal is never edited or disputed. Selecting a passage offers "create finding from here." <i>(Build-time alternative on record: citation chip → peek drawer over the workbook in addition to this tab.)</i></div>
+    <div class="frame">
+      <div class="chrome"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="url">parachute.app · review R-2214 · Source</span></div>
+      <div class="appbar">
+        <span class="logo">◠ Parachute</span><span class="crumb">Reviews / 4407 Meridian Ave</span>
+        <div class="tabs"><span class="tab">Workbook</span><span class="tab on">Source <span class="cnt">6 pgs</span></span></div>
+        <div class="right"><span class="btn ghosty" style="position:relative;">Document locked <span class="anno" style="top:-13px; right:-13px;">1</span></span></div>
+      </div>
+      <div class="srcwrap">
+        <div class="srcdoc">
+          <div class="srcpage">
+            <h5>INCOME CAPITALIZATION APPROACH — p.4 of 6</h5>
+            <div class="ln w90"></div><div class="ln w80"></div>
+            <span class="hl" style="position:relative;">"…a capitalization rate of 6.25% was selected based on two market transactions closed in 2024…" <span class="mtag red" style="top:-4px;">2</span></span>
+            <div class="ln w70"></div><div class="ln w90"></div><div class="ln w60"></div>
+            <span class="hl" style="position:relative;">"…Comparable 2 is considered superior to the subject in overall condition…" <span class="mtag" style="top:-4px;">1</span><span class="anno" style="left:-46px; top:0;">2</span></span>
+            <div class="ln w80"></div><div class="ln w90"></div>
+            <span class="hl" style="position:relative; background:var(--petrol-soft); outline-color:#9ccac3; color:#134e48;">"…the marketing period of four months is consistent with…"&nbsp; <span style="position:absolute; left:8px; bottom:-26px; background:var(--petrol); color:#fff; font-size:10.5px; font-weight:650; padding:4px 12px; border-radius:999px; box-shadow:0 3px 10px rgba(15,118,110,.4); white-space:nowrap;">＋ Create finding from here</span><span class="anno" style="left:-46px; top:0;">4</span></span>
+            <div class="ln w70" style="margin-top:30px;"></div>
+          </div>
+        </div>
+        <div class="srcrail" style="position:relative;">
+          <span class="anno" style="top:-13px; left:-13px;">3</span>
+          <h4>Findings · 7</h4>
+          <div class="hint">Same findings as the Workbook — decide from either place, always in sync</div>
+          <div class="srcitem on" style="flex-direction:column; align-items:stretch;">
+            <div style="display:flex; gap:8px; align-items:flex-start;"><span class="sd"></span>Comp 2 adjustment discrepancy<span class="pg">p.4</span></div>
+            <div class="fbar" style="margin-top:9px; flex-wrap:wrap;"><span class="fbtn go" style="font-size:10.5px; padding:3px 9px;">✓ Concur</span><span class="fbtn" style="font-size:10.5px; padding:3px 9px;">✎ Edit</span><span class="fbtn no" style="font-size:10.5px; padding:3px 9px;">✗ Reject</span><span class="fmore" style="font-size:11px;">🗑 💬 ⚑</span></div>
+          </div>
+          <div class="srcitem" style="flex-direction:column; align-items:stretch;">
+            <div style="display:flex; gap:8px; align-items:flex-start;"><span class="sd red"></span>Cap-rate support insufficient<span class="pg">p.4</span></div>
+            <div class="decided" style="margin-top:6px; font-size:10.5px;">✓ Concurred with edits · 2:14 PM</div>
+          </div>
+          <div class="srcitem"><span class="sd"></span>Rent roll variance unexplained<span class="pg">p.3</span></div>
+          <div class="srcitem"><span class="sd"></span>Exposure period unsupported<span class="pg">p.5</span></div>
+          <div class="srcitem" style="border-style:dashed; color:var(--petrol);">Open in Workbook ↗</div>
+        </div>
+      </div>
+    </div>
+    <div class="callouts">
+      <h4>Callouts — screen 3</h4>
+      <ol>
+        <li><span class="n">1</span><span><b>Document locked</b> — the appraisal itself is never annotated, disputed, or edited; the doc pane carries no edit affordances. Only the finding objects are actionable.</span></li>
+        <li><span class="n">2</span><span><b>Deep-link target</b> — clicking "Cited · p.47 ↗" on a workbook finding lands here, scrolled to the exact highlighted span (F-140/141 anchor work reused).</span></li>
+        <li><span class="n">3</span><span><b>Rail = full parity</b> — the same Concur / Edit / Reject (+ delete, comment, flag) as the workbook blocks, same shared state: the second item shows a decision made earlier in the Workbook. Edit expands the item in place — same editor as the workbook block, no side panel.</span></li>
+        <li><span class="n">4</span><span><b>Create finding from a span</b> — select source text → a finding is created with the citation pre-filled; it appears in the Workbook (and this rail) tagged "Reviewer-added." Evidence capture, not source annotation.</span></li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- ══════════════════ SCREEN 4 ══════════════════ -->
+  <div class="screen">
+    <h2>4 · Supporting pieces — add-finding composer &amp; the three audit layers</h2>
+    <div class="sub">Left: the "＋ Add finding" composer (a first-class object, not a text edit). Middle: the in-app activity ledger (layer 3). Right: the printed decision log that ships inside the PDF/docx (layer 2) — layer 1 is the on-doc pips already visible on screen 1.</div>
+    <div class="frame">
+      <div class="strip">
+        <div class="piece" style="position:relative;">
+          <span class="anno" style="top:-12px; left:-12px;">1</span>
+          <h4>＋ Add finding <span style="font-weight:400; color:var(--ink-3); font-size:11px;">(reviewer-added)</span></h4>
+          <div class="mini">Finding</div>
+          <div class="field">Flood-zone note missing from exhibit</div>
+          <div class="mini">Details</div>
+          <div class="field" style="min-height:52px;">Parcel sits partially in Zone AE; the site exhibit omits the FEMA panel reference.</div>
+          <div class="mini">Severity</div>
+          <div class="sevpick"><span>Low</span><span class="on">Moderate</span><span>High</span></div>
+          <div class="fl2"><div class="field"><span class="ph">Source page (optional)</span> &nbsp;p.31</div><div class="field"><span class="ph">Section</span> &nbsp;Review findings ▾</div></div>
+          <div class="composerbar"><span class="fbtn">Cancel</span><span class="fbtn go">Add finding</span></div>
+        </div>
+        <div class="piece" style="position:relative;">
+          <span class="anno" style="top:-12px; left:-12px;">2</span>
+          <h4>🕘 Activity <span style="font-weight:400; color:var(--ink-3); font-size:11px;">(in-app ledger — layer 3)</span></h4>
+          <div class="ledger">
+            <div class="row"><span class="t">2:14 PM</span><span><span class="who">J. Rivera</span> concurred with edits — <i>Cap-rate support…</i><br><span class="diff">reworded finding text (view diff)</span></span></div>
+            <div class="row"><span class="t">2:11 PM</span><span><span class="who">J. Rivera</span> deleted row — <i>Comparable 5</i> (Analytical exhibits)<br><span class="diff">$366.00 / +4% / +1% / $391.00</span></span></div>
+            <div class="row"><span class="t">2:09 PM</span><span><span class="who">J. Rivera</span> added finding — <i>Flood-zone note missing…</i> <span class="pip user" style="font-size:9px;">Reviewer-added</span></span></div>
+            <div class="row"><span class="t">2:03 PM</span><span><span class="who">System</span> compiled workbook · layout "Meridian default" · 7 AI findings</span></div>
+          </div>
+        </div>
+        <div class="piece" style="position:relative;">
+          <span class="anno" style="top:-12px; left:-12px;">3</span>
+          <h4>Printed decision log <span style="font-weight:400; color:var(--ink-3); font-size:11px;">(in the exported doc — layer 2)</span></h4>
+          <div class="dlog">
+            <div class="drow"><span class="st ok">CONCURRED</span><span>Comp 2 adjustment discrepancy — reviewer concurs with the model's treatment.</span></div>
+            <div class="drow"><span class="st ed">EDITED</span><span>Cap-rate support insufficient — finding reworded by reviewer; original retained in audit record.</span></div>
+            <div class="drow"><span class="st ua">ADDED</span><span>Flood-zone note missing from exhibit — raised by reviewer (not model-identified).</span></div>
+            <div class="drow"><span class="st rj">EXCLUDED</span><span>Comparable 5 removed from adjustment grid by reviewer (outlier).</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="callouts">
+      <h4>Callouts — screen 4</h4>
+      <ol>
+        <li><span class="n">1</span><span><b>Composer asks three things</b> — text, severity, optional citation + target section. Output = the teal "Reviewer-added" block on screen 1.</span></li>
+        <li><span class="n">2</span><span><b>Layer 3: full ledger</b> — every click, edit, and deletion with before→after. Answers "did you even read this?" factually. Not printed by default.</span></li>
+        <li><span class="n">3</span><span><b>Layer 2: printed narrative</b> — decisions, edits, additions and exclusions inside the deliverable itself. Nothing disappears silently (client to confirm exclusion printing — Open Q2).</span></li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="foot">Parachute v2 · inline-workbook wireframes · Jul 7, 2026 (amended Jul 8: findings editable from both views) · pairs with parachute-inline-workbook-plan.md (F-143–F-149)</div>
+</div>
+</body>
+</html>

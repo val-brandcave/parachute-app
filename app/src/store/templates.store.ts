@@ -70,6 +70,15 @@ interface TemplatesState {
   promoteWorkbookVersion: (familyId: string, versionId: string) => Promise<void>;
   deleteWorkbookVersion: (familyId: string, versionId: string) => Promise<void>;
   setDefaultLayout: (familyId: string) => Promise<void>;
+  /** "Save as my template" (F-147): capture a per-review workbook's STRUCTURE +
+   *  THEME (never content) as a new personal `WorkbookLayout`, so the next run
+   *  can come out the reviewer's way via the F-133 inherited-template tile. */
+  saveLayoutFromWorkbook: (input: {
+    name: string;
+    profile: string;
+    theme: string;
+    sections: { id: string; title: string; type: string; enabled: boolean }[];
+  }) => Promise<WorkbookLayout>;
 }
 
 export const useTemplatesStore = create<TemplatesState>((set, get) => ({
@@ -381,5 +390,35 @@ export const useTemplatesStore = create<TemplatesState>((set, get) => ({
         l.profile === target.profile ? { ...l, isDefault: l.id === familyId } : l,
       ),
     }));
+  },
+
+  saveLayoutFromWorkbook: async ({ name, profile, theme, sections }) => {
+    const now = Date.now();
+    const full: WorkbookLayout = {
+      id: generateId(),
+      // Personal save inherits the org of the existing layout shelf.
+      orgId: get().layouts[0]?.orgId ?? "org-001",
+      name,
+      profile,
+      isDefault: false,
+      createdAt: now,
+      versions: [
+        {
+          id: generateId(),
+          version: 1,
+          status: "published",
+          theme,
+          sections,
+          createdAt: now,
+          publishedAt: now,
+        },
+      ],
+    };
+    const created = await adapter.create<WorkbookLayout>(
+      Collections.WORKBOOK_LAYOUTS,
+      full,
+    );
+    set((s) => ({ layouts: [...s.layouts, created] }));
+    return created;
   },
 }));
