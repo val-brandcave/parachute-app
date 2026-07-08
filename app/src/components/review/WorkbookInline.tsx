@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/atoms";
-import { SeverityChip } from "@/components/molecules";
+import { SEV_META } from "@/lib/utils";
 import { ResponseComposer, type ComposerMode } from "./ResponseComposer";
 import type { WbSection, WbSectionType } from "@/lib/workbook-config";
 import type {
@@ -115,79 +115,108 @@ export function WorkbookFindingBlock({
       className={`wb-fblock wb-fblock--${f.severity}${f.byReviewer ? " is-user" : ""}`}
       data-finding={f.id}
     >
-      <div className="wb-fblock-head">
-        <SeverityChip severity={f.severity} />
-        <span className="wb-fblock-q">{f.question}</span>
-        <span className="wb-fblock-cite" title="Opens the cited span in Source (Phase 2b)">
-          Cited · p.{f.page}
+      {/* Identity: title first, then ONE quiet meta row — severity is doubly
+          coded (spine color + small word), citation and authorship live here.
+          All decision/provenance STATE lives in the footer, nowhere else. */}
+      <div className="wb-fblock-q">{f.question}</div>
+      <div className="wb-fblock-meta">
+        <span className={`wb-fmeta-sev wb-fmeta-sev--${f.severity}`}>
+          {SEV_META[f.severity].label}
         </span>
-        {disp === "edited" && (
-          <ProvenancePip label="Rewritten by reviewer" by={reviewerName} at={state?.decidedAt} />
+        <span className="wb-fmeta-sep" aria-hidden="true">
+          ·
+        </span>
+        <span className="wb-fmeta-cite" title="Opens the cited span in Source (Phase 2b)">
+          Cited p.{f.page}
+        </span>
+        {f.byReviewer && (
+          <>
+            <span className="wb-fmeta-sep" aria-hidden="true">
+              ·
+            </span>
+            <span className="wb-fmeta-user">Added by {reviewerName}</span>
+          </>
         )}
-        {f.byReviewer && <ProvenancePip label="Reviewer-added" tone="user" />}
       </div>
 
       <p className="wb-fblock-text">{text}</p>
-      {state?.comment && !composer && (
-        <p className="wb-find-comment">Reviewer note: {state.comment}</p>
-      )}
 
-      {!composer &&
-        (decided ? (
-          <div className="wb-fblock-decided">
-            <Icon name="check-circle" size={14} />
-            <span>
-              {disp === "edited" ? "Concurred with edits" : "Concurred"} · {reviewerName}
-              {state?.decidedAt ? ` · ${fmtTime(state.decidedAt)}` : ""}
-            </span>
-            <button
-              className="wb-fblock-undo"
-              onClick={() => actions.onDisposition(f.id, "pending")}
-            >
-              Undo
-            </button>
-          </div>
-        ) : (
-          <div className="wb-fblock-bar">
-            <button
-              className="wb-fbtn wb-fbtn--go"
-              onClick={() => actions.onDisposition(f.id, "accepted")}
-            >
-              <Icon name="check" size={14} /> Concur
-            </button>
-            <button className="wb-fbtn" onClick={() => setComposer("edit")}>
-              <Icon name="edit" size={14} /> Edit
-            </button>
-            <button className="wb-fbtn wb-fbtn--no" onClick={() => setComposer("rejected")}>
-              <Icon name="reject" size={14} /> Reject
-            </button>
-            <button
-              className="wb-fbtn"
-              onClick={() => actions.onDisposition(f.id, "removed")}
-              title="Excluded from the workbook, retained in the audit record"
-            >
-              <Icon name="trash" size={14} /> Delete
-            </button>
-            <span className="wb-fblock-aux">
+      {!composer && (
+        <div className="wb-fblock-foot">
+          {decided ? (
+            <div className="wb-fblock-decided">
+              <Icon name="check-circle" size={14} />
+              <span>
+                {disp === "edited" ? (
+                  <>
+                    Concurred with edits —{" "}
+                    <span
+                      className="wb-fdec-prov"
+                      title={`Original AI finding: ${f.analysis}`}
+                    >
+                      rewritten by you
+                    </span>
+                  </>
+                ) : (
+                  "Concurred"
+                )}
+                {state?.decidedAt ? ` · ${fmtTime(state.decidedAt)}` : ""}
+              </span>
               <button
-                className={`wb-faux${state?.comment ? " on" : ""}`}
-                onClick={() => setComposer("comment")}
-                aria-label="Comment"
-                title="Comment"
+                className="wb-fblock-undo"
+                onClick={() => actions.onDisposition(f.id, "pending")}
               >
-                <Icon name="comment" size={14} />
+                Undo
+              </button>
+            </div>
+          ) : (
+            <div className="wb-fblock-bar">
+              <button
+                className="wb-fbtn wb-fbtn--go"
+                onClick={() => actions.onDisposition(f.id, "accepted")}
+              >
+                <Icon name="check" size={14} /> Concur
+              </button>
+              <button className="wb-fbtn" onClick={() => setComposer("edit")}>
+                <Icon name="edit" size={14} /> Edit
+              </button>
+              <button className="wb-fbtn wb-fbtn--no" onClick={() => setComposer("rejected")}>
+                <Icon name="reject" size={14} /> Reject
               </button>
               <button
-                className={`wb-faux${state?.flagged ? " on" : ""}`}
-                onClick={() => actions.onToggleFlag(f.id)}
-                aria-label={state?.flagged ? "Clear follow-up flag" : "Flag for follow-up"}
-                title="Flag for follow-up"
+                className="wb-fbtn"
+                onClick={() => actions.onDisposition(f.id, "removed")}
+                title="Excluded from the workbook, retained in the audit record"
               >
-                <Icon name="flag" size={14} />
+                <Icon name="trash" size={14} /> Delete
               </button>
-            </span>
-          </div>
-        ))}
+              <span className="wb-fblock-aux">
+                <button
+                  className={`wb-faux${state?.comment ? " on" : ""}`}
+                  onClick={() => setComposer("comment")}
+                  aria-label="Comment"
+                  title="Comment"
+                >
+                  <Icon name="comment" size={14} />
+                </button>
+                <button
+                  className={`wb-faux${state?.flagged ? " on" : ""}`}
+                  onClick={() => actions.onToggleFlag(f.id)}
+                  aria-label={state?.flagged ? "Clear follow-up flag" : "Flag for follow-up"}
+                  title="Flag for follow-up"
+                >
+                  <Icon name="flag" size={14} />
+                </button>
+              </span>
+            </div>
+          )}
+          {state?.comment && (
+            <p className="wb-fblock-note">
+              <Icon name="comment" size={12} /> &ldquo;{state.comment}&rdquo;
+            </p>
+          )}
+        </div>
+      )}
 
       {composer && (
         <ResponseComposer

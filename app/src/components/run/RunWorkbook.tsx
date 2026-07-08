@@ -101,6 +101,25 @@ export function RunWorkbook({
 
   // Document-toolbar state — zoom + a page indicator that tracks scroll.
   const stageRef = useRef<HTMLDivElement>(null);
+  // "Review them" (low-confidence banner) cycles through the undecided finding
+  // blocks IN the document — the workbook is the decision surface, so the
+  // banner never routes away from it.
+  const attnIdx = useRef(0);
+  const goNextPending = () => {
+    const sc = stageRef.current;
+    if (!sc) return;
+    const pendingIds = findings
+      .filter((f) => (states[f.id]?.disposition ?? "pending") === "pending")
+      .map((f) => f.id);
+    if (!pendingIds.length) return;
+    const id = pendingIds[attnIdx.current % pendingIds.length];
+    attnIdx.current += 1;
+    const el = sc.querySelector<HTMLElement>(`[data-finding="${id}"]`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.classList.add("is-attn");
+    setTimeout(() => el.classList.remove("is-attn"), 1600);
+  };
   const [zoom, setZoom] = useState(1);
   const [page, setPage] = useState(1);
   const [pageCount, setPageCount] = useState(1);
@@ -308,8 +327,8 @@ export function RunWorkbook({
                 <b>{ctx.lowConfidenceCount} item{ctx.lowConfidenceCount === 1 ? "" : "s"}</b>{" "}
                 need a closer look before you sign — review them?
               </span>
-              <Button variant="tonal" size="sm" onClick={onReviewFindings}>
-                Review findings
+              <Button variant="tonal" size="sm" onClick={goNextPending}>
+                Review them
               </Button>
               <button
                 className="run-callout-x"
@@ -396,8 +415,8 @@ export function RunWorkbook({
             </>
           ) : (
             <>
-              <Button variant="outline" size="sm" iconLeft="quote" onClick={onReviewFindings}>
-                Review findings
+              <Button variant="outline" size="sm" iconLeft="pdf" onClick={onReviewFindings}>
+                View source
               </Button>
               <Button variant="primary" size="sm" iconRight="forward" onClick={onSign}>
                 Sign &amp; finalize

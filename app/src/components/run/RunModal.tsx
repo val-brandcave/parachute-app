@@ -437,7 +437,7 @@ export function RunModal() {
         sealed: !!signature,
         signature,
         blocked: ctx.pendingCount > 0,
-        blockedNote: `${ctx.pendingCount} finding${ctx.pendingCount === 1 ? "" : "s"} still need a decision — open Findings to resolve them before signing.`,
+        blockedNote: `${ctx.pendingCount} finding${ctx.pendingCount === 1 ? "" : "s"} still need a decision — decide them right in the workbook before signing.`,
         title: "Sign & finalize",
         statement: (
           <>
@@ -585,9 +585,13 @@ export function RunModal() {
                           items={[
                             { key: "workbook", label: "Workbook", icon: "book" },
                             {
+                              // The evidence view (F-143/F-149): the source
+                              // appraisal + the same findings, decidable from
+                              // either surface. The rail INSIDE keeps its
+                              // "Findings" title; this nav item names the view.
                               key: "exceptions",
-                              label: "Findings",
-                              icon: "quote",
+                              label: "Source",
+                              icon: "pdf",
                               badge:
                                 !signature && ctx.pendingCount > 0 ? ctx.pendingCount : null,
                             },

@@ -2970,33 +2970,94 @@ textarea {
 .wb-fblock.is-user {
   border-left-color: var(--md-accent);
 }
-.wb-fblock-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-bottom: 6px;
+/* attention pulse — the low-confidence banner scrolls here and flashes */
+.wb-fblock.is-attn {
+  animation: wb-attn 1.5s ease;
 }
+@keyframes wb-attn {
+  0%,
+  55% {
+    box-shadow:
+      0 0 0 2px var(--md-accent),
+      0 0 0 7px var(--md-accent-c);
+  }
+  100% {
+    box-shadow: none;
+  }
+}
+/* anatomy: title → ONE quiet meta row → body → ONE status footer. Identity
+   facts (severity word, citation, authorship) live in the meta row; every
+   decision/provenance state lives in the footer — nothing floats. */
 .wb-fblock-q {
   font-size: 14px;
   font-weight: 600;
   line-height: 1.4;
   color: var(--md-on-surface);
 }
-.wb-fblock-cite {
+.wb-fblock-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 3px 0 8px;
   font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  color: var(--md-on-surface-t);
+}
+.wb-fmeta-sev {
+  text-transform: uppercase;
+  font-weight: 750;
+}
+.wb-fmeta-sev--crit {
+  color: var(--md-crit);
+}
+.wb-fmeta-sev--fail {
+  color: var(--md-error);
+}
+.wb-fmeta-sev--flag {
+  color: var(--md-warn);
+}
+.wb-fmeta-sev--pass {
+  color: var(--md-success);
+}
+.wb-fmeta-sev--na {
+  color: var(--md-on-surface-t);
+}
+.wb-fmeta-sep {
+  color: var(--md-outline);
+}
+.wb-fmeta-cite {
   white-space: nowrap;
-  padding: 2px 9px;
-  border-radius: 999px;
+}
+.wb-fmeta-user {
   color: var(--md-accent-d);
-  background: var(--md-accent-c);
 }
 .wb-fblock-text {
   font-size: 13px;
   line-height: 1.6;
   color: var(--md-on-surface-v);
+}
+/* the status footer — decision bar (undecided) or decided line, + note */
+.wb-fblock-foot {
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 1px solid var(--md-outline-v);
+}
+.wb-fblock-note {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 12px;
+  font-style: italic;
+  line-height: 1.5;
+  color: var(--md-on-surface-v);
+}
+.wb-fdec-prov {
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+  cursor: help;
 }
 /* the inline decision bar (Concur · Edit · Reject · Delete + comment/flag) */
 .wb-fblock-bar {
@@ -3004,7 +3065,6 @@ textarea {
   align-items: center;
   gap: 6px;
   flex-wrap: wrap;
-  margin-top: 10px;
 }
 .wb-fbtn {
   display: inline-flex;
@@ -3066,12 +3126,11 @@ textarea {
   background: var(--md-accent-c);
   color: var(--md-accent-d);
 }
-/* decided line — the decision applied instantly, with its audit stamp */
+/* decided line — the decision + its provenance in one place */
 .wb-fblock-decided {
   display: flex;
   align-items: center;
   gap: 7px;
-  margin-top: 10px;
   font-size: 12px;
   font-weight: 700;
   color: var(--md-success);
@@ -12221,10 +12280,19 @@ select.qfilter {
   display: inline-flex;
   align-items: center;
   gap: 9px;
+  flex-wrap: wrap;
   font-family: var(--font-display);
   font-size: 14px;
   font-weight: 700;
   color: var(--md-on-surface);
+}
+/* the shared-store hint under the Source rail's Findings title (F-149) */
+.run-ex-thread-sub {
+  flex-basis: 100%;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--md-on-surface-t);
 }
 .run-ex-count {
   display: inline-grid;
