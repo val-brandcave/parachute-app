@@ -115,6 +115,19 @@ interface WorkspaceState {
   updateSection: (id: string, patch: Partial<WbSection>) => void;
   updateSettings: (patch: Partial<WbDocSettings>) => void;
 
+  // ---- On-canvas structure edits (inline workbook chrome, F-144) ----
+  /** Insert a new section before `beforeId` (null = append). Returns the id. */
+  insertSectionAt: (section: Omit<WbSection, "id">, beforeId: string | null) => string;
+  /** Drop a dragged section before `beforeId` (null = move to the end). */
+  moveSectionBefore: (id: string, beforeId: string | null) => void;
+  /** Copy a section (new id, "(copy)" title) right after the original. */
+  duplicateSection: (id: string) => void;
+  /** Replace one SWOT quadrant's items (inline card editing). */
+  updateSwotQuadrant: (
+    quadrant: "strengths" | "weaknesses" | "opportunities" | "threats",
+    items: string[],
+  ) => void;
+
   // ---- Comp-grid repeater (inline workbook editing, F-144) ----
   /** Append a fresh "Comparable N" row with neutral defaults — appears instantly. */
   addCompRow: () => void;
@@ -359,6 +372,50 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     set((s) =>
       s.workbook
         ? { workbook: { ...s.workbook, settings: { ...s.workbook.settings, ...patch } } }
+        : {},
+    ),
+
+  // ---- On-canvas structure edits (inline workbook chrome, F-144) ----
+  insertSectionAt: (section, beforeId) => {
+    const id = generateId();
+    set((s) => {
+      if (!s.workbook) return {};
+      const next = [...s.workbook.sections];
+      const at = beforeId ? next.findIndex((sec) => sec.id === beforeId) : -1;
+      next.splice(at < 0 ? next.length : at, 0, { ...section, id });
+      return { workbook: { ...s.workbook, sections: next } };
+    });
+    return id;
+  },
+
+  moveSectionBefore: (id, beforeId) =>
+    set((s) => {
+      if (!s.workbook || id === beforeId) return {};
+      const list = [...s.workbook.sections];
+      const from = list.findIndex((sec) => sec.id === id);
+      if (from < 0) return {};
+      const [moved] = list.splice(from, 1);
+      const at = beforeId ? list.findIndex((sec) => sec.id === beforeId) : -1;
+      list.splice(at < 0 ? list.length : at, 0, moved);
+      return { workbook: { ...s.workbook, sections: list } };
+    }),
+
+  duplicateSection: (id) =>
+    set((s) => {
+      if (!s.workbook) return {};
+      const i = s.workbook.sections.findIndex((sec) => sec.id === id);
+      if (i < 0) return {};
+      const src = s.workbook.sections[i];
+      const copy: WbSection = { ...src, id: generateId(), title: `${src.title} (copy)` };
+      const next = [...s.workbook.sections];
+      next.splice(i + 1, 0, copy);
+      return { workbook: { ...s.workbook, sections: next } };
+    }),
+
+  updateSwotQuadrant: (quadrant, items) =>
+    set((s) =>
+      s.exhibits
+        ? { exhibits: { ...s.exhibits, swot: { ...s.exhibits.swot, [quadrant]: items } } }
         : {},
     ),
 

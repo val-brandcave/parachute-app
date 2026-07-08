@@ -24,7 +24,15 @@ import {
   visibleSensitivityCols,
   type WorkbookConfig,
   type WbSection,
+  type WbFact,
 } from "@/lib/workbook-config";
+import {
+  SectionShell,
+  HiddenSectionStub,
+  AddDivider,
+  FactGridEditor,
+  useSectionDrag,
+} from "./WorkbookSectionChrome";
 import {
   AdjustmentTable,
   PsfBarChart,
@@ -109,26 +117,53 @@ export function WorkbookPreview({
     ? ["accepted", "pending"]
     : ["accepted", "edited", "pending"];
 
+  // On-canvas drag-to-reorder (section chrome). The hook is inert until a
+  // handle starts a drag; drops route to the host's moveSectionBefore.
+  const { dragId, dropId, startDrag } = useSectionDrag((id, beforeId) => {
+    editing?.onMoveSectionBefore(id, beforeId);
+  });
+
   // Build each enabled section to a node (null = auto section with no content,
-  // skipped without consuming a number).
+  // skipped without consuming a number). In edit mode, HIDDEN sections stay in
+  // the flow as slim stubs so Hide is reversible on the canvas.
   const built = config.sections
-    .filter((s) => s.enabled)
-    .map((s) => ({ s, node: buildNode(s) }))
-    .filter((b): b is { s: WbSection; node: React.ReactNode } => b.node !== null);
+    .filter((s) => s.enabled || !!edit)
+    .map((s) => ({ s, stub: !s.enabled, node: s.enabled ? buildNode(s) : null }))
+    .filter((b) => b.stub || b.node !== null);
 
   function buildNode(s: WbSection): React.ReactNode {
     switch (s.type) {
-      case "summary":
+      case "summary": {
+        // Fact tiles derive from the review record until first edited — the
+        // first edit MATERIALIZES them onto the section (plan §4.1).
+        const derivedFacts: WbFact[] = [
+          { label: "Concluded Market Value", value: formatMoney(value.concludedValue), big: true },
+          { label: "Effective Date", value: formatLongDate(value.effectiveDate) },
+          { label: "Loan Amount", value: formatMoney(value.loanAmount) },
+          { label: "Loan-to-Value", value: `${Math.round(value.ltv * 100)}%` },
+          { label: "Property Rights", value: value.rights },
+          { label: "Property Type", value: review.propertyType },
+        ];
+        const facts = s.facts ?? derivedFacts;
         return (
           <>
-            <div className="wb-facts">
-              <Fact label="Concluded Market Value" value={formatMoney(value.concludedValue)} big />
-              <Fact label="Effective Date" value={formatLongDate(value.effectiveDate)} />
-              <Fact label="Loan Amount" value={formatMoney(value.loanAmount)} />
-              <Fact label="Loan-to-Value" value={`${Math.round(value.ltv * 100)}%`} />
-              <Fact label="Property Rights" value={value.rights} />
-              <Fact label="Property Type" value={review.propertyType} />
-            </div>
+            {s.edited && !edit && (
+              <ProvenancePip label="Edited by reviewer" by={s.edited.by} at={s.edited.at} />
+            )}
+            {edit ? (
+              <FactGridEditor
+                facts={facts}
+                onCommit={(next) =>
+                  edit.onUpdateSection(s.id, { facts: next, edited: prov(reviewerName) })
+                }
+              />
+            ) : (
+              <div className="wb-facts">
+                {facts.map((f, i) => (
+                  <Fact key={i} label={f.label} value={f.value} big={f.big} />
+                ))}
+              </div>
+            )}
             <div className="wb-approaches">
               <span className="wb-mini-label">Approaches developed</span>
               <div className="wb-tags">
@@ -141,6 +176,7 @@ export function WorkbookPreview({
             </div>
           </>
         );
+      }
 
       case "findings": {
         const cats = s.categories ?? [];
@@ -197,6 +233,18 @@ export function WorkbookPreview({
         const showCap = series.capRate && mode !== "table";
         if (!showTable && !showPsf && !showCap)
           return <p className="wb-prose wb-muted">All exhibit series are hidden.</p>;
+        // The $/SF chart DERIVES from the adjustment grid, so row edits flow
+        // straight into the exhibit (only the concluded bar is kept from seed).
+        const psf = {
+          ...exhibits.psf,
+          bars: [
+            ...exhibits.adjustmentGrid.map((r) => ({
+              label: r.comp.replace(/^Comparable\s+/i, "Comp "),
+              value: Math.round(r.adj),
+            })),
+            ...exhibits.psf.bars.filter((b) => b.concluded),
+          ],
+        };
         return (
           <>
             {showTable && (
@@ -219,7 +267,7 @@ export function WorkbookPreview({
                 </p>
               </>
             )}
-            {showPsf && <PsfBarChart psf={exhibits.psf} />}
+            {showPsf && <PsfBarChart psf={psf} />}
             {showCap && <CapRateScale cap={exhibits.capRate} />}
           </>
         );
@@ -349,7 +397,7 @@ export function WorkbookPreview({
 
       case "swot":
         if (!exhibits) return null;
-        return <SwotGrid swot={exhibits.swot} />;
+        return <SwotGrid swot={exhibits.swot} onUpdateQuadrant={edit ? edit.onUpdateSwot : null} />;
 
       case "freeText":
         return (
@@ -472,14 +520,19 @@ export function WorkbookPreview({
   }
 
   // Number sections (body 1..N, appendices A, B…) and weight each — same order
-  // the Builder's list labels use.
+  // the Builder's list labels use. Stubs don't consume a number.
   let num = 0;
   let appx = 0;
-  const labeled = built.map(({ s, node }) => ({
+  const labeled = built.map(({ s, node, stub }) => ({
     s,
     node,
-    label: s.appendix ? `Appendix ${String.fromCharCode(65 + appx++)}` : String(++num),
-    weight: estimateWeight(s),
+    stub,
+    label: stub
+      ? ""
+      : s.appendix
+        ? `Appendix ${String.fromCharCode(65 + appx++)}`
+        : String(++num),
+    weight: stub ? 0.1 : estimateWeight(s),
   }));
   type LabeledSection = (typeof labeled)[number];
 
@@ -509,18 +562,72 @@ export function WorkbookPreview({
   const coverPages = hasToc ? 2 : 1;
   const totalPages = coverPages + pages.length;
 
-  // Contents list — each rendered section to its 1-based page number.
+  // Contents list — each rendered section to its 1-based page number (hidden
+  // stubs never print, so they stay out of the contents).
   const toc = pages.flatMap((pg, pi) =>
-    pg.map((it) => ({
-      id: it.s.id,
-      label: it.label,
-      title: it.s.title,
-      appendix: !!it.s.appendix,
-      pageNo: pi + coverPages + 1,
-    })),
+    pg
+      .filter((it) => !it.stub)
+      .map((it) => ({
+        id: it.s.id,
+        label: it.label,
+        title: it.s.title,
+        appendix: !!it.s.appendix,
+        pageNo: pi + coverPages + 1,
+      })),
   );
   const tocSections = toc.filter((it) => !it.appendix);
   const tocAppendices = toc.filter((it) => it.appendix);
+
+  // Chrome context: which types exist (singletons drop out of the add palette),
+  // the last shell (end-of-document drop target), and per-TYPE toolbar extras —
+  // the §5 matrix rendered from the capability registry.
+  const presentTypes = config.sections.map((s) => s.type);
+  const lastShellId = [...labeled].reverse().find((it) => !it.stub)?.s.id;
+  const EXHIBIT_MODES = ["both", "table", "chart"] as const;
+  const extrasFor = (s: WbSection): React.ReactNode => {
+    if (!edit) return null;
+    if (s.type === "exhibits") {
+      const mode = s.exhibitMode ?? "both";
+      const next = EXHIBIT_MODES[(EXHIBIT_MODES.indexOf(mode) + 1) % EXHIBIT_MODES.length];
+      const modeLabel =
+        mode === "both" ? "Table + chart" : mode === "table" ? "Table only" : "Chart only";
+      return (
+        <button
+          className="wb-shell-act"
+          onClick={() => edit.onUpdateSection(s.id, { exhibitMode: next })}
+          title="Cycle what this exhibit shows: table / chart / both"
+        >
+          <Icon name="columns" size={12} /> {modeLabel}
+        </button>
+      );
+    }
+    if (s.type === "sensitivity" && exhibits) {
+      const total = exhibits.sensitivity.cols.length;
+      const n = Math.min(s.sensitivityCols ?? total, total);
+      return (
+        <span className="wb-shell-step">
+          <button
+            className="wb-shell-act"
+            onClick={() => edit.onUpdateSection(s.id, { sensitivityCols: Math.max(3, n - 1) })}
+            disabled={n <= 3}
+            aria-label="Fewer scenario columns"
+          >
+            <Icon name="minus" size={12} />
+          </button>
+          {n} cols
+          <button
+            className="wb-shell-act"
+            onClick={() => edit.onUpdateSection(s.id, { sensitivityCols: Math.min(total, n + 1) })}
+            disabled={n >= total}
+            aria-label="More scenario columns"
+          >
+            <Icon name="add" size={12} />
+          </button>
+        </span>
+      );
+    }
+    return null;
+  };
 
   const runHead = settings.showHeader ? (
     <div className="wb-runhead">
@@ -661,16 +768,52 @@ export function WorkbookPreview({
         </section>
       )}
 
-      {/* Content pages — sections packed onto Letter sheets */}
+      {/* Content pages — sections packed onto Letter sheets. In edit mode each
+          section wears the canvas chrome (outline + toolbar + drag handle) with
+          an insert divider before it; hidden sections render as stubs. */}
       {pages.map((pg, pi) => (
         <section className="wb-page" key={`pg-${pi}`}>
           {runHead}
           <div className="wb-page-body">
-            {pg.map(({ s, node, label }) => (
-              <Section key={s.id} id={s.id} label={label} title={s.title}>
-                {node}
-              </Section>
-            ))}
+            {pg.map(({ s, node, label, stub }) => {
+              if (!edit)
+                return (
+                  <Section key={s.id} id={s.id} label={label} title={s.title}>
+                    {node}
+                  </Section>
+                );
+              if (stub)
+                return (
+                  <div key={s.id}>
+                    <AddDivider beforeId={s.id} presentTypes={presentTypes} edit={edit} />
+                    <HiddenSectionStub
+                      sec={s}
+                      dropBefore={dropId === s.id}
+                      onShow={() => edit.onToggleSection(s.id)}
+                    />
+                  </div>
+                );
+              return (
+                <div key={s.id}>
+                  <AddDivider beforeId={s.id} presentTypes={presentTypes} edit={edit} />
+                  <SectionShell
+                    sec={s}
+                    label={label}
+                    edit={edit}
+                    dragging={dragId === s.id}
+                    dropBefore={dropId === s.id}
+                    dropAfter={dropId === "__end__" && s.id === lastShellId}
+                    onHandleDown={startDrag(s.id)}
+                    extras={extrasFor(s)}
+                  >
+                    {node}
+                  </SectionShell>
+                </div>
+              );
+            })}
+            {edit && pi === pages.length - 1 && (
+              <AddDivider beforeId={null} presentTypes={presentTypes} edit={edit} />
+            )}
           </div>
           <div className="wb-page-foot">
             {settings.showFooter && <span>{WORKBOOK_FOOTER}</span>}

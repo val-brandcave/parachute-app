@@ -5,6 +5,8 @@ import { Button, Icon } from "@/components/atoms";
 import { StatusPill } from "@/components/molecules";
 import { useWorkspaceStore, useTemplatesStore } from "@/store";
 import { WorkbookPreview } from "@/components/review/WorkbookPreview";
+import { AddFindingModal, type NewFinding } from "@/components/review/AddFindingModal";
+import { newSection, type WbSection } from "@/lib/workbook-config";
 import type { Review } from "@/types";
 import type { RunReviewType } from "@/store";
 import type { RunContext } from "./RunModal";
@@ -57,9 +59,24 @@ export function RunWorkbook({
     addCompRow,
     deleteCompRow,
     updateCompRow,
+    toggleSection,
+    deleteSection,
+    duplicateSection,
+    moveSectionBefore,
+    insertSectionAt,
+    updateSwotQuadrant,
+    addReviewerFinding,
   } = useWorkspaceStore();
   const regeneratedAt = useWorkspaceStore((s) => s.regeneratedAt);
   const responses = useTemplatesStore((s) => s.responses);
+  const layouts = useTemplatesStore((s) => s.layouts);
+  const saveLayoutFromWorkbook = useTemplatesStore((s) => s.saveLayoutFromWorkbook);
+
+  // "＋ Add finding" composer, opened from a canvas divider. `false` = closed;
+  // otherwise the divider's insert position (section id | null = end).
+  const [addFindingAt, setAddFindingAt] = useState<string | null | false>(false);
+  // "Save as template" (F-147) — brief confirmation state on the button.
+  const [savedTemplate, setSavedTemplate] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const [customizing, setCustomizing] = useState(false);
 
@@ -108,6 +125,57 @@ export function RunWorkbook({
   if (!ctx.ready || !review || !workbook) {
     return <div className="run-loading text-secondary">Compiling your workbook…</div>;
   }
+
+  // Reviewer-added finding from a canvas divider (F-145): create the finding,
+  // then make sure its category renders SOMEWHERE — append it to the nearest
+  // findings section above the divider (or any / a fresh one at the divider).
+  const handleAddFinding = (f: NewFinding) => {
+    addReviewerFinding(f);
+    const beforeId = addFindingAt === false ? null : addFindingAt;
+    const secs = workbook.sections;
+    const lands = secs.some(
+      (s) => s.type === "findings" && s.enabled && (s.categories ?? []).includes(f.category),
+    );
+    if (lands) return;
+    const idx = beforeId ? secs.findIndex((s) => s.id === beforeId) : secs.length;
+    let target: WbSection | undefined;
+    for (let i = Math.min(idx < 0 ? secs.length : idx, secs.length) - 1; i >= 0; i--) {
+      if (secs[i].type === "findings" && secs[i].enabled) {
+        target = secs[i];
+        break;
+      }
+    }
+    target ??= secs.find((s) => s.type === "findings" && s.enabled);
+    if (target)
+      updateSection(target.id, { categories: [...(target.categories ?? []), f.category] });
+    else
+      insertSectionAt(
+        { type: "findings", title: "Reviewer Findings", enabled: true, categories: [f.category] },
+        beforeId,
+      );
+  };
+
+  // "Save as my template" (F-147): structure + theme only — content stays
+  // per-review. Lands on the org's layout shelf for the F-133 confirm-gate tile.
+  const saveTemplate = async () => {
+    if (savedTemplate) return;
+    const base = workbook.baseLayoutId
+      ? layouts.find((l) => l.id === workbook.baseLayoutId)
+      : undefined;
+    await saveLayoutFromWorkbook({
+      name: `My layout — saved ${new Date().toLocaleDateString([], { month: "short", day: "numeric" })}`,
+      profile: base?.profile ?? "Commercial",
+      theme: workbook.settings.theme,
+      sections: workbook.sections.map((s) => ({
+        id: s.id,
+        title: s.title,
+        type: s.type,
+        enabled: s.enabled,
+      })),
+    });
+    setSavedTemplate(true);
+    setTimeout(() => setSavedTemplate(false), 2400);
+  };
 
   const showCallout = !dismissed && !signed && ctx.lowConfidenceCount > 0;
 
@@ -187,10 +255,18 @@ export function RunWorkbook({
             </button>
           </div>
           {/* Customize ▸ — the whole 20% behind one quiet toolbar affordance,
-              closed by default (F-146 / Decision D). Demos never open it. */}
+              closed by default (F-146 / Decision D). Demos never open it.
+              Save as template (F-147) captures structure + theme, not content. */}
           {!signed && (
             <>
               <span className="run-ex-tools-div" aria-hidden="true" />
+              <button
+                className={`run-wb-tbtn run-wb-tbtn--quiet${savedTemplate ? " is-saved" : ""}`}
+                onClick={saveTemplate}
+              >
+                <Icon name={savedTemplate ? "check" : "templates"} size={14} />
+                {savedTemplate ? "Saved to templates" : "Save as template"}
+              </button>
               <button
                 className={`run-wb-tbtn${customizing ? " is-active" : ""}`}
                 onClick={() => setCustomizing((v) => !v)}
@@ -274,6 +350,14 @@ export function RunWorkbook({
                       onAddCompRow: addCompRow,
                       onDeleteCompRow: deleteCompRow,
                       onUpdateCompRow: updateCompRow,
+                      onToggleSection: toggleSection,
+                      onDeleteSection: deleteSection,
+                      onDuplicateSection: duplicateSection,
+                      onMoveSectionBefore: moveSectionBefore,
+                      onInsertSection: (type, beforeId) =>
+                        insertSectionAt(newSection(type, findings), beforeId),
+                      onRequestAddFinding: (beforeId) => setAddFindingAt(beforeId),
+                      onUpdateSwot: updateSwotQuadrant,
                     }
               }
             />
@@ -282,6 +366,12 @@ export function RunWorkbook({
 
         {customizing && !signed && <RunCustomizePanel onClose={() => setCustomizing(false)} />}
       </div>
+
+      <AddFindingModal
+        open={addFindingAt !== false}
+        onClose={() => setAddFindingAt(false)}
+        onSave={handleAddFinding}
+      />
 
       <footer className="run-foot">
         <div className="run-foot-actions">

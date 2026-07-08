@@ -3246,6 +3246,319 @@ textarea {
   background: var(--md-surface);
 }
 
+/* ---- section canvas chrome (Phase 2a.5 — hover outline + floating tools) ----
+   The HubSpot select-a-module mechanic on paper: hover a section → petrol
+   outline, a navy action pill riding the top edge, and a ⠿ drag handle. All
+   chrome is overlay — the printed layout never shifts. */
+.wb-shell {
+  position: relative;
+  border-radius: 10px;
+  transition: box-shadow 0.14s ease;
+}
+/* INSET ring — sections run to the sheet edge and .wb-page clips overflow,
+   so an outward ring (or anything hung outside the box) gets cut off. */
+.wb-shell:hover {
+  box-shadow: inset 0 0 0 1.5px var(--md-accent);
+}
+.wb-shell.is-dragging {
+  opacity: 0.45;
+  box-shadow: inset 0 0 0 1.5px var(--md-accent);
+}
+/* drop-indicator line (drag reorder) — above the target section */
+.wb-shell.is-drop-before::before,
+.wb-stub.is-drop-before::before,
+.wb-shell.is-drop-after::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--md-accent);
+  z-index: 6;
+}
+.wb-shell.is-drop-before::before,
+.wb-stub.is-drop-before::before {
+  top: -3px;
+}
+.wb-shell.is-drop-after::after {
+  bottom: -3px;
+}
+body.wb-reordering {
+  user-select: none;
+  cursor: grabbing;
+}
+body.wb-reordering .wb-shell-bar,
+body.wb-reordering .wb-adddiv {
+  visibility: hidden; /* quiet the canvas while a section is in flight */
+}
+/* ⠿ drag handle — a navy chip riding the outline's TOP-LEFT edge (the
+   HubSpot corner placement), mirroring the action pill on the right. Kept
+   inside the sheet so .wb-page's overflow can't clip it. */
+.wb-shell-grip {
+  position: absolute;
+  top: -13px;
+  left: 8px;
+  z-index: 7;
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 26px;
+  border: none;
+  border-radius: 9px;
+  background: var(--paper-ink);
+  box-shadow: var(--paper-elev);
+  color: var(--paper-bg);
+  cursor: grab;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+  touch-action: none;
+}
+.wb-shell-grip:hover {
+  color: var(--md-accent);
+}
+.wb-shell:hover .wb-shell-grip,
+.wb-shell.is-dragging .wb-shell-grip {
+  opacity: 1;
+}
+.wb-shell-grip:active {
+  cursor: grabbing;
+}
+/* floating action pill — rides the outline's top edge, right-aligned */
+.wb-shell-bar {
+  position: absolute;
+  top: -13px;
+  right: 8px;
+  z-index: 7;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px 5px;
+  border-radius: 9px;
+  background: var(--paper-ink);
+  box-shadow: var(--paper-elev);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+}
+.wb-shell:hover .wb-shell-bar,
+.wb-shell-bar:focus-within {
+  opacity: 1;
+  pointer-events: auto;
+}
+.wb-shell-act {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--paper-bg);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.wb-shell-act:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+.wb-shell-act:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.wb-shell-act--danger:hover {
+  background: var(--paper-err);
+}
+.wb-shell-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--paper-bg);
+  white-space: nowrap;
+}
+/* rename-in-place: the heading text becomes an input, same type styles */
+.wb-sec-rename {
+  flex: 1;
+  font: inherit;
+  font-family: var(--wb-head);
+  color: var(--md-on-surface);
+  background: var(--md-surface);
+  border: none;
+  outline: 2px solid var(--md-accent);
+  border-radius: 6px;
+  padding: 0 8px;
+  margin: -2px 0;
+  min-width: 0;
+}
+
+/* hidden-section stub — Hide stays reversible on the canvas */
+.wb-stub {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 34px;
+  padding: 8px 12px;
+  border: 1px dashed var(--md-outline);
+  border-radius: 9px;
+  background: var(--md-surface-1);
+  color: var(--md-on-surface-t);
+  font-size: 12px;
+}
+.wb-stub-title {
+  font-weight: 600;
+  color: var(--md-on-surface-v);
+}
+.wb-stub-tag {
+  font-size: 10.5px;
+  font-style: italic;
+}
+.wb-stub-show {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border: 1px solid var(--md-outline);
+  border-radius: 999px;
+  background: var(--md-surface);
+  color: var(--md-on-surface-v);
+  cursor: pointer;
+}
+.wb-stub-show:hover {
+  border-color: var(--md-accent);
+  color: var(--md-accent-d);
+}
+
+/* ＋ add divider between sections — a quiet hover zone that reveals the pills */
+.wb-adddiv {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 26px;
+  margin: -6px 34px; /* align with the sections' content inset */
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+.wb-adddiv:hover,
+.wb-adddiv:focus-within {
+  opacity: 1;
+}
+.wb-adddiv-line {
+  flex: 1;
+  height: 1px;
+  background: var(--md-accent);
+  opacity: 0.4;
+}
+.wb-adddiv-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 650;
+  padding: 3px 12px;
+  border: 1px dashed var(--md-accent);
+  border-radius: 999px;
+  background: var(--md-accent-c);
+  color: var(--md-accent-d);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.wb-adddiv-btn:hover,
+.wb-adddiv-btn.on {
+  background: var(--md-surface);
+}
+.wb-adddiv-menu {
+  min-width: 240px;
+}
+
+/* editable fact grid (summary "metric tiles") */
+.wb-fact {
+  position: relative;
+}
+.wb-facts--edit .wb-fact-l .wb-cell,
+.wb-facts--edit .wb-fact-v .wb-cell {
+  text-align: left;
+}
+.wb-fact-del {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  margin: 0;
+}
+.wb-facts--edit .wb-fact:hover .wb-fact-del {
+  opacity: 1;
+}
+.wb-fact--add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 58px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  border: none;
+  outline: 1px dashed var(--md-accent);
+  outline-offset: -6px;
+  background: var(--md-surface);
+  color: var(--md-accent-d);
+  cursor: pointer;
+}
+.wb-fact--add:hover {
+  background: var(--md-accent-c);
+}
+
+/* SWOT card items — click-to-edit + per-item delete + per-quadrant add */
+.wb-swot-li {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+.wb-swot-li .wb-cell {
+  text-align: left;
+  flex: 1;
+}
+.wb-swot-li .wb-cell-in {
+  width: 100%;
+}
+.wb-swot-li .wb-rowdel {
+  margin-left: 0;
+  flex: none;
+  align-self: center;
+}
+.wb-swot-li:hover .wb-rowdel {
+  opacity: 1;
+}
+.wb-swot-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  font-family: inherit;
+  font-size: 10.5px;
+  font-weight: 650;
+  padding: 2px 10px;
+  border: 1px dashed currentColor;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  opacity: 0.65;
+  cursor: pointer;
+}
+.wb-swot-add:hover {
+  opacity: 1;
+}
+
 /* ---- analytical exhibits ---- */
 .wb-exh {
   margin-bottom: 4px;
@@ -10954,6 +11267,17 @@ select.qfilter {
   background: var(--md-selected);
   border-color: transparent;
   color: var(--md-on-selected);
+}
+/* the quiet dashed variant — Save as template (F-147) */
+.run-wb-tbtn--quiet {
+  border-style: dashed;
+  color: var(--md-on-surface-v);
+}
+.run-wb-tbtn--quiet.is-saved {
+  border-style: solid;
+  border-color: var(--md-success);
+  color: var(--md-success);
+  background: var(--md-success-c);
 }
 .run-wb-zoom {
   width: 100%;

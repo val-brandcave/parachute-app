@@ -142,8 +142,9 @@ function NumCell({
 }
 
 /** Click-to-edit cell: a button showing the formatted value; clicking swaps in
- *  an input seeded with the raw value. Enter/blur commits, Esc cancels. */
-function GridCell({
+ *  an input seeded with the raw value. Enter/blur commits, Esc cancels.
+ *  Exported — the fact grid and SWOT cards reuse the same cell mechanic. */
+export function GridCell({
   raw,
   display,
   numeric,
@@ -184,7 +185,10 @@ function GridCell({
       }}
       onKeyDown={(e) => {
         if (e.key === "Enter") e.currentTarget.blur();
-        if (e.key === "Escape") setEditing(false);
+        if (e.key === "Escape") {
+          e.stopPropagation();
+          setEditing(false);
+        }
       }}
     />
   );
@@ -299,19 +303,64 @@ const SWOT_QUADRANTS = [
   { key: "threats", label: "Threats", cls: "t" },
 ] as const;
 
-export function SwotGrid({ swot }: { swot: WorkbookExhibits["swot"] }) {
+export function SwotGrid({
+  swot,
+  onUpdateQuadrant,
+}: {
+  swot: WorkbookExhibits["swot"];
+  /** When set (edit mode), quadrant items are click-to-edit with per-item
+   *  delete and a per-quadrant add — the "cards" get the same structured
+   *  editing as the repeater tables (§5 matrix). */
+  onUpdateQuadrant?: ((q: keyof WorkbookExhibits["swot"], items: string[]) => void) | null;
+}) {
   return (
     <div className="wb-swot">
-      {SWOT_QUADRANTS.map((q) => (
-        <div key={q.key} className={`wb-swot-q wb-swot-q--${q.cls}`}>
-          <h5>{q.label}</h5>
-          <ul>
-            {swot[q.key].map((item, i) => (
-              <li key={i}>{item}</li>
-            ))}
-          </ul>
-        </div>
-      ))}
+      {SWOT_QUADRANTS.map((q) => {
+        const items = swot[q.key];
+        const commit = (next: string[]) => onUpdateQuadrant?.(q.key, next);
+        return (
+          <div key={q.key} className={`wb-swot-q wb-swot-q--${q.cls}`}>
+            <h5>{q.label}</h5>
+            <ul>
+              {items.map((item, i) =>
+                onUpdateQuadrant ? (
+                  <li key={`${i}-${item}`} className="wb-swot-li">
+                    <GridCell
+                      raw={item}
+                      display={item}
+                      onCommit={(v) =>
+                        commit(
+                          v.trim()
+                            ? items.map((it, j) => (j === i ? v.trim() : it))
+                            : items.filter((_, j) => j !== i),
+                        )
+                      }
+                    />
+                    <button
+                      className="wb-rowdel"
+                      onClick={() => commit(items.filter((_, j) => j !== i))}
+                      aria-label={`Delete "${item}"`}
+                      title="Delete item"
+                    >
+                      <Icon name="trash" size={12} />
+                    </button>
+                  </li>
+                ) : (
+                  <li key={i}>{item}</li>
+                ),
+              )}
+            </ul>
+            {onUpdateQuadrant && (
+              <button
+                className="wb-swot-add"
+                onClick={() => commit([...items, "New point — click to edit"])}
+              >
+                <Icon name="add" size={12} /> Add
+              </button>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

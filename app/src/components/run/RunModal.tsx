@@ -493,6 +493,11 @@ export function RunModal() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      // Inline editors (prose, grid cells, rename, composers) own their Escape —
+      // cancelling an edit must never close the whole run takeover.
+      const el = e.target as HTMLElement;
+      if (el?.tagName === "INPUT" || el?.tagName === "TEXTAREA" || el?.isContentEditable)
+        return;
       if (e.key === "Escape" && spoke !== "progress") onClose();
     };
     if (open) document.addEventListener("keydown", onKey);

@@ -4,13 +4,14 @@ import { useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/atoms";
 import { SeverityChip } from "@/components/molecules";
 import { ResponseComposer, type ComposerMode } from "./ResponseComposer";
-import type { WbSection } from "@/lib/workbook-config";
+import type { WbSection, WbSectionType } from "@/lib/workbook-config";
 import type {
   Disposition,
   Finding,
   FindingState,
   ResponseTemplate,
   WbAdjustmentRow,
+  WbSwot,
 } from "@/types";
 
 /**
@@ -32,6 +33,17 @@ export interface WorkbookEditingActions {
   onAddCompRow: () => void;
   onDeleteCompRow: (comp: string) => void;
   onUpdateCompRow: (comp: string, patch: Partial<WbAdjustmentRow>) => void;
+  // ---- on-canvas structure (section chrome, Phase 2a.5) ----
+  onToggleSection: (id: string) => void;
+  onDeleteSection: (id: string) => void;
+  onDuplicateSection: (id: string) => void;
+  onMoveSectionBefore: (id: string, beforeId: string | null) => void;
+  /** Insert a fresh section of `type` before `beforeId` (null = end). */
+  onInsertSection: (type: WbSectionType, beforeId: string | null) => void;
+  /** Open the reviewer-finding composer, targeting the divider position. */
+  onRequestAddFinding: (beforeId: string | null) => void;
+  /** Replace one SWOT quadrant's items (inline card editing). */
+  onUpdateSwot: (quadrant: keyof WbSwot, items: string[]) => void;
 }
 
 const fmtTime = (at: number) =>
@@ -255,6 +267,7 @@ export function EditableProse({
           onBlur={commit}
           onKeyDown={(e) => {
             if (e.key === "Escape") {
+              e.stopPropagation();
               cancelled.current = true;
               setEditing(false);
             }
