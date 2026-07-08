@@ -39,7 +39,10 @@ import {
   CapRateScale,
   SensitivityHeat,
   SwotGrid,
+  GridCell,
 } from "./WorkbookExhibits";
+import { ActionMenu } from "@/components/molecules/ActionMenu";
+import { availableCategories } from "@/lib/workbook-config";
 import {
   EditableProse,
   ProvenancePip,
@@ -145,6 +148,9 @@ export function WorkbookPreview({
           { label: "Property Type", value: review.propertyType },
         ];
         const facts = s.facts ?? derivedFacts;
+        const approaches = s.approaches ?? value.approaches;
+        const commitApproaches = (next: string[]) =>
+          edit?.onUpdateSection(s.id, { approaches: next, edited: prov(reviewerName) });
         return (
           <>
             {s.edited && !edit && (
@@ -167,11 +173,43 @@ export function WorkbookPreview({
             <div className="wb-approaches">
               <span className="wb-mini-label">Approaches developed</span>
               <div className="wb-tags">
-                {value.approaches.map((a) => (
-                  <span key={a} className="wb-tag">
-                    {a}
-                  </span>
-                ))}
+                {approaches.map((a, i) =>
+                  edit ? (
+                    <span key={`${i}-${a}`} className="wb-tag wb-tag--edit">
+                      <GridCell
+                        raw={a}
+                        display={a}
+                        onCommit={(v) =>
+                          commitApproaches(
+                            v.trim()
+                              ? approaches.map((x, j) => (j === i ? v.trim() : x))
+                              : approaches.filter((_, j) => j !== i),
+                          )
+                        }
+                      />
+                      <button
+                        className="wb-rowdel"
+                        onClick={() => commitApproaches(approaches.filter((_, j) => j !== i))}
+                        aria-label={`Remove ${a}`}
+                        title="Remove approach"
+                      >
+                        <Icon name="trash" size={11} />
+                      </button>
+                    </span>
+                  ) : (
+                    <span key={a} className="wb-tag">
+                      {a}
+                    </span>
+                  ),
+                )}
+                {edit && (
+                  <button
+                    className="wb-tag wb-tag--add"
+                    onClick={() => commitApproaches([...approaches, "New approach"])}
+                  >
+                    <Icon name="add" size={12} /> Add
+                  </button>
+                )}
               </div>
             </div>
           </>
@@ -183,15 +221,22 @@ export function WorkbookPreview({
         const items = findings.filter(
           (f) => cats.includes(f.category) && bodyDisps.includes(disp(f.id)),
         );
-        if (!items.length)
+        if (!items.length && !edit)
           return (
             <p className="wb-prose wb-muted">No findings fall under this section.</p>
           );
         // Inline editing: every finding is a live decision block in the document
-        // (Concur / Edit / Reject / Delete where it stands — F-143).
+        // (Concur / Edit / Reject / Delete where it stands — F-143). The chapter
+        // foot carries "＋ Add finding" — a finding belongs to a chapter, so the
+        // composer pre-fills THIS section's categories (F-145).
         if (edit)
           return (
             <>
+              {!items.length && (
+                <p className="wb-prose wb-muted">
+                  No findings fall under this section yet.
+                </p>
+              )}
               {items.map((f) => (
                 <WorkbookFindingBlock
                   key={f.id}
@@ -202,6 +247,9 @@ export function WorkbookPreview({
                   actions={edit}
                 />
               ))}
+              <button className="wb-addrow" onClick={() => edit.onRequestAddFinding(s.id)}>
+                <Icon name="add" size={13} /> Add finding
+              </button>
             </>
           );
         return (
@@ -268,7 +316,12 @@ export function WorkbookPreview({
               </>
             )}
             {showPsf && <PsfBarChart psf={psf} />}
-            {showCap && <CapRateScale cap={exhibits.capRate} />}
+            {showCap && (
+              <CapRateScale
+                cap={exhibits.capRate}
+                tools={edit ? { onUpdate: edit.onUpdateCapRate } : null}
+              />
+            )}
           </>
         );
       }
@@ -586,6 +639,37 @@ export function WorkbookPreview({
   const EXHIBIT_MODES = ["both", "table", "chart"] as const;
   const extrasFor = (s: WbSection): React.ReactNode => {
     if (!edit) return null;
+    if (s.type === "findings") {
+      // Which categories roll into this chapter — a checkbox menu over every
+      // category in the review (stays open while toggling; doc re-renders live).
+      const current = s.categories ?? [];
+      const all = Array.from(new Set([...availableCategories(findings), ...current]));
+      return (
+        <ActionMenu
+          menuClassName="wb-adddiv-menu"
+          items={all.map((cat) => ({
+            label: cat,
+            selected: current.includes(cat),
+            keepOpen: true,
+            onClick: () =>
+              edit.onUpdateSection(s.id, {
+                categories: current.includes(cat)
+                  ? current.filter((c) => c !== cat)
+                  : [...current, cat],
+              }),
+          }))}
+          trigger={({ open, toggle }) => (
+            <button
+              className={`wb-shell-act${open ? " is-open" : ""}`}
+              onClick={toggle}
+              title="Which finding categories roll into this chapter"
+            >
+              <Icon name="checklist" size={12} /> Categories
+            </button>
+          )}
+        />
+      );
+    }
     if (s.type === "exhibits") {
       const mode = s.exhibitMode ?? "both";
       const next = EXHIBIT_MODES[(EXHIBIT_MODES.indexOf(mode) + 1) % EXHIBIT_MODES.length];

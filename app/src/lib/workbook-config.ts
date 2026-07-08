@@ -65,6 +65,8 @@ export interface WbSection {
   imported?: boolean;
   /** summary — reviewer-materialized fact rows (overrides the derived facts). */
   facts?: WbFact[];
+  /** summary — reviewer-materialized "approaches developed" tags. */
+  approaches?: string[];
   /** Set when the reviewer edited this section's content in place — drives the
    *  "Edited by reviewer" provenance pip (inline-workbook plan §4.3, layer 1). */
   edited?: { by: string; at: number };

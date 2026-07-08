@@ -65,6 +65,7 @@ export function RunWorkbook({
     moveSectionBefore,
     insertSectionAt,
     updateSwotQuadrant,
+    updateCapRate,
     addReviewerFinding,
   } = useWorkspaceStore();
   const regeneratedAt = useWorkspaceStore((s) => s.regeneratedAt);
@@ -72,8 +73,8 @@ export function RunWorkbook({
   const layouts = useTemplatesStore((s) => s.layouts);
   const saveLayoutFromWorkbook = useTemplatesStore((s) => s.saveLayoutFromWorkbook);
 
-  // "＋ Add finding" composer, opened from a canvas divider. `false` = closed;
-  // otherwise the divider's insert position (section id | null = end).
+  // "＋ Add finding" composer, opened from a findings chapter's foot. `false` =
+  // closed; otherwise the target findings section's id.
   const [addFindingAt, setAddFindingAt] = useState<string | null | false>(false);
   // "Save as template" (F-147) — brief confirmation state on the button.
   const [savedTemplate, setSavedTemplate] = useState(false);
@@ -126,33 +127,28 @@ export function RunWorkbook({
     return <div className="run-loading text-secondary">Compiling your workbook…</div>;
   }
 
-  // Reviewer-added finding from a canvas divider (F-145): create the finding,
-  // then make sure its category renders SOMEWHERE — append it to the nearest
-  // findings section above the divider (or any / a fresh one at the divider).
+  // Reviewer-added finding (F-145): a finding is a first-class object added to
+  // a specific findings CHAPTER — the composer opens from that chapter's foot
+  // with its categories offered (plus "Reviewer Note" for uncategorized adds).
+  const targetFindingsSection: WbSection | undefined =
+    addFindingAt === false || addFindingAt === null
+      ? undefined
+      : workbook.sections.find((s) => s.id === addFindingAt);
+  const addFindingCategories = targetFindingsSection
+    ? Array.from(new Set([...(targetFindingsSection.categories ?? []), "Reviewer Note"]))
+    : undefined;
+
   const handleAddFinding = (f: NewFinding) => {
     addReviewerFinding(f);
-    const beforeId = addFindingAt === false ? null : addFindingAt;
-    const secs = workbook.sections;
-    const lands = secs.some(
-      (s) => s.type === "findings" && s.enabled && (s.categories ?? []).includes(f.category),
-    );
-    if (lands) return;
-    const idx = beforeId ? secs.findIndex((s) => s.id === beforeId) : secs.length;
-    let target: WbSection | undefined;
-    for (let i = Math.min(idx < 0 ? secs.length : idx, secs.length) - 1; i >= 0; i--) {
-      if (secs[i].type === "findings" && secs[i].enabled) {
-        target = secs[i];
-        break;
-      }
-    }
-    target ??= secs.find((s) => s.type === "findings" && s.enabled);
-    if (target)
-      updateSection(target.id, { categories: [...(target.categories ?? []), f.category] });
-    else
-      insertSectionAt(
-        { type: "findings", title: "Reviewer Findings", enabled: true, categories: [f.category] },
-        beforeId,
-      );
+    // If the chosen category isn't in the target chapter yet (e.g. "Reviewer
+    // Note"), append it THERE so the new block lands where the reviewer clicked.
+    if (
+      targetFindingsSection &&
+      !(targetFindingsSection.categories ?? []).includes(f.category)
+    )
+      updateSection(targetFindingsSection.id, {
+        categories: [...(targetFindingsSection.categories ?? []), f.category],
+      });
   };
 
   // "Save as my template" (F-147): structure + theme only — content stays
@@ -356,8 +352,9 @@ export function RunWorkbook({
                       onMoveSectionBefore: moveSectionBefore,
                       onInsertSection: (type, beforeId) =>
                         insertSectionAt(newSection(type, findings), beforeId),
-                      onRequestAddFinding: (beforeId) => setAddFindingAt(beforeId),
+                      onRequestAddFinding: (sectionId) => setAddFindingAt(sectionId),
                       onUpdateSwot: updateSwotQuadrant,
+                      onUpdateCapRate: updateCapRate,
                     }
               }
             />
@@ -371,6 +368,7 @@ export function RunWorkbook({
         open={addFindingAt !== false}
         onClose={() => setAddFindingAt(false)}
         onSave={handleAddFinding}
+        categories={addFindingCategories}
       />
 
       <footer className="run-foot">

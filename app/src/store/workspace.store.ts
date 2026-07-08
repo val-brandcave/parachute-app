@@ -127,6 +127,8 @@ interface WorkspaceState {
     quadrant: "strengths" | "weaknesses" | "opportunities" | "threats",
     items: string[],
   ) => void;
+  /** Patch the cap-rate exhibit (structured point/band editing — never free-draw). */
+  updateCapRate: (patch: Partial<WorkbookExhibits["capRate"]>) => void;
 
   // ---- Comp-grid repeater (inline workbook editing, F-144) ----
   /** Append a fresh "Comparable N" row with neutral defaults — appears instantly. */
@@ -416,6 +418,13 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     set((s) =>
       s.exhibits
         ? { exhibits: { ...s.exhibits, swot: { ...s.exhibits.swot, [quadrant]: items } } }
+        : {},
+    ),
+
+  updateCapRate: (patch) =>
+    set((s) =>
+      s.exhibits
+        ? { exhibits: { ...s.exhibits, capRate: { ...s.exhibits.capRate, ...patch } } }
         : {},
     ),
 

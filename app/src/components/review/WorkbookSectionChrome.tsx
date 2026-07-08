@@ -192,7 +192,10 @@ export function HiddenSectionStub({
   );
 }
 
-/* ---- add divider: ＋ Add section (palette) · ＋ Add finding ---- */
+/* ---- add divider: ＋ Add section (palette) ----
+   Sections insert AT a position; findings are first-class OBJECTS that belong
+   to a chapter, so "＋ Add finding" lives at the foot of each findings section
+   (category pre-filled), not on this divider. */
 
 export function AddDivider({
   beforeId,
@@ -225,12 +228,6 @@ export function AddDivider({
           </button>
         )}
       />
-      <button
-        className="wb-adddiv-btn"
-        onClick={() => edit.onRequestAddFinding(beforeId)}
-      >
-        <Icon name="add" size={12} /> Add finding
-      </button>
       <span className="wb-adddiv-line" aria-hidden="true" />
     </div>
   );

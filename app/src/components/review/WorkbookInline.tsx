@@ -12,6 +12,7 @@ import type {
   ResponseTemplate,
   WbAdjustmentRow,
   WbSwot,
+  WorkbookExhibits as WorkbookExhibitsData,
 } from "@/types";
 
 /**
@@ -40,10 +41,14 @@ export interface WorkbookEditingActions {
   onMoveSectionBefore: (id: string, beforeId: string | null) => void;
   /** Insert a fresh section of `type` before `beforeId` (null = end). */
   onInsertSection: (type: WbSectionType, beforeId: string | null) => void;
-  /** Open the reviewer-finding composer, targeting the divider position. */
-  onRequestAddFinding: (beforeId: string | null) => void;
+  /** Open the reviewer-finding composer for a findings CHAPTER (section id) —
+   *  the finding is a first-class object added to that chapter, not content
+   *  dropped at a cursor position. */
+  onRequestAddFinding: (sectionId: string | null) => void;
   /** Replace one SWOT quadrant's items (inline card editing). */
   onUpdateSwot: (quadrant: keyof WbSwot, items: string[]) => void;
+  /** Patch the cap-rate exhibit (structured point/band editing). */
+  onUpdateCapRate: (patch: Partial<WorkbookExhibitsData["capRate"]>) => void;
 }
 
 const fmtTime = (at: number) =>

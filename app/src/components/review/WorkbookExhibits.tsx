@@ -215,7 +215,16 @@ export function PsfBarChart({ psf }: { psf: WorkbookExhibits["psf"] }) {
   );
 }
 
-export function CapRateScale({ cap }: { cap: WorkbookExhibits["capRate"] }) {
+export function CapRateScale({
+  cap,
+  tools,
+}: {
+  cap: WorkbookExhibits["capRate"];
+  /** Structured point/band editing (edit mode): the chart itself is evidence —
+   *  never free-drawn — so edits go through a mini-table and the scale redraws. */
+  tools?: { onUpdate: (patch: Partial<WorkbookExhibits["capRate"]>) => void } | null;
+}) {
+  const [editingData, setEditingData] = useState(false);
   const values = cap.points.map((p) => p.value).concat([cap.bandMin, cap.bandMax]);
   const lo = Math.min(...values);
   const hi = Math.max(...values);
@@ -245,6 +254,150 @@ export function CapRateScale({ cap }: { cap: WorkbookExhibits["capRate"] }) {
         ))}
       </div>
       <p className="wb-exh-note">{cap.note}</p>
+
+      {tools && !editingData && (
+        <button className="wb-addrow" onClick={() => setEditingData(true)}>
+          <Icon name="edit" size={13} /> Edit cap-rate data
+        </button>
+      )}
+      {tools && editingData && (
+        <CapRateDataEditor
+          cap={cap}
+          onUpdate={tools.onUpdate}
+          onClose={() => setEditingData(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+/** The structured cap-rate editor: label · value · selected · delete per point,
+ *  ＋ Add point, and the market band min/max. Every commit redraws the scale. */
+function CapRateDataEditor({
+  cap,
+  onUpdate,
+  onClose,
+}: {
+  cap: WorkbookExhibits["capRate"];
+  onUpdate: (patch: Partial<WorkbookExhibits["capRate"]>) => void;
+  onClose: () => void;
+}) {
+  const points = cap.points;
+  const parseNum = (v: string) => {
+    const n = parseFloat(v.replace(/[%\s]/g, ""));
+    return Number.isNaN(n) ? null : n;
+  };
+
+  return (
+    <div className="wb-capedit">
+      <table className="wb-exh-table is-editable wb-capedit-table">
+        <thead>
+          <tr>
+            <th>Point</th>
+            <th className="num">Rate ({cap.unit})</th>
+            <th>Selected</th>
+            <th aria-label="Row actions" />
+          </tr>
+        </thead>
+        <tbody>
+          {points.map((p, i) => (
+            <tr key={`${i}-${p.label}`}>
+              <td>
+                <GridCell
+                  raw={p.label}
+                  display={p.label}
+                  onCommit={(v) =>
+                    v.trim() &&
+                    onUpdate({
+                      points: points.map((x, j) =>
+                        j === i ? { ...x, label: v.trim() } : x,
+                      ),
+                    })
+                  }
+                />
+              </td>
+              <td className="num">
+                <GridCell
+                  raw={String(p.value)}
+                  display={`${p.value}${cap.unit}`}
+                  numeric
+                  onCommit={(v) => {
+                    const n = parseNum(v);
+                    if (n != null)
+                      onUpdate({
+                        points: points.map((x, j) => (j === i ? { ...x, value: n } : x)),
+                      });
+                  }}
+                />
+              </td>
+              <td>
+                <button
+                  className={`wb-capedit-radio${p.selected ? " on" : ""}`}
+                  aria-label={`Mark ${p.label} as the selected rate`}
+                  onClick={() =>
+                    onUpdate({
+                      points: points.map((x, j) => ({ ...x, selected: j === i })),
+                    })
+                  }
+                >
+                  <span />
+                </button>
+              </td>
+              <td>
+                {!p.selected && points.length > 2 && (
+                  <button
+                    className="wb-rowdel is-shown"
+                    onClick={() => onUpdate({ points: points.filter((_, j) => j !== i) })}
+                    aria-label={`Delete ${p.label}`}
+                  >
+                    <Icon name="trash" size={12} />
+                  </button>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div className="wb-capedit-foot">
+        <button
+          className="wb-addrow"
+          onClick={() =>
+            onUpdate({
+              points: [
+                ...points,
+                { label: `Point ${points.length + 1}`, value: cap.bandMax },
+              ],
+            })
+          }
+        >
+          <Icon name="add" size={13} /> Add point
+        </button>
+        <span className="wb-capedit-band">
+          Market band
+          <GridCell
+            raw={String(cap.bandMin)}
+            display={`${cap.bandMin}${cap.unit}`}
+            numeric
+            onCommit={(v) => {
+              const n = parseNum(v);
+              if (n != null) onUpdate({ bandMin: n });
+            }}
+          />
+          –
+          <GridCell
+            raw={String(cap.bandMax)}
+            display={`${cap.bandMax}${cap.unit}`}
+            numeric
+            onCommit={(v) => {
+              const n = parseNum(v);
+              if (n != null) onUpdate({ bandMax: n });
+            }}
+          />
+        </span>
+        <button className="wb-capedit-done" onClick={onClose}>
+          <Icon name="check" size={13} /> Done
+        </button>
+      </div>
     </div>
   );
 }

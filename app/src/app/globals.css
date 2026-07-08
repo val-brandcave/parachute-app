@@ -3517,6 +3517,111 @@ body.wb-reordering .wb-adddiv {
   background: var(--md-accent-c);
 }
 
+/* approaches tags (summary) — click-to-edit chips + add */
+.wb-tag--edit {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.wb-tag--edit .wb-rowdel {
+  margin-left: 0;
+  width: 18px;
+  height: 18px;
+}
+.wb-tag--edit:hover .wb-rowdel {
+  opacity: 1;
+}
+.wb-tag--add {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: inherit;
+  cursor: pointer;
+  border-style: dashed;
+  border-color: var(--md-accent);
+  background: var(--md-accent-c);
+  color: var(--md-accent-d);
+}
+.wb-tag--add:hover {
+  background: var(--md-surface);
+}
+
+/* cap-rate structured data editor — the chart is evidence; edits go through
+   the mini-table and the scale redraws (never free-drawn) */
+.wb-capedit {
+  margin-top: 10px;
+  padding: 12px 14px;
+  border: 1px dashed var(--md-accent);
+  border-radius: 10px;
+  background: var(--md-surface-1);
+}
+.wb-capedit-table {
+  font-size: 12px;
+}
+.wb-capedit-table td {
+  padding: 5px 10px;
+}
+.wb-capedit-radio {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--md-outline);
+  border-radius: 50%;
+  background: var(--md-surface);
+  cursor: pointer;
+  padding: 0;
+}
+.wb-capedit-radio span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: transparent;
+}
+.wb-capedit-radio.on {
+  border-color: var(--md-accent);
+}
+.wb-capedit-radio.on span {
+  background: var(--md-accent);
+}
+.wb-rowdel.is-shown {
+  opacity: 1;
+}
+.wb-capedit-foot {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+.wb-capedit-foot .wb-addrow {
+  margin-top: 6px;
+}
+.wb-capedit-band {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--md-on-surface-v);
+  font-variant-numeric: tabular-nums;
+}
+.wb-capedit-done {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border: none;
+  border-radius: 7px;
+  background: var(--paper-ink);
+  color: var(--paper-bg);
+  cursor: pointer;
+}
+
 /* SWOT card items — click-to-edit + per-item delete + per-quadrant add */
 .wb-swot-li {
   position: relative;

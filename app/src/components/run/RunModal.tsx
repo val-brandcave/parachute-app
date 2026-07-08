@@ -494,10 +494,12 @@ export function RunModal() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       // Inline editors (prose, grid cells, rename, composers) own their Escape —
-      // cancelling an edit must never close the whole run takeover.
+      // cancelling an edit must never close the whole run takeover. Same for an
+      // open popover (ActionMenu et al): Escape dismisses IT, not the run.
       const el = e.target as HTMLElement;
       if (el?.tagName === "INPUT" || el?.tagName === "TEXTAREA" || el?.isContentEditable)
         return;
+      if (document.querySelector(".ui-menu-pop")) return;
       if (e.key === "Escape" && spoke !== "progress") onClose();
     };
     if (open) document.addEventListener("keydown", onKey);
