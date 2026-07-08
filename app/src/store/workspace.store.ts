@@ -8,6 +8,7 @@ import type {
   Disposition,
   Severity,
   WorkbookExhibits,
+  WbAdjustmentRow,
 } from "@/types";
 import type {
   WorkbookConfig,
@@ -113,6 +114,13 @@ interface WorkspaceState {
   addSection: (section: Omit<WbSection, "id">) => string;
   updateSection: (id: string, patch: Partial<WbSection>) => void;
   updateSettings: (patch: Partial<WbDocSettings>) => void;
+
+  // ---- Comp-grid repeater (inline workbook editing, F-144) ----
+  /** Append a fresh "Comparable N" row with neutral defaults — appears instantly. */
+  addCompRow: () => void;
+  deleteCompRow: (comp: string) => void;
+  /** Patch a row's cells; the adjusted $/SF re-derives unless patched directly. */
+  updateCompRow: (comp: string, patch: Partial<WbAdjustmentRow>) => void;
 }
 
 export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
@@ -162,7 +170,13 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     set((s) => ({
       states: {
         ...s.states,
-        [findingId]: { ...s.states[findingId], disposition: disp, reason, templateId },
+        [findingId]: {
+          ...s.states[findingId],
+          disposition: disp,
+          reason,
+          templateId,
+          decidedAt: disp === "pending" ? undefined : Date.now(),
+        },
       },
       workbookDirty: s.compiledAt != null ? true : s.workbookDirty,
     })),
@@ -347,7 +361,66 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         ? { workbook: { ...s.workbook, settings: { ...s.workbook.settings, ...patch } } }
         : {},
     ),
+
+  // ---- Comp-grid repeater (inline workbook editing, F-144) ----
+  addCompRow: () =>
+    set((s) => {
+      if (!s.exhibits) return {};
+      const rows = s.exhibits.adjustmentGrid;
+      // Next comp number = one past the highest existing "Comparable N".
+      const n =
+        rows.reduce((max, r) => {
+          const m = r.comp.match(/(\d+)\s*$/);
+          return m ? Math.max(max, parseInt(m[1], 10)) : max;
+        }, 0) + 1;
+      const fresh = withDerivedAdj({
+        comp: `Comparable ${n}`,
+        unadj: 350,
+        location: 0,
+        condition: 0,
+        quality: 0,
+        adj: 350,
+      });
+      return { exhibits: { ...s.exhibits, adjustmentGrid: [...rows, fresh] } };
+    }),
+
+  deleteCompRow: (comp) =>
+    set((s) =>
+      s.exhibits
+        ? {
+            exhibits: {
+              ...s.exhibits,
+              adjustmentGrid: s.exhibits.adjustmentGrid.filter((r) => r.comp !== comp),
+            },
+          }
+        : {},
+    ),
+
+  updateCompRow: (comp, patch) =>
+    set((s) =>
+      s.exhibits
+        ? {
+            exhibits: {
+              ...s.exhibits,
+              adjustmentGrid: s.exhibits.adjustmentGrid.map((r) =>
+                r.comp === comp
+                  ? patch.adj != null
+                    ? { ...r, ...patch }
+                    : withDerivedAdj({ ...r, ...patch })
+                  : r,
+              ),
+            },
+          }
+        : {},
+    ),
 }));
+
+/** Adjusted $/SF re-derives from the unadjusted value + the three signed %
+ *  adjustments — the "table never breaks" guarantee of structured row editing. */
+function withDerivedAdj(row: WbAdjustmentRow): WbAdjustmentRow {
+  const adj = row.unadj * (1 + (row.location + row.condition + row.quality) / 100);
+  return { ...row, adj: Math.round(adj * 100) / 100 };
+}
 
 /** Workbook tally derived from current dispositions. */
 export function tally(states: Record<string, FindingState>) {

@@ -103,6 +103,11 @@
   --paper-crit-c: #f6dcdc;
   --paper-info: #2d6ca6;
   --paper-info-c: #e4eef7;
+  /* Petrol accent pinned to its LIGHT values on paper — the inline-editing
+     chrome (hover outlines, cite chips, add-row pills) stays WYSIWYG in dark. */
+  --paper-accent: #2a6f7f;
+  --paper-accent-d: #14505e;
+  --paper-accent-c: #deebee;
 }
 
 /* Compact density — info-dense, layout unchanged */
@@ -2303,6 +2308,9 @@ textarea {
   --md-crit-c: var(--paper-crit-c);
   --md-info: var(--paper-info);
   --md-info-c: var(--paper-info-c);
+  --md-accent: var(--paper-accent);
+  --md-accent-d: var(--paper-accent-d);
+  --md-accent-c: var(--paper-accent-c);
 }
 
 /* A single sheet */
@@ -2922,6 +2930,320 @@ textarea {
   font-weight: 600;
   color: var(--md-warn);
   margin-top: 2px;
+}
+
+/* ---- inline workbook editing (Phase 2a — F-143/F-144) ----
+   The workbook IS the workspace: findings render as live decision blocks in
+   the document, the comp grid gets row tools, narratives edit in place. All
+   on paper tokens; the hover cue everywhere is the pinned petrol outline. */
+
+/* finding block — a finding living IN the document, decisions inline */
+.wb-fblock {
+  position: relative;
+  border: 1px solid var(--md-outline-v);
+  border-left: 3px solid var(--md-outline);
+  border-radius: 12px;
+  padding: 13px 15px 12px;
+  margin-bottom: 10px;
+  background: var(--md-surface);
+  transition: box-shadow 0.14s ease;
+}
+.wb-fblock:hover {
+  box-shadow: 0 0 0 1.5px var(--md-accent);
+}
+.wb-fblock--crit {
+  border-left-color: var(--md-crit);
+}
+.wb-fblock--fail {
+  border-left-color: var(--md-error);
+}
+.wb-fblock--flag {
+  border-left-color: var(--md-warn);
+}
+.wb-fblock--pass {
+  border-left-color: var(--md-success);
+}
+.wb-fblock--na {
+  border-left-color: var(--md-outline);
+}
+/* reviewer-added findings carry the petrol spine — never confusable with AI */
+.wb-fblock.is-user {
+  border-left-color: var(--md-accent);
+}
+.wb-fblock-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.wb-fblock-q {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--md-on-surface);
+}
+.wb-fblock-cite {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  padding: 2px 9px;
+  border-radius: 999px;
+  color: var(--md-accent-d);
+  background: var(--md-accent-c);
+}
+.wb-fblock-text {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--md-on-surface-v);
+}
+/* the inline decision bar (Concur · Edit · Reject · Delete + comment/flag) */
+.wb-fblock-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+.wb-fbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--md-outline);
+  background: var(--md-surface);
+  color: var(--md-on-surface);
+  cursor: pointer;
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease;
+}
+.wb-fbtn:hover {
+  background: var(--md-surface-1);
+}
+.wb-fbtn--go {
+  background: var(--md-success-c);
+  border-color: var(--md-success-c);
+  color: var(--md-success);
+}
+.wb-fbtn--go:hover {
+  background: var(--md-success-c);
+  border-color: var(--md-success);
+}
+.wb-fbtn--no {
+  color: var(--md-error);
+}
+.wb-fbtn--no:hover {
+  background: var(--md-error-c);
+  border-color: var(--md-error-c);
+}
+.wb-fblock-aux {
+  margin-left: auto;
+  display: inline-flex;
+  gap: 2px;
+}
+.wb-faux {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--md-on-surface-t);
+  cursor: pointer;
+}
+.wb-faux:hover {
+  background: var(--md-surface-1);
+  color: var(--md-on-surface);
+}
+.wb-faux.on {
+  background: var(--md-accent-c);
+  color: var(--md-accent-d);
+}
+/* decided line — the decision applied instantly, with its audit stamp */
+.wb-fblock-decided {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--md-success);
+}
+.wb-fblock-undo {
+  border: none;
+  background: none;
+  padding: 0;
+  margin-left: 4px;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--md-on-surface-t);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.wb-fblock-undo:hover {
+  color: var(--md-on-surface);
+}
+
+/* provenance pips (audit layer 1) — carried on the printed doc too */
+.wb-pip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: var(--md-info-c);
+  color: var(--md-info);
+}
+.wb-pip--user {
+  background: var(--md-accent-c);
+  color: var(--md-accent-d);
+}
+
+/* prose edit-in-place — click text → caret, ✓/blur commits, Esc cancels */
+.wb-eprose {
+  position: relative;
+}
+.wb-eprose > .wb-pip {
+  margin-bottom: 6px;
+}
+.wb-eprose-idle {
+  border-radius: 8px;
+  padding: 2px 6px;
+  margin: -2px -6px;
+  cursor: text;
+  transition: box-shadow 0.14s ease;
+}
+.wb-eprose-idle:hover {
+  box-shadow: 0 0 0 1.5px var(--md-accent);
+}
+.wb-eprose.is-editing [contenteditable] {
+  outline: 2px solid var(--md-accent);
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin: -8px -10px;
+  background: var(--md-surface);
+  white-space: pre-wrap;
+}
+.wb-eprose-ctl {
+  position: absolute;
+  right: 4px;
+  bottom: -26px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 5;
+}
+.wb-eprose-ctl button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border: none;
+  border-radius: 7px;
+  background: var(--paper-ink);
+  color: var(--paper-bg);
+  cursor: pointer;
+  box-shadow: var(--paper-elev);
+}
+.wb-eprose-ctl span {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--md-on-surface-t);
+  background: var(--md-surface);
+  border: 1px solid var(--md-outline-v);
+  border-radius: 6px;
+  padding: 2px 8px;
+}
+
+/* comp-grid repeater tools — structured row/cell edits, never free text */
+.wb-cell {
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+  padding: 0 4px;
+  margin: 0 -4px;
+  border-radius: 5px;
+  cursor: text;
+  text-align: inherit;
+  font-variant-numeric: inherit;
+}
+.wb-cell:hover {
+  box-shadow: 0 0 0 1.5px var(--md-accent);
+  background: var(--md-surface);
+}
+.wb-cell-in {
+  width: 72px;
+  font: inherit;
+  font-size: 12.5px;
+  padding: 2px 6px;
+  border: 1.5px solid var(--md-accent);
+  border-radius: 6px;
+  background: var(--md-surface);
+  color: var(--md-on-surface);
+}
+.wb-cell-in.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.wb-exh-table td:first-child .wb-cell-in {
+  width: 132px;
+}
+.wb-rowdel {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  margin-left: 6px;
+  vertical-align: middle;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--md-on-surface-t);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+.wb-exh-table.is-editable tr:hover .wb-rowdel {
+  opacity: 1;
+}
+.wb-rowdel:hover {
+  background: var(--md-error-c);
+  color: var(--md-error);
+}
+.wb-addrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 14px;
+  border: 1px dashed var(--md-accent);
+  border-radius: 999px;
+  background: var(--md-accent-c);
+  color: var(--md-accent-d);
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.wb-addrow:hover {
+  background: var(--md-surface);
 }
 
 /* ---- analytical exhibits ---- */
@@ -10606,6 +10928,32 @@ select.qfilter {
 }
 .run-wb-bar-state--final {
   color: var(--md-success);
+}
+/* Customize ▸ — the one quiet toolbar affordance hiding the 20% (F-146) */
+.run-wb-tbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border: 1px solid var(--md-outline);
+  border-radius: 8px;
+  background: var(--md-surface);
+  color: var(--md-on-surface);
+  cursor: pointer;
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease;
+}
+.run-wb-tbtn:hover {
+  background: var(--md-surface-1);
+}
+.run-wb-tbtn.is-active {
+  background: var(--md-selected);
+  border-color: transparent;
+  color: var(--md-on-selected);
 }
 .run-wb-zoom {
   width: 100%;

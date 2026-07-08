@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Button, Icon } from "@/components/atoms";
 import { StatusPill } from "@/components/molecules";
-import { useWorkspaceStore } from "@/store";
+import { useWorkspaceStore, useTemplatesStore } from "@/store";
 import { WorkbookPreview } from "@/components/review/WorkbookPreview";
 import type { Review } from "@/types";
 import type { RunReviewType } from "@/store";
@@ -43,10 +43,23 @@ export function RunWorkbook({
   onReviewFindings: () => void;
   onReturn: () => void;
 }) {
-  const { findings, states, exhibits, workbook, signature, filing } = useWorkspaceStore();
-  const workbookDirty = useWorkspaceStore((s) => s.workbookDirty);
-  const regenerate = useWorkspaceStore((s) => s.regenerate);
+  const {
+    findings,
+    states,
+    exhibits,
+    workbook,
+    signature,
+    filing,
+    setDisposition,
+    setComment,
+    toggleFlag,
+    updateSection,
+    addCompRow,
+    deleteCompRow,
+    updateCompRow,
+  } = useWorkspaceStore();
   const regeneratedAt = useWorkspaceStore((s) => s.regeneratedAt);
+  const responses = useTemplatesStore((s) => s.responses);
   const [dismissed, setDismissed] = useState(false);
   const [customizing, setCustomizing] = useState(false);
 
@@ -173,6 +186,21 @@ export function RunWorkbook({
               <Icon name="chevron-right" size={16} />
             </button>
           </div>
+          {/* Customize ▸ — the whole 20% behind one quiet toolbar affordance,
+              closed by default (F-146 / Decision D). Demos never open it. */}
+          {!signed && (
+            <>
+              <span className="run-ex-tools-div" aria-hidden="true" />
+              <button
+                className={`run-wb-tbtn${customizing ? " is-active" : ""}`}
+                onClick={() => setCustomizing((v) => !v)}
+                aria-expanded={customizing}
+              >
+                Customize
+                <Icon name={customizing ? "close" : "chevron-right"} size={14} />
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -198,19 +226,9 @@ export function RunWorkbook({
             </div>
           )}
 
-          {workbookDirty && !signed && (
-            <div className="run-dirty" role="status">
-              <Icon name="refresh" size={16} />
-              <span className="run-dirty-text">
-                <b>Findings changed</b> since this workbook was compiled — regenerate to fold
-                your latest decisions in.
-              </span>
-              <button className="run-dirty-cta" onClick={regenerate}>
-                <Icon name="refresh" size={14} /> Regenerate
-              </button>
-            </div>
-          )}
-
+          {/* Direct edits are live (Decision E, Jul 7) — the dirty-callout /
+              Regenerate loop left the primary flow; the compile beat above
+              remains only for system recompute. */}
           {showCallout && (
             <div className="run-callout" role="status">
               <Icon name="warn" size={16} />
@@ -244,11 +262,25 @@ export function RunWorkbook({
               reviewedAt={review.orderedAt}
               signature={signature}
               filing={filing}
+              editing={
+                signed
+                  ? null
+                  : {
+                      responses,
+                      onDisposition: setDisposition,
+                      onComment: setComment,
+                      onToggleFlag: toggleFlag,
+                      onUpdateSection: updateSection,
+                      onAddCompRow: addCompRow,
+                      onDeleteCompRow: deleteCompRow,
+                      onUpdateCompRow: updateCompRow,
+                    }
+              }
             />
           </div>
         </div>
 
-        {customizing && <RunCustomizePanel onClose={() => setCustomizing(false)} />}
+        {customizing && !signed && <RunCustomizePanel onClose={() => setCustomizing(false)} />}
       </div>
 
       <footer className="run-foot">
@@ -278,15 +310,6 @@ export function RunWorkbook({
             <>
               <Button variant="outline" size="sm" iconLeft="quote" onClick={onReviewFindings}>
                 Review findings
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                iconLeft="edit"
-                className={customizing ? "is-active" : undefined}
-                onClick={() => setCustomizing((v) => !v)}
-              >
-                Customize
               </Button>
               <Button variant="primary" size="sm" iconRight="forward" onClick={onSign}>
                 Sign &amp; finalize

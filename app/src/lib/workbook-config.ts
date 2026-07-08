@@ -49,10 +49,14 @@ export interface WbSection {
   exhibitMode?: "table" | "chart" | "both";
   /** sensitivity — how many scenario columns to print (centred on the selected). */
   sensitivityCols?: number;
-  /** freeText — the narrative body. */
+  /** freeText — the narrative body. On a `conclusion` section it is the
+   *  reviewer's in-place rewrite, overriding the derived narrative (F-144). */
   body?: string;
   /** freeText carrying an appraisal section pulled in via the import band. */
   imported?: boolean;
+  /** Set when the reviewer edited this section's content in place — drives the
+   *  "Edited by reviewer" provenance pip (inline-workbook plan §4.3, layer 1). */
+  edited?: { by: string; at: number };
 }
 
 /** The 9 author-addable section types (the Builder add-palette). `returns` is

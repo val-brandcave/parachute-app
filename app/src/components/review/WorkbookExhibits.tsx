@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
+import { Icon } from "@/components/atoms";
 import { formatMoney } from "@/lib/workbook";
-import type { WorkbookExhibits } from "@/types";
+import type { WbAdjustmentRow, WorkbookExhibits } from "@/types";
 
 /**
  * The workbook's analytical exhibits — the "evidence of property" the reviewer
@@ -13,35 +15,178 @@ import type { WorkbookExhibits } from "@/types";
 
 const pct = (n: number) => `${n > 0 ? "+" : ""}${n}%`;
 
-export function AdjustmentTable({ rows }: { rows: WorkbookExhibits["adjustmentGrid"] }) {
+/** Row tools for the comp-grid repeater (inline workbook editing, F-144):
+ *  instant add row, per-row delete, click-any-cell-to-edit. Structured controls
+ *  only — the adjusted $/SF re-derives in the store, so the table never breaks. */
+export interface CompGridTools {
+  onAdd: () => void;
+  onDelete: (comp: string) => void;
+  onUpdate: (comp: string, patch: Partial<WbAdjustmentRow>) => void;
+}
+
+export function AdjustmentTable({
+  rows,
+  tools,
+}: {
+  rows: WorkbookExhibits["adjustmentGrid"];
+  tools?: CompGridTools | null;
+}) {
   return (
-    <table className="wb-exh-table">
-      <thead>
-        <tr>
-          <th>Comparable</th>
-          <th className="num">Unadj. $/SF</th>
-          <th className="num">Location</th>
-          <th className="num">Condition</th>
-          <th className="num">Quality</th>
-          <th className="num">Adj. $/SF</th>
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((r) => (
-          <tr key={r.comp} className={r.flag ? "is-flag" : undefined}>
-            <td>
-              {r.comp}
-              {r.flag && <span className="wb-exh-flag">discrepancy — see finding</span>}
-            </td>
-            <td className="num">${r.unadj.toFixed(2)}</td>
-            <td className="num">{pct(r.location)}</td>
-            <td className="num">{pct(r.condition)}</td>
-            <td className="num">{pct(r.quality)}</td>
-            <td className="num strong">${r.adj.toFixed(2)}</td>
+    <>
+      <table className={`wb-exh-table${tools ? " is-editable" : ""}`}>
+        <thead>
+          <tr>
+            <th>Comparable</th>
+            <th className="num">Unadj. $/SF</th>
+            <th className="num">Location</th>
+            <th className="num">Condition</th>
+            <th className="num">Quality</th>
+            <th className="num">Adj. $/SF</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.comp} className={r.flag ? "is-flag" : undefined}>
+              <td>
+                {tools ? (
+                  <GridCell
+                    raw={r.comp}
+                    display={r.comp}
+                    onCommit={(v) => v.trim() && tools.onUpdate(r.comp, { comp: v.trim() })}
+                  />
+                ) : (
+                  r.comp
+                )}
+                {r.flag && <span className="wb-exh-flag">discrepancy — see finding</span>}
+              </td>
+              <NumCell
+                value={r.unadj}
+                display={`$${r.unadj.toFixed(2)}`}
+                tools={tools}
+                onCommit={(n) => tools?.onUpdate(r.comp, { unadj: n })}
+              />
+              <NumCell
+                value={r.location}
+                display={pct(r.location)}
+                tools={tools}
+                onCommit={(n) => tools?.onUpdate(r.comp, { location: n })}
+              />
+              <NumCell
+                value={r.condition}
+                display={pct(r.condition)}
+                tools={tools}
+                onCommit={(n) => tools?.onUpdate(r.comp, { condition: n })}
+              />
+              <NumCell
+                value={r.quality}
+                display={pct(r.quality)}
+                tools={tools}
+                onCommit={(n) => tools?.onUpdate(r.comp, { quality: n })}
+              />
+              <td className="num strong">
+                ${r.adj.toFixed(2)}
+                {tools && (
+                  <button
+                    className="wb-rowdel"
+                    onClick={() => tools.onDelete(r.comp)}
+                    aria-label={`Delete ${r.comp}`}
+                    title={`Delete ${r.comp}`}
+                  >
+                    <Icon name="trash" size={13} />
+                  </button>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {tools && (
+        <button className="wb-addrow" onClick={tools.onAdd}>
+          <Icon name="add" size={13} /> Add row
+        </button>
+      )}
+    </>
+  );
+}
+
+/** A numeric grid cell — renders formatted, flips to an input on click. The
+ *  adjusted column stays derived (read-only), so edits can't break the math. */
+function NumCell({
+  value,
+  display,
+  tools,
+  onCommit,
+}: {
+  value: number;
+  display: string;
+  tools?: CompGridTools | null;
+  onCommit: (n: number) => void;
+}) {
+  return (
+    <td className="num">
+      {tools ? (
+        <GridCell
+          raw={String(value)}
+          display={display}
+          numeric
+          onCommit={(v) => {
+            const n = parseFloat(v.replace(/[$,%\s,]/g, ""));
+            if (!Number.isNaN(n)) onCommit(n);
+          }}
+        />
+      ) : (
+        display
+      )}
+    </td>
+  );
+}
+
+/** Click-to-edit cell: a button showing the formatted value; clicking swaps in
+ *  an input seeded with the raw value. Enter/blur commits, Esc cancels. */
+function GridCell({
+  raw,
+  display,
+  numeric,
+  onCommit,
+}: {
+  raw: string;
+  display: string;
+  numeric?: boolean;
+  onCommit: (v: string) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [val, setVal] = useState(raw);
+
+  if (!editing)
+    return (
+      <button
+        className="wb-cell"
+        title="Click to edit"
+        onClick={() => {
+          setVal(raw);
+          setEditing(true);
+        }}
+      >
+        {display}
+      </button>
+    );
+
+  return (
+    <input
+      className={`wb-cell-in${numeric ? " num" : ""}`}
+      autoFocus
+      value={val}
+      onFocus={(e) => e.target.select()}
+      onChange={(e) => setVal(e.target.value)}
+      onBlur={() => {
+        setEditing(false);
+        onCommit(val);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") e.currentTarget.blur();
+        if (e.key === "Escape") setEditing(false);
+      }}
+    />
   );
 }
 

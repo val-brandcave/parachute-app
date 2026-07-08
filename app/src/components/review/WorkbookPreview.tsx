@@ -32,6 +32,12 @@ import {
   SensitivityHeat,
   SwotGrid,
 } from "./WorkbookExhibits";
+import {
+  EditableProse,
+  ProvenancePip,
+  WorkbookFindingBlock,
+  type WorkbookEditingActions,
+} from "./WorkbookInline";
 import type { WorkbookSignature, WorkbookFiling } from "@/store/workspace.store";
 import type { Finding, FindingState, Review, WorkbookExhibits } from "@/types";
 
@@ -56,6 +62,7 @@ export function WorkbookPreview({
   reviewedAt,
   signature,
   filing,
+  editing,
 }: {
   review: Review;
   findings: Finding[];
@@ -68,10 +75,16 @@ export function WorkbookPreview({
   reviewedAt: number;
   signature: WorkbookSignature | null;
   filing: WorkbookFiling | null;
+  /** Inline-editing actions (Phase 2a — F-143/F-144). When set and the workbook
+   *  is unsigned, findings render as live decision blocks, the comp grid gets
+   *  row tools, and narratives edit in place. Omit for the read-only doc. */
+  editing?: WorkbookEditingActions | null;
 }) {
   const value = useMemo(() => valueSummary(review), [review]);
   const rec = RECOMMENDATION_META[recommendation];
   const riskMeta = RISK_META[risk];
+  // A signed document is final — editing chrome never renders over the seal.
+  const edit = signature ? null : editing ?? null;
 
   const { settings } = config;
   const accent = WB_THEMES[settings.theme]?.accent ?? WB_THEMES.Navy.accent;
@@ -138,6 +151,23 @@ export function WorkbookPreview({
           return (
             <p className="wb-prose wb-muted">No findings fall under this section.</p>
           );
+        // Inline editing: every finding is a live decision block in the document
+        // (Concur / Edit / Reject / Delete where it stands — F-143).
+        if (edit)
+          return (
+            <>
+              {items.map((f) => (
+                <WorkbookFindingBlock
+                  key={f.id}
+                  f={f}
+                  state={states[f.id]}
+                  property={review.propertyAddress}
+                  reviewerName={reviewerName}
+                  actions={edit}
+                />
+              ))}
+            </>
+          );
         return (
           <>
             {items.map((f) =>
@@ -172,7 +202,18 @@ export function WorkbookPreview({
             {showTable && (
               <>
                 <div className="wb-exh-h">Sales comparison adjustment grid</div>
-                <AdjustmentTable rows={exhibits.adjustmentGrid} />
+                <AdjustmentTable
+                  rows={exhibits.adjustmentGrid}
+                  tools={
+                    edit
+                      ? {
+                          onAdd: edit.onAddCompRow,
+                          onDelete: edit.onDeleteCompRow,
+                          onUpdate: edit.onUpdateCompRow,
+                        }
+                      : null
+                  }
+                />
                 <p className="wb-exh-note" style={{ marginBottom: 14 }}>
                   Abbreviated grid — the full grid appears in the appraisal (p.47).
                 </p>
@@ -235,20 +276,51 @@ export function WorkbookPreview({
                   </div>
                   <div className="wb-ret-q">{f.question}</div>
                   <div className="wb-ret-reason">{dispositionLine(states[f.id])}</div>
+                  {edit && (
+                    <button
+                      className="wb-fblock-undo"
+                      onClick={() => edit.onDisposition(f.id, "pending")}
+                    >
+                      Undo — back to open
+                    </button>
+                  )}
                 </li>
               ))}
             </ol>
           </>
         );
 
-      case "conclusion":
+      case "conclusion": {
+        // The reviewer's in-place rewrite (s.body) overrides the derived
+        // narrative; until then the derived sentence renders (and seeds the
+        // editor as plain text when clicked).
+        const derived = `Based on the technical review of the appraisal of ${review.propertyAddress} prepared by ${review.appraisalFirm}, the reviewer’s recommendation is ${rec.label.toLowerCase()}. ${riskWording}`;
+        const conclusionProse = s.body ? (
+          <p className="wb-prose">{s.body}</p>
+        ) : (
+          <p className="wb-prose">
+            Based on the technical review of the appraisal of <b>{review.propertyAddress}</b>{" "}
+            prepared by {review.appraisalFirm}, the reviewer&rsquo;s recommendation is{" "}
+            <b>{rec.label.toLowerCase()}</b>. {riskWording}
+          </p>
+        );
         return (
           <>
-            <p className="wb-prose">
-              Based on the technical review of the appraisal of <b>{review.propertyAddress}</b>{" "}
-              prepared by {review.appraisalFirm}, the reviewer&rsquo;s recommendation is{" "}
-              <b>{rec.label.toLowerCase()}</b>. {riskWording}
-            </p>
+            {edit ? (
+              <EditableProse
+                text={s.body ?? derived}
+                display={conclusionProse}
+                edited={s.edited}
+                onCommit={(t) => edit.onUpdateSection(s.id, { body: t, edited: prov(reviewerName) })}
+              />
+            ) : (
+              <>
+                {s.edited && (
+                  <ProvenancePip label="Edited by reviewer" by={s.edited.by} at={s.edited.at} />
+                )}
+                {conclusionProse}
+              </>
+            )}
             {actions.length > 0 ? (
               <ol className="wb-actions-list">
                 {actions.map((a) => (
@@ -273,6 +345,7 @@ export function WorkbookPreview({
             )}
           </>
         );
+      }
 
       case "swot":
         if (!exhibits) return null;
@@ -286,8 +359,24 @@ export function WorkbookPreview({
                 <Icon name="download" size={12} /> Imported from the appraisal report
               </div>
             )}
-            {s.body ? (
-              <p className="wb-prose">{s.body}</p>
+            {edit ? (
+              <EditableProse
+                text={s.body ?? ""}
+                display={
+                  s.body ? undefined : (
+                    <span className="wb-muted">Empty narrative — click to write it here.</span>
+                  )
+                }
+                edited={s.edited}
+                onCommit={(t) => edit.onUpdateSection(s.id, { body: t, edited: prov(reviewerName) })}
+              />
+            ) : s.body ? (
+              <>
+                {s.edited && (
+                  <ProvenancePip label="Edited by reviewer" by={s.edited.by} at={s.edited.at} />
+                )}
+                <p className="wb-prose">{s.body}</p>
+              </>
             ) : (
               <p className="wb-prose wb-muted">
                 Empty narrative — add body text in the Builder.
@@ -358,7 +447,8 @@ export function WorkbookPreview({
         const items = findings.filter(
           (f) => cats.includes(f.category) && bodyDisps.includes(disp(f.id)),
         );
-        return 0.16 + items.length * 0.14;
+        // Live finding blocks carry a decision bar, so they run taller.
+        return 0.16 + items.length * (edit ? 0.2 : 0.14);
       }
       case "exhibits":
         return 0.78;
@@ -595,6 +685,12 @@ export function WorkbookPreview({
 }
 
 /* ---- section + small presentational helpers ---- */
+
+/** Provenance stamp for an in-place content edit — called from commit handlers
+ *  only (never during render). */
+function prov(by: string) {
+  return { by, at: Date.now() };
+}
 
 function Section({
   id,
