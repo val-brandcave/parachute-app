@@ -24,14 +24,32 @@ import {
   visibleSensitivityCols,
   type WorkbookConfig,
   type WbSection,
+  type WbFact,
 } from "@/lib/workbook-config";
+import {
+  SectionShell,
+  HiddenSectionStub,
+  AddDivider,
+  FactGridEditor,
+  SectionDragGhost,
+  useSectionDrag,
+} from "./WorkbookSectionChrome";
 import {
   AdjustmentTable,
   PsfBarChart,
   CapRateScale,
   SensitivityHeat,
   SwotGrid,
+  GridCell,
 } from "./WorkbookExhibits";
+import { ActionMenu } from "@/components/molecules/ActionMenu";
+import { availableCategories } from "@/lib/workbook-config";
+import {
+  EditableProse,
+  ProvenancePip,
+  WorkbookFindingBlock,
+  type WorkbookEditingActions,
+} from "./WorkbookInline";
 import type { WorkbookSignature, WorkbookFiling } from "@/store/workspace.store";
 import type { Finding, FindingState, Review, WorkbookExhibits } from "@/types";
 
@@ -56,6 +74,7 @@ export function WorkbookPreview({
   reviewedAt,
   signature,
   filing,
+  editing,
 }: {
   review: Review;
   findings: Finding[];
@@ -68,10 +87,16 @@ export function WorkbookPreview({
   reviewedAt: number;
   signature: WorkbookSignature | null;
   filing: WorkbookFiling | null;
+  /** Inline-editing actions (Phase 2a — F-143/F-144). When set and the workbook
+   *  is unsigned, findings render as live decision blocks, the comp grid gets
+   *  row tools, and narratives edit in place. Omit for the read-only doc. */
+  editing?: WorkbookEditingActions | null;
 }) {
   const value = useMemo(() => valueSummary(review), [review]);
   const rec = RECOMMENDATION_META[recommendation];
   const riskMeta = RISK_META[risk];
+  // A signed document is final — editing chrome never renders over the seal.
+  const edit = signature ? null : editing ?? null;
 
   const { settings } = config;
   const accent = WB_THEMES[settings.theme]?.accent ?? WB_THEMES.Navy.accent;
@@ -96,47 +121,138 @@ export function WorkbookPreview({
     ? ["accepted", "pending"]
     : ["accepted", "edited", "pending"];
 
+  // On-canvas drag-to-reorder (section chrome). The hook is inert until a
+  // handle starts a drag; drops route to the host's moveSectionBefore. While
+  // dragging, a spring-following ghost chip carries the section in hand.
+  const { dragId, dropId, startDrag, ghostX, ghostY } = useSectionDrag((id, beforeId) => {
+    editing?.onMoveSectionBefore(id, beforeId);
+  });
+
   // Build each enabled section to a node (null = auto section with no content,
-  // skipped without consuming a number).
+  // skipped without consuming a number). In edit mode, HIDDEN sections stay in
+  // the flow as slim stubs so Hide is reversible on the canvas.
   const built = config.sections
-    .filter((s) => s.enabled)
-    .map((s) => ({ s, node: buildNode(s) }))
-    .filter((b): b is { s: WbSection; node: React.ReactNode } => b.node !== null);
+    .filter((s) => s.enabled || !!edit)
+    .map((s) => ({ s, stub: !s.enabled, node: s.enabled ? buildNode(s) : null }))
+    .filter((b) => b.stub || b.node !== null);
 
   function buildNode(s: WbSection): React.ReactNode {
     switch (s.type) {
-      case "summary":
+      case "summary": {
+        // Fact tiles derive from the review record until first edited — the
+        // first edit MATERIALIZES them onto the section (plan §4.1).
+        const derivedFacts: WbFact[] = [
+          { label: "Concluded Market Value", value: formatMoney(value.concludedValue), big: true },
+          { label: "Effective Date", value: formatLongDate(value.effectiveDate) },
+          { label: "Loan Amount", value: formatMoney(value.loanAmount) },
+          { label: "Loan-to-Value", value: `${Math.round(value.ltv * 100)}%` },
+          { label: "Property Rights", value: value.rights },
+          { label: "Property Type", value: review.propertyType },
+        ];
+        const facts = s.facts ?? derivedFacts;
+        const approaches = s.approaches ?? value.approaches;
+        const commitApproaches = (next: string[]) =>
+          edit?.onUpdateSection(s.id, { approaches: next, edited: prov(reviewerName) });
         return (
           <>
-            <div className="wb-facts">
-              <Fact label="Concluded Market Value" value={formatMoney(value.concludedValue)} big />
-              <Fact label="Effective Date" value={formatLongDate(value.effectiveDate)} />
-              <Fact label="Loan Amount" value={formatMoney(value.loanAmount)} />
-              <Fact label="Loan-to-Value" value={`${Math.round(value.ltv * 100)}%`} />
-              <Fact label="Property Rights" value={value.rights} />
-              <Fact label="Property Type" value={review.propertyType} />
-            </div>
+            {s.edited && !edit && (
+              <ProvenancePip label="Edited by reviewer" by={s.edited.by} at={s.edited.at} />
+            )}
+            {edit ? (
+              <FactGridEditor
+                facts={facts}
+                onCommit={(next) =>
+                  edit.onUpdateSection(s.id, { facts: next, edited: prov(reviewerName) })
+                }
+              />
+            ) : (
+              <div className="wb-facts">
+                {facts.map((f, i) => (
+                  <Fact key={i} label={f.label} value={f.value} big={f.big} />
+                ))}
+              </div>
+            )}
             <div className="wb-approaches">
               <span className="wb-mini-label">Approaches developed</span>
               <div className="wb-tags">
-                {value.approaches.map((a) => (
-                  <span key={a} className="wb-tag">
-                    {a}
-                  </span>
-                ))}
+                {approaches.map((a, i) =>
+                  edit ? (
+                    <span key={`${i}-${a}`} className="wb-tag wb-tag--edit">
+                      <GridCell
+                        raw={a}
+                        display={a}
+                        onCommit={(v) =>
+                          commitApproaches(
+                            v.trim()
+                              ? approaches.map((x, j) => (j === i ? v.trim() : x))
+                              : approaches.filter((_, j) => j !== i),
+                          )
+                        }
+                      />
+                      <button
+                        className="wb-rowdel"
+                        onClick={() => commitApproaches(approaches.filter((_, j) => j !== i))}
+                        aria-label={`Remove ${a}`}
+                        title="Remove approach"
+                      >
+                        <Icon name="trash" size={11} />
+                      </button>
+                    </span>
+                  ) : (
+                    <span key={a} className="wb-tag">
+                      {a}
+                    </span>
+                  ),
+                )}
+                {edit && (
+                  <button
+                    className="wb-tag wb-tag--add"
+                    onClick={() => commitApproaches([...approaches, "New approach"])}
+                  >
+                    <Icon name="add" size={12} /> Add
+                  </button>
+                )}
               </div>
             </div>
           </>
         );
+      }
 
       case "findings": {
         const cats = s.categories ?? [];
         const items = findings.filter(
           (f) => cats.includes(f.category) && bodyDisps.includes(disp(f.id)),
         );
-        if (!items.length)
+        if (!items.length && !edit)
           return (
             <p className="wb-prose wb-muted">No findings fall under this section.</p>
+          );
+        // Inline editing: every finding is a live decision block in the document
+        // (Concur / Edit / Reject / Delete where it stands — F-143). The chapter
+        // foot carries "＋ Add finding" — a finding belongs to a chapter, so the
+        // composer pre-fills THIS section's categories (F-145).
+        if (edit)
+          return (
+            <>
+              {!items.length && (
+                <p className="wb-prose wb-muted">
+                  No findings fall under this section yet.
+                </p>
+              )}
+              {items.map((f) => (
+                <WorkbookFindingBlock
+                  key={f.id}
+                  f={f}
+                  state={states[f.id]}
+                  property={review.propertyAddress}
+                  reviewerName={reviewerName}
+                  actions={edit}
+                />
+              ))}
+              <button className="wb-addrow" onClick={() => edit.onRequestAddFinding(s.id)}>
+                <Icon name="add" size={13} /> Add finding
+              </button>
+            </>
           );
         return (
           <>
@@ -167,19 +283,47 @@ export function WorkbookPreview({
         const showCap = series.capRate && mode !== "table";
         if (!showTable && !showPsf && !showCap)
           return <p className="wb-prose wb-muted">All exhibit series are hidden.</p>;
+        // The $/SF chart DERIVES from the adjustment grid, so row edits flow
+        // straight into the exhibit (only the concluded bar is kept from seed).
+        const psf = {
+          ...exhibits.psf,
+          bars: [
+            ...exhibits.adjustmentGrid.map((r) => ({
+              label: r.comp.replace(/^Comparable\s+/i, "Comp "),
+              value: Math.round(r.adj),
+            })),
+            ...exhibits.psf.bars.filter((b) => b.concluded),
+          ],
+        };
         return (
           <>
             {showTable && (
               <>
                 <div className="wb-exh-h">Sales comparison adjustment grid</div>
-                <AdjustmentTable rows={exhibits.adjustmentGrid} />
+                <AdjustmentTable
+                  rows={exhibits.adjustmentGrid}
+                  tools={
+                    edit
+                      ? {
+                          onAdd: edit.onAddCompRow,
+                          onDelete: edit.onDeleteCompRow,
+                          onUpdate: edit.onUpdateCompRow,
+                        }
+                      : null
+                  }
+                />
                 <p className="wb-exh-note" style={{ marginBottom: 14 }}>
                   Abbreviated grid — the full grid appears in the appraisal (p.47).
                 </p>
               </>
             )}
-            {showPsf && <PsfBarChart psf={exhibits.psf} />}
-            {showCap && <CapRateScale cap={exhibits.capRate} />}
+            {showPsf && <PsfBarChart psf={psf} />}
+            {showCap && (
+              <CapRateScale
+                cap={exhibits.capRate}
+                tools={edit ? { onUpdate: edit.onUpdateCapRate } : null}
+              />
+            )}
           </>
         );
       }
@@ -235,20 +379,51 @@ export function WorkbookPreview({
                   </div>
                   <div className="wb-ret-q">{f.question}</div>
                   <div className="wb-ret-reason">{dispositionLine(states[f.id])}</div>
+                  {edit && (
+                    <button
+                      className="wb-fblock-undo"
+                      onClick={() => edit.onDisposition(f.id, "pending")}
+                    >
+                      Undo — back to open
+                    </button>
+                  )}
                 </li>
               ))}
             </ol>
           </>
         );
 
-      case "conclusion":
+      case "conclusion": {
+        // The reviewer's in-place rewrite (s.body) overrides the derived
+        // narrative; until then the derived sentence renders (and seeds the
+        // editor as plain text when clicked).
+        const derived = `Based on the technical review of the appraisal of ${review.propertyAddress} prepared by ${review.appraisalFirm}, the reviewer’s recommendation is ${rec.label.toLowerCase()}. ${riskWording}`;
+        const conclusionProse = s.body ? (
+          <p className="wb-prose">{s.body}</p>
+        ) : (
+          <p className="wb-prose">
+            Based on the technical review of the appraisal of <b>{review.propertyAddress}</b>{" "}
+            prepared by {review.appraisalFirm}, the reviewer&rsquo;s recommendation is{" "}
+            <b>{rec.label.toLowerCase()}</b>. {riskWording}
+          </p>
+        );
         return (
           <>
-            <p className="wb-prose">
-              Based on the technical review of the appraisal of <b>{review.propertyAddress}</b>{" "}
-              prepared by {review.appraisalFirm}, the reviewer&rsquo;s recommendation is{" "}
-              <b>{rec.label.toLowerCase()}</b>. {riskWording}
-            </p>
+            {edit ? (
+              <EditableProse
+                text={s.body ?? derived}
+                display={conclusionProse}
+                edited={s.edited}
+                onCommit={(t) => edit.onUpdateSection(s.id, { body: t, edited: prov(reviewerName) })}
+              />
+            ) : (
+              <>
+                {s.edited && (
+                  <ProvenancePip label="Edited by reviewer" by={s.edited.by} at={s.edited.at} />
+                )}
+                {conclusionProse}
+              </>
+            )}
             {actions.length > 0 ? (
               <ol className="wb-actions-list">
                 {actions.map((a) => (
@@ -273,10 +448,11 @@ export function WorkbookPreview({
             )}
           </>
         );
+      }
 
       case "swot":
         if (!exhibits) return null;
-        return <SwotGrid swot={exhibits.swot} />;
+        return <SwotGrid swot={exhibits.swot} onUpdateQuadrant={edit ? edit.onUpdateSwot : null} />;
 
       case "freeText":
         return (
@@ -286,8 +462,24 @@ export function WorkbookPreview({
                 <Icon name="download" size={12} /> Imported from the appraisal report
               </div>
             )}
-            {s.body ? (
-              <p className="wb-prose">{s.body}</p>
+            {edit ? (
+              <EditableProse
+                text={s.body ?? ""}
+                display={
+                  s.body ? undefined : (
+                    <span className="wb-muted">Empty narrative — click to write it here.</span>
+                  )
+                }
+                edited={s.edited}
+                onCommit={(t) => edit.onUpdateSection(s.id, { body: t, edited: prov(reviewerName) })}
+              />
+            ) : s.body ? (
+              <>
+                {s.edited && (
+                  <ProvenancePip label="Edited by reviewer" by={s.edited.by} at={s.edited.at} />
+                )}
+                <p className="wb-prose">{s.body}</p>
+              </>
             ) : (
               <p className="wb-prose wb-muted">
                 Empty narrative — add body text in the Builder.
@@ -358,7 +550,8 @@ export function WorkbookPreview({
         const items = findings.filter(
           (f) => cats.includes(f.category) && bodyDisps.includes(disp(f.id)),
         );
-        return 0.16 + items.length * 0.14;
+        // Live finding blocks carry a decision bar, so they run taller.
+        return 0.16 + items.length * (edit ? 0.2 : 0.14);
       }
       case "exhibits":
         return 0.78;
@@ -382,14 +575,19 @@ export function WorkbookPreview({
   }
 
   // Number sections (body 1..N, appendices A, B…) and weight each — same order
-  // the Builder's list labels use.
+  // the Builder's list labels use. Stubs don't consume a number.
   let num = 0;
   let appx = 0;
-  const labeled = built.map(({ s, node }) => ({
+  const labeled = built.map(({ s, node, stub }) => ({
     s,
     node,
-    label: s.appendix ? `Appendix ${String.fromCharCode(65 + appx++)}` : String(++num),
-    weight: estimateWeight(s),
+    stub,
+    label: stub
+      ? ""
+      : s.appendix
+        ? `Appendix ${String.fromCharCode(65 + appx++)}`
+        : String(++num),
+    weight: stub ? 0.1 : estimateWeight(s),
   }));
   type LabeledSection = (typeof labeled)[number];
 
@@ -419,18 +617,103 @@ export function WorkbookPreview({
   const coverPages = hasToc ? 2 : 1;
   const totalPages = coverPages + pages.length;
 
-  // Contents list — each rendered section to its 1-based page number.
+  // Contents list — each rendered section to its 1-based page number (hidden
+  // stubs never print, so they stay out of the contents).
   const toc = pages.flatMap((pg, pi) =>
-    pg.map((it) => ({
-      id: it.s.id,
-      label: it.label,
-      title: it.s.title,
-      appendix: !!it.s.appendix,
-      pageNo: pi + coverPages + 1,
-    })),
+    pg
+      .filter((it) => !it.stub)
+      .map((it) => ({
+        id: it.s.id,
+        label: it.label,
+        title: it.s.title,
+        appendix: !!it.s.appendix,
+        pageNo: pi + coverPages + 1,
+      })),
   );
   const tocSections = toc.filter((it) => !it.appendix);
   const tocAppendices = toc.filter((it) => it.appendix);
+
+  // Chrome context: which types exist (singletons drop out of the add palette),
+  // the last shell (end-of-document drop target), and per-TYPE toolbar extras —
+  // the §5 matrix rendered from the capability registry.
+  const presentTypes = config.sections.map((s) => s.type);
+  const lastShellId = [...labeled].reverse().find((it) => !it.stub)?.s.id;
+  const EXHIBIT_MODES = ["both", "table", "chart"] as const;
+  const extrasFor = (s: WbSection): React.ReactNode => {
+    if (!edit) return null;
+    if (s.type === "findings") {
+      // Which categories roll into this chapter — a checkbox menu over every
+      // category in the review (stays open while toggling; doc re-renders live).
+      const current = s.categories ?? [];
+      const all = Array.from(new Set([...availableCategories(findings), ...current]));
+      return (
+        <ActionMenu
+          menuClassName="wb-adddiv-menu"
+          items={all.map((cat) => ({
+            label: cat,
+            selected: current.includes(cat),
+            keepOpen: true,
+            onClick: () =>
+              edit.onUpdateSection(s.id, {
+                categories: current.includes(cat)
+                  ? current.filter((c) => c !== cat)
+                  : [...current, cat],
+              }),
+          }))}
+          trigger={({ open, toggle }) => (
+            <button
+              className={`wb-shell-act${open ? " is-open" : ""}`}
+              onClick={toggle}
+              title="Which finding categories roll into this chapter"
+            >
+              <Icon name="checklist" size={12} /> Categories
+            </button>
+          )}
+        />
+      );
+    }
+    if (s.type === "exhibits") {
+      const mode = s.exhibitMode ?? "both";
+      const next = EXHIBIT_MODES[(EXHIBIT_MODES.indexOf(mode) + 1) % EXHIBIT_MODES.length];
+      const modeLabel =
+        mode === "both" ? "Table + chart" : mode === "table" ? "Table only" : "Chart only";
+      return (
+        <button
+          className="wb-shell-act"
+          onClick={() => edit.onUpdateSection(s.id, { exhibitMode: next })}
+          title="Cycle what this exhibit shows: table / chart / both"
+        >
+          <Icon name="columns" size={12} /> {modeLabel}
+        </button>
+      );
+    }
+    if (s.type === "sensitivity" && exhibits) {
+      const total = exhibits.sensitivity.cols.length;
+      const n = Math.min(s.sensitivityCols ?? total, total);
+      return (
+        <span className="wb-shell-step">
+          <button
+            className="wb-shell-act"
+            onClick={() => edit.onUpdateSection(s.id, { sensitivityCols: Math.max(3, n - 1) })}
+            disabled={n <= 3}
+            aria-label="Fewer scenario columns"
+          >
+            <Icon name="minus" size={12} />
+          </button>
+          {n} cols
+          <button
+            className="wb-shell-act"
+            onClick={() => edit.onUpdateSection(s.id, { sensitivityCols: Math.min(total, n + 1) })}
+            disabled={n >= total}
+            aria-label="More scenario columns"
+          >
+            <Icon name="add" size={12} />
+          </button>
+        </span>
+      );
+    }
+    return null;
+  };
 
   const runHead = settings.showHeader ? (
     <div className="wb-runhead">
@@ -571,16 +854,61 @@ export function WorkbookPreview({
         </section>
       )}
 
-      {/* Content pages — sections packed onto Letter sheets */}
+      {/* Drag ghost — the section "in hand", trailing the pointer */}
+      {dragId &&
+        (() => {
+          const it = labeled.find((l) => l.s.id === dragId);
+          return it ? (
+            <SectionDragGhost label={it.label} title={it.s.title} x={ghostX} y={ghostY} />
+          ) : null;
+        })()}
+
+      {/* Content pages — sections packed onto Letter sheets. In edit mode each
+          section wears the canvas chrome (outline + toolbar + drag handle) with
+          an insert divider before it; hidden sections render as stubs. */}
       {pages.map((pg, pi) => (
         <section className="wb-page" key={`pg-${pi}`}>
           {runHead}
           <div className="wb-page-body">
-            {pg.map(({ s, node, label }) => (
-              <Section key={s.id} id={s.id} label={label} title={s.title}>
-                {node}
-              </Section>
-            ))}
+            {pg.map(({ s, node, label, stub }) => {
+              if (!edit)
+                return (
+                  <Section key={s.id} id={s.id} label={label} title={s.title}>
+                    {node}
+                  </Section>
+                );
+              if (stub)
+                return (
+                  <div key={s.id}>
+                    <AddDivider beforeId={s.id} presentTypes={presentTypes} edit={edit} />
+                    <HiddenSectionStub
+                      sec={s}
+                      dropBefore={dropId === s.id}
+                      onShow={() => edit.onToggleSection(s.id)}
+                    />
+                  </div>
+                );
+              return (
+                <div key={s.id}>
+                  <AddDivider beforeId={s.id} presentTypes={presentTypes} edit={edit} />
+                  <SectionShell
+                    sec={s}
+                    label={label}
+                    edit={edit}
+                    dragging={dragId === s.id}
+                    dropBefore={dropId === s.id}
+                    dropAfter={dropId === "__end__" && s.id === lastShellId}
+                    onHandleDown={startDrag(s.id)}
+                    extras={extrasFor(s)}
+                  >
+                    {node}
+                  </SectionShell>
+                </div>
+              );
+            })}
+            {edit && pi === pages.length - 1 && (
+              <AddDivider beforeId={null} presentTypes={presentTypes} edit={edit} />
+            )}
           </div>
           <div className="wb-page-foot">
             {settings.showFooter && <span>{WORKBOOK_FOOTER}</span>}
@@ -595,6 +923,12 @@ export function WorkbookPreview({
 }
 
 /* ---- section + small presentational helpers ---- */
+
+/** Provenance stamp for an in-place content edit — called from commit handlers
+ *  only (never during render). */
+function prov(by: string) {
+  return { by, at: Date.now() };
+}
 
 function Section({
   id,

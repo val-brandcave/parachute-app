@@ -3,8 +3,10 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Button, Icon } from "@/components/atoms";
 import { StatusPill } from "@/components/molecules";
-import { useWorkspaceStore } from "@/store";
+import { useWorkspaceStore, useTemplatesStore } from "@/store";
 import { WorkbookPreview } from "@/components/review/WorkbookPreview";
+import { AddFindingModal, type NewFinding } from "@/components/review/AddFindingModal";
+import { newSection, type WbSection } from "@/lib/workbook-config";
 import type { Review } from "@/types";
 import type { RunReviewType } from "@/store";
 import type { RunContext } from "./RunModal";
@@ -43,10 +45,39 @@ export function RunWorkbook({
   onReviewFindings: () => void;
   onReturn: () => void;
 }) {
-  const { findings, states, exhibits, workbook, signature, filing } = useWorkspaceStore();
-  const workbookDirty = useWorkspaceStore((s) => s.workbookDirty);
-  const regenerate = useWorkspaceStore((s) => s.regenerate);
+  const {
+    findings,
+    states,
+    exhibits,
+    workbook,
+    signature,
+    filing,
+    setDisposition,
+    setComment,
+    toggleFlag,
+    updateSection,
+    addCompRow,
+    deleteCompRow,
+    updateCompRow,
+    toggleSection,
+    deleteSection,
+    duplicateSection,
+    moveSectionBefore,
+    insertSectionAt,
+    updateSwotQuadrant,
+    updateCapRate,
+    addReviewerFinding,
+  } = useWorkspaceStore();
   const regeneratedAt = useWorkspaceStore((s) => s.regeneratedAt);
+  const responses = useTemplatesStore((s) => s.responses);
+  const layouts = useTemplatesStore((s) => s.layouts);
+  const saveLayoutFromWorkbook = useTemplatesStore((s) => s.saveLayoutFromWorkbook);
+
+  // "＋ Add finding" composer, opened from a findings chapter's foot. `false` =
+  // closed; otherwise the target findings section's id.
+  const [addFindingAt, setAddFindingAt] = useState<string | null | false>(false);
+  // "Save as template" (F-147) — brief confirmation state on the button.
+  const [savedTemplate, setSavedTemplate] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const [customizing, setCustomizing] = useState(false);
 
@@ -70,6 +101,25 @@ export function RunWorkbook({
 
   // Document-toolbar state — zoom + a page indicator that tracks scroll.
   const stageRef = useRef<HTMLDivElement>(null);
+  // "Review them" (low-confidence banner) cycles through the undecided finding
+  // blocks IN the document — the workbook is the decision surface, so the
+  // banner never routes away from it.
+  const attnIdx = useRef(0);
+  const goNextPending = () => {
+    const sc = stageRef.current;
+    if (!sc) return;
+    const pendingIds = findings
+      .filter((f) => (states[f.id]?.disposition ?? "pending") === "pending")
+      .map((f) => f.id);
+    if (!pendingIds.length) return;
+    const id = pendingIds[attnIdx.current % pendingIds.length];
+    attnIdx.current += 1;
+    const el = sc.querySelector<HTMLElement>(`[data-finding="${id}"]`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.classList.add("is-attn");
+    setTimeout(() => el.classList.remove("is-attn"), 1600);
+  };
   const [zoom, setZoom] = useState(1);
   const [page, setPage] = useState(1);
   const [pageCount, setPageCount] = useState(1);
@@ -95,6 +145,52 @@ export function RunWorkbook({
   if (!ctx.ready || !review || !workbook) {
     return <div className="run-loading text-secondary">Compiling your workbook…</div>;
   }
+
+  // Reviewer-added finding (F-145): a finding is a first-class object added to
+  // a specific findings CHAPTER — the composer opens from that chapter's foot
+  // with its categories offered (plus "Reviewer Note" for uncategorized adds).
+  const targetFindingsSection: WbSection | undefined =
+    addFindingAt === false || addFindingAt === null
+      ? undefined
+      : workbook.sections.find((s) => s.id === addFindingAt);
+  const addFindingCategories = targetFindingsSection
+    ? Array.from(new Set([...(targetFindingsSection.categories ?? []), "Reviewer Note"]))
+    : undefined;
+
+  const handleAddFinding = (f: NewFinding) => {
+    addReviewerFinding(f);
+    // If the chosen category isn't in the target chapter yet (e.g. "Reviewer
+    // Note"), append it THERE so the new block lands where the reviewer clicked.
+    if (
+      targetFindingsSection &&
+      !(targetFindingsSection.categories ?? []).includes(f.category)
+    )
+      updateSection(targetFindingsSection.id, {
+        categories: [...(targetFindingsSection.categories ?? []), f.category],
+      });
+  };
+
+  // "Save as my template" (F-147): structure + theme only — content stays
+  // per-review. Lands on the org's layout shelf for the F-133 confirm-gate tile.
+  const saveTemplate = async () => {
+    if (savedTemplate) return;
+    const base = workbook.baseLayoutId
+      ? layouts.find((l) => l.id === workbook.baseLayoutId)
+      : undefined;
+    await saveLayoutFromWorkbook({
+      name: `My layout — saved ${new Date().toLocaleDateString([], { month: "short", day: "numeric" })}`,
+      profile: base?.profile ?? "Commercial",
+      theme: workbook.settings.theme,
+      sections: workbook.sections.map((s) => ({
+        id: s.id,
+        title: s.title,
+        type: s.type,
+        enabled: s.enabled,
+      })),
+    });
+    setSavedTemplate(true);
+    setTimeout(() => setSavedTemplate(false), 2400);
+  };
 
   const showCallout = !dismissed && !signed && ctx.lowConfidenceCount > 0;
 
@@ -173,6 +269,29 @@ export function RunWorkbook({
               <Icon name="chevron-right" size={16} />
             </button>
           </div>
+          {/* Customize ▸ — the whole 20% behind one quiet toolbar affordance,
+              closed by default (F-146 / Decision D). Demos never open it.
+              Save as template (F-147) captures structure + theme, not content. */}
+          {!signed && (
+            <>
+              <span className="run-ex-tools-div" aria-hidden="true" />
+              <button
+                className={`run-wb-tbtn run-wb-tbtn--quiet${savedTemplate ? " is-saved" : ""}`}
+                onClick={saveTemplate}
+              >
+                <Icon name={savedTemplate ? "check" : "templates"} size={14} />
+                {savedTemplate ? "Saved to templates" : "Save as template"}
+              </button>
+              <button
+                className={`run-wb-tbtn${customizing ? " is-active" : ""}`}
+                onClick={() => setCustomizing((v) => !v)}
+                aria-expanded={customizing}
+              >
+                Customize
+                <Icon name={customizing ? "close" : "chevron-right"} size={14} />
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -198,19 +317,9 @@ export function RunWorkbook({
             </div>
           )}
 
-          {workbookDirty && !signed && (
-            <div className="run-dirty" role="status">
-              <Icon name="refresh" size={16} />
-              <span className="run-dirty-text">
-                <b>Findings changed</b> since this workbook was compiled — regenerate to fold
-                your latest decisions in.
-              </span>
-              <button className="run-dirty-cta" onClick={regenerate}>
-                <Icon name="refresh" size={14} /> Regenerate
-              </button>
-            </div>
-          )}
-
+          {/* Direct edits are live (Decision E, Jul 7) — the dirty-callout /
+              Regenerate loop left the primary flow; the compile beat above
+              remains only for system recompute. */}
           {showCallout && (
             <div className="run-callout" role="status">
               <Icon name="warn" size={16} />
@@ -218,8 +327,8 @@ export function RunWorkbook({
                 <b>{ctx.lowConfidenceCount} item{ctx.lowConfidenceCount === 1 ? "" : "s"}</b>{" "}
                 need a closer look before you sign — review them?
               </span>
-              <Button variant="tonal" size="sm" onClick={onReviewFindings}>
-                Review findings
+              <Button variant="tonal" size="sm" onClick={goNextPending}>
+                Review them
               </Button>
               <button
                 className="run-callout-x"
@@ -244,12 +353,42 @@ export function RunWorkbook({
               reviewedAt={review.orderedAt}
               signature={signature}
               filing={filing}
+              editing={
+                signed
+                  ? null
+                  : {
+                      responses,
+                      onDisposition: setDisposition,
+                      onComment: setComment,
+                      onToggleFlag: toggleFlag,
+                      onUpdateSection: updateSection,
+                      onAddCompRow: addCompRow,
+                      onDeleteCompRow: deleteCompRow,
+                      onUpdateCompRow: updateCompRow,
+                      onToggleSection: toggleSection,
+                      onDeleteSection: deleteSection,
+                      onDuplicateSection: duplicateSection,
+                      onMoveSectionBefore: moveSectionBefore,
+                      onInsertSection: (type, beforeId) =>
+                        insertSectionAt(newSection(type, findings), beforeId),
+                      onRequestAddFinding: (sectionId) => setAddFindingAt(sectionId),
+                      onUpdateSwot: updateSwotQuadrant,
+                      onUpdateCapRate: updateCapRate,
+                    }
+              }
             />
           </div>
         </div>
 
-        {customizing && <RunCustomizePanel onClose={() => setCustomizing(false)} />}
+        {customizing && !signed && <RunCustomizePanel onClose={() => setCustomizing(false)} />}
       </div>
+
+      <AddFindingModal
+        open={addFindingAt !== false}
+        onClose={() => setAddFindingAt(false)}
+        onSave={handleAddFinding}
+        categories={addFindingCategories}
+      />
 
       <footer className="run-foot">
         <div className="run-foot-actions">
@@ -276,17 +415,8 @@ export function RunWorkbook({
             </>
           ) : (
             <>
-              <Button variant="outline" size="sm" iconLeft="quote" onClick={onReviewFindings}>
-                Review findings
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                iconLeft="edit"
-                className={customizing ? "is-active" : undefined}
-                onClick={() => setCustomizing((v) => !v)}
-              >
-                Customize
+              <Button variant="outline" size="sm" iconLeft="pdf" onClick={onReviewFindings}>
+                View source
               </Button>
               <Button variant="primary" size="sm" iconRight="forward" onClick={onSign}>
                 Sign &amp; finalize

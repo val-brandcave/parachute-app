@@ -48,12 +48,20 @@ export function AddFindingModal({
   open,
   onClose,
   onSave,
+  categories,
 }: {
   open: boolean;
   onClose: () => void;
   onSave: (f: NewFinding) => void;
+  /** Override the category options (e.g. the target findings chapter's
+   *  categories, so the new finding lands where the reviewer clicked). */
+  categories?: string[];
 }) {
   const [draft, setDraft] = useState<NewFinding>(EMPTY);
+  const cats = categories?.length ? categories : CATEGORIES;
+  // Keep the draft's category valid for the offered list (it may be scoped to
+  // a specific chapter when opened from the workbook canvas).
+  const category = cats.includes(draft.category) ? draft.category : cats[0];
 
   const canSave = draft.question.trim().length > 0;
 
@@ -66,7 +74,12 @@ export function AddFindingModal({
 
   const submit = () => {
     if (!canSave) return;
-    onSave({ ...draft, question: draft.question.trim(), analysis: draft.analysis.trim() });
+    onSave({
+      ...draft,
+      category,
+      question: draft.question.trim(),
+      analysis: draft.analysis.trim(),
+    });
     close();
   };
 
@@ -95,10 +108,10 @@ export function AddFindingModal({
             <label htmlFor="af-category">Category</label>
             <select
               id="af-category"
-              value={draft.category}
+              value={category}
               onChange={(e) => set("category", e.target.value)}
             >
-              {CATEGORIES.map((c) => (
+              {cats.map((c) => (
                 <option key={c} value={c}>
                   {c}
                 </option>

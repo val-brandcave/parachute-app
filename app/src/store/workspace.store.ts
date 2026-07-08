@@ -8,6 +8,7 @@ import type {
   Disposition,
   Severity,
   WorkbookExhibits,
+  WbAdjustmentRow,
 } from "@/types";
 import type {
   WorkbookConfig,
@@ -113,6 +114,28 @@ interface WorkspaceState {
   addSection: (section: Omit<WbSection, "id">) => string;
   updateSection: (id: string, patch: Partial<WbSection>) => void;
   updateSettings: (patch: Partial<WbDocSettings>) => void;
+
+  // ---- On-canvas structure edits (inline workbook chrome, F-144) ----
+  /** Insert a new section before `beforeId` (null = append). Returns the id. */
+  insertSectionAt: (section: Omit<WbSection, "id">, beforeId: string | null) => string;
+  /** Drop a dragged section before `beforeId` (null = move to the end). */
+  moveSectionBefore: (id: string, beforeId: string | null) => void;
+  /** Copy a section (new id, "(copy)" title) right after the original. */
+  duplicateSection: (id: string) => void;
+  /** Replace one SWOT quadrant's items (inline card editing). */
+  updateSwotQuadrant: (
+    quadrant: "strengths" | "weaknesses" | "opportunities" | "threats",
+    items: string[],
+  ) => void;
+  /** Patch the cap-rate exhibit (structured point/band editing — never free-draw). */
+  updateCapRate: (patch: Partial<WorkbookExhibits["capRate"]>) => void;
+
+  // ---- Comp-grid repeater (inline workbook editing, F-144) ----
+  /** Append a fresh "Comparable N" row with neutral defaults — appears instantly. */
+  addCompRow: () => void;
+  deleteCompRow: (comp: string) => void;
+  /** Patch a row's cells; the adjusted $/SF re-derives unless patched directly. */
+  updateCompRow: (comp: string, patch: Partial<WbAdjustmentRow>) => void;
 }
 
 export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
@@ -162,7 +185,13 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     set((s) => ({
       states: {
         ...s.states,
-        [findingId]: { ...s.states[findingId], disposition: disp, reason, templateId },
+        [findingId]: {
+          ...s.states[findingId],
+          disposition: disp,
+          reason,
+          templateId,
+          decidedAt: disp === "pending" ? undefined : Date.now(),
+        },
       },
       workbookDirty: s.compiledAt != null ? true : s.workbookDirty,
     })),
@@ -347,7 +376,117 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         ? { workbook: { ...s.workbook, settings: { ...s.workbook.settings, ...patch } } }
         : {},
     ),
+
+  // ---- On-canvas structure edits (inline workbook chrome, F-144) ----
+  insertSectionAt: (section, beforeId) => {
+    const id = generateId();
+    set((s) => {
+      if (!s.workbook) return {};
+      const next = [...s.workbook.sections];
+      const at = beforeId ? next.findIndex((sec) => sec.id === beforeId) : -1;
+      next.splice(at < 0 ? next.length : at, 0, { ...section, id });
+      return { workbook: { ...s.workbook, sections: next } };
+    });
+    return id;
+  },
+
+  moveSectionBefore: (id, beforeId) =>
+    set((s) => {
+      if (!s.workbook || id === beforeId) return {};
+      const list = [...s.workbook.sections];
+      const from = list.findIndex((sec) => sec.id === id);
+      if (from < 0) return {};
+      const [moved] = list.splice(from, 1);
+      const at = beforeId ? list.findIndex((sec) => sec.id === beforeId) : -1;
+      list.splice(at < 0 ? list.length : at, 0, moved);
+      return { workbook: { ...s.workbook, sections: list } };
+    }),
+
+  duplicateSection: (id) =>
+    set((s) => {
+      if (!s.workbook) return {};
+      const i = s.workbook.sections.findIndex((sec) => sec.id === id);
+      if (i < 0) return {};
+      const src = s.workbook.sections[i];
+      const copy: WbSection = { ...src, id: generateId(), title: `${src.title} (copy)` };
+      const next = [...s.workbook.sections];
+      next.splice(i + 1, 0, copy);
+      return { workbook: { ...s.workbook, sections: next } };
+    }),
+
+  updateSwotQuadrant: (quadrant, items) =>
+    set((s) =>
+      s.exhibits
+        ? { exhibits: { ...s.exhibits, swot: { ...s.exhibits.swot, [quadrant]: items } } }
+        : {},
+    ),
+
+  updateCapRate: (patch) =>
+    set((s) =>
+      s.exhibits
+        ? { exhibits: { ...s.exhibits, capRate: { ...s.exhibits.capRate, ...patch } } }
+        : {},
+    ),
+
+  // ---- Comp-grid repeater (inline workbook editing, F-144) ----
+  addCompRow: () =>
+    set((s) => {
+      if (!s.exhibits) return {};
+      const rows = s.exhibits.adjustmentGrid;
+      // Next comp number = one past the highest existing "Comparable N".
+      const n =
+        rows.reduce((max, r) => {
+          const m = r.comp.match(/(\d+)\s*$/);
+          return m ? Math.max(max, parseInt(m[1], 10)) : max;
+        }, 0) + 1;
+      const fresh = withDerivedAdj({
+        comp: `Comparable ${n}`,
+        unadj: 350,
+        location: 0,
+        condition: 0,
+        quality: 0,
+        adj: 350,
+      });
+      return { exhibits: { ...s.exhibits, adjustmentGrid: [...rows, fresh] } };
+    }),
+
+  deleteCompRow: (comp) =>
+    set((s) =>
+      s.exhibits
+        ? {
+            exhibits: {
+              ...s.exhibits,
+              adjustmentGrid: s.exhibits.adjustmentGrid.filter((r) => r.comp !== comp),
+            },
+          }
+        : {},
+    ),
+
+  updateCompRow: (comp, patch) =>
+    set((s) =>
+      s.exhibits
+        ? {
+            exhibits: {
+              ...s.exhibits,
+              adjustmentGrid: s.exhibits.adjustmentGrid.map((r) =>
+                r.comp === comp
+                  ? patch.adj != null
+                    ? { ...r, ...patch }
+                    : withDerivedAdj({ ...r, ...patch })
+                  : r,
+              ),
+            },
+          }
+        : {},
+    ),
 }));
+
+/** Adjusted $/SF re-derives from the unadjusted value + the three signed %
+ *  adjustments — the "table never breaks" guarantee of structured row editing. */
+function withDerivedAdj(row: WbAdjustmentRow): WbAdjustmentRow {
+  const adj = row.unadj * (1 + (row.location + row.condition + row.quality) / 100);
+  return { ...row, adj: Math.round(adj * 100) / 100 };
+}
 
 /** Workbook tally derived from current dispositions. */
 export function tally(states: Record<string, FindingState>) {

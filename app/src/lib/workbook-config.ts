@@ -33,6 +33,15 @@ export interface WbExhibitSeries {
   capRate: boolean;
 }
 
+/** One row of an editable fact grid (summary section). Facts derive from the
+ *  review record until first edited; editing MATERIALIZES them onto the section
+ *  (`WbSection.facts`) — plan §4.1 "compile = seed, not render". */
+export interface WbFact {
+  label: string;
+  value: string;
+  big?: boolean;
+}
+
 export interface WbSection {
   id: string;
   type: WbSectionType;
@@ -49,10 +58,18 @@ export interface WbSection {
   exhibitMode?: "table" | "chart" | "both";
   /** sensitivity — how many scenario columns to print (centred on the selected). */
   sensitivityCols?: number;
-  /** freeText — the narrative body. */
+  /** freeText — the narrative body. On a `conclusion` section it is the
+   *  reviewer's in-place rewrite, overriding the derived narrative (F-144). */
   body?: string;
   /** freeText carrying an appraisal section pulled in via the import band. */
   imported?: boolean;
+  /** summary — reviewer-materialized fact rows (overrides the derived facts). */
+  facts?: WbFact[];
+  /** summary — reviewer-materialized "approaches developed" tags. */
+  approaches?: string[];
+  /** Set when the reviewer edited this section's content in place — drives the
+   *  "Edited by reviewer" provenance pip (inline-workbook plan §4.3, layer 1). */
+  edited?: { by: string; at: number };
 }
 
 /** The 9 author-addable section types (the Builder add-palette). `returns` is
