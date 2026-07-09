@@ -3475,15 +3475,6 @@ body.wb-reordering .wb-adddiv {
 .wb-shell-act--danger:hover {
   background: var(--paper-err);
 }
-.wb-shell-step {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--paper-bg);
-  white-space: nowrap;
-}
 /* rename-in-place: the heading text becomes an input, same type styles */
 .wb-sec-rename {
   flex: 1;
@@ -3580,10 +3571,6 @@ body.wb-reordering .wb-adddiv {
 .wb-adddiv-btn.on {
   background: var(--md-surface);
 }
-.wb-adddiv-menu {
-  min-width: 240px;
-}
-
 /* editable fact grid (summary "metric tiles") */
 .wb-fact {
   position: relative;
