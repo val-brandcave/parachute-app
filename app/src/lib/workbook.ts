@@ -351,36 +351,13 @@ export function auditStages(f: Finding): AuditStage[] {
   ];
 }
 
-/* ---------- Conclusion action items (derived from dispositions) ---------- */
-
-export interface ActionItem {
-  id: string;
-  text: string;
-  deadline: string;
-}
-
-/** Action items the conclusion lists, derived from the reviewer's decisions:
- *  rejected findings and conditioned findings become tracked asks, with a
- *  deadline phrase scaled by severity. */
-export function actionItems(
-  findings: Finding[],
-  states: Record<string, FindingState>,
-): ActionItem[] {
-  return findings
-    .filter((f) => {
-      const st = states[f.id];
-      // Removed findings are dropped from the workbook — never a tracked ask.
-      if (st?.disposition === "removed") return false;
-      return st?.disposition === "rejected" || st?.condition;
-    })
-    .map((f, i) => ({
-      id: `A${i + 1}`,
-      text:
-        states[f.id]?.reason ||
-        states[f.id]?.comment ||
-        f.question,
-      deadline: f.severity === "crit" || f.severity === "fail" ? "due before funding" : "due with revision",
-    }));
+/** The severity-scaled deadline phrase a derived action item / condition seed
+ *  carries until the reviewer authors a real date (F-151). Shared so the derived
+ *  seeds in `workbook-config` and any read-only surface agree. */
+export function derivedDeadlinePhrase(f: Finding): string {
+  return f.severity === "crit" || f.severity === "fail"
+    ? "Before funding"
+    : "With revision";
 }
 
 /* ---------- Document header / footer defaults ---------- */

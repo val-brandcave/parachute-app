@@ -1,6 +1,14 @@
 export { useReviewsStore } from "./reviews.store";
 export { useUsersStore } from "./users.store";
 export { useWorkspaceStore, tally } from "./workspace.store";
+export type {
+  ActivityEntry,
+  ActivityActor,
+  Comment,
+  LedgerPatch,
+  WorkbookSignature,
+  WorkbookFiling,
+} from "./workspace.store";
 export {
   useAdminStore,
   attNeedsAttention,
