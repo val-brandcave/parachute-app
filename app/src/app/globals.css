@@ -2866,7 +2866,8 @@ textarea {
   line-height: 1.55;
   color: var(--md-on-surface-t);
 }
-.wb-find-ai {
+.wb-find-ai,
+.wb-find-prov {
   margin-top: 8px;
   padding-top: 7px;
   border-top: 1px dashed var(--md-outline-v);
@@ -2890,6 +2891,11 @@ textarea {
 }
 .wb-find--na {
   border-left: 3px solid var(--md-outline);
+}
+/* reviewer-authored finding — petrol spine, never confusable with an AI finding
+   (mirrors the edit-mode .wb-fblock.is-user treatment). */
+.wb-find--user {
+  border-left: 3px solid var(--md-accent);
 }
 /* imported-narrative tag on a free-text section */
 .wb-import-tag {
