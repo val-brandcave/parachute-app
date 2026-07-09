@@ -334,7 +334,7 @@ export function RunWorkbook({
                 <SegmentedControl
                   options={[
                     { value: "edit", label: "Edit" },
-                    { value: "clean", label: "Clean" },
+                    { value: "clean", label: "Preview" },
                   ]}
                   value={cleanView ? "clean" : "edit"}
                   onChange={(v) => setView(v as "edit" | "clean")}
