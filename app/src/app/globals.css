@@ -2948,9 +2948,6 @@ textarea {
   background: var(--md-surface);
   transition: box-shadow 0.14s ease;
 }
-.wb-fblock:hover {
-  box-shadow: 0 0 0 1.5px var(--md-accent);
-}
 .wb-fblock--crit {
   border-left-color: var(--md-crit);
 }
