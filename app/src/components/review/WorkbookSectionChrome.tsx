@@ -271,16 +271,28 @@ export function hasSectionSettings(type: WbSectionType): boolean {
   return SETTINGS_TYPES.includes(type);
 }
 
+/** The visible findings chapters + their display number — lets the routing menu
+ *  show where each category currently lives ("In §5 · Cost Approach"). */
+export interface FindingsSectionInfo {
+  id: string;
+  title: string;
+  label: string;
+  categories: string[];
+}
+
 export function SectionSettings({
   sec,
   edit,
   exhibits,
   findings,
+  findingsSections,
 }: {
   sec: WbSection;
   edit: WorkbookEditingActions;
   exhibits: WorkbookExhibits | null;
   findings: Finding[];
+  /** All visible findings chapters (for exclusive-routing ownership hints). */
+  findingsSections: FindingsSectionInfo[];
 }) {
   if (!hasSectionSettings(sec.type)) return null;
 
@@ -299,23 +311,32 @@ export function SectionSettings({
       { label: "Cap-rate comparison", selected: series.capRate, keepOpen: true, onClick: toggle("capRate") },
     ];
   } else if (sec.type === "findings") {
-    // Which finding categories route into this chapter (client ref: "Routes
-    // finding categories"). Data already exists on the section.
+    // Exclusive routing (F-152): a category lives in exactly ONE chapter, so a
+    // finding can never print twice. Checking a category here MOVES it here
+    // (removing it from wherever it was); each row shows its current home so the
+    // partition is legible. Unchecking unassigns it (surfaced as a warning).
     const current = sec.categories ?? [];
     const all = Array.from(new Set([...availableCategories(findings), ...current]));
+    const ownerOf = (cat: string) =>
+      findingsSections.find((fs) => fs.id !== sec.id && fs.categories.includes(cat));
     items = [
       { header: true, label: "Route finding categories" },
-      ...all.map((cat) => ({
-        label: cat,
-        selected: current.includes(cat),
-        keepOpen: true,
-        onClick: () =>
-          edit.onUpdateSection(sec.id, {
-            categories: current.includes(cat)
-              ? current.filter((c) => c !== cat)
-              : [...current, cat],
-          }),
-      })),
+      ...all.map((cat) => {
+        const mine = current.includes(cat);
+        const owner = mine ? undefined : ownerOf(cat);
+        const description = mine
+          ? "In this section"
+          : owner
+            ? `In §${owner.label} · ${owner.title}`
+            : "Not shown in any section";
+        return {
+          label: cat,
+          description,
+          selected: mine,
+          keepOpen: true,
+          onClick: () => edit.onRouteCategory(cat, mine ? null : sec.id),
+        };
+      }),
     ];
   } else if (sec.type === "sensitivity" && exhibits) {
     // Scenario columns (moved off the toolbar cycler into settings). Radio 3..N,

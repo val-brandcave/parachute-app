@@ -7,7 +7,7 @@ import { ActionMenu } from "@/components/molecules/ActionMenu";
 import { useWorkspaceStore, useTemplatesStore } from "@/store";
 import { WorkbookPreview } from "@/components/review/WorkbookPreview";
 import { AddFindingModal, type NewFinding } from "@/components/review/AddFindingModal";
-import { newSection, type WbSection } from "@/lib/workbook-config";
+import { newSection, unroutedCategories, type WbSection } from "@/lib/workbook-config";
 import type { Review } from "@/types";
 import type { RunReviewType } from "@/store";
 import type { RunContext } from "./RunModal";
@@ -66,6 +66,7 @@ export function RunWorkbook({
     duplicateSection,
     moveSectionBefore,
     insertSectionAt,
+    moveCategoryToSection,
     updateSwotQuadrant,
     updateCapRate,
     addReviewerFinding,
@@ -242,6 +243,10 @@ export function RunWorkbook({
   // Clean view is a read-only preview, so the finding blocks it scrolls to
   // aren't decision blocks there — hide the callout while previewing.
   const showCallout = !dismissed && !signed && !cleanView && ctx.lowConfidenceCount > 0;
+  // Categories whose findings no visible section routes — they'd silently drop
+  // from the signable doc (exclusive routing), so warn instead.
+  const unroutedCats =
+    !signed && !cleanView ? unroutedCategories(workbook.sections, findings) : [];
 
   const zoomBy = (d: number) =>
     setZoom((z) => Math.min(1.5, Math.max(0.7, +(z + d).toFixed(2))));
@@ -435,6 +440,22 @@ export function RunWorkbook({
             </div>
           )}
 
+          {/* Exclusive routing (F-152): a category with no visible home would
+              drop its findings from the signable doc — surface it, never drop
+              silently. Not dismissible: it's a data-integrity gap to resolve. */}
+          {unroutedCats.length > 0 && (
+            <div className="run-callout" role="status">
+              <Icon name="warn" size={16} />
+              <span className="run-callout-text">
+                <b>
+                  {unroutedCats.length} finding categor{unroutedCats.length === 1 ? "y is" : "ies are"}
+                </b>{" "}
+                not shown in any section — {unroutedCats.join(", ")}. Route{" "}
+                {unroutedCats.length === 1 ? "it" : "them"} from a findings section&rsquo;s ⚙ Settings.
+              </span>
+            </div>
+          )}
+
           <div className="run-wb-zoom" style={{ zoom }}>
             <WorkbookPreview
               review={review}
@@ -465,7 +486,8 @@ export function RunWorkbook({
                       onDuplicateSection: duplicateSection,
                       onMoveSectionBefore: moveSectionBefore,
                       onInsertSection: (type, beforeId) =>
-                        insertSectionAt(newSection(type, findings), beforeId),
+                        insertSectionAt(newSection(type), beforeId),
+                      onRouteCategory: moveCategoryToSection,
                       onRequestAddFinding: (sectionId) => setAddFindingAt(sectionId),
                       onUpdateSwot: updateSwotQuadrant,
                       onUpdateCapRate: updateCapRate,

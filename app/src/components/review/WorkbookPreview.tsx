@@ -669,6 +669,16 @@ export function WorkbookPreview({
   // ad-hoc toolbar cyclers.
   const presentTypes = config.sections.map((s) => s.type);
   const lastShellId = [...labeled].reverse().find((it) => !it.stub)?.s.id;
+  // Visible findings chapters + their number — feeds the ⚙ routing menu's
+  // "In §N · title" ownership hints (exclusive routing).
+  const findingsSectionInfo = labeled
+    .filter((it) => it.s.type === "findings" && !it.stub)
+    .map((it) => ({
+      id: it.s.id,
+      title: it.s.title,
+      label: it.label,
+      categories: it.s.categories ?? [],
+    }));
 
   const runHead = settings.showHeader ? (
     <div className="wb-runhead">
@@ -860,6 +870,7 @@ export function WorkbookPreview({
                         edit={edit}
                         exhibits={exhibits}
                         findings={findings}
+                        findingsSections={findingsSectionInfo}
                       />
                     }
                   >

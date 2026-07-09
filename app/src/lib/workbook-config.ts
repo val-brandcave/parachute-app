@@ -480,6 +480,18 @@ export function availableCategories(findings: Finding[]): string[] {
   return Array.from(new Set(findings.map((f) => f.category))).sort();
 }
 
+/** Categories with findings that no VISIBLE findings section routes — their
+ *  findings would silently drop out of the signable doc, so the workbook surfaces
+ *  them as a warning (routing is exclusive: a category has exactly one home). */
+export function unroutedCategories(sections: WbSection[], findings: Finding[]): string[] {
+  const routed = new Set<string>();
+  for (const s of sections) {
+    if (s.type === "findings" && s.enabled)
+      for (const c of s.categories ?? []) routed.add(c);
+  }
+  return availableCategories(findings).filter((c) => !routed.has(c));
+}
+
 /** Slice a sensitivity table to `n` columns, keeping the selected column in
  *  view and centred where possible. */
 export function visibleSensitivityCols<T extends { selected?: boolean }>(
@@ -494,15 +506,18 @@ export function visibleSensitivityCols<T extends { selected?: boolean }>(
   return cols.slice(start, start + n);
 }
 
-/** A fresh section of `type`, ready to append (id stamped by the store). */
-export function newSection(type: WbSectionType, allFindings: Finding[]): Omit<WbSection, "id"> {
+/** A fresh section of `type`, ready to append (id stamped by the store). A new
+ *  findings chapter starts with NO categories — routing is exclusive, so you
+ *  route categories into it (claiming every category here would duplicate every
+ *  finding). */
+export function newSection(type: WbSectionType): Omit<WbSection, "id"> {
   switch (type) {
     case "findings":
       return {
         type,
         title: "Findings",
         enabled: true,
-        categories: availableCategories(allFindings),
+        categories: [],
       };
     case "exhibits":
       return {
