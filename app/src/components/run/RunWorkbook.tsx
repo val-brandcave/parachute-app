@@ -11,6 +11,7 @@ import type { Review } from "@/types";
 import type { RunReviewType } from "@/store";
 import type { RunContext } from "./RunModal";
 import { RunCustomizePanel } from "./RunCustomize";
+import { RunActivityPanel } from "./RunActivity";
 
 /**
  * S-A Workbook — the run flow's home base. The compiled workbook is the hero;
@@ -67,6 +68,12 @@ export function RunWorkbook({
     updateSwotQuadrant,
     updateCapRate,
     addReviewerFinding,
+    restoreFinding,
+    updateReviewerFinding,
+    deleteReviewerFinding,
+    comments,
+    addComment,
+    deleteComment,
   } = useWorkspaceStore();
   const regeneratedAt = useWorkspaceStore((s) => s.regeneratedAt);
   const responses = useTemplatesStore((s) => s.responses);
@@ -80,6 +87,20 @@ export function RunWorkbook({
   const [savedTemplate, setSavedTemplate] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const [customizing, setCustomizing] = useState(false);
+  // The right dock hosts one panel at a time — opening Activity closes Customize
+  // and vice versa, so the workbook is never sandwiched between two docks.
+  const [activityOpen, setActivityOpen] = useState(false);
+  const openCustomize = () =>
+    setCustomizing((v) => {
+      if (!v) setActivityOpen(false);
+      return !v;
+    });
+  const openActivity = () =>
+    setActivityOpen((v) => {
+      if (!v) setCustomizing(false);
+      return !v;
+    });
+  const activityCount = useWorkspaceStore((s) => s.activity.length);
 
   // Compile sweep (D5 feedback, Jul 2): a fresh Regenerate — whether we just
   // arrived from Findings (mount, lazy init checks freshness) or clicked the
@@ -269,6 +290,19 @@ export function RunWorkbook({
               <Icon name="chevron-right" size={16} />
             </button>
           </div>
+          {/* Activity (🕘) — the audit ledger (layer 3). Always available, even
+              after signing: the record is the point. */}
+          <span className="run-ex-tools-div" aria-hidden="true" />
+          <button
+            className={`run-wb-tbtn run-wb-tbtn--quiet${activityOpen ? " is-active" : ""}`}
+            onClick={openActivity}
+            aria-expanded={activityOpen}
+            aria-label="Activity ledger"
+          >
+            <Icon name="history" size={14} />
+            Activity
+            {activityCount > 1 && <span className="run-wb-tbtn-count">{activityCount}</span>}
+          </button>
           {/* Customize ▸ — the whole 20% behind one quiet toolbar affordance,
               closed by default (F-146 / Decision D). Demos never open it.
               Save as template (F-147) captures structure + theme, not content. */}
@@ -284,7 +318,7 @@ export function RunWorkbook({
               </button>
               <button
                 className={`run-wb-tbtn${customizing ? " is-active" : ""}`}
-                onClick={() => setCustomizing((v) => !v)}
+                onClick={openCustomize}
                 aria-expanded={customizing}
               >
                 Customize
@@ -374,6 +408,12 @@ export function RunWorkbook({
                       onRequestAddFinding: (sectionId) => setAddFindingAt(sectionId),
                       onUpdateSwot: updateSwotQuadrant,
                       onUpdateCapRate: updateCapRate,
+                      onRestoreFinding: restoreFinding,
+                      onEditReviewer: (id, text) => updateReviewerFinding(id, { analysis: text }),
+                      onRemoveReviewer: deleteReviewerFinding,
+                      comments,
+                      onAddComment: addComment,
+                      onDeleteComment: deleteComment,
                     }
               }
             />
@@ -381,6 +421,12 @@ export function RunWorkbook({
         </div>
 
         {customizing && !signed && <RunCustomizePanel onClose={() => setCustomizing(false)} />}
+        {activityOpen && (
+          <RunActivityPanel
+            reviewerName={ctx.reviewerName}
+            onClose={() => setActivityOpen(false)}
+          />
+        )}
       </div>
 
       <AddFindingModal

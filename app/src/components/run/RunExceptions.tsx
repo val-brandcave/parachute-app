@@ -1,13 +1,24 @@
 "use client";
 
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button, Icon } from "@/components/atoms";
 import { ActionMenu, FindingDecisionBar } from "@/components/molecules";
 import { useWorkspaceStore, useTemplatesStore, type RunReviewType } from "@/store";
+import { AddFindingModal, type NewFinding } from "@/components/review/AddFindingModal";
 import { buildAppraisalDoc, docPageIndex, type DocBlock, type DocRun } from "@/data/appraisal-doc";
 import { valueSummary, formatLongDate, auditStages } from "@/lib/workbook";
 import type { Finding, FindingState, Review, Severity, ResponseTemplate } from "@/types";
+
+/** A live text selection inside the appraisal body — drives the floating
+ *  "＋ Create finding here" affordance (evidence-first authoring, F-145). */
+interface DocSelection {
+  text: string;
+  page: number;
+  x: number; // viewport coords of the selection's end (for the floating button)
+  y: number;
+}
 
 const SEV_META: Record<Severity, { label: string; tone: string; color: string }> = {
   crit: { label: "Critical", tone: "crit", color: "var(--md-crit)" },
@@ -16,6 +27,9 @@ const SEV_META: Record<Severity, { label: string; tone: string; color: string }>
   pass: { label: "Clean", tone: "pass", color: "var(--md-success)" },
   na: { label: "N/A", tone: "na", color: "var(--md-outline)" },
 };
+
+const fmtClock = (ms: number) =>
+  new Date(ms).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 
 /** Exceptions-first ordering: criticals/fails first, then by ascending confidence. */
 function rank(f: Finding) {
@@ -52,6 +66,9 @@ export function RunExceptions({
 }) {
   const { findings, states, setDisposition, setComment, toggleCondition, toggleFlag } =
     useWorkspaceStore();
+  const addReviewerFinding = useWorkspaceStore((s) => s.addReviewerFinding);
+  const updateReviewerFinding = useWorkspaceStore((s) => s.updateReviewerFinding);
+  const deleteReviewerFinding = useWorkspaceStore((s) => s.deleteReviewerFinding);
   const workbookDirty = useWorkspaceStore((s) => s.workbookDirty);
   const regenerate = useWorkspaceStore((s) => s.regenerate);
   const responses = useTemplatesStore((s) => s.responses);
@@ -111,6 +128,16 @@ export function RunExceptions({
     [review.appraisalFirm],
   );
 
+  // Reviewer-added findings with a cited span, grouped by their (rendered) page —
+  // re-matched during render to re-highlight the exact words the reviewer picked.
+  const reviewerSpansByPage = useMemo(() => {
+    const map: Record<number, { id: string; span: string }[]> = {};
+    for (const f of findings) {
+      if (f.byReviewer && f.citedSpan) (map[f.page] ??= []).push({ id: f.id, span: f.citedSpan });
+    }
+    return map;
+  }, [findings]);
+
   // Which page each anchored finding sits on (for the gutter-tag layer).
   const anchorsByPage = useMemo(() => {
     const map: Record<number, string[]> = {};
@@ -132,6 +159,12 @@ export function RunExceptions({
   // Measured vertical offset (within its page) of each anchor's highlight, so the
   // gutter tag aligns to the cited line. Re-measured on zoom + container resize.
   const [tagTops, setTagTops] = useState<Record<string, number>>({});
+
+  // Evidence-first authoring (F-145): a live selection in the appraisal body →
+  // floating create button; the modal prefill; a transient cited-page pulse.
+  const [docSel, setDocSel] = useState<DocSelection | null>(null);
+  const [createPrefill, setCreatePrefill] = useState<Partial<NewFinding> | null>(null);
+  const [flashPage, setFlashPage] = useState<number | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const pageRefs = useRef<Record<number, HTMLElement | null>>({});
@@ -174,9 +207,20 @@ export function RunExceptions({
     if (el) {
       el.scrollIntoView({ behavior: "smooth", block: "center" });
     } else {
-      const p = annoPage[id] ?? 0;
-      if (p > 0) goPage(p);
+      // Reviewer-added findings carry no inline anchor — fall back to the cited
+      // page and pulse it (best-effort evidence pointer).
+      const p = annoPage[id] ?? findingById[id]?.page ?? 0;
+      if (p > 0) {
+        goPage(p);
+        pulsePage(p);
+      }
     }
+  };
+
+  /** Briefly ring the cited page so the reviewer's eye lands on it. */
+  const pulsePage = (p: number) => {
+    setFlashPage(p);
+    setTimeout(() => setFlashPage((cur) => (cur === p ? null : cur)), 1400);
   };
 
   // On landing, point the document at the first finding so the open accordion,
@@ -213,6 +257,7 @@ export function RunExceptions({
 
   // Track which page is in view → the page counter.
   const onScroll = () => {
+    if (docSel) setDocSel(null);
     const sc = scrollRef.current;
     if (!sc) return;
     const top = sc.getBoundingClientRect().top;
@@ -228,29 +273,133 @@ export function RunExceptions({
   };
   const zoomBy = (d: number) => setZoom((z) => Math.min(1.5, Math.max(0.7, +(z + d).toFixed(2))));
 
-  /* ---- document rendering ---- */
+  /* ---- evidence-first authoring: select a span → create a finding ---- */
 
-  const renderRun = (r: DocRun, key: number) => {
-    if (!r.anchor || !findingById[r.anchor]) return <Fragment key={key}>{r.text}</Fragment>;
-    const f = findingById[r.anchor];
-    const tone = SEV_META[f.severity].tone;
-    const active = selectedId === r.anchor;
-    return (
-      <mark
-        key={key}
-        id={`anno-${r.anchor}`}
-        className={`run-anno run-anno--${tone}${active ? " active" : ""}`}
-        onClick={() => selectFinding(r.anchor!, "doc")}
-      >
-        <span className={`run-anno-badge run-anno-badge--${tone}`} aria-hidden="true">
-          {numberOf[r.anchor]}
-        </span>
-        {r.text}
-      </mark>
-    );
+  // On mouse-up in the doc, capture a non-empty selection that lives inside the
+  // appraisal BODY (never the letterhead, tags, or an existing highlight click).
+  const onDocMouseUp = () => {
+    const selection = window.getSelection();
+    if (!selection || selection.isCollapsed || selection.rangeCount === 0) {
+      setDocSel(null);
+      return;
+    }
+    const text = selection.toString().trim();
+    const range = selection.getRangeAt(0);
+    const bodyEl =
+      range.commonAncestorContainer.nodeType === 1
+        ? (range.commonAncestorContainer as HTMLElement)
+        : range.commonAncestorContainer.parentElement;
+    const body = bodyEl?.closest(".run-ex-page-body");
+    const pageEl = bodyEl?.closest<HTMLElement>("[data-page]");
+    if (text.length < 3 || !body || !pageEl) {
+      setDocSel(null);
+      return;
+    }
+    const r = range.getBoundingClientRect();
+    setDocSel({
+      text,
+      page: Number(pageEl.dataset.page),
+      x: Math.min(r.left + r.width / 2, window.innerWidth - 130),
+      y: r.bottom,
+    });
   };
 
-  const renderBlock = (b: DocBlock, i: number) => {
+  // Any fresh pointer-down or scroll dismisses the floating button (its rect
+  // would otherwise go stale).
+  useEffect(() => {
+    if (!docSel) return;
+    const clear = (e?: Event) => {
+      // Keep it up while the pointer is on the button itself.
+      if (e && (e.target as HTMLElement)?.closest?.(".run-ex-mk")) return;
+      setDocSel(null);
+    };
+    window.addEventListener("pointerdown", clear);
+    return () => window.removeEventListener("pointerdown", clear);
+  }, [docSel]);
+
+  const beginCreate = () => {
+    if (!docSel) return;
+    setCreatePrefill({
+      category: "Reviewer Note",
+      severity: "flag",
+      page: docSel.page,
+      evidence: docSel.text,
+    });
+    window.getSelection()?.removeAllRanges();
+    setDocSel(null);
+  };
+
+  const handleCreate = (f: NewFinding) => {
+    const id = addReviewerFinding({
+      category: f.category,
+      question: f.question,
+      analysis: f.analysis,
+      page: f.page,
+      severity: f.severity,
+      evidence: f.evidence,
+    });
+    setCreatePrefill(null);
+    // Land on the new finding: open its rail item and pulse the cited page.
+    setTimeout(() => selectFinding(id, "rail"), 60);
+  };
+
+  /* ---- document rendering ---- */
+
+  const renderRun = (r: DocRun, key: number, pageNo: number, used: Set<string>) => {
+    // AI finding: the seeded inline anchor.
+    if (r.anchor && findingById[r.anchor]) {
+      const f = findingById[r.anchor];
+      const tone = SEV_META[f.severity].tone;
+      const active = selectedId === r.anchor;
+      return (
+        <mark
+          key={key}
+          id={`anno-${r.anchor}`}
+          className={`run-anno run-anno--${tone}${active ? " active" : ""}`}
+          onClick={() => selectFinding(r.anchor!, "doc")}
+        >
+          <span className={`run-anno-badge run-anno-badge--${tone}`} aria-hidden="true">
+            {numberOf[r.anchor]}
+          </span>
+          {r.text}
+        </mark>
+      );
+    }
+    // Reviewer span: re-match the reviewer's exact quote WITHIN this run (single-
+    // block selections only — cross-block ones fall back to the page pulse). One
+    // highlight per finding per page (the `used` guard prevents duplicate ids).
+    const spans = reviewerSpansByPage[pageNo];
+    if (spans) {
+      for (const { id, span } of spans) {
+        if (used.has(id)) continue;
+        const at = r.text.indexOf(span);
+        if (at < 0) continue;
+        used.add(id);
+        const before = r.text.slice(0, at);
+        const after = r.text.slice(at + span.length);
+        const active = selectedId === id;
+        return (
+          <Fragment key={key}>
+            {before}
+            <mark
+              id={`anno-${id}`}
+              className={`run-anno run-anno--user${active ? " active" : ""}`}
+              onClick={() => selectFinding(id, "doc")}
+            >
+              <span className="run-anno-badge run-anno-badge--user" aria-hidden="true">
+                <Icon name="user" size={11} />
+              </span>
+              {span}
+            </mark>
+            {after}
+          </Fragment>
+        );
+      }
+    }
+    return <Fragment key={key}>{r.text}</Fragment>;
+  };
+
+  const renderBlock = (b: DocBlock, i: number, pageNo: number, used: Set<string>) => {
     switch (b.type) {
       case "h":
         return (
@@ -261,13 +410,13 @@ export function RunExceptions({
       case "p":
         return (
           <p className="run-doc-p" key={i}>
-            {b.runs.map(renderRun)}
+            {b.runs.map((r, j) => renderRun(r, j, pageNo, used))}
           </p>
         );
       case "note":
         return (
           <p className="run-doc-note" key={i}>
-            {b.runs.map(renderRun)}
+            {b.runs.map((r, j) => renderRun(r, j, pageNo, used))}
           </p>
         );
       case "facts":
@@ -382,12 +531,20 @@ export function RunExceptions({
           </div>
         </div>
 
-        <div className="run-ex-scroll scroll" ref={scrollRef} onScroll={onScroll}>
+        <div
+          className="run-ex-scroll scroll"
+          ref={scrollRef}
+          onScroll={onScroll}
+          onMouseUp={onDocMouseUp}
+        >
           <div className="run-ex-pages" style={{ "--page-w": `${Math.round(PAGE_W * zoom)}px` } as React.CSSProperties}>
             {doc.map((p) => (
               <article
                 key={p.n}
-                className={`run-ex-page${p.cover ? " run-ex-page--cover" : ""}`}
+                data-page={p.n}
+                className={`run-ex-page${p.cover ? " run-ex-page--cover" : ""}${
+                  flashPage === p.n ? " is-cite-flash" : ""
+                }`}
                 ref={(el) => {
                   pageRefs.current[p.n] = el;
                 }}
@@ -420,7 +577,12 @@ export function RunExceptions({
                       </div>
                     </div>
                   )}
-                  {p.blocks.map(renderBlock)}
+                  {(() => {
+                    // One highlight per reviewer finding per page — a fresh guard
+                    // set each render keeps ids unique across the page's runs.
+                    const used = new Set<string>();
+                    return p.blocks.map((b, i) => renderBlock(b, i, p.n, used));
+                  })()}
                 </div>
 
                 {/* Scanned/OCR fallback only: right-margin tags aligned to the
@@ -470,7 +632,7 @@ export function RunExceptions({
           </span>
           <ActionMenu
             tooltip="More actions"
-            items={[{ label: "Accept all pending", icon: "check-all", onClick: agreeAll }]}
+            items={[{ label: "Concur with all pending", icon: "check-all", onClick: agreeAll }]}
           />
         </div>
 
@@ -495,9 +657,24 @@ export function RunExceptions({
                   onClick={() => selectFinding(f.id)}
                   aria-expanded={active}
                 >
-                  <span className={`run-ex-num run-ex-num--${sev.tone}`}>{i + 1}</span>
-                  <span className="run-ex-item-title">{f.category}</span>
-                  <span className="run-ex-headconf">{Math.round(f.confidence * 100)}%</span>
+                  {f.byReviewer ? (
+                    <span
+                      className="run-ex-num run-ex-num--user"
+                      title="Added by you"
+                      aria-label="Reviewer-added finding"
+                    >
+                      <Icon name="user" size={13} />
+                    </span>
+                  ) : (
+                    <span className={`run-ex-num run-ex-num--${sev.tone}`}>{i + 1}</span>
+                  )}
+                  <span className="run-ex-item-title">
+                    {f.category}
+                    {f.byReviewer && <span className="run-ex-userbadge">Reviewer-added</span>}
+                  </span>
+                  {!f.byReviewer && (
+                    <span className="run-ex-headconf">{Math.round(f.confidence * 100)}%</span>
+                  )}
                   <span
                     className={`run-ex-state run-ex-state--${disp}`}
                     aria-hidden="true"
@@ -547,9 +724,9 @@ export function RunExceptions({
                         <button
                           className="run-ex-zcite"
                           onClick={() => selectFinding(f.id)}
-                          aria-label={`Jump to the cited span on page ${annoPage[f.id]}`}
+                          aria-label={`Jump to the cited span on page ${annoPage[f.id] ?? f.page}`}
                         >
-                          p.{annoPage[f.id]}
+                          p.{annoPage[f.id] ?? f.page}
                           <Icon name="forward" size={12} />
                         </button>
                       </div>
@@ -560,41 +737,68 @@ export function RunExceptions({
 
                     <div className="run-ex-hair" />
 
-                    {/* AI AUDIT TRAIL — multi-stage reasoning chain */}
-                    <div className="run-ex-zone">
-                      <div className="run-ex-zt run-ex-zt--ai">
-                        <Icon name="ai" size={13} />
-                        AI audit trail
+                    {f.byReviewer ? (
+                      /* REVIEWER PROVENANCE — this finding is yours; the AI never
+                         reasoned about it, so no AI audit trail / no decision. */
+                      <div className="run-ex-zone">
+                        <div className="run-ex-zt">Provenance</div>
+                        <p className="run-ex-prov">
+                          <Icon name="user" size={13} />
+                          <span>
+                            Created by you
+                            {f.citedSpan ? " from a source span" : ""} · p.{f.page}
+                            {f.createdAt ? ` · ${fmtClock(f.createdAt)}` : ""}
+                          </span>
+                        </p>
+                        {state.flagged && (
+                          <p className="run-ex-decision-note run-ex-decision-note--flag">
+                            <Icon name="flag" size={12} /> Flagged for follow-up
+                          </p>
+                        )}
+                        {state.comment && (
+                          <p className="run-ex-decision-note">
+                            <Icon name="comment" size={12} /> {state.comment}
+                          </p>
+                        )}
                       </div>
-                      <ol className="run-ex-audit">
-                        {auditStages(f).map((s) => (
-                          <li key={s.n} className="run-ex-astage">
-                            <span className="run-ex-astage-rail" aria-hidden="true">
-                              <span className={`run-ex-astage-dot run-ex-astage-dot--${s.tone}`} />
-                            </span>
-                            <div className="run-ex-astage-main">
-                              <span className="run-ex-astage-h">
-                                <span className="run-ex-astage-step">S{s.n}</span>
-                                <span className="run-ex-astage-label">{s.label}</span>
-                                <span className={`run-ex-averdict run-ex-averdict--${s.tone}`}>
-                                  {s.verdict}
+                    ) : (
+                      <>
+                        {/* AI AUDIT TRAIL — multi-stage reasoning chain */}
+                        <div className="run-ex-zone">
+                          <div className="run-ex-zt run-ex-zt--ai">
+                            <Icon name="ai" size={13} />
+                            AI audit trail
+                          </div>
+                          <ol className="run-ex-audit">
+                            {auditStages(f).map((s) => (
+                              <li key={s.n} className="run-ex-astage">
+                                <span className="run-ex-astage-rail" aria-hidden="true">
+                                  <span className={`run-ex-astage-dot run-ex-astage-dot--${s.tone}`} />
                                 </span>
-                              </span>
-                              <p className="run-ex-astage-t">{s.text}</p>
-                            </div>
-                          </li>
-                        ))}
-                      </ol>
-                      {/* Citation / proof-point seam (F3) — awaiting Ed's raw 5-stage output. */}
-                    </div>
+                                <div className="run-ex-astage-main">
+                                  <span className="run-ex-astage-h">
+                                    <span className="run-ex-astage-step">S{s.n}</span>
+                                    <span className="run-ex-astage-label">{s.label}</span>
+                                    <span className={`run-ex-averdict run-ex-averdict--${s.tone}`}>
+                                      {s.verdict}
+                                    </span>
+                                  </span>
+                                  <p className="run-ex-astage-t">{s.text}</p>
+                                </div>
+                              </li>
+                            ))}
+                          </ol>
+                        </div>
 
-                    <div className="run-ex-hair" />
+                        <div className="run-ex-hair" />
 
-                    {/* YOUR DECISION */}
-                    <div className="run-ex-zone">
-                      <div className="run-ex-zt">Your decision</div>
-                      <YourDecision state={state} responses={responses} />
-                    </div>
+                        {/* YOUR DECISION */}
+                        <div className="run-ex-zone">
+                          <div className="run-ex-zt">Your decision</div>
+                          <YourDecision state={state} responses={responses} />
+                        </div>
+                      </>
+                    )}
 
                     <FindingDecisionBar
                       finding={f}
@@ -603,12 +807,15 @@ export function RunExceptions({
                       responseTemplates={responses}
                       variant="accordion"
                       keyboard={active}
+                      reviewer={f.byReviewer}
                       onDisposition={(d, reason, templateId) =>
                         setDisposition(f.id, d, reason, templateId)
                       }
                       onComment={(comment) => setComment(f.id, comment)}
                       onToggleCondition={() => toggleCondition(f.id)}
                       onToggleFlag={() => toggleFlag(f.id)}
+                      onEditText={(text) => updateReviewerFinding(f.id, { analysis: text })}
+                      onRemove={() => deleteReviewerFinding(f.id)}
                     />
                     </motion.div>
                   )}
@@ -638,6 +845,29 @@ export function RunExceptions({
           </p>
         </div>
       </aside>
+
+      {/* Floating "create finding from here" — appears at a live source selection
+          (evidence-first authoring). Portaled + fixed so page overflow can't clip it. */}
+      {docSel &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <button
+            className="run-ex-mk"
+            style={{ top: docSel.y + 8, left: docSel.x }}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={beginCreate}
+          >
+            <Icon name="add" size={14} /> Create finding here
+          </button>,
+          document.body,
+        )}
+
+      <AddFindingModal
+        open={!!createPrefill}
+        prefill={createPrefill ?? undefined}
+        onClose={() => setCreatePrefill(null)}
+        onSave={handleCreate}
+      />
     </div>
   );
 }
@@ -648,7 +878,7 @@ const DECISION_META: Record<
   Exclude<FindingState["disposition"], "pending">,
   { label: string; tone: string }
 > = {
-  accepted: { label: "Accepted — kept as written", tone: "pass" },
+  accepted: { label: "Concurred — kept as written", tone: "pass" },
   edited: { label: "Edited — rewritten by reviewer", tone: "flag" },
   rejected: { label: "Rejected — returns to appraiser", tone: "fail" },
   removed: { label: "Removed from workbook — kept for audit", tone: "muted" },

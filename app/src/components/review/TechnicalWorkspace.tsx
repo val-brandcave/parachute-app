@@ -207,7 +207,7 @@ export function TechnicalWorkspace({
           tooltip="More actions"
           items={[
             { header: true, label: "Bulk" },
-            { label: "Accept all passing checks", icon: "check-all", onClick: acceptAllPasses },
+            { label: "Concur with all passing checks", icon: "check-all", onClick: acceptAllPasses },
           ]}
         />
       </ReviewActions>

@@ -440,11 +440,30 @@ export function WorkbookPreview({
               </p>
             )}
             {removed.length > 0 && (
-              <p className="wb-prose wb-muted wb-excluded-note">
-                {removed.length} finding{removed.length === 1 ? "" : "s"} {removed.length === 1 ? "was" : "were"}{" "}
-                reviewed and excluded from this workbook as not material to the value conclusion;{" "}
-                {removed.length === 1 ? "it is" : "they are"} retained in the review audit log.
-              </p>
+              <div className="wb-excluded">
+                <p className="wb-prose wb-muted wb-excluded-note">
+                  {removed.length} finding{removed.length === 1 ? "" : "s"} {removed.length === 1 ? "was" : "were"}{" "}
+                  reviewed and excluded from this workbook as not material to the value conclusion;{" "}
+                  {removed.length === 1 ? "it is" : "they are"} retained in the review audit log.
+                </p>
+                {edit && (
+                  <ul className="wb-excluded-list">
+                    {removed.map((f) => (
+                      <li className="wb-excluded-item" key={f.id}>
+                        <Icon name="reject" size={13} className="wb-excluded-ic" />
+                        <span className="wb-excluded-q">{f.question}</span>
+                        <button
+                          className="wb-excluded-restore"
+                          onClick={() => edit.onRestoreFinding(f.id)}
+                          title="Bring this finding back into the workbook"
+                        >
+                          <Icon name="undo" size={12} /> Restore
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             )}
           </>
         );

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/atoms";
 import { SEV_META } from "@/lib/utils";
 import { ResponseComposer, type ComposerMode } from "./ResponseComposer";
+import type { Comment } from "@/store";
 import type { WbSection, WbSectionType } from "@/lib/workbook-config";
 import type {
   Disposition,
@@ -49,6 +50,19 @@ export interface WorkbookEditingActions {
   onUpdateSwot: (quadrant: keyof WbSwot, items: string[]) => void;
   /** Patch the cap-rate exhibit (structured point/band editing). */
   onUpdateCapRate: (patch: Partial<WorkbookExhibitsData["capRate"]>) => void;
+  /** Bring an excluded finding back into the workbook (audited as "Restored"). */
+  onRestoreFinding: (findingId: string) => void;
+  /** Reword a reviewer's OWN finding body (never the AI's). */
+  onEditReviewer: (findingId: string, text: string) => void;
+  /** Delete a reviewer's OWN finding. */
+  onRemoveReviewer: (findingId: string) => void;
+  // ---- Comments anywhere (Phase 2b) — margin pins on any block ----
+  /** All block-anchored comments (the pin filters to its own anchor). */
+  comments: Comment[];
+  /** Post a comment against a block (section/finding/prose). */
+  onAddComment: (anchorId: string, anchorLabel: string, body: string) => void;
+  /** Remove a comment (audited). */
+  onDeleteComment: (id: string) => void;
 }
 
 const fmtTime = (at: number) =>
@@ -105,6 +119,8 @@ export function WorkbookFindingBlock({
 
   const save = (t: string, templateId?: string) => {
     if (composer === "comment") actions.onComment(f.id, t, templateId);
+    // Reviewer's own finding: Edit reweords the finding itself, never a disposition.
+    else if (f.byReviewer && composer === "edit") actions.onEditReviewer(f.id, t);
     else if (composer)
       actions.onDisposition(f.id, composer === "edit" ? "edited" : "rejected", t, templateId);
     setComposer(null);
@@ -143,7 +159,39 @@ export function WorkbookFindingBlock({
 
       {!composer && (
         <div className="wb-fblock-foot">
-          {decided ? (
+          {f.byReviewer ? (
+            /* Reviewer's own finding: manage it (no Concur/Reject — you authored it). */
+            <div className="wb-fblock-bar">
+              <button className="wb-fbtn" onClick={() => setComposer("edit")}>
+                <Icon name="edit" size={14} /> Edit
+              </button>
+              <button
+                className="wb-fbtn wb-fbtn--no"
+                onClick={() => actions.onRemoveReviewer(f.id)}
+                title="Remove your finding"
+              >
+                <Icon name="trash" size={14} /> Remove
+              </button>
+              <span className="wb-fblock-aux">
+                <button
+                  className={`wb-faux${state?.comment ? " on" : ""}`}
+                  onClick={() => setComposer("comment")}
+                  aria-label="Comment"
+                  title="Comment"
+                >
+                  <Icon name="comment" size={14} />
+                </button>
+                <button
+                  className={`wb-faux${state?.flagged ? " on" : ""}`}
+                  onClick={() => actions.onToggleFlag(f.id)}
+                  aria-label={state?.flagged ? "Clear follow-up flag" : "Flag for follow-up"}
+                  title="Flag for follow-up"
+                >
+                  <Icon name="flag" size={14} />
+                </button>
+              </span>
+            </div>
+          ) : decided ? (
             <div className="wb-fblock-decided">
               <Icon name="check-circle" size={14} />
               <span>

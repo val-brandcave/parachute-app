@@ -14,6 +14,7 @@ import {
   type WbFact,
 } from "@/lib/workbook-config";
 import { GridCell } from "./WorkbookExhibits";
+import { CommentAnchor } from "./WorkbookComments";
 import type { WorkbookEditingActions } from "./WorkbookInline";
 
 /**
@@ -104,6 +105,9 @@ export function SectionShell({
       >
         <Icon name="grip" size={15} />
       </button>
+
+      {/* Comment pin — hangs in the right gutter, aligned to the section top. */}
+      <CommentAnchor anchorId={sec.id} anchorLabel={sec.title} edit={edit} />
 
       <div className="wb-shell-bar" role="toolbar" aria-label={`${sec.title} tools`}>
         {caps.rename && (
