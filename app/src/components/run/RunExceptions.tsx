@@ -387,7 +387,7 @@ export function RunExceptions({
               onClick={() => selectFinding(id, "doc")}
             >
               <span className="run-anno-badge run-anno-badge--user" aria-hidden="true">
-                <Icon name="user" size={11} />
+                {numberOf[id]}
               </span>
               {span}
             </mark>
@@ -654,17 +654,12 @@ export function RunExceptions({
                   onClick={() => selectFinding(f.id)}
                   aria-expanded={active}
                 >
-                  {f.byReviewer ? (
-                    <span
-                      className="run-ex-num run-ex-num--user"
-                      title="Added by you"
-                      aria-label="Reviewer-added finding"
-                    >
-                      <Icon name="user" size={13} />
-                    </span>
-                  ) : (
-                    <span className={`run-ex-num run-ex-num--${sev.tone}`}>{i + 1}</span>
-                  )}
+                  <span
+                    className={`run-ex-num run-ex-num--${f.byReviewer ? "user" : sev.tone}`}
+                    title={f.byReviewer ? "Reviewer-added finding" : undefined}
+                  >
+                    {i + 1}
+                  </span>
                   <span className="run-ex-item-title">
                     {f.category}
                     {f.byReviewer && <span className="run-ex-userbadge">Reviewer-added</span>}
