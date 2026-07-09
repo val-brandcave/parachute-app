@@ -5,6 +5,7 @@ export type {
   ActivityEntry,
   ActivityActor,
   Comment,
+  LedgerPatch,
   WorkbookSignature,
   WorkbookFiling,
 } from "./workspace.store";

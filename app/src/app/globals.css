@@ -4124,6 +4124,111 @@ body.wb-reordering .wb-adddiv {
   margin-top: 2px;
 }
 
+/* ---- condition + action-item authoring (F-151) ---- */
+/* Conditions: the text/source wrap so a per-row delete rides the right edge. */
+.wb-cond-body {
+  flex: 1;
+  min-width: 0;
+}
+/* Click-to-edit cells inside the doc lists wrap like prose (the exhibit grid
+   cells are single-line; these carry sentences). */
+.wb-conditions .wb-cell,
+.wb-actions-list .wb-cell {
+  display: inline-block;
+  width: 100%;
+  white-space: normal;
+  text-align: left;
+  line-height: 1.55;
+}
+/* the editing input carries a sentence here, not a grid figure — go full-width. */
+.wb-conditions .wb-cell-in,
+.wb-actions-list .wb-cell-in {
+  width: 100%;
+}
+/* Action items: id · [text over a structured meta row] · delete. */
+.wb-act-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.wb-act-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px 14px;
+}
+/* read-only owner chip — the fee appraiser (petrol) reads distinct from a
+   teammate (neutral), so "who must act" is legible at a glance. */
+.wb-act-owner {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 2px 9px 2px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--md-outline-v);
+  color: var(--md-on-surface-v);
+  background: var(--md-surface-1);
+}
+.wb-act-owner--firm {
+  color: var(--md-accent-d);
+  border-color: color-mix(in srgb, var(--md-accent) 30%, transparent);
+  background: var(--md-accent-c);
+}
+.wb-act-due.is-unset {
+  color: var(--md-on-surface-t);
+  font-weight: 500;
+  font-style: italic;
+}
+/* edit-mode structured fields — a compact framed owner select + date input, in
+   the inline-cell idiom (never a full form field over the paper). */
+.wb-act-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  border: 1px solid var(--md-outline-v);
+  border-radius: 8px;
+  background: var(--md-surface);
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+.wb-act-field:hover {
+  border-color: var(--md-accent);
+}
+.wb-act-field:focus-within {
+  border-color: var(--md-accent);
+  box-shadow: 0 0 0 2px var(--ring-accent);
+}
+.wb-act-field-ic {
+  color: var(--md-on-surface-t);
+  flex-shrink: 0;
+}
+.wb-act-owner-sel,
+.wb-act-date-in {
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 12px;
+  color: var(--md-on-surface);
+  padding: 1px 2px;
+  cursor: pointer;
+  /* the doc is white paper in both themes — keep native menus/pickers light. */
+  color-scheme: light;
+}
+.wb-act-owner-sel:focus,
+.wb-act-date-in:focus {
+  outline: none;
+}
+.wb-act-date-in {
+  font-variant-numeric: tabular-nums;
+}
+.wb-actions-list.is-editing li {
+  padding: 12px 0;
+}
+
 /* imported appraisal sections */
 .wb-import {
   margin-bottom: 12px;

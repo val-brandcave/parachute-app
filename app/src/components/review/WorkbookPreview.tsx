@@ -16,12 +16,13 @@ import {
   dispTag,
   dispositionLine,
   aiBasisLine,
-  actionItems,
   workbookHeader,
   WORKBOOK_FOOTER,
 } from "@/lib/workbook";
 import {
   visibleSensitivityCols,
+  derivedConditions,
+  derivedActionItems,
   type WorkbookConfig,
   type WbSection,
   type WbFact,
@@ -48,8 +49,13 @@ import {
   EditableProse,
   ProvenancePip,
   WorkbookFindingBlock,
+  ConditionsBlock,
+  ActionItemsBlock,
   type WorkbookEditingActions,
+  type OwnerOption,
 } from "./WorkbookInline";
+import { useUsersStore } from "@/store";
+import { CURRENT_USER } from "@/lib/current-user";
 import type { WorkbookSignature, WorkbookFiling } from "@/store/workspace.store";
 import type { Finding, FindingState, Review, WorkbookExhibits } from "@/types";
 
@@ -93,6 +99,7 @@ export function WorkbookPreview({
   editing?: WorkbookEditingActions | null;
 }) {
   const value = useMemo(() => valueSummary(review), [review]);
+  const users = useUsersStore((s) => s.users);
   const rec = RECOMMENDATION_META[recommendation];
   const riskMeta = RISK_META[risk];
   // A signed document is final — editing chrome never renders over the seal.
@@ -107,13 +114,37 @@ export function WorkbookPreview({
   // Removed findings are excluded from the workbook everywhere but retained for
   // the audit trail (F-118). `removed` powers an optional "excluded" footnote.
   const removed = findings.filter((f) => disp(f.id) === "removed");
-  const conditions = findings.filter(
-    (f) => states[f.id]?.condition && disp(f.id) !== "removed",
-  );
   const returned = settings.hideRejected
     ? []
     : findings.filter((f) => disp(f.id) === "rejected");
-  const actions = actionItems(findings, states);
+
+  // Conditions + action items materialize-on-edit (F-151): they render derived
+  // from the dispositions until the reviewer authors the list, after which the
+  // materialized copy on the section wins. Same `s.facts ?? derived` seam the
+  // summary fact tiles use.
+  const conditionsSec = config.sections.find((s) => s.type === "conditions");
+  const conclusionSec = config.sections.find((s) => s.type === "conclusion");
+  const conditionList =
+    conditionsSec?.conditions ?? derivedConditions(findings, states);
+  const actionList =
+    conclusionSec?.actions ?? derivedActionItems(findings, states, review.appraisalFirm);
+
+  // Owner options for an action item — the fee appraiser (default) + teammates,
+  // the signed-in reviewer tagged "You". Falls back to the current user if the
+  // team hasn't been fetched into the store yet.
+  const owners: OwnerOption[] = useMemo(() => {
+    const team = users.length
+      ? users
+      : [{ id: CURRENT_USER.id, name: CURRENT_USER.name }];
+    return [
+      { label: review.appraisalFirm, value: review.appraisalFirm, kind: "firm" as const },
+      ...team.map((u) => ({
+        label: u.id === CURRENT_USER.id ? `${u.name} (You)` : u.name,
+        value: u.name,
+        kind: "person" as const,
+      })),
+    ];
+  }, [users, review.appraisalFirm]);
 
   // Which dispositions belong in the findings body (rejected go to "Returned";
   // overridden can be hidden via settings).
@@ -336,29 +367,15 @@ export function WorkbookPreview({
       }
 
       case "conditions":
-        if (!conditions.length) return null;
+        // Auto section: hidden when empty in the read-only doc, but always shown
+        // in edit mode so the reviewer can author / add standalone conditions.
+        if (!conditionList.length && !edit) return null;
         return (
-          <>
-            <p className="wb-prose">
-              Approval is recommended subject to the following condition
-              {conditions.length === 1 ? "" : "s"} being satisfied prior to funding:
-            </p>
-            <ol className="wb-conditions">
-              {conditions.map((f, i) => (
-                <li key={f.id}>
-                  <span className="wb-cond-id">C{i + 1}</span>
-                  <div>
-                    <div className="wb-cond-text">
-                      {states[f.id]?.reason || states[f.id]?.comment || f.question}
-                    </div>
-                    <div className="wb-cond-src">
-                      {f.category} · p.{f.page}
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ol>
-          </>
+          <ConditionsBlock
+            conditions={conditionList}
+            editing={!!edit}
+            onCommit={edit ? edit.onCommitConditions : () => {}}
+          />
         );
 
       case "returns":
@@ -424,21 +441,12 @@ export function WorkbookPreview({
                 {conclusionProse}
               </>
             )}
-            {actions.length > 0 ? (
-              <ol className="wb-actions-list">
-                {actions.map((a) => (
-                  <li key={a.id}>
-                    <span className="wb-act-id">{a.id}</span>
-                    <span className="wb-act-text">{a.text}</span>
-                    <span className="wb-act-due">{a.deadline}</span>
-                  </li>
-                ))}
-              </ol>
-            ) : (
-              <p className="wb-prose wb-muted">
-                No outstanding action items — all findings were reconciled without conditions.
-              </p>
-            )}
+            <ActionItemsBlock
+              items={actionList}
+              editing={!!edit}
+              owners={owners}
+              onCommit={edit ? edit.onCommitActionItems : () => {}}
+            />
             {removed.length > 0 && (
               <div className="wb-excluded">
                 <p className="wb-prose wb-muted wb-excluded-note">
@@ -579,11 +587,11 @@ export function WorkbookPreview({
       case "swot":
         return 0.5;
       case "conditions":
-        return 0.16 + conditions.length * 0.1;
+        return 0.16 + conditionList.length * 0.1;
       case "returns":
         return 0.16 + returned.length * 0.15;
       case "conclusion":
-        return 0.32 + actions.length * 0.07;
+        return 0.32 + actionList.length * 0.07;
       case "freeText":
         return 0.3;
       case "certification":
@@ -792,9 +800,9 @@ export function WorkbookPreview({
               />
               <span className="wb-pill-text">
                 Reviewer recommendation: <b>{rec.label}</b>
-                {conditions.length > 0 && rec.tone !== "info" && (
+                {conditionList.length > 0 && rec.tone !== "info" && (
                   <span className="wb-rec-count">
-                    {conditions.length} condition{conditions.length === 1 ? "" : "s"}
+                    {conditionList.length} condition{conditionList.length === 1 ? "" : "s"}
                   </span>
                 )}
               </span>

@@ -74,6 +74,8 @@ export function RunWorkbook({
     comments,
     addComment,
     deleteComment,
+    commitConditions,
+    commitActionItems,
   } = useWorkspaceStore();
   const regeneratedAt = useWorkspaceStore((s) => s.regeneratedAt);
   const responses = useTemplatesStore((s) => s.responses);
@@ -414,6 +416,8 @@ export function RunWorkbook({
                       comments,
                       onAddComment: addComment,
                       onDeleteComment: deleteComment,
+                      onCommitConditions: commitConditions,
+                      onCommitActionItems: commitActionItems,
                     }
               }
             />

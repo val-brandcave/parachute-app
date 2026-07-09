@@ -3,9 +3,18 @@
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/atoms";
 import { SEV_META } from "@/lib/utils";
+import { generateId } from "@/types";
 import { ResponseComposer, type ComposerMode } from "./ResponseComposer";
-import type { Comment } from "@/store";
-import type { WbSection, WbSectionType } from "@/lib/workbook-config";
+import { GridCell } from "./WorkbookExhibits";
+import type { Comment, LedgerPatch } from "@/store";
+import {
+  isIsoDate,
+  formatActionDeadline,
+  type WbSection,
+  type WbSectionType,
+  type WbCondition,
+  type WbActionItem,
+} from "@/lib/workbook-config";
 import type {
   Disposition,
   Finding,
@@ -63,6 +72,19 @@ export interface WorkbookEditingActions {
   onAddComment: (anchorId: string, anchorLabel: string, body: string) => void;
   /** Remove a comment (audited). */
   onDeleteComment: (id: string) => void;
+  // ---- Conditions / action items authoring (F-151) ----
+  /** Persist the materialized conditions list (+ audit). */
+  onCommitConditions: (next: WbCondition[], log: LedgerPatch) => void;
+  /** Persist the materialized action-items list (+ audit). */
+  onCommitActionItems: (next: WbActionItem[], log: LedgerPatch) => void;
+}
+
+/** An assignable owner for an action item — the external fee appraiser (default)
+ *  or an internal teammate. `value` is what's stored; `label` may append "(You)". */
+export interface OwnerOption {
+  label: string;
+  value: string;
+  kind: "firm" | "person";
 }
 
 const fmtTime = (at: number) =>
@@ -387,5 +409,267 @@ export function EditableProse({
         {display ?? text}
       </div>
     </div>
+  );
+}
+
+/**
+ * Conditions of Approval (F-151) — the batched corrections sent to the fee
+ * appraiser. The list derives from the conditioned findings until the reviewer
+ * touches it; the first edit materializes an authored list (a condition's
+ * WORDING is authored separately from the raw finding text). Read-only prints
+ * the numbered list; edit mode adds click-to-edit wording, per-row remove, and
+ * a ＋Add for standalone conditions (no source finding).
+ */
+export function ConditionsBlock({
+  conditions,
+  editing,
+  onCommit,
+}: {
+  conditions: WbCondition[];
+  editing: boolean;
+  onCommit: (next: WbCondition[], log: LedgerPatch) => void;
+}) {
+  const rewordCondition = (id: string, text: string) => {
+    const before = conditions.find((c) => c.id === id)?.text ?? "";
+    if (before === text) return;
+    onCommit(
+      conditions.map((c) => (c.id === id ? { ...c, text } : c)),
+      { action: "Reworded a condition", before, after: text, icon: "edit", kind: "edit" },
+    );
+  };
+  const removeCondition = (id: string) => {
+    const gone = conditions.find((c) => c.id === id);
+    onCommit(conditions.filter((c) => c.id !== id), {
+      action: "Removed a condition",
+      target: gone?.text,
+      icon: "trash",
+      kind: "exclude",
+    });
+  };
+  const addCondition = () => {
+    const fresh: WbCondition = { id: generateId(), text: "New condition — click to edit" };
+    onCommit([...conditions, fresh], {
+      action: "Added a condition",
+      target: "Reviewer-added condition",
+      icon: "add",
+      kind: "structure",
+    });
+  };
+
+  return (
+    <>
+      {conditions.length > 0 ? (
+        <>
+          <p className="wb-prose">
+            Approval is recommended subject to the following condition
+            {conditions.length === 1 ? "" : "s"} being satisfied prior to funding:
+          </p>
+          <ol className="wb-conditions">
+            {conditions.map((c, i) => (
+              <li key={c.id}>
+                <span className="wb-cond-id">C{i + 1}</span>
+                <div className="wb-cond-body">
+                  <div className="wb-cond-text">
+                    {editing ? (
+                      <GridCell
+                        raw={c.text}
+                        display={c.text}
+                        onCommit={(v) =>
+                          v.trim() ? rewordCondition(c.id, v.trim()) : removeCondition(c.id)
+                        }
+                      />
+                    ) : (
+                      c.text
+                    )}
+                  </div>
+                  <div className="wb-cond-src">
+                    {c.sourceFindingId
+                      ? `${c.category ?? "Finding"} · p.${c.page}`
+                      : "Reviewer-added condition"}
+                  </div>
+                </div>
+                {editing && (
+                  <button
+                    className="wb-rowdel is-shown"
+                    onClick={() => removeCondition(c.id)}
+                    aria-label="Remove this condition"
+                    title="Remove condition"
+                  >
+                    <Icon name="trash" size={13} />
+                  </button>
+                )}
+              </li>
+            ))}
+          </ol>
+        </>
+      ) : (
+        editing && (
+          <p className="wb-prose wb-muted">
+            No conditions yet — add the corrections the appraiser must resolve before funding.
+          </p>
+        )
+      )}
+      {editing && (
+        <button className="wb-addrow" onClick={addCondition}>
+          <Icon name="add" size={13} /> Add condition
+        </button>
+      )}
+    </>
+  );
+}
+
+/**
+ * Conclusion action items (F-151) — the tracked asks, each with a structured
+ * owner (the fee appraiser by default, reassignable to a teammate) and a
+ * deadline (an authored date, or the severity phrase until dated). Derives from
+ * dispositions until first edited, then materializes into an authored list.
+ */
+export function ActionItemsBlock({
+  items,
+  editing,
+  owners,
+  onCommit,
+}: {
+  items: WbActionItem[];
+  editing: boolean;
+  owners: OwnerOption[];
+  onCommit: (next: WbActionItem[], log: LedgerPatch) => void;
+}) {
+  const defaultOwner = owners.find((o) => o.kind === "firm")?.value ?? owners[0]?.value ?? "";
+  const patch = (id: string, partial: Partial<WbActionItem>, log: LedgerPatch) =>
+    onCommit(items.map((a) => (a.id === id ? { ...a, ...partial } : a)), log);
+  const removeItem = (id: string) => {
+    const gone = items.find((a) => a.id === id);
+    onCommit(items.filter((a) => a.id !== id), {
+      action: "Removed an action item",
+      target: gone?.text,
+      icon: "trash",
+      kind: "exclude",
+    });
+  };
+  const rewordItem = (id: string, text: string) => {
+    const before = items.find((a) => a.id === id)?.text ?? "";
+    if (before === text) return;
+    patch(id, { text }, { action: "Reworded an action item", before, after: text, icon: "edit", kind: "edit" });
+  };
+  const reassign = (id: string, owner: string) =>
+    patch(id, { owner }, { action: "Reassigned an action item", target: owner, icon: "user", kind: "edit" });
+  const setDeadline = (id: string, deadline: string) =>
+    patch(id, { deadline }, {
+      action: "Set an action-item deadline",
+      target: formatActionDeadline(deadline),
+      icon: "calendar",
+      kind: "edit",
+    });
+  const addItem = () => {
+    const fresh: WbActionItem = {
+      id: generateId(),
+      text: "New action item — click to edit",
+      owner: defaultOwner,
+      deadline: "",
+    };
+    onCommit([...items, fresh], { action: "Added an action item", icon: "add", kind: "structure" });
+  };
+
+  if (!items.length && !editing) {
+    return (
+      <p className="wb-prose wb-muted">
+        No outstanding action items — all findings were reconciled without conditions.
+      </p>
+    );
+  }
+
+  return (
+    <>
+      {items.length > 0 ? (
+        <ol className={`wb-actions-list${editing ? " is-editing" : ""}`}>
+          {items.map((a, i) => {
+            const owner = owners.find((o) => o.value === a.owner);
+            const ownerKind = owner?.kind ?? "firm";
+            return (
+              <li key={a.id}>
+                <span className="wb-act-id">A{i + 1}</span>
+                <div className="wb-act-main">
+                  <div className="wb-act-text">
+                    {editing ? (
+                      <GridCell
+                        raw={a.text}
+                        display={a.text}
+                        onCommit={(v) => (v.trim() ? rewordItem(a.id, v.trim()) : removeItem(a.id))}
+                      />
+                    ) : (
+                      a.text
+                    )}
+                  </div>
+                  <div className="wb-act-meta">
+                    {editing ? (
+                      <span className="wb-act-field">
+                        <Icon
+                          name={ownerKind === "firm" ? "org" : "user"}
+                          size={13}
+                          className="wb-act-field-ic"
+                        />
+                        <select
+                          className="wb-act-owner-sel"
+                          value={a.owner}
+                          onChange={(e) => reassign(a.id, e.target.value)}
+                          aria-label="Action-item owner"
+                        >
+                          {owners.map((o) => (
+                            <option key={o.value} value={o.value}>
+                              {o.label}
+                            </option>
+                          ))}
+                        </select>
+                      </span>
+                    ) : (
+                      <span className={`wb-act-owner wb-act-owner--${ownerKind}`}>
+                        <Icon name={ownerKind === "firm" ? "org" : "user"} size={12} />
+                        {a.owner}
+                      </span>
+                    )}
+                    {editing ? (
+                      <span className="wb-act-field">
+                        <Icon name="calendar" size={13} className="wb-act-field-ic" />
+                        <input
+                          type="date"
+                          className="wb-act-date-in"
+                          value={isIsoDate(a.deadline) ? a.deadline : ""}
+                          onChange={(e) => setDeadline(a.id, e.target.value)}
+                          aria-label="Action-item deadline"
+                        />
+                      </span>
+                    ) : (
+                      <span className={`wb-act-due${a.deadline ? "" : " is-unset"}`}>
+                        {formatActionDeadline(a.deadline)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                {editing && (
+                  <button
+                    className="wb-rowdel is-shown"
+                    onClick={() => removeItem(a.id)}
+                    aria-label="Remove this action item"
+                    title="Remove action item"
+                  >
+                    <Icon name="trash" size={13} />
+                  </button>
+                )}
+              </li>
+            );
+          })}
+        </ol>
+      ) : (
+        <p className="wb-prose wb-muted">
+          No action items yet — add the corrections the appraiser must address.
+        </p>
+      )}
+      {editing && (
+        <button className="wb-addrow" onClick={addItem}>
+          <Icon name="add" size={13} /> Add action item
+        </button>
+      )}
+    </>
   );
 }

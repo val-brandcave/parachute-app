@@ -14,6 +14,8 @@ import type {
   WorkbookConfig,
   WbSection,
   WbDocSettings,
+  WbCondition,
+  WbActionItem,
 } from "@/lib/workbook-config";
 
 /** Short status code shown on a finding pill, derived from its severity. */
@@ -65,6 +67,10 @@ export interface ActivityEntry {
   /** Coarse kind → the row's accent tone in the drawer. */
   kind?: "decision" | "edit" | "structure" | "comment" | "exclude" | "system" | "sign";
 }
+
+/** The audit fields an authoring action supplies for its ledger entry — the
+ *  store stamps `id`/`at` and pins `actor` to the reviewer. */
+export type LedgerPatch = Omit<ActivityEntry, "id" | "at" | "actor">;
 
 /** A reviewer comment anchored to ANY block (F-142 note model, generalized in
  *  Phase 2b — no longer findings-only). `anchorId` is a section / finding /
@@ -197,6 +203,15 @@ interface WorkspaceState {
   deleteCompRow: (comp: string) => void;
   /** Patch a row's cells; the adjusted $/SF re-derives unless patched directly. */
   updateCompRow: (comp: string, patch: Partial<WbAdjustmentRow>) => void;
+
+  // ---- Conditions / action items authoring (materialize-on-edit, F-151) ----
+  /** Persist the materialized conditions-of-approval list onto the conditions
+   *  section and log the change. `next` is the full array (the caller seeds it
+   *  from the derived list on first edit). */
+  commitConditions: (next: WbCondition[], log: LedgerPatch) => void;
+  /** Persist the materialized action-items list onto the conclusion section and
+   *  log the change. */
+  commitActionItems: (next: WbActionItem[], log: LedgerPatch) => void;
 }
 
 export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
@@ -833,6 +848,41 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
           }
         : {},
     ),
+
+  // ---- Conditions / action items authoring (materialize-on-edit, F-151) ----
+  commitConditions: (next, log) =>
+    set((s) => {
+      if (!s.workbook) return {};
+      const sec = s.workbook.sections.find((x) => x.type === "conditions");
+      if (!sec) return {};
+      return {
+        workbook: {
+          ...s.workbook,
+          sections: s.workbook.sections.map((x) =>
+            x.id === sec.id ? { ...x, conditions: next } : x,
+          ),
+        },
+        activity: [entry({ actor: "you", ...log }), ...s.activity],
+        workbookDirty: s.compiledAt != null ? true : s.workbookDirty,
+      };
+    }),
+
+  commitActionItems: (next, log) =>
+    set((s) => {
+      if (!s.workbook) return {};
+      const sec = s.workbook.sections.find((x) => x.type === "conclusion");
+      if (!sec) return {};
+      return {
+        workbook: {
+          ...s.workbook,
+          sections: s.workbook.sections.map((x) =>
+            x.id === sec.id ? { ...x, actions: next } : x,
+          ),
+        },
+        activity: [entry({ actor: "you", ...log }), ...s.activity],
+        workbookDirty: s.compiledAt != null ? true : s.workbookDirty,
+      };
+    }),
 }));
 
 /** Build a fresh ledger entry — id + timestamp stamped here (an action context,

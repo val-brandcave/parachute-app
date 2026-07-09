@@ -1,6 +1,11 @@
-import type { Finding, WorkbookExhibits, WorkbookLayout } from "@/types";
+import type { Finding, FindingState, WorkbookExhibits, WorkbookLayout } from "@/types";
 import { publishedVersion } from "@/lib/template-versions";
-import { RISK_META, findingsSections, type RiskRating } from "@/lib/workbook";
+import {
+  RISK_META,
+  findingsSections,
+  derivedDeadlinePhrase,
+  type RiskRating,
+} from "@/lib/workbook";
 
 /**
  * Per-review Workbook configuration — what the Builder authors and the Workbook
@@ -42,6 +47,35 @@ export interface WbFact {
   big?: boolean;
 }
 
+/** One authored condition of approval (F-151). Conditions derive from the
+ *  conditioned findings until the reviewer touches them; the first edit
+ *  MATERIALIZES the list onto the section (`WbSection.conditions`), after which
+ *  the WORDING is authored separately from the raw finding text — a condition is
+ *  the batched correction sent to the fee appraiser, not the finding. A derived
+ *  condition keeps `sourceFindingId` (+ its page/category) so the p.X citation
+ *  and provenance survive; a reviewer-added condition carries no source. */
+export interface WbCondition {
+  id: string;
+  text: string;
+  sourceFindingId?: string;
+  page?: number;
+  category?: string;
+}
+
+/** One authored action item on the conclusion (F-151). Like conditions, action
+ *  items derive from dispositions until first edited, then materialize onto
+ *  `WbSection.actions`. Each is structured — an `owner` (defaults to the fee
+ *  appraiser, reassignable to a teammate) and a `deadline` (an ISO `yyyy-mm-dd`
+ *  once authored; a derived seed carries the severity phrase until dated) —
+ *  never free text laid over a table. */
+export interface WbActionItem {
+  id: string;
+  text: string;
+  owner: string;
+  deadline: string;
+  sourceFindingId?: string;
+}
+
 export interface WbSection {
   id: string;
   type: WbSectionType;
@@ -67,6 +101,12 @@ export interface WbSection {
   facts?: WbFact[];
   /** summary — reviewer-materialized "approaches developed" tags. */
   approaches?: string[];
+  /** conditions — reviewer-materialized conditions of approval (overrides the
+   *  derived-from-findings list once authored; F-151). */
+  conditions?: WbCondition[];
+  /** conclusion — reviewer-materialized action items (overrides the derived
+   *  list; each carries a structured owner + deadline; F-151). */
+  actions?: WbActionItem[];
   /** Set when the reviewer edited this section's content in place — drives the
    *  "Edited by reviewer" provenance pip (inline-workbook plan §4.3, layer 1). */
   edited?: { by: string; at: number };
@@ -327,6 +367,76 @@ export function sectionListLabels(
     }
   }
   return out;
+}
+
+/* ---------- Conditions / action items (derive → materialize on edit) ---------- */
+
+/** Which findings roll into the batched asks: a rejected finding (returned for
+ *  revision) or one the reviewer flagged as a condition — never an excluded one. */
+function isTrackedAsk(f: Finding, states: Record<string, FindingState>): boolean {
+  const st = states[f.id];
+  if (st?.disposition === "removed") return false;
+  return st?.disposition === "rejected" || !!st?.condition;
+}
+
+/** The reviewer's text for a finding-derived ask — the rewritten wording, else a
+ *  note, else the raw question. */
+function askText(f: Finding, states: Record<string, FindingState>): string {
+  return states[f.id]?.reason || states[f.id]?.comment || f.question;
+}
+
+/** Conditions of approval derived from the conditioned findings (F-151). Ids are
+ *  deterministic (`cond-<findingId>`) so this is safe to call in render before
+ *  the reviewer materializes the list; each keeps its source finding for the
+ *  p.X citation. */
+export function derivedConditions(
+  findings: Finding[],
+  states: Record<string, FindingState>,
+): WbCondition[] {
+  return findings
+    .filter((f) => states[f.id]?.condition && states[f.id]?.disposition !== "removed")
+    .map((f) => ({
+      id: `cond-${f.id}`,
+      text: askText(f, states),
+      sourceFindingId: f.id,
+      page: f.page,
+      category: f.category,
+    }));
+}
+
+/** Action items derived from the reviewer's decisions (F-151). Owner defaults to
+ *  the fee appraiser (the send-back target); the deadline seeds as the severity
+ *  phrase until the reviewer authors a real date. Deterministic ids, render-safe. */
+export function derivedActionItems(
+  findings: Finding[],
+  states: Record<string, FindingState>,
+  defaultOwner: string,
+): WbActionItem[] {
+  return findings
+    .filter((f) => isTrackedAsk(f, states))
+    .map((f) => ({
+      id: `act-${f.id}`,
+      text: askText(f, states),
+      owner: defaultOwner,
+      deadline: derivedDeadlinePhrase(f),
+      sourceFindingId: f.id,
+    }));
+}
+
+/** Whether a deadline string is an authored ISO date (vs a derived phrase). */
+export function isIsoDate(d: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}$/.test(d);
+}
+
+/** Human deadline for the compiled doc: an authored ISO date renders "Due Mon D,
+ *  YYYY"; a derived phrase prints as-is; empty reads as unset. */
+export function formatActionDeadline(d: string): string {
+  if (!d) return "No date set";
+  if (isIsoDate(d)) {
+    const dt = new Date(`${d}T00:00:00`);
+    return `Due ${dt.toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })}`;
+  }
+  return d;
 }
 
 /* ---------- Helpers shared by the Builder + the doc ---------- */
