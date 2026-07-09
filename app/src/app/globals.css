@@ -12842,14 +12842,6 @@ select.qfilter {
   font-weight: 700;
   color: var(--md-on-surface);
 }
-/* the shared-store hint under the Source rail's Findings title (F-149) */
-.run-ex-thread-sub {
-  flex-basis: 100%;
-  font-family: var(--font-sans);
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--md-on-surface-t);
-}
 .run-ex-count {
   display: inline-grid;
   place-items: center;

@@ -626,9 +626,6 @@ export function RunExceptions({
             <span className="run-ex-count">
               {decided}/{exceptions.length}
             </span>
-            <span className="run-ex-thread-sub">
-              Same findings as the workbook — decide in either place
-            </span>
           </span>
           <ActionMenu
             tooltip="More actions"
