@@ -3431,13 +3431,13 @@ body.wb-reordering .wb-adddiv {
 .wb-shell-grip:active {
   cursor: grabbing;
 }
-/* floating action pill — rides the outline's top edge on the LEFT, just past the
-   ⠿ grip (F-153). Left-side controls keep the RIGHT gutter clear for the
-   persistent comment pin, which used to be eclipsed by this pill. */
+/* floating action pill — rides the outline's top-RIGHT edge. Comments now live
+   IN this pill (a "Comment · N" button), so there's no separate right-gutter pin
+   to collide with and the toolbar sits back on the right (F-153). */
 .wb-shell-bar {
   position: absolute;
   top: -13px;
-  left: 44px;
+  right: 8px;
   z-index: 7;
   display: flex;
   align-items: center;
@@ -11908,41 +11908,10 @@ select.qfilter {
 }
 
 /* ============================================================
-   Comments anywhere (Phase 2b) — a margin pin on each section + a
-   portaled thread popover. Pin lives on paper (inside .wb-doc, kept
-   in-box since .wb-page clips overflow); card is portaled to body.
+   Comments anywhere (Phase 2b) — opened from the section toolbar's
+   "Comment · N" button; a portaled thread popover anchored to it.
+   No separate margin pin. Card is portaled to body.
    ============================================================ */
-.wb-cnote-pin {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  z-index: 6;
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  height: 24px;
-  min-width: 24px;
-  padding: 0 6px;
-  border: none;
-  border-radius: 999px;
-  background: var(--paper-bg);
-  color: var(--md-accent);
-  box-shadow: var(--paper-elev);
-  cursor: pointer;
-  /* Only rendered when the section has comments or the thread is open (see
-     CommentAnchor), so it's always meant to be visible — no hover reveal. */
-  transition: background 0.12s ease, color 0.12s ease;
-}
-.wb-cnote-pin.has-notes,
-.wb-cnote-pin.is-open {
-  background: var(--md-accent);
-  color: #fff;
-}
-.wb-cnote-count {
-  font-size: 11px;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
 /* portaled thread card — chrome context, theme-aware, overlay tier */
 .wb-cnote-card {
   position: fixed;

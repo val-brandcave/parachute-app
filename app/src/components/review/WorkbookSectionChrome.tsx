@@ -17,7 +17,7 @@ import {
   type WbFact,
 } from "@/lib/workbook-config";
 import { GridCell } from "./WorkbookExhibits";
-import { CommentAnchor } from "./WorkbookComments";
+import { CommentThread } from "./WorkbookComments";
 import type { WorkbookEditingActions } from "./WorkbookInline";
 import type { Finding, WorkbookExhibits } from "@/types";
 
@@ -88,10 +88,12 @@ export function SectionShell({
   const caps = sectionCaps(sec);
   const [renaming, setRenaming] = useState(false);
   const [draft, setDraft] = useState(sec.title);
-  // Comments open from the toolbar (F-153) — no empty hover pin competing with
-  // the toolbar; the gutter pin shows only when the section carries comments.
+  // Comments live entirely in the toolbar (F-153): one "Comment · N" button is
+  // the single affordance (no separate margin pin), and the thread popover
+  // anchors to that button so it opens right where you clicked.
   const [commentsOpen, setCommentsOpen] = useState(false);
-  const commentCount = edit.comments.filter((c) => c.anchorId === sec.id).length;
+  const commentBtnRef = useRef<HTMLButtonElement>(null);
+  const commentThread = edit.comments.filter((c) => c.anchorId === sec.id);
 
   const commitRename = () => {
     setRenaming(false);
@@ -117,16 +119,6 @@ export function SectionShell({
         <Icon name="grip" size={15} />
       </button>
 
-      {/* Comment pin — right gutter, shown only when the section carries
-          comments (or the thread is open); opened from the toolbar button. */}
-      <CommentAnchor
-        anchorId={sec.id}
-        anchorLabel={sec.title}
-        edit={edit}
-        open={commentsOpen}
-        onOpenChange={setCommentsOpen}
-      />
-
       <div className="wb-shell-bar" role="toolbar" aria-label={`${sec.title} tools`}>
         {caps.rename && (
           <button
@@ -141,12 +133,13 @@ export function SectionShell({
         )}
         {extras}
         <button
+          ref={commentBtnRef}
           className={`wb-shell-act${commentsOpen ? " is-open" : ""}`}
           onClick={() => setCommentsOpen((v) => !v)}
           title="Comments on this section"
         >
           <Icon name="comment" size={12} />
-          {commentCount > 0 ? `Comment · ${commentCount}` : "Comment"}
+          {commentThread.length > 0 ? `Comment · ${commentThread.length}` : "Comment"}
         </button>
         {caps.hide && (
           <button
@@ -171,6 +164,17 @@ export function SectionShell({
           </button>
         )}
       </div>
+
+      {commentsOpen && (
+        <CommentThread
+          anchorRef={commentBtnRef}
+          anchorLabel={sec.title}
+          comments={commentThread}
+          onAdd={(body) => edit.onAddComment(sec.id, sec.title, body)}
+          onDelete={edit.onDeleteComment}
+          onClose={() => setCommentsOpen(false)}
+        />
+      )}
 
       <h3 className="wb-sec-h" style={{ fontFamily: "var(--wb-head)" }}>
         <span className="wb-sec-n">{label}</span>
