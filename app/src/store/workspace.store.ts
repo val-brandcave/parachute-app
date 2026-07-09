@@ -189,6 +189,11 @@ interface WorkspaceState {
   moveSectionBefore: (id: string, beforeId: string | null) => void;
   /** Copy a section (new id, "(copy)" title) right after the original. */
   duplicateSection: (id: string) => void;
+  /** Route a finding category to exactly one findings section (a partition):
+   *  adds it to `targetSectionId` and removes it from every other findings
+   *  section, so the same findings can never print in two chapters. `null`
+   *  unassigns the category (its findings drop out — surfaced as a warning). */
+  moveCategoryToSection: (category: string, targetSectionId: string | null) => void;
   /** Replace one SWOT quadrant's items (inline card editing). */
   updateSwotQuadrant: (
     quadrant: "strengths" | "weaknesses" | "opportunities" | "threats",
@@ -721,7 +726,8 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       if (!s.workbook) return {};
       const next = [...s.workbook.sections];
       const at = beforeId ? next.findIndex((sec) => sec.id === beforeId) : -1;
-      next.splice(at < 0 ? next.length : at, 0, { ...section, id });
+      // Palette-inserted sections are reviewer-added → Deletable (F-153).
+      next.splice(at < 0 ? next.length : at, 0, { ...section, id, added: true });
       return {
         workbook: { ...s.workbook, sections: next },
         activity: [
@@ -757,13 +763,69 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       const i = s.workbook.sections.findIndex((sec) => sec.id === id);
       if (i < 0) return {};
       const src = s.workbook.sections[i];
-      const copy: WbSection = { ...src, id: generateId(), title: `${src.title} (copy)` };
+      // A duplicated findings chapter starts EMPTY: category routing is exclusive
+      // (a category lives in one section), so cloning its categories would create
+      // an impossible double-home. You route categories into the new chapter.
+      const copy: WbSection = {
+        ...src,
+        id: generateId(),
+        title: `${src.title} (copy)`,
+        added: true, // a duplicate is reviewer-created → Deletable (F-153)
+        ...(src.type === "findings" ? { categories: [] } : {}),
+      };
       const next = [...s.workbook.sections];
       next.splice(i + 1, 0, copy);
       return {
         workbook: { ...s.workbook, sections: next },
         activity: [
           entry({ actor: "you", action: "Duplicated the section", target: src.title, icon: "copy", kind: "structure" }),
+          ...s.activity,
+        ],
+      };
+    }),
+
+  moveCategoryToSection: (category, targetSectionId) =>
+    set((s) => {
+      if (!s.workbook) return {};
+      let changed = false;
+      const sections = s.workbook.sections.map((sec) => {
+        if (sec.type !== "findings") return sec;
+        const has = (sec.categories ?? []).includes(category);
+        if (sec.id === targetSectionId) {
+          if (has) return sec;
+          changed = true;
+          return { ...sec, categories: [...(sec.categories ?? []), category] };
+        }
+        if (has) {
+          changed = true;
+          return { ...sec, categories: (sec.categories ?? []).filter((c) => c !== category) };
+        }
+        return sec;
+      });
+      if (!changed) return {};
+      const target = targetSectionId
+        ? sections.find((sec) => sec.id === targetSectionId)
+        : null;
+      return {
+        workbook: { ...s.workbook, sections },
+        activity: [
+          entry(
+            target
+              ? {
+                  actor: "you",
+                  action: "Routed findings to a section",
+                  target: `${category} → ${target.title}`,
+                  icon: "checklist",
+                  kind: "structure",
+                }
+              : {
+                  actor: "you",
+                  action: "Unassigned a finding category",
+                  target: category,
+                  icon: "eye-off",
+                  kind: "structure",
+                },
+          ),
           ...s.activity,
         ],
       };

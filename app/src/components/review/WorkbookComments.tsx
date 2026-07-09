@@ -3,13 +3,12 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Icon } from "@/components/atoms";
-import type { WorkbookEditingActions } from "./WorkbookInline";
 
 /**
- * Comments anywhere (Phase 2b, F-142 generalized) — a margin pin anchored to a
- * block, opening a thread popover. The pin hangs in the document's right gutter
- * (Google-Docs mental model); it's faint until hovered, solid once the block
- * carries comments. The thread is a portaled, fixed-positioned popover (the
+ * Comments anywhere (Phase 2b, F-142 generalized) — a section's comment thread,
+ * opened from the section toolbar's "Comment" button (which carries the count)
+ * and anchored to it. No separate margin pin: the toolbar button is the single
+ * comment affordance. The thread is a portaled, fixed-positioned popover (the
  * house floating-layer RULE — never absolute inside the paginated, overflow-
  * clipped `.wb-doc`).
  */
@@ -17,48 +16,7 @@ import type { WorkbookEditingActions } from "./WorkbookInline";
 const fmtTime = (at: number) =>
   new Date(at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 
-export function CommentAnchor({
-  anchorId,
-  anchorLabel,
-  edit,
-}: {
-  anchorId: string;
-  anchorLabel: string;
-  edit: WorkbookEditingActions;
-}) {
-  const thread = edit.comments.filter((c) => c.anchorId === anchorId);
-  const count = thread.length;
-  const [open, setOpen] = useState(false);
-  const pinRef = useRef<HTMLButtonElement>(null);
-
-  return (
-    <>
-      <button
-        ref={pinRef}
-        type="button"
-        className={`wb-cnote-pin${count ? " has-notes" : ""}${open ? " is-open" : ""}`}
-        onClick={() => setOpen((v) => !v)}
-        aria-label={count ? `${count} comment${count === 1 ? "" : "s"}` : "Add a comment"}
-        title={count ? `${count} comment${count === 1 ? "" : "s"}` : "Add a comment"}
-      >
-        <Icon name="comment" size={13} />
-        {count > 0 && <span className="wb-cnote-count">{count}</span>}
-      </button>
-      {open && (
-        <CommentThread
-          anchorRef={pinRef}
-          anchorLabel={anchorLabel}
-          comments={thread}
-          onAdd={(body) => edit.onAddComment(anchorId, anchorLabel, body)}
-          onDelete={edit.onDeleteComment}
-          onClose={() => setOpen(false)}
-        />
-      )}
-    </>
-  );
-}
-
-function CommentThread({
+export function CommentThread({
   anchorRef,
   anchorLabel,
   comments,

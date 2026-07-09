@@ -17,7 +17,7 @@ import {
   type WbFact,
 } from "@/lib/workbook-config";
 import { GridCell } from "./WorkbookExhibits";
-import { CommentAnchor } from "./WorkbookComments";
+import { CommentThread } from "./WorkbookComments";
 import type { WorkbookEditingActions } from "./WorkbookInline";
 import type { Finding, WorkbookExhibits } from "@/types";
 
@@ -43,16 +43,19 @@ interface SectionCaps {
   del: boolean;
 }
 
-export function sectionCaps(type: WbSectionType): SectionCaps {
+export function sectionCaps(sec: WbSection): SectionCaps {
   // Certification anchors the sign flow — it can be renamed/hidden, never
   // removed or doubled. Everything else follows the singleton rule.
-  if (type === "certification")
+  if (sec.type === "certification")
     return { rename: true, hide: true, duplicate: false, del: false };
   return {
     rename: true,
     hide: true,
-    duplicate: !SINGLETON_TYPES.includes(type),
-    del: true,
+    duplicate: !SINGLETON_TYPES.includes(sec.type),
+    // Delete only on sections the reviewer ADDED or DUPLICATED (F-153). Derived /
+    // template sections are excluded via Hide (reversible, keeps config), never
+    // destroyed — so most sections show Hide but no Delete.
+    del: !!sec.added,
   };
 }
 
@@ -82,9 +85,15 @@ export function SectionShell({
   extras?: React.ReactNode;
   children: React.ReactNode;
 }) {
-  const caps = sectionCaps(sec.type);
+  const caps = sectionCaps(sec);
   const [renaming, setRenaming] = useState(false);
   const [draft, setDraft] = useState(sec.title);
+  // Comments live entirely in the toolbar (F-153): one "Comment · N" button is
+  // the single affordance (no separate margin pin), and the thread popover
+  // anchors to that button so it opens right where you clicked.
+  const [commentsOpen, setCommentsOpen] = useState(false);
+  const commentBtnRef = useRef<HTMLButtonElement>(null);
+  const commentThread = edit.comments.filter((c) => c.anchorId === sec.id);
 
   const commitRename = () => {
     setRenaming(false);
@@ -110,9 +119,6 @@ export function SectionShell({
         <Icon name="grip" size={15} />
       </button>
 
-      {/* Comment pin — hangs in the right gutter, aligned to the section top. */}
-      <CommentAnchor anchorId={sec.id} anchorLabel={sec.title} edit={edit} />
-
       <div className="wb-shell-bar" role="toolbar" aria-label={`${sec.title} tools`}>
         {caps.rename && (
           <button
@@ -126,6 +132,15 @@ export function SectionShell({
           </button>
         )}
         {extras}
+        <button
+          ref={commentBtnRef}
+          className={`wb-shell-act${commentsOpen ? " is-open" : ""}`}
+          onClick={() => setCommentsOpen((v) => !v)}
+          title="Comments on this section"
+        >
+          <Icon name="comment" size={12} />
+          {commentThread.length > 0 ? `Comment · ${commentThread.length}` : "Comment"}
+        </button>
         {caps.hide && (
           <button
             className="wb-shell-act"
@@ -149,6 +164,17 @@ export function SectionShell({
           </button>
         )}
       </div>
+
+      {commentsOpen && (
+        <CommentThread
+          anchorRef={commentBtnRef}
+          anchorLabel={sec.title}
+          comments={commentThread}
+          onAdd={(body) => edit.onAddComment(sec.id, sec.title, body)}
+          onDelete={edit.onDeleteComment}
+          onClose={() => setCommentsOpen(false)}
+        />
+      )}
 
       <h3 className="wb-sec-h" style={{ fontFamily: "var(--wb-head)" }}>
         <span className="wb-sec-n">{label}</span>
@@ -271,16 +297,28 @@ export function hasSectionSettings(type: WbSectionType): boolean {
   return SETTINGS_TYPES.includes(type);
 }
 
+/** The visible findings chapters + their display number — lets the routing menu
+ *  show where each category currently lives ("In §5 · Cost Approach"). */
+export interface FindingsSectionInfo {
+  id: string;
+  title: string;
+  label: string;
+  categories: string[];
+}
+
 export function SectionSettings({
   sec,
   edit,
   exhibits,
   findings,
+  findingsSections,
 }: {
   sec: WbSection;
   edit: WorkbookEditingActions;
   exhibits: WorkbookExhibits | null;
   findings: Finding[];
+  /** All visible findings chapters (for exclusive-routing ownership hints). */
+  findingsSections: FindingsSectionInfo[];
 }) {
   if (!hasSectionSettings(sec.type)) return null;
 
@@ -299,23 +337,32 @@ export function SectionSettings({
       { label: "Cap-rate comparison", selected: series.capRate, keepOpen: true, onClick: toggle("capRate") },
     ];
   } else if (sec.type === "findings") {
-    // Which finding categories route into this chapter (client ref: "Routes
-    // finding categories"). Data already exists on the section.
+    // Exclusive routing (F-152): a category lives in exactly ONE chapter, so a
+    // finding can never print twice. Checking a category here MOVES it here
+    // (removing it from wherever it was); each row shows its current home so the
+    // partition is legible. Unchecking unassigns it (surfaced as a warning).
     const current = sec.categories ?? [];
     const all = Array.from(new Set([...availableCategories(findings), ...current]));
+    const ownerOf = (cat: string) =>
+      findingsSections.find((fs) => fs.id !== sec.id && fs.categories.includes(cat));
     items = [
       { header: true, label: "Route finding categories" },
-      ...all.map((cat) => ({
-        label: cat,
-        selected: current.includes(cat),
-        keepOpen: true,
-        onClick: () =>
-          edit.onUpdateSection(sec.id, {
-            categories: current.includes(cat)
-              ? current.filter((c) => c !== cat)
-              : [...current, cat],
-          }),
-      })),
+      ...all.map((cat) => {
+        const mine = current.includes(cat);
+        const owner = mine ? undefined : ownerOf(cat);
+        const description = mine
+          ? "In this section"
+          : owner
+            ? `In §${owner.label} · ${owner.title}`
+            : "Not shown in any section";
+        return {
+          label: cat,
+          description,
+          selected: mine,
+          keepOpen: true,
+          onClick: () => edit.onRouteCategory(cat, mine ? null : sec.id),
+        };
+      }),
     ];
   } else if (sec.type === "sensitivity" && exhibits) {
     // Scenario columns (moved off the toolbar cycler into settings). Radio 3..N,
@@ -428,11 +475,16 @@ export function useSectionDrag(
   const dragRef = useRef<string | null>(null);
   const dropRef = useRef<string | null>(null);
   const onDropRef = useRef(onDrop);
+  // Last pointer position (updated on move; read by the auto-scroll rAF loop so
+  // scrolling continues even when the pointer is held still at an edge).
+  const pointer = useRef({ x: 0, y: 0 });
+  const scrollElRef = useRef<HTMLElement | null>(null);
+  const rafRef = useRef<number | null>(null);
   // The drag ghost trails the pointer on springs — the "thing in hand" cue.
   const ghostRawX = useMotionValue(0);
   const ghostRawY = useMotionValue(0);
-  const ghostX = useSpring(ghostRawX, { stiffness: 650, damping: 42, mass: 0.55 });
-  const ghostY = useSpring(ghostRawY, { stiffness: 650, damping: 42, mass: 0.55 });
+  const ghostX = useSpring(ghostRawX, { stiffness: 750, damping: 44, mass: 0.5 });
+  const ghostY = useSpring(ghostRawY, { stiffness: 750, damping: 44, mass: 0.5 });
 
   // Keep refs in sync (post-render) so the window listeners read fresh values
   // without the drag effect re-subscribing on every render mid-drag.
@@ -444,9 +496,18 @@ export function useSectionDrag(
 
   useEffect(() => {
     if (!dragId) return;
-    const move = (ev: PointerEvent) => {
-      ghostRawX.set(ev.clientX + 16);
-      ghostRawY.set(ev.clientY + 12);
+
+    // The scrollable ancestor of the dragged section — the document stage. We
+    // auto-scroll it when the pointer nears an edge so a long doc stays reachable.
+    scrollElRef.current = findScrollParent(
+      document.querySelector<HTMLElement>(`[data-wb-sec="${dragId}"]`),
+    );
+
+    // Drop target = the first section whose vertical midpoint is below the
+    // pointer (null/"__end__" = drop at the very end). Reads the shared pointer
+    // ref so it stays correct during auto-scroll, not just on pointer move.
+    const computeDrop = () => {
+      const y = pointer.current.y;
       const shells = Array.from(
         document.querySelectorAll<HTMLElement>("[data-wb-sec]"),
       );
@@ -455,13 +516,44 @@ export function useSectionDrag(
         const sid = el.dataset.wbSec!;
         if (sid === dragRef.current) continue;
         const r = el.getBoundingClientRect();
-        if (ev.clientY < r.top + r.height / 2) {
+        if (y < r.top + r.height / 2) {
           target = sid;
           break;
         }
       }
-      setDropId(target);
+      if (target !== dropRef.current) setDropId(target);
     };
+
+    const move = (ev: PointerEvent) => {
+      pointer.current = { x: ev.clientX, y: ev.clientY };
+      ghostRawX.set(ev.clientX + 16);
+      ghostRawY.set(ev.clientY + 12);
+      computeDrop();
+    };
+
+    // Edge auto-scroll — a rAF loop (so it keeps going when the pointer is held
+    // still) that scrolls the stage when the pointer is within EDGE of a border,
+    // ramping speed with proximity. Re-derives the drop target as content moves.
+    const EDGE = 84;
+    const MAX_SPEED = 24;
+    const speedFrom = (dist: number) =>
+      Math.min(MAX_SPEED, (Math.min(dist, EDGE) / EDGE) * MAX_SPEED);
+    const tick = () => {
+      const el = scrollElRef.current;
+      if (el) {
+        const r = el.getBoundingClientRect();
+        const y = pointer.current.y;
+        let dy = 0;
+        if (y < r.top + EDGE) dy = -speedFrom(r.top + EDGE - y);
+        else if (y > r.bottom - EDGE) dy = speedFrom(y - (r.bottom - EDGE));
+        if (Math.abs(dy) >= 0.5) {
+          el.scrollBy(0, dy);
+          computeDrop();
+        }
+      }
+      rafRef.current = requestAnimationFrame(tick);
+    };
+
     const up = () => {
       const drag = dragRef.current;
       const drop = dropRef.current;
@@ -469,12 +561,15 @@ export function useSectionDrag(
       setDropId(null);
       if (drag && drop) onDropRef.current(drag, drop === "__end__" ? null : drop);
     };
+
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", up);
     document.body.classList.add("wb-reordering");
+    rafRef.current = requestAnimationFrame(tick);
     return () => {
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", up);
+      if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
       document.body.classList.remove("wb-reordering");
     };
     // Motion values are stable references — safe in deps.
@@ -482,13 +577,33 @@ export function useSectionDrag(
 
   const startDrag = (id: string) => (e: React.PointerEvent) => {
     e.preventDefault();
-    // Park the ghost at the grab point instantly (no fly-in from 0,0).
-    ghostRawX.jump(e.clientX + 16);
-    ghostRawY.jump(e.clientY + 12);
+    const gx = e.clientX + 16;
+    const gy = e.clientY + 12;
+    pointer.current = { x: e.clientX, y: e.clientY };
+    // Park BOTH the source and the spring output at the grab point — jumping only
+    // the source lets the spring animate in from 0,0 (the ghost's "fly-in" lag).
+    ghostRawX.jump(gx);
+    ghostRawY.jump(gy);
+    ghostX.jump(gx);
+    ghostY.jump(gy);
     setDragId(id);
   };
 
   return { dragId, dropId, startDrag, ghostX, ghostY };
+}
+
+/** Nearest scrollable ancestor of `el` (the document stage during a section
+ *  drag) — walks up until it finds one that actually overflows, so edge
+ *  auto-scroll targets the real scroller and not a clipped wrapper. */
+function findScrollParent(el: HTMLElement | null): HTMLElement | null {
+  let node = el?.parentElement ?? null;
+  while (node) {
+    const oy = getComputedStyle(node).overflowY;
+    if ((oy === "auto" || oy === "scroll") && node.scrollHeight > node.clientHeight)
+      return node;
+    node = node.parentElement;
+  }
+  return null;
 }
 
 /** The cursor-following drag ghost — a lifted paper chip carrying the dragged

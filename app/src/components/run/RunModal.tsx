@@ -589,11 +589,13 @@ export function RunModal() {
                               // appraisal + the same findings, decidable from
                               // either surface. The rail INSIDE keeps its
                               // "Findings" title; this nav item names the view.
+                              // No pending badge here (F-153): the workbook is the
+                              // decision surface and owns the "needs attention"
+                              // signal (its callout + the sign-gate); a to-do count
+                              // on this secondary reference view misdirected it.
                               key: "exceptions",
                               label: "Source",
                               icon: "pdf",
-                              badge:
-                                !signature && ctx.pendingCount > 0 ? ctx.pendingCount : null,
                             },
                           ]}
                           active={spoke}

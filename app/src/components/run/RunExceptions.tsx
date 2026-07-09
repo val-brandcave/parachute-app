@@ -4,7 +4,7 @@ import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from 
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button, Icon } from "@/components/atoms";
-import { ActionMenu, FindingDecisionBar } from "@/components/molecules";
+import { ActionMenu, FindingDecisionBar, SegmentedControl } from "@/components/molecules";
 import { useWorkspaceStore, useTemplatesStore, type RunReviewType } from "@/store";
 import { AddFindingModal, type NewFinding } from "@/components/review/AddFindingModal";
 import { buildAppraisalDoc, docPageIndex, type DocBlock, type DocRun } from "@/data/appraisal-doc";
@@ -154,6 +154,11 @@ export function RunExceptions({
   // the top exception (derived in render — no effect, no cascading setState).
   const [picked, setPicked] = useState<string | null>(null);
   const selectedId = picked ?? exceptions[0]?.id ?? null;
+  // Source defaults to the CLEAN appraisal (F-153): the workbook is the primary
+  // decision surface, so this reference view shows the pristine document until
+  // the reviewer opts into the annotation layer (highlights + numbered badges +
+  // the findings rail). Citation lookups + create-from-span still work clean.
+  const [showAnnotations, setShowAnnotations] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [page, setPage] = useState(1);
   // Measured vertical offset (within its page) of each anchor's highlight, so the
@@ -228,7 +233,8 @@ export function RunExceptions({
   // view arrives via a cross-fade, so an animated scroll would fight it).
   const didInitialScroll = useRef(false);
   useEffect(() => {
-    if (didInitialScroll.current) return;
+    // Only once the annotation layer is on — clean mode lands at the doc top.
+    if (didInitialScroll.current || !showAnnotations) return;
     const first = exceptions[0]?.id;
     if (!first) return;
     const raf = requestAnimationFrame(() => {
@@ -243,7 +249,7 @@ export function RunExceptions({
       }
     });
     return () => cancelAnimationFrame(raf);
-  }, [exceptions, annoPage]);
+  }, [exceptions, annoPage, showAnnotations]);
 
   // Bulk action — accept every finding that hasn't been decided yet (leaves
   // any already overridden/flagged untouched).
@@ -339,13 +345,17 @@ export function RunExceptions({
       evidence: f.evidence,
     });
     setCreatePrefill(null);
-    // Land on the new finding: open its rail item and pulse the cited page.
+    // Reveal the annotation layer so the finding you just created is visible in
+    // context (rail + on-page mark), then land on it.
+    setShowAnnotations(true);
     setTimeout(() => selectFinding(id, "rail"), 60);
   };
 
   /* ---- document rendering ---- */
 
   const renderRun = (r: DocRun, key: number, pageNo: number, used: Set<string>) => {
+    // Clean view: no annotation layer — the appraisal renders as plain text.
+    if (!showAnnotations) return <Fragment key={key}>{r.text}</Fragment>;
     // AI finding: the seeded inline anchor.
     if (r.anchor && findingById[r.anchor]) {
       const f = findingById[r.anchor];
@@ -387,7 +397,7 @@ export function RunExceptions({
               onClick={() => selectFinding(id, "doc")}
             >
               <span className="run-anno-badge run-anno-badge--user" aria-hidden="true">
-                <Icon name="user" size={11} />
+                {numberOf[id]}
               </span>
               {span}
             </mark>
@@ -528,6 +538,19 @@ export function RunExceptions({
                 <Icon name="chevron-right" size={16} />
               </button>
             </div>
+            <span className="run-ex-tools-div" aria-hidden="true" />
+            {/* Clean ↔ Annotated (F-153) — clean is the default; annotated brings
+                in the AI highlights + numbered badges + the findings rail. */}
+            <span className="run-wb-viewmode">
+              <SegmentedControl
+                options={[
+                  { value: "clean", label: "Clean" },
+                  { value: "annotated", label: "Annotated" },
+                ]}
+                value={showAnnotations ? "annotated" : "clean"}
+                onChange={(v) => setShowAnnotations(v === "annotated")}
+              />
+            </span>
           </div>
         </div>
 
@@ -618,7 +641,8 @@ export function RunExceptions({
         </div>
       </div>
 
-      {/* ---- Synced exceptions thread ---- */}
+      {/* ---- Synced exceptions thread (annotation layer only, F-153) ---- */}
+      {showAnnotations && (
       <aside className="run-ex-thread">
         <div className="run-ex-thread-head">
           <span className="run-ex-thread-title">
@@ -654,17 +678,12 @@ export function RunExceptions({
                   onClick={() => selectFinding(f.id)}
                   aria-expanded={active}
                 >
-                  {f.byReviewer ? (
-                    <span
-                      className="run-ex-num run-ex-num--user"
-                      title="Added by you"
-                      aria-label="Reviewer-added finding"
-                    >
-                      <Icon name="user" size={13} />
-                    </span>
-                  ) : (
-                    <span className={`run-ex-num run-ex-num--${sev.tone}`}>{i + 1}</span>
-                  )}
+                  <span
+                    className={`run-ex-num run-ex-num--${f.byReviewer ? "user" : sev.tone}`}
+                    title={f.byReviewer ? "Reviewer-added finding" : undefined}
+                  >
+                    {i + 1}
+                  </span>
                   <span className="run-ex-item-title">
                     {f.category}
                     {f.byReviewer && <span className="run-ex-userbadge">Reviewer-added</span>}
@@ -842,6 +861,7 @@ export function RunExceptions({
           </p>
         </div>
       </aside>
+      )}
 
       {/* Floating "create finding from here" — appears at a live source selection
           (evidence-first authoring). Portaled + fixed so page overflow can't clip it. */}

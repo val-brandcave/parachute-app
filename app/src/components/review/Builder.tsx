@@ -151,7 +151,7 @@ export function Builder({ reviewId }: { reviewId: string }) {
   const reviewerName = byId(review.assigneeId)?.signatureName || CURRENT_USER.signatureName;
 
   const addType = (type: WbSectionType) => {
-    const id = addSection(newSection(type, findings));
+    const id = addSection(newSection(type));
     setSelectedId(id);
     setRightMode("preview");
   };
