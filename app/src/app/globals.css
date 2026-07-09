@@ -3993,16 +3993,18 @@ body.wb-reordering .wb-adddiv {
   margin-top: 12px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
 }
+/* Clean hairline rows — matches the sibling Action Items list; no tinted cards
+   (a formal doc, not a marketing block). */
 .wb-conditions li {
   display: flex;
   gap: 12px;
   align-items: flex-start;
-  padding: 12px 14px;
-  border-radius: 12px;
-  background: var(--md-accent-c);
-  border: 1px solid color-mix(in srgb, var(--md-accent) 30%, transparent);
+  padding: 10px 0;
+  border-bottom: 1px solid var(--md-outline-v);
+}
+.wb-conditions li:last-child {
+  border-bottom: none;
 }
 .wb-cond-id {
   flex-shrink: 0;
@@ -4012,8 +4014,8 @@ body.wb-reordering .wb-adddiv {
   height: 24px;
   padding: 0 8px;
   border-radius: 7px;
-  background: var(--md-accent-d);
-  color: #fff;
+  background: var(--md-selected);
+  color: var(--md-on-selected);
   font-size: 12px;
   font-weight: 700;
 }
@@ -4025,7 +4027,7 @@ body.wb-reordering .wb-adddiv {
 .wb-cond-src {
   font-size: 11.5px;
   font-weight: 600;
-  color: var(--md-accent-d);
+  color: var(--md-on-surface-t);
   margin-top: 3px;
 }
 
