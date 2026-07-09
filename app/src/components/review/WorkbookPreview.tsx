@@ -29,6 +29,7 @@ import {
 } from "@/lib/workbook-config";
 import {
   SectionShell,
+  SectionSettings,
   HiddenSectionStub,
   AddDivider,
   FactGridEditor,
@@ -43,8 +44,6 @@ import {
   SwotGrid,
   GridCell,
 } from "./WorkbookExhibits";
-import { ActionMenu } from "@/components/molecules/ActionMenu";
-import { availableCategories } from "@/lib/workbook-config";
 import {
   EditableProse,
   ProvenancePip,
@@ -307,11 +306,13 @@ export function WorkbookPreview({
 
       case "exhibits": {
         if (!exhibits) return null;
+        // Per-series show/hide is the whole control now (F-152) — each series is
+        // single-form, so the old table/chart/both mode was redundant. Toggles
+        // live in the ⚙ settings popover.
         const series = s.series ?? { adjustmentGrid: true, psf: true, capRate: true };
-        const mode = s.exhibitMode ?? "both";
-        const showTable = series.adjustmentGrid && mode !== "chart";
-        const showPsf = series.psf && mode !== "table";
-        const showCap = series.capRate && mode !== "table";
+        const showTable = series.adjustmentGrid;
+        const showPsf = series.psf;
+        const showCap = series.capRate;
         if (!showTable && !showPsf && !showCap)
           return <p className="wb-prose wb-muted">All exhibit series are hidden.</p>;
         // The $/SF chart DERIVES from the adjustment grid, so row edits flow
@@ -445,6 +446,7 @@ export function WorkbookPreview({
               items={actionList}
               editing={!!edit}
               owners={owners}
+              showTiming={s.showActionTiming !== false}
               onCommit={edit ? edit.onCommitActionItems : () => {}}
             />
             {removed.length > 0 && (
@@ -660,87 +662,12 @@ export function WorkbookPreview({
   const tocSections = toc.filter((it) => !it.appendix);
   const tocAppendices = toc.filter((it) => it.appendix);
 
-  // Chrome context: which types exist (singletons drop out of the add palette),
-  // the last shell (end-of-document drop target), and per-TYPE toolbar extras —
-  // the §5 matrix rendered from the capability registry.
+  // Chrome context: which types exist (singletons render dimmed in the add
+  // palette), and the last shell (end-of-document drop target). Per-type
+  // configuration now lives in the ⚙ settings popover (SectionSettings), not
+  // ad-hoc toolbar cyclers.
   const presentTypes = config.sections.map((s) => s.type);
   const lastShellId = [...labeled].reverse().find((it) => !it.stub)?.s.id;
-  const EXHIBIT_MODES = ["both", "table", "chart"] as const;
-  const extrasFor = (s: WbSection): React.ReactNode => {
-    if (!edit) return null;
-    if (s.type === "findings") {
-      // Which categories roll into this chapter — a checkbox menu over every
-      // category in the review (stays open while toggling; doc re-renders live).
-      const current = s.categories ?? [];
-      const all = Array.from(new Set([...availableCategories(findings), ...current]));
-      return (
-        <ActionMenu
-          menuClassName="wb-adddiv-menu"
-          items={all.map((cat) => ({
-            label: cat,
-            selected: current.includes(cat),
-            keepOpen: true,
-            onClick: () =>
-              edit.onUpdateSection(s.id, {
-                categories: current.includes(cat)
-                  ? current.filter((c) => c !== cat)
-                  : [...current, cat],
-              }),
-          }))}
-          trigger={({ open, toggle }) => (
-            <button
-              className={`wb-shell-act${open ? " is-open" : ""}`}
-              onClick={toggle}
-              title="Which finding categories roll into this chapter"
-            >
-              <Icon name="checklist" size={12} /> Categories
-            </button>
-          )}
-        />
-      );
-    }
-    if (s.type === "exhibits") {
-      const mode = s.exhibitMode ?? "both";
-      const next = EXHIBIT_MODES[(EXHIBIT_MODES.indexOf(mode) + 1) % EXHIBIT_MODES.length];
-      const modeLabel =
-        mode === "both" ? "Table + chart" : mode === "table" ? "Table only" : "Chart only";
-      return (
-        <button
-          className="wb-shell-act"
-          onClick={() => edit.onUpdateSection(s.id, { exhibitMode: next })}
-          title="Cycle what this exhibit shows: table / chart / both"
-        >
-          <Icon name="columns" size={12} /> {modeLabel}
-        </button>
-      );
-    }
-    if (s.type === "sensitivity" && exhibits) {
-      const total = exhibits.sensitivity.cols.length;
-      const n = Math.min(s.sensitivityCols ?? total, total);
-      return (
-        <span className="wb-shell-step">
-          <button
-            className="wb-shell-act"
-            onClick={() => edit.onUpdateSection(s.id, { sensitivityCols: Math.max(3, n - 1) })}
-            disabled={n <= 3}
-            aria-label="Fewer scenario columns"
-          >
-            <Icon name="minus" size={12} />
-          </button>
-          {n} cols
-          <button
-            className="wb-shell-act"
-            onClick={() => edit.onUpdateSection(s.id, { sensitivityCols: Math.min(total, n + 1) })}
-            disabled={n >= total}
-            aria-label="More scenario columns"
-          >
-            <Icon name="add" size={12} />
-          </button>
-        </span>
-      );
-    }
-    return null;
-  };
 
   const runHead = settings.showHeader ? (
     <div className="wb-runhead">
@@ -926,7 +853,14 @@ export function WorkbookPreview({
                     dropBefore={dropId === s.id}
                     dropAfter={dropId === "__end__" && s.id === lastShellId}
                     onHandleDown={startDrag(s.id)}
-                    extras={extrasFor(s)}
+                    extras={
+                      <SectionSettings
+                        sec={s}
+                        edit={edit}
+                        exhibits={exhibits}
+                        findings={findings}
+                      />
+                    }
                   >
                     {node}
                   </SectionShell>

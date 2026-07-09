@@ -528,11 +528,15 @@ export function ActionItemsBlock({
   items,
   editing,
   owners,
+  showTiming = true,
   onCommit,
 }: {
   items: WbActionItem[];
   editing: boolean;
   owners: OwnerOption[];
+  /** Show the per-item due/timing (client ref's "Show due/timing column"; the
+   *  ⚙ settings toggle). When off, the deadline field/label is hidden. */
+  showTiming?: boolean;
   onCommit: (next: WbActionItem[], log: LedgerPatch) => void;
 }) {
   const defaultOwner = owners.find((o) => o.kind === "firm")?.value ?? owners[0]?.value ?? "";
@@ -628,22 +632,23 @@ export function ActionItemsBlock({
                         {a.owner}
                       </span>
                     )}
-                    {editing ? (
-                      <span className="wb-act-field">
-                        <Icon name="calendar" size={13} className="wb-act-field-ic" />
-                        <input
-                          type="date"
-                          className="wb-act-date-in"
-                          value={isIsoDate(a.deadline) ? a.deadline : ""}
-                          onChange={(e) => setDeadline(a.id, e.target.value)}
-                          aria-label="Action-item deadline"
-                        />
-                      </span>
-                    ) : (
-                      <span className={`wb-act-due${a.deadline ? "" : " is-unset"}`}>
-                        {formatActionDeadline(a.deadline)}
-                      </span>
-                    )}
+                    {showTiming &&
+                      (editing ? (
+                        <span className="wb-act-field">
+                          <Icon name="calendar" size={13} className="wb-act-field-ic" />
+                          <input
+                            type="date"
+                            className="wb-act-date-in"
+                            value={isIsoDate(a.deadline) ? a.deadline : ""}
+                            onChange={(e) => setDeadline(a.id, e.target.value)}
+                            aria-label="Action-item deadline"
+                          />
+                        </span>
+                      ) : (
+                        <span className={`wb-act-due${a.deadline ? "" : " is-unset"}`}>
+                          {formatActionDeadline(a.deadline)}
+                        </span>
+                      ))}
                   </div>
                 </div>
                 {editing && (

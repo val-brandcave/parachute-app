@@ -9,6 +9,9 @@ import {
   PALETTE_TYPES,
   SINGLETON_TYPES,
   SECTION_TYPE_LABEL,
+  SECTION_TYPE_ICON,
+  SECTION_TYPE_DESC,
+  availableCategories,
   type WbSection,
   type WbSectionType,
   type WbFact,
@@ -16,6 +19,7 @@ import {
 import { GridCell } from "./WorkbookExhibits";
 import { CommentAnchor } from "./WorkbookComments";
 import type { WorkbookEditingActions } from "./WorkbookInline";
+import type { Finding, WorkbookExhibits } from "@/types";
 
 /**
  * On-canvas section chrome (Phase 2a.5, F-144) — the HubSpot-builder mechanic
@@ -210,24 +214,34 @@ export function AddDivider({
 }: {
   /** Insert position — the section this divider precedes (null = end). */
   beforeId: string | null;
-  /** Types already in the document (singletons filter out of the palette). */
+  /** Types already in the document (singletons already present render dimmed). */
   presentTypes: WbSectionType[];
   edit: WorkbookEditingActions;
 }) {
-  const palette: ActionItem[] = PALETTE_TYPES.filter(
-    (t) => !(SINGLETON_TYPES.includes(t) && presentTypes.includes(t)),
-  ).map((t) => ({
-    label: SECTION_TYPE_LABEL[t],
-    icon: "add",
-    onClick: () => edit.onInsertSection(t, beforeId),
-  }));
+  // Enriched palette (F-152): icon + name + one-line description per type — a
+  // reviewer shouldn't have to know "sensitivity" vs "exhibits". Singletons that
+  // already exist stay VISIBLE but dimmed (so the catalog reads complete), rather
+  // than silently vanishing as they did before.
+  const palette: ActionItem[] = [
+    { header: true, label: "Add a section" },
+    ...PALETTE_TYPES.map((t) => {
+      const taken = SINGLETON_TYPES.includes(t) && presentTypes.includes(t);
+      return {
+        label: SECTION_TYPE_LABEL[t],
+        description: taken ? "Already in the document" : SECTION_TYPE_DESC[t],
+        icon: SECTION_TYPE_ICON[t],
+        disabled: taken,
+        onClick: () => edit.onInsertSection(t, beforeId),
+      } satisfies ActionItem;
+    }),
+  ];
 
   return (
     <div className="wb-adddiv" role="group" aria-label="Insert here">
       <span className="wb-adddiv-line" aria-hidden="true" />
       <ActionMenu
         items={palette}
-        menuClassName="wb-adddiv-menu"
+        menuClassName="wb-addpalette"
         trigger={({ open, toggle }) => (
           <button className={`wb-adddiv-btn${open ? " on" : ""}`} onClick={toggle}>
             <Icon name="add" size={12} /> Add section
@@ -236,6 +250,116 @@ export function AddDivider({
       />
       <span className="wb-adddiv-line" aria-hidden="true" />
     </div>
+  );
+}
+
+/* ---- section settings popover (⚙): non-content config, on the element ----
+   The client builder's per-section settings cards, adapted to our canvas: an
+   on-element ⚙ popover (NOT a docked side inspector — Jeff's "CRO feel"), built
+   on the house ActionMenu so it's portaled + viewport-clamped for free. CONTENT
+   still edits inline on the paper; only configuration lives here. Type-driven —
+   only types with real settings show the ⚙ (see `hasSectionSettings`). */
+
+const SETTINGS_TYPES: WbSectionType[] = [
+  "exhibits",
+  "findings",
+  "sensitivity",
+  "conclusion",
+];
+
+export function hasSectionSettings(type: WbSectionType): boolean {
+  return SETTINGS_TYPES.includes(type);
+}
+
+export function SectionSettings({
+  sec,
+  edit,
+  exhibits,
+  findings,
+}: {
+  sec: WbSection;
+  edit: WorkbookEditingActions;
+  exhibits: WorkbookExhibits | null;
+  findings: Finding[];
+}) {
+  if (!hasSectionSettings(sec.type)) return null;
+
+  let items: ActionItem[] = [];
+
+  if (sec.type === "exhibits") {
+    // Per-series show/hide (client ref: the Table/Chart-per-series card). Our
+    // three series are each single-form, so a toggle is the honest control.
+    const series = sec.series ?? { adjustmentGrid: true, psf: true, capRate: true };
+    const toggle = (key: keyof typeof series) => () =>
+      edit.onUpdateSection(sec.id, { series: { ...series, [key]: !series[key] } });
+    items = [
+      { header: true, label: "Exhibit series" },
+      { label: "Sales adjustment grid", selected: series.adjustmentGrid, keepOpen: true, onClick: toggle("adjustmentGrid") },
+      { label: "Adjusted $/SF chart", selected: series.psf, keepOpen: true, onClick: toggle("psf") },
+      { label: "Cap-rate comparison", selected: series.capRate, keepOpen: true, onClick: toggle("capRate") },
+    ];
+  } else if (sec.type === "findings") {
+    // Which finding categories route into this chapter (client ref: "Routes
+    // finding categories"). Data already exists on the section.
+    const current = sec.categories ?? [];
+    const all = Array.from(new Set([...availableCategories(findings), ...current]));
+    items = [
+      { header: true, label: "Route finding categories" },
+      ...all.map((cat) => ({
+        label: cat,
+        selected: current.includes(cat),
+        keepOpen: true,
+        onClick: () =>
+          edit.onUpdateSection(sec.id, {
+            categories: current.includes(cat)
+              ? current.filter((c) => c !== cat)
+              : [...current, cat],
+          }),
+      })),
+    ];
+  } else if (sec.type === "sensitivity" && exhibits) {
+    // Scenario columns (moved off the toolbar cycler into settings). Radio 3..N,
+    // centred on the selected column by `visibleSensitivityCols` at render.
+    const total = exhibits.sensitivity.cols.length;
+    const n = Math.min(sec.sensitivityCols ?? total, total);
+    items = [
+      { header: true, label: "Scenario columns" },
+      ...Array.from({ length: total - 2 }, (_, i) => i + 3).map((cols) => ({
+        label: `${cols} columns`,
+        selected: n === cols,
+        onClick: () => edit.onUpdateSection(sec.id, { sensitivityCols: cols }),
+      })),
+    ];
+  } else if (sec.type === "conclusion") {
+    // Show due/timing on action items (client ref's "Show due/timing column").
+    const showTiming = sec.showActionTiming !== false;
+    items = [
+      { header: true, label: "Action items" },
+      {
+        label: "Show due / timing",
+        selected: showTiming,
+        keepOpen: true,
+        onClick: () => edit.onUpdateSection(sec.id, { showActionTiming: !showTiming }),
+      },
+    ];
+  }
+
+  if (!items.length) return null;
+
+  return (
+    <ActionMenu
+      items={items}
+      menuClassName="wb-settings-menu"
+      trigger={({ open, toggle }) => (
+        <button
+          className={`wb-shell-act${open ? " is-open" : ""}`}
+          onClick={toggle}
+          title="Section settings"
+        >
+          <Icon name="settings" size={12} /> Settings
+        </button>
+      )}
+    />
   );
 }
 

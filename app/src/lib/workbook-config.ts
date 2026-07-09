@@ -1,3 +1,4 @@
+import type { IconName } from "@/components/atoms";
 import type { Finding, FindingState, WorkbookExhibits, WorkbookLayout } from "@/types";
 import { publishedVersion } from "@/lib/template-versions";
 import {
@@ -107,6 +108,9 @@ export interface WbSection {
   /** conclusion — reviewer-materialized action items (overrides the derived
    *  list; each carries a structured owner + deadline; F-151). */
   actions?: WbActionItem[];
+  /** conclusion — show the per-item due/timing on action items (client ref's
+   *  "Show due/timing column" toggle). Undefined reads as true. */
+  showActionTiming?: boolean;
   /** Set when the reviewer edited this section's content in place — drives the
    *  "Edited by reviewer" provenance pip (inline-workbook plan §4.3, layer 1). */
   edited?: { by: string; at: number };
@@ -150,6 +154,36 @@ export const SECTION_TYPE_LABEL: Record<WbSectionType, string> = {
   conclusion: "Conclusion & action items",
   freeText: "Free-text narrative",
   certification: "Reviewer certification",
+};
+
+/** A distinct icon per section type — used by the enriched add palette so a
+ *  reviewer can tell "sensitivity" from "exhibits" at a glance (client ref: the
+ *  Section-library rail). Every name is verified against the `Icon` atom map. */
+export const SECTION_TYPE_ICON: Record<WbSectionType, IconName> = {
+  summary: "info",
+  findings: "checklist",
+  exhibits: "columns",
+  sensitivity: "sort",
+  swot: "templates",
+  conditions: "gavel",
+  returns: "undo",
+  conclusion: "check-circle",
+  freeText: "document",
+  certification: "sso",
+};
+
+/** One-line "what this section does" — the add palette's subtitle (client ref). */
+export const SECTION_TYPE_DESC: Record<WbSectionType, string> = {
+  summary: "Property & value summary — auto-populated",
+  findings: "Dispositioned findings, routed by category",
+  exhibits: "Adjustment grid, $/SF & cap-rate exhibits",
+  sensitivity: "Value sensitivity to cap-rate shifts",
+  swot: "Strengths · weaknesses · opportunities · threats",
+  conditions: "Numbered conditions of approval",
+  returns: "Items returned to the appraiser",
+  conclusion: "Conclusion & appraiser action items",
+  freeText: "A free narrative block",
+  certification: "Reviewer certification & signature",
 };
 
 /** A short type tag shown on the section row. */

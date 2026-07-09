@@ -18,6 +18,10 @@ export type ActionItem = {
   divider?: boolean;
   /** Render a small non-clickable section header. */
   header?: boolean;
+  /** A second, muted line under the label (icon + name + "what it does" cards). */
+  description?: string;
+  /** Non-clickable, dimmed — e.g. a singleton section already in the document. */
+  disabled?: boolean;
 };
 
 /**
@@ -151,7 +155,8 @@ export function ActionMenu({
                     <button
                       key={it.label ?? `item-${idx}`}
                       role="menuitem"
-                      className={cnItem(it.danger)}
+                      className={cnItem(it.danger, it.description)}
+                      disabled={it.disabled}
                       onClick={() => {
                         it.onClick?.();
                         if (!it.keepOpen) setOpen(false);
@@ -164,7 +169,14 @@ export function ActionMenu({
                       ) : (
                         it.icon && <Icon name={it.icon} size={16} />
                       )}
-                      {it.label}
+                      {it.description ? (
+                        <span className="ui-menu-item-body">
+                          <span className="ui-menu-item-label">{it.label}</span>
+                          <span className="ui-menu-item-desc">{it.description}</span>
+                        </span>
+                      ) : (
+                        it.label
+                      )}
                     </button>
                   );
                 })}
@@ -177,6 +189,10 @@ export function ActionMenu({
   );
 }
 
-function cnItem(danger?: boolean) {
-  return "ui-menu-item" + (danger ? " danger" : "");
+function cnItem(danger?: boolean, description?: string) {
+  return (
+    "ui-menu-item" +
+    (danger ? " danger" : "") +
+    (description ? " ui-menu-item--rich" : "")
+  );
 }
