@@ -36,10 +36,13 @@ export function FindingDecisionBar({
   responseTemplates,
   variant = "focus",
   keyboard = true,
+  reviewer = false,
   onDisposition,
   onComment,
   onToggleCondition,
   onToggleFlag,
+  onEditText,
+  onRemove,
 }: {
   finding: Finding;
   state: FindingState;
@@ -48,10 +51,17 @@ export function FindingDecisionBar({
   variant?: "focus" | "accordion";
   /** Bind the a/e/r/c shortcuts while this bar is the active one (default on). */
   keyboard?: boolean;
+  /** Reviewer-authored finding: no Concur/Reject (you own it) — Edit · Comment ·
+   *  Flag · Remove. Edit reweords the finding itself; Remove deletes it. */
+  reviewer?: boolean;
   onDisposition: (disp: Disposition, reason?: string, templateId?: string) => void;
   onComment: (comment: string, templateId?: string) => void;
   onToggleCondition: () => void;
   onToggleFlag: () => void;
+  /** Reviewer mode only — commit a reworded finding body. */
+  onEditText?: (text: string) => void;
+  /** Reviewer mode only — delete the reviewer's own finding. */
+  onRemove?: () => void;
 }) {
   const [composer, setComposer] = useState<ComposerMode | null>(null);
   const disp = state.disposition;
@@ -74,13 +84,13 @@ export function FindingDecisionBar({
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       switch (e.key.toLowerCase()) {
         case "a":
-          accept();
+          if (!reviewer) accept();
           break;
         case "e":
           openComposer("edit");
           break;
         case "r":
-          openComposer("rejected");
+          if (!reviewer) openComposer("rejected");
           break;
         case "c":
           openComposer("comment");
@@ -96,8 +106,11 @@ export function FindingDecisionBar({
     if (!composer) return;
     if (composer === "comment") {
       // A comment is an independent note — it does NOT set a disposition (F-140),
-      // so it can accompany any decision (Accept + comment, Reject + comment, …).
+      // so it can accompany any decision (Concur + comment, Reject + comment, …).
       onComment(text, templateId);
+    } else if (reviewer && composer === "edit") {
+      // Reviewer's own finding: Edit reweords the finding itself, never a disposition.
+      onEditText?.(text);
     } else {
       onDisposition(composer === "edit" ? "edited" : "rejected", text, templateId);
     }
@@ -127,38 +140,73 @@ export function FindingDecisionBar({
   // The disposition tag + template-applied hint are redundant in the accordion
   // (the YOUR DECISION zone already states them); show them only in the routed
   // focus pane, which has no such zone.
-  const showDispTag = variant === "focus";
+  const showDispTag = variant === "focus" && !reviewer;
   const tag = showDispTag && disp !== "pending" ? DISP_TAG[disp] : null;
+
+  const iconSize = variant === "accordion" ? 15 : 17;
 
   return (
     <div className={`fdb fdb--${variant}`}>
       <div className="fdb-row">
-        <button
-          className={`fdb-act fdb-act--accept${!composer && disp === "accepted" ? " on" : ""}`}
-          onClick={accept}
-        >
-          <Icon name="check" size={variant === "accordion" ? 15 : 17} />
-          Accept
-        </button>
-        <button
-          className={`fdb-act fdb-act--edit${
-            composer === "edit" || (!composer && disp === "edited") ? " on" : ""
-          }`}
-          onClick={() => openComposer("edit")}
-        >
-          <Icon name="edit" size={variant === "accordion" ? 15 : 17} />
-          Edit
-        </button>
-        <button
-          className={`fdb-act fdb-act--reject${
-            composer === "rejected" || (!composer && disp === "rejected") ? " on" : ""
-          }`}
-          onClick={() => openComposer("rejected")}
-        >
-          <Icon name="reject" size={variant === "accordion" ? 15 : 17} />
-          Reject
-        </button>
-        <ActionMenu items={overflow} tooltip="More actions" />
+        {reviewer ? (
+          <>
+            {/* Reviewer's own finding — manage it, don't adjudicate it. */}
+            <button
+              className={`fdb-act fdb-act--edit${composer === "edit" ? " on" : ""}`}
+              onClick={() => openComposer("edit")}
+            >
+              <Icon name="edit" size={iconSize} />
+              Edit
+            </button>
+            <button
+              className={`fdb-act${composer === "comment" ? " on" : ""}`}
+              onClick={() => openComposer("comment")}
+            >
+              <Icon name="comment" size={iconSize} />
+              Comment
+            </button>
+            <button
+              className={`fdb-act${state.flagged ? " on" : ""}`}
+              onClick={onToggleFlag}
+            >
+              <Icon name="flag" size={iconSize} />
+              {state.flagged ? "Flagged" : "Flag"}
+            </button>
+            <button className="fdb-act fdb-act--reject" onClick={onRemove}>
+              <Icon name="trash" size={iconSize} />
+              Remove
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              className={`fdb-act fdb-act--accept${!composer && disp === "accepted" ? " on" : ""}`}
+              onClick={accept}
+            >
+              <Icon name="check" size={iconSize} />
+              Concur
+            </button>
+            <button
+              className={`fdb-act fdb-act--edit${
+                composer === "edit" || (!composer && disp === "edited") ? " on" : ""
+              }`}
+              onClick={() => openComposer("edit")}
+            >
+              <Icon name="edit" size={iconSize} />
+              Edit
+            </button>
+            <button
+              className={`fdb-act fdb-act--reject${
+                composer === "rejected" || (!composer && disp === "rejected") ? " on" : ""
+              }`}
+              onClick={() => openComposer("rejected")}
+            >
+              <Icon name="reject" size={iconSize} />
+              Reject
+            </button>
+            <ActionMenu items={overflow} tooltip="More actions" />
+          </>
+        )}
 
         {tag && (
           <span className="fdb-status">
@@ -200,9 +248,11 @@ export function FindingDecisionBar({
           property={property}
           responses={responseTemplates}
           initialText={
-            composer === "rejected" || composer === "edit"
-              ? state.reason ?? ""
-              : state.comment ?? ""
+            composer === "comment"
+              ? state.comment ?? ""
+              : reviewer && composer === "edit"
+                ? finding.analysis
+                : state.reason ?? ""
           }
           onSave={saveComposer}
           onCancel={() => setComposer(null)}

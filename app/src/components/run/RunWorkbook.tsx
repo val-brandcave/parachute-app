@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Button, Icon } from "@/components/atoms";
+import { Button, Icon, Tooltip } from "@/components/atoms";
 import { StatusPill } from "@/components/molecules";
 import { useWorkspaceStore, useTemplatesStore } from "@/store";
 import { WorkbookPreview } from "@/components/review/WorkbookPreview";
@@ -11,6 +11,7 @@ import type { Review } from "@/types";
 import type { RunReviewType } from "@/store";
 import type { RunContext } from "./RunModal";
 import { RunCustomizePanel } from "./RunCustomize";
+import { RunActivityPanel } from "./RunActivity";
 
 /**
  * S-A Workbook — the run flow's home base. The compiled workbook is the hero;
@@ -67,6 +68,14 @@ export function RunWorkbook({
     updateSwotQuadrant,
     updateCapRate,
     addReviewerFinding,
+    restoreFinding,
+    updateReviewerFinding,
+    deleteReviewerFinding,
+    comments,
+    addComment,
+    deleteComment,
+    commitConditions,
+    commitActionItems,
   } = useWorkspaceStore();
   const regeneratedAt = useWorkspaceStore((s) => s.regeneratedAt);
   const responses = useTemplatesStore((s) => s.responses);
@@ -80,6 +89,31 @@ export function RunWorkbook({
   const [savedTemplate, setSavedTemplate] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const [customizing, setCustomizing] = useState(false);
+  // Clean view (F-152): flips the editing chrome off so the reviewer sees the
+  // exact signable deliverable — the true read-only render (findings compact, no
+  // add affordances, no toolbars), not a cosmetic fade. A VIEW toggle (like
+  // zoom), never an editing mode-flip; editing stays the default. Scroll position
+  // is captured on toggle and restored after the re-layout so the viewport holds.
+  const [cleanView, setCleanView] = useState(false);
+  const savedScroll = useRef<number | null>(null);
+  const toggleClean = () => {
+    savedScroll.current = stageRef.current?.scrollTop ?? null;
+    setCleanView((v) => !v);
+  };
+  // The right dock hosts one panel at a time — opening Activity closes Customize
+  // and vice versa, so the workbook is never sandwiched between two docks.
+  const [activityOpen, setActivityOpen] = useState(false);
+  const openCustomize = () =>
+    setCustomizing((v) => {
+      if (!v) setActivityOpen(false);
+      return !v;
+    });
+  const openActivity = () =>
+    setActivityOpen((v) => {
+      if (!v) setCustomizing(false);
+      return !v;
+    });
+  const activityCount = useWorkspaceStore((s) => s.activity.length);
 
   // Compile sweep (D5 feedback, Jul 2): a fresh Regenerate — whether we just
   // arrived from Findings (mount, lazy init checks freshness) or clicked the
@@ -140,6 +174,16 @@ export function RunWorkbook({
     return () => mo.disconnect();
   }, [ctx.ready]);
 
+  // Restore scroll after a clean-view toggle re-lays-out the document, so the
+  // reviewer's place in the doc holds across the fade.
+  useLayoutEffect(() => {
+    const el = stageRef.current;
+    if (savedScroll.current != null && el) {
+      el.scrollTo({ top: savedScroll.current });
+      savedScroll.current = null;
+    }
+  }, [cleanView]);
+
   const signed = !!signature;
 
   if (!ctx.ready || !review || !workbook) {
@@ -192,7 +236,9 @@ export function RunWorkbook({
     setTimeout(() => setSavedTemplate(false), 2400);
   };
 
-  const showCallout = !dismissed && !signed && ctx.lowConfidenceCount > 0;
+  // Clean view is a read-only preview, so the finding blocks it scrolls to
+  // aren't decision blocks there — hide the callout while previewing.
+  const showCallout = !dismissed && !signed && !cleanView && ctx.lowConfidenceCount > 0;
 
   const zoomBy = (d: number) =>
     setZoom((z) => Math.min(1.5, Math.max(0.7, +(z + d).toFixed(2))));
@@ -269,6 +315,40 @@ export function RunWorkbook({
               <Icon name="chevron-right" size={16} />
             </button>
           </div>
+          {/* Clean view (👁) — strip the editing chrome to preview the exact
+              signable deliverable. Only meaningful while editing (a signed doc
+              is already final/clean). */}
+          {!signed && (
+            <>
+              <span className="run-ex-tools-div" aria-hidden="true" />
+              <Tooltip
+                content="Preview the document exactly as it prints — no editing chrome"
+                compact
+              >
+                <button
+                  className={`run-wb-tbtn run-wb-tbtn--quiet${cleanView ? " is-active" : ""}`}
+                  onClick={toggleClean}
+                  aria-pressed={cleanView}
+                >
+                  <Icon name={cleanView ? "edit" : "eye"} size={14} />
+                  {cleanView ? "Edit" : "Clean view"}
+                </button>
+              </Tooltip>
+            </>
+          )}
+          {/* Activity (🕘) — the audit ledger (layer 3). Always available, even
+              after signing: the record is the point. */}
+          <span className="run-ex-tools-div" aria-hidden="true" />
+          <button
+            className={`run-wb-tbtn run-wb-tbtn--quiet${activityOpen ? " is-active" : ""}`}
+            onClick={openActivity}
+            aria-expanded={activityOpen}
+            aria-label="Activity ledger"
+          >
+            <Icon name="history" size={14} />
+            Activity
+            {activityCount > 1 && <span className="run-wb-tbtn-count">{activityCount}</span>}
+          </button>
           {/* Customize ▸ — the whole 20% behind one quiet toolbar affordance,
               closed by default (F-146 / Decision D). Demos never open it.
               Save as template (F-147) captures structure + theme, not content. */}
@@ -284,7 +364,7 @@ export function RunWorkbook({
               </button>
               <button
                 className={`run-wb-tbtn${customizing ? " is-active" : ""}`}
-                onClick={() => setCustomizing((v) => !v)}
+                onClick={openCustomize}
                 aria-expanded={customizing}
               >
                 Customize
@@ -354,7 +434,7 @@ export function RunWorkbook({
               signature={signature}
               filing={filing}
               editing={
-                signed
+                signed || cleanView
                   ? null
                   : {
                       responses,
@@ -374,6 +454,14 @@ export function RunWorkbook({
                       onRequestAddFinding: (sectionId) => setAddFindingAt(sectionId),
                       onUpdateSwot: updateSwotQuadrant,
                       onUpdateCapRate: updateCapRate,
+                      onRestoreFinding: restoreFinding,
+                      onEditReviewer: (id, text) => updateReviewerFinding(id, { analysis: text }),
+                      onRemoveReviewer: deleteReviewerFinding,
+                      comments,
+                      onAddComment: addComment,
+                      onDeleteComment: deleteComment,
+                      onCommitConditions: commitConditions,
+                      onCommitActionItems: commitActionItems,
                     }
               }
             />
@@ -381,6 +469,12 @@ export function RunWorkbook({
         </div>
 
         {customizing && !signed && <RunCustomizePanel onClose={() => setCustomizing(false)} />}
+        {activityOpen && (
+          <RunActivityPanel
+            reviewerName={ctx.reviewerName}
+            onClose={() => setActivityOpen(false)}
+          />
+        )}
       </div>
 
       <AddFindingModal

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Modal, Button } from "@/components/atoms";
+import { Modal, Button, Icon } from "@/components/atoms";
 import { SegmentedControl } from "@/components/molecules";
 import { SEV_META } from "@/lib/utils";
 import type { Severity } from "@/types";
@@ -12,6 +12,8 @@ export interface NewFinding {
   analysis: string;
   page: number;
   severity: Severity;
+  /** Quoted source span, when created evidence-first from a Source selection. */
+  evidence?: string;
 }
 
 const CATEGORIES = [
@@ -49,6 +51,7 @@ export function AddFindingModal({
   onClose,
   onSave,
   categories,
+  prefill,
 }: {
   open: boolean;
   onClose: () => void;
@@ -56,8 +59,21 @@ export function AddFindingModal({
   /** Override the category options (e.g. the target findings chapter's
    *  categories, so the new finding lands where the reviewer clicked). */
   categories?: string[];
+  /** Seed the composer — evidence-first creation from a Source span carries the
+   *  quote + page. Applied when the modal opens; absent = a blank output-first add. */
+  prefill?: Partial<NewFinding>;
 }) {
   const [draft, setDraft] = useState<NewFinding>(EMPTY);
+  // Seed the draft the moment the modal opens — blank for an output-first add, or
+  // prefilled from a Source selection. Uses the "adjust state on prop change"
+  // render-time pattern (not an effect) so reopening always re-seeds cleanly.
+  const [wasOpen, setWasOpen] = useState(false);
+  if (open && !wasOpen) {
+    setWasOpen(true);
+    setDraft({ ...EMPTY, ...prefill });
+  } else if (!open && wasOpen) {
+    setWasOpen(false);
+  }
   const cats = categories?.length ? categories : CATEGORIES;
   // Keep the draft's category valid for the offered list (it may be scoped to
   // a specific chapter when opened from the workbook canvas).
@@ -87,8 +103,21 @@ export function AddFindingModal({
     setDraft((d) => ({ ...d, [key]: value }));
 
   return (
-    <Modal open={open} onClose={close} title="Add a finding" size="sm">
+    <Modal
+      open={open}
+      onClose={close}
+      title={draft.evidence ? "Create finding from source" : "Add a finding"}
+      size="sm"
+    >
       <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        {draft.evidence && (
+          <div className="af-evidence">
+            <span className="af-evidence-h">
+              <Icon name="quote" size={12} /> From the source · p.{draft.page}
+            </span>
+            <blockquote className="af-evidence-q">{draft.evidence}</blockquote>
+          </div>
+        )}
         <div className="field">
           <label htmlFor="af-question">Finding</label>
           <input

@@ -100,6 +100,9 @@ export interface Finding extends BaseEntity {
   material: boolean; // value-impacting
   suggestedDisposition: Disposition;
   byReviewer?: boolean; // reviewer-authored finding
+  /** Raw quoted source span for a reviewer finding created from a selection —
+   *  re-matched on the Source doc to re-highlight the span (F-145). */
+  citedSpan?: string;
 }
 
 /* Per-finding reviewer state (lives in the workspace store). */
