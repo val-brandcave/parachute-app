@@ -41,6 +41,9 @@ export interface WorkbookEditingActions {
   onComment: (findingId: string, comment: string, templateId?: string) => void;
   onToggleFlag: (findingId: string) => void;
   onUpdateSection: (id: string, patch: Partial<WbSection>) => void;
+  /** Route a finding category to exactly one findings section (exclusive) —
+   *  moving it here removes it from any other chapter; `null` unassigns it. */
+  onRouteCategory: (category: string, targetSectionId: string | null) => void;
   onAddCompRow: () => void;
   onDeleteCompRow: (comp: string) => void;
   onUpdateCompRow: (comp: string, patch: Partial<WbAdjustmentRow>) => void;

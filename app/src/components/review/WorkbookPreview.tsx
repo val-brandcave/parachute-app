@@ -297,6 +297,7 @@ export function WorkbookPreview({
                   showStatus={settings.showStatus}
                   showConfidence={settings.showConfidence}
                   coded={settings.colorCoding}
+                  reviewerName={reviewerName}
                 />
               ),
             )}
@@ -668,6 +669,16 @@ export function WorkbookPreview({
   // ad-hoc toolbar cyclers.
   const presentTypes = config.sections.map((s) => s.type);
   const lastShellId = [...labeled].reverse().find((it) => !it.stub)?.s.id;
+  // Visible findings chapters + their number — feeds the ⚙ routing menu's
+  // "In §N · title" ownership hints (exclusive routing).
+  const findingsSectionInfo = labeled
+    .filter((it) => it.s.type === "findings" && !it.stub)
+    .map((it) => ({
+      id: it.s.id,
+      title: it.s.title,
+      label: it.label,
+      categories: it.s.categories ?? [],
+    }));
 
   const runHead = settings.showHeader ? (
     <div className="wb-runhead">
@@ -859,6 +870,7 @@ export function WorkbookPreview({
                         edit={edit}
                         exhibits={exhibits}
                         findings={findings}
+                        findingsSections={findingsSectionInfo}
                       />
                     }
                   >
@@ -937,13 +949,32 @@ function FindingEntry({
   showStatus,
   showConfidence,
   coded,
+  reviewerName,
 }: {
   f: Finding;
   state: FindingState;
   showStatus: boolean;
   showConfidence: boolean;
   coded: boolean;
+  reviewerName: string;
 }) {
+  // Reviewer-authored finding: NOT an AI finding, so the clean doc shows the
+  // reviewer's own text + authorship — never a fabricated "AI basis / confidence"
+  // footnote or an AI-disposition tag (mirrors the edit-mode reviewer branch).
+  if (f.byReviewer) {
+    return (
+      <div className="wb-find wb-find--user">
+        <div className="wb-find-top">
+          <span className="wb-find-q">{f.question}</span>
+        </div>
+        <p className="wb-find-resp">{f.analysis}</p>
+        {state.comment && <p className="wb-find-comment">Reviewer note: {state.comment}</p>}
+        <div className="wb-find-prov">
+          {f.status} · Added by {reviewerName} · p.{f.page}
+        </div>
+      </div>
+    );
+  }
   const tag = dispTag(state.disposition);
   return (
     <div className={`wb-find${coded ? ` wb-find--${f.severity}` : ""}`}>

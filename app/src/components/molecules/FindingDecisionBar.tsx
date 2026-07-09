@@ -150,7 +150,9 @@ export function FindingDecisionBar({
       <div className="fdb-row">
         {reviewer ? (
           <>
-            {/* Reviewer's own finding — manage it, don't adjudicate it. */}
+            {/* Reviewer's own finding — manage it, don't adjudicate it. Mirrors the
+                AI bar's shape (primary actions + ⋯): Edit / Remove up front, the
+                secondary Comment / Flag folded behind the overflow. */}
             <button
               className={`fdb-act fdb-act--edit${composer === "edit" ? " on" : ""}`}
               onClick={() => openComposer("edit")}
@@ -158,24 +160,25 @@ export function FindingDecisionBar({
               <Icon name="edit" size={iconSize} />
               Edit
             </button>
-            <button
-              className={`fdb-act${composer === "comment" ? " on" : ""}`}
-              onClick={() => openComposer("comment")}
-            >
-              <Icon name="comment" size={iconSize} />
-              Comment
-            </button>
-            <button
-              className={`fdb-act${state.flagged ? " on" : ""}`}
-              onClick={onToggleFlag}
-            >
-              <Icon name="flag" size={iconSize} />
-              {state.flagged ? "Flagged" : "Flag"}
-            </button>
             <button className="fdb-act fdb-act--reject" onClick={onRemove}>
               <Icon name="trash" size={iconSize} />
               Remove
             </button>
+            <ActionMenu
+              tooltip="More actions"
+              items={[
+                {
+                  label: state.comment ? "Edit comment" : "Comment",
+                  icon: "comment",
+                  onClick: () => openComposer("comment"),
+                },
+                {
+                  label: state.flagged ? "Clear follow-up flag" : "Flag for follow-up",
+                  icon: "flag",
+                  onClick: onToggleFlag,
+                },
+              ]}
+            />
           </>
         ) : (
           <>
