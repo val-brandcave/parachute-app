@@ -428,11 +428,16 @@ export function useSectionDrag(
   const dragRef = useRef<string | null>(null);
   const dropRef = useRef<string | null>(null);
   const onDropRef = useRef(onDrop);
+  // Last pointer position (updated on move; read by the auto-scroll rAF loop so
+  // scrolling continues even when the pointer is held still at an edge).
+  const pointer = useRef({ x: 0, y: 0 });
+  const scrollElRef = useRef<HTMLElement | null>(null);
+  const rafRef = useRef<number | null>(null);
   // The drag ghost trails the pointer on springs — the "thing in hand" cue.
   const ghostRawX = useMotionValue(0);
   const ghostRawY = useMotionValue(0);
-  const ghostX = useSpring(ghostRawX, { stiffness: 650, damping: 42, mass: 0.55 });
-  const ghostY = useSpring(ghostRawY, { stiffness: 650, damping: 42, mass: 0.55 });
+  const ghostX = useSpring(ghostRawX, { stiffness: 750, damping: 44, mass: 0.5 });
+  const ghostY = useSpring(ghostRawY, { stiffness: 750, damping: 44, mass: 0.5 });
 
   // Keep refs in sync (post-render) so the window listeners read fresh values
   // without the drag effect re-subscribing on every render mid-drag.
@@ -444,9 +449,18 @@ export function useSectionDrag(
 
   useEffect(() => {
     if (!dragId) return;
-    const move = (ev: PointerEvent) => {
-      ghostRawX.set(ev.clientX + 16);
-      ghostRawY.set(ev.clientY + 12);
+
+    // The scrollable ancestor of the dragged section — the document stage. We
+    // auto-scroll it when the pointer nears an edge so a long doc stays reachable.
+    scrollElRef.current = findScrollParent(
+      document.querySelector<HTMLElement>(`[data-wb-sec="${dragId}"]`),
+    );
+
+    // Drop target = the first section whose vertical midpoint is below the
+    // pointer (null/"__end__" = drop at the very end). Reads the shared pointer
+    // ref so it stays correct during auto-scroll, not just on pointer move.
+    const computeDrop = () => {
+      const y = pointer.current.y;
       const shells = Array.from(
         document.querySelectorAll<HTMLElement>("[data-wb-sec]"),
       );
@@ -455,13 +469,44 @@ export function useSectionDrag(
         const sid = el.dataset.wbSec!;
         if (sid === dragRef.current) continue;
         const r = el.getBoundingClientRect();
-        if (ev.clientY < r.top + r.height / 2) {
+        if (y < r.top + r.height / 2) {
           target = sid;
           break;
         }
       }
-      setDropId(target);
+      if (target !== dropRef.current) setDropId(target);
     };
+
+    const move = (ev: PointerEvent) => {
+      pointer.current = { x: ev.clientX, y: ev.clientY };
+      ghostRawX.set(ev.clientX + 16);
+      ghostRawY.set(ev.clientY + 12);
+      computeDrop();
+    };
+
+    // Edge auto-scroll — a rAF loop (so it keeps going when the pointer is held
+    // still) that scrolls the stage when the pointer is within EDGE of a border,
+    // ramping speed with proximity. Re-derives the drop target as content moves.
+    const EDGE = 84;
+    const MAX_SPEED = 24;
+    const speedFrom = (dist: number) =>
+      Math.min(MAX_SPEED, (Math.min(dist, EDGE) / EDGE) * MAX_SPEED);
+    const tick = () => {
+      const el = scrollElRef.current;
+      if (el) {
+        const r = el.getBoundingClientRect();
+        const y = pointer.current.y;
+        let dy = 0;
+        if (y < r.top + EDGE) dy = -speedFrom(r.top + EDGE - y);
+        else if (y > r.bottom - EDGE) dy = speedFrom(y - (r.bottom - EDGE));
+        if (Math.abs(dy) >= 0.5) {
+          el.scrollBy(0, dy);
+          computeDrop();
+        }
+      }
+      rafRef.current = requestAnimationFrame(tick);
+    };
+
     const up = () => {
       const drag = dragRef.current;
       const drop = dropRef.current;
@@ -469,12 +514,15 @@ export function useSectionDrag(
       setDropId(null);
       if (drag && drop) onDropRef.current(drag, drop === "__end__" ? null : drop);
     };
+
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", up);
     document.body.classList.add("wb-reordering");
+    rafRef.current = requestAnimationFrame(tick);
     return () => {
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", up);
+      if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
       document.body.classList.remove("wb-reordering");
     };
     // Motion values are stable references — safe in deps.
@@ -482,13 +530,33 @@ export function useSectionDrag(
 
   const startDrag = (id: string) => (e: React.PointerEvent) => {
     e.preventDefault();
-    // Park the ghost at the grab point instantly (no fly-in from 0,0).
-    ghostRawX.jump(e.clientX + 16);
-    ghostRawY.jump(e.clientY + 12);
+    const gx = e.clientX + 16;
+    const gy = e.clientY + 12;
+    pointer.current = { x: e.clientX, y: e.clientY };
+    // Park BOTH the source and the spring output at the grab point — jumping only
+    // the source lets the spring animate in from 0,0 (the ghost's "fly-in" lag).
+    ghostRawX.jump(gx);
+    ghostRawY.jump(gy);
+    ghostX.jump(gx);
+    ghostY.jump(gy);
     setDragId(id);
   };
 
   return { dragId, dropId, startDrag, ghostX, ghostY };
+}
+
+/** Nearest scrollable ancestor of `el` (the document stage during a section
+ *  drag) — walks up until it finds one that actually overflows, so edge
+ *  auto-scroll targets the real scroller and not a clipped wrapper. */
+function findScrollParent(el: HTMLElement | null): HTMLElement | null {
+  let node = el?.parentElement ?? null;
+  while (node) {
+    const oy = getComputedStyle(node).overflowY;
+    if ((oy === "auto" || oy === "scroll") && node.scrollHeight > node.clientHeight)
+      return node;
+    node = node.parentElement;
+  }
+  return null;
 }
 
 /** The cursor-following drag ghost — a lifted paper chip carrying the dragged
