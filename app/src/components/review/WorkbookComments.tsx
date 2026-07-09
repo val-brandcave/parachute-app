@@ -21,15 +21,25 @@ export function CommentAnchor({
   anchorId,
   anchorLabel,
   edit,
+  open,
+  onOpenChange,
 }: {
   anchorId: string;
   anchorLabel: string;
   edit: WorkbookEditingActions;
+  /** Controlled open state — the section toolbar's Comment button drives it, so
+   *  adding the first comment doesn't need an always-hovering empty pin. */
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
 }) {
   const thread = edit.comments.filter((c) => c.anchorId === anchorId);
   const count = thread.length;
-  const [open, setOpen] = useState(false);
   const pinRef = useRef<HTMLButtonElement>(null);
+
+  // The gutter pin is a PERSISTENT marker shown only when the section carries
+  // comments (or while the thread is open) — never an empty pin competing with
+  // the section toolbar on hover. Empty + closed → nothing in the gutter.
+  if (count === 0 && !open) return null;
 
   return (
     <>
@@ -37,7 +47,7 @@ export function CommentAnchor({
         ref={pinRef}
         type="button"
         className={`wb-cnote-pin${count ? " has-notes" : ""}${open ? " is-open" : ""}`}
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => onOpenChange(!open)}
         aria-label={count ? `${count} comment${count === 1 ? "" : "s"}` : "Add a comment"}
         title={count ? `${count} comment${count === 1 ? "" : "s"}` : "Add a comment"}
       >
@@ -51,7 +61,7 @@ export function CommentAnchor({
           comments={thread}
           onAdd={(body) => edit.onAddComment(anchorId, anchorLabel, body)}
           onDelete={edit.onDeleteComment}
-          onClose={() => setOpen(false)}
+          onClose={() => onOpenChange(false)}
         />
       )}
     </>

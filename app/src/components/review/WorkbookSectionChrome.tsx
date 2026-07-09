@@ -88,6 +88,10 @@ export function SectionShell({
   const caps = sectionCaps(sec);
   const [renaming, setRenaming] = useState(false);
   const [draft, setDraft] = useState(sec.title);
+  // Comments open from the toolbar (F-153) — no empty hover pin competing with
+  // the toolbar; the gutter pin shows only when the section carries comments.
+  const [commentsOpen, setCommentsOpen] = useState(false);
+  const commentCount = edit.comments.filter((c) => c.anchorId === sec.id).length;
 
   const commitRename = () => {
     setRenaming(false);
@@ -113,8 +117,15 @@ export function SectionShell({
         <Icon name="grip" size={15} />
       </button>
 
-      {/* Comment pin — hangs in the right gutter, aligned to the section top. */}
-      <CommentAnchor anchorId={sec.id} anchorLabel={sec.title} edit={edit} />
+      {/* Comment pin — right gutter, shown only when the section carries
+          comments (or the thread is open); opened from the toolbar button. */}
+      <CommentAnchor
+        anchorId={sec.id}
+        anchorLabel={sec.title}
+        edit={edit}
+        open={commentsOpen}
+        onOpenChange={setCommentsOpen}
+      />
 
       <div className="wb-shell-bar" role="toolbar" aria-label={`${sec.title} tools`}>
         {caps.rename && (
@@ -129,6 +140,14 @@ export function SectionShell({
           </button>
         )}
         {extras}
+        <button
+          className={`wb-shell-act${commentsOpen ? " is-open" : ""}`}
+          onClick={() => setCommentsOpen((v) => !v)}
+          title="Comments on this section"
+        >
+          <Icon name="comment" size={12} />
+          {commentCount > 0 ? `Comment · ${commentCount}` : "Comment"}
+        </button>
         {caps.hide && (
           <button
             className="wb-shell-act"

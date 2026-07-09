@@ -11929,18 +11929,12 @@ select.qfilter {
   color: var(--md-accent);
   box-shadow: var(--paper-elev);
   cursor: pointer;
-  opacity: 0;
-  transition: opacity 0.12s ease, background 0.12s ease, color 0.12s ease;
-}
-.wb-shell:hover .wb-cnote-pin {
-  opacity: 0.62;
-}
-.wb-cnote-pin:hover {
-  opacity: 1;
+  /* Only rendered when the section has comments or the thread is open (see
+     CommentAnchor), so it's always meant to be visible — no hover reveal. */
+  transition: background 0.12s ease, color 0.12s ease;
 }
 .wb-cnote-pin.has-notes,
 .wb-cnote-pin.is-open {
-  opacity: 1;
   background: var(--md-accent);
   color: #fff;
 }
