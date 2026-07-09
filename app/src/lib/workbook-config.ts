@@ -114,6 +114,10 @@ export interface WbSection {
   /** Set when the reviewer edited this section's content in place — drives the
    *  "Edited by reviewer" provenance pip (inline-workbook plan §4.3, layer 1). */
   edited?: { by: string; at: number };
+  /** True when the reviewer ADDED this section (via the palette) or DUPLICATED
+   *  it — as opposed to a derived/template section. Only added sections can be
+   *  Deleted; derived ones are excluded via Hide, never destroyed (F-153). */
+  added?: boolean;
 }
 
 /** The 9 author-addable section types (the Builder add-palette). `returns` is

@@ -726,7 +726,8 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       if (!s.workbook) return {};
       const next = [...s.workbook.sections];
       const at = beforeId ? next.findIndex((sec) => sec.id === beforeId) : -1;
-      next.splice(at < 0 ? next.length : at, 0, { ...section, id });
+      // Palette-inserted sections are reviewer-added → Deletable (F-153).
+      next.splice(at < 0 ? next.length : at, 0, { ...section, id, added: true });
       return {
         workbook: { ...s.workbook, sections: next },
         activity: [
@@ -769,6 +770,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         ...src,
         id: generateId(),
         title: `${src.title} (copy)`,
+        added: true, // a duplicate is reviewer-created → Deletable (F-153)
         ...(src.type === "findings" ? { categories: [] } : {}),
       };
       const next = [...s.workbook.sections];

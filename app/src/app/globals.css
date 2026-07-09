@@ -3431,11 +3431,13 @@ body.wb-reordering .wb-adddiv {
 .wb-shell-grip:active {
   cursor: grabbing;
 }
-/* floating action pill — rides the outline's top edge, right-aligned */
+/* floating action pill — rides the outline's top edge on the LEFT, just past the
+   ⠿ grip (F-153). Left-side controls keep the RIGHT gutter clear for the
+   persistent comment pin, which used to be eclipsed by this pill. */
 .wb-shell-bar {
   position: absolute;
   top: -13px;
-  right: 8px;
+  left: 44px;
   z-index: 7;
   display: flex;
   align-items: center;

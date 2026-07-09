@@ -43,16 +43,19 @@ interface SectionCaps {
   del: boolean;
 }
 
-export function sectionCaps(type: WbSectionType): SectionCaps {
+export function sectionCaps(sec: WbSection): SectionCaps {
   // Certification anchors the sign flow — it can be renamed/hidden, never
   // removed or doubled. Everything else follows the singleton rule.
-  if (type === "certification")
+  if (sec.type === "certification")
     return { rename: true, hide: true, duplicate: false, del: false };
   return {
     rename: true,
     hide: true,
-    duplicate: !SINGLETON_TYPES.includes(type),
-    del: true,
+    duplicate: !SINGLETON_TYPES.includes(sec.type),
+    // Delete only on sections the reviewer ADDED or DUPLICATED (F-153). Derived /
+    // template sections are excluded via Hide (reversible, keeps config), never
+    // destroyed — so most sections show Hide but no Delete.
+    del: !!sec.added,
   };
 }
 
@@ -82,7 +85,7 @@ export function SectionShell({
   extras?: React.ReactNode;
   children: React.ReactNode;
 }) {
-  const caps = sectionCaps(sec.type);
+  const caps = sectionCaps(sec);
   const [renaming, setRenaming] = useState(false);
   const [draft, setDraft] = useState(sec.title);
 
