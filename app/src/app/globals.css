@@ -11613,16 +11613,32 @@ select.qfilter {
   border-color: transparent;
   color: var(--md-on-selected);
 }
-/* the quiet dashed variant — Save as template (F-147) */
-.run-wb-tbtn--quiet {
-  border-style: dashed;
-  color: var(--md-on-surface-v);
+/* view-mode segmented (Edit | Clean, F-153) — compact for the 48px doc bar */
+.run-wb-viewmode .ui-seg {
+  padding: 2px;
+  border-radius: 8px;
 }
-.run-wb-tbtn--quiet.is-saved {
-  border-style: solid;
-  border-color: var(--md-success);
+.run-wb-viewmode .ui-seg button {
+  padding: 4px 13px;
+  font-size: 12px;
+}
+/* panels cluster (F-153) — Activity + Customize drive the one right dock and are
+   mutually exclusive, so they group tight and only the open one lights up. */
+.run-wb-panels {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+/* transient "saved to templates" confirmation — Save moved into the ⋯ menu, so
+   the feedback rides here for a beat instead of on the button. */
+.run-wb-saved {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
   color: var(--md-success);
-  background: var(--md-success-c);
+  white-space: nowrap;
 }
 .run-wb-zoom {
   width: 100%;

@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Button, Icon, Tooltip } from "@/components/atoms";
-import { StatusPill } from "@/components/molecules";
+import { Button, Icon } from "@/components/atoms";
+import { StatusPill, SegmentedControl } from "@/components/molecules";
+import { ActionMenu } from "@/components/molecules/ActionMenu";
 import { useWorkspaceStore, useTemplatesStore } from "@/store";
 import { WorkbookPreview } from "@/components/review/WorkbookPreview";
 import { AddFindingModal, type NewFinding } from "@/components/review/AddFindingModal";
@@ -96,9 +97,11 @@ export function RunWorkbook({
   // is captured on toggle and restored after the re-layout so the viewport holds.
   const [cleanView, setCleanView] = useState(false);
   const savedScroll = useRef<number | null>(null);
-  const toggleClean = () => {
+  const setView = (v: "edit" | "clean") => {
+    const next = v === "clean";
+    if (next === cleanView) return;
     savedScroll.current = stageRef.current?.scrollTop ?? null;
-    setCleanView((v) => !v);
+    setCleanView(next);
   };
   // The right dock hosts one panel at a time — opening Activity closes Customize
   // and vice versa, so the workbook is never sandwiched between two docks.
@@ -315,61 +318,73 @@ export function RunWorkbook({
               <Icon name="chevron-right" size={16} />
             </button>
           </div>
-          {/* Clean view (👁) — strip the editing chrome to preview the exact
-              signable deliverable. Only meaningful while editing (a signed doc
-              is already final/clean). */}
+          {/* View mode (F-153) — a 2-state segmented Edit | Clean; the current
+              state is always lit, never inferred from a flipping label. Clean =
+              the exact signable deliverable (no editing chrome). Hidden once
+              signed (a final doc is already clean). */}
           {!signed && (
             <>
               <span className="run-ex-tools-div" aria-hidden="true" />
-              <Tooltip
-                content="Preview the document exactly as it prints — no editing chrome"
-                compact
-              >
-                <button
-                  className={`run-wb-tbtn run-wb-tbtn--quiet${cleanView ? " is-active" : ""}`}
-                  onClick={toggleClean}
-                  aria-pressed={cleanView}
-                >
-                  <Icon name={cleanView ? "edit" : "eye"} size={14} />
-                  {cleanView ? "Edit" : "Clean view"}
-                </button>
-              </Tooltip>
+              <span className="run-wb-viewmode">
+                <SegmentedControl
+                  options={[
+                    { value: "edit", label: "Edit" },
+                    { value: "clean", label: "Clean" },
+                  ]}
+                  value={cleanView ? "clean" : "edit"}
+                  onChange={(v) => setView(v as "edit" | "clean")}
+                />
+              </span>
             </>
           )}
-          {/* Activity (🕘) — the audit ledger (layer 3). Always available, even
-              after signing: the record is the point. */}
+
+          {/* Panels (F-153) — Activity + Customize both drive the ONE right dock
+              and are mutually exclusive, so they sit in a cluster where only the
+              open one lights up. Activity (audit ledger, layer 3) stays after
+              signing; Customize (the 20% behind one button, F-146) does not. */}
           <span className="run-ex-tools-div" aria-hidden="true" />
-          <button
-            className={`run-wb-tbtn run-wb-tbtn--quiet${activityOpen ? " is-active" : ""}`}
-            onClick={openActivity}
-            aria-expanded={activityOpen}
-            aria-label="Activity ledger"
-          >
-            <Icon name="history" size={14} />
-            Activity
-            {activityCount > 1 && <span className="run-wb-tbtn-count">{activityCount}</span>}
-          </button>
-          {/* Customize ▸ — the whole 20% behind one quiet toolbar affordance,
-              closed by default (F-146 / Decision D). Demos never open it.
-              Save as template (F-147) captures structure + theme, not content. */}
-          {!signed && (
-            <>
-              <span className="run-ex-tools-div" aria-hidden="true" />
-              <button
-                className={`run-wb-tbtn run-wb-tbtn--quiet${savedTemplate ? " is-saved" : ""}`}
-                onClick={saveTemplate}
-              >
-                <Icon name={savedTemplate ? "check" : "templates"} size={14} />
-                {savedTemplate ? "Saved to templates" : "Save as template"}
-              </button>
+          <div className="run-wb-panels" role="group" aria-label="Panels">
+            <button
+              className={`run-wb-tbtn${activityOpen ? " is-active" : ""}`}
+              onClick={openActivity}
+              aria-expanded={activityOpen}
+              aria-label="Activity ledger"
+            >
+              <Icon name="history" size={14} />
+              Activity
+              {activityCount > 1 && <span className="run-wb-tbtn-count">{activityCount}</span>}
+            </button>
+            {!signed && (
               <button
                 className={`run-wb-tbtn${customizing ? " is-active" : ""}`}
                 onClick={openCustomize}
                 aria-expanded={customizing}
               >
-                Customize
-                <Icon name={customizing ? "close" : "chevron-right"} size={14} />
+                <Icon name="settings" size={14} /> Customize
               </button>
+            )}
+          </div>
+
+          {/* Overflow (F-153) — tertiary/rare actions. Save as template (F-147)
+              captures structure + theme, not content; too rare for prime space. */}
+          {!signed && (
+            <>
+              {savedTemplate && (
+                <span className="run-wb-saved" role="status">
+                  <Icon name="check" size={13} /> Saved to templates
+                </span>
+              )}
+              <ActionMenu
+                tooltip="More actions"
+                items={[
+                  {
+                    label: savedTemplate ? "Saved to templates" : "Save as template",
+                    icon: savedTemplate ? "check" : "templates",
+                    disabled: savedTemplate,
+                    onClick: saveTemplate,
+                  },
+                ]}
+              />
             </>
           )}
         </div>
