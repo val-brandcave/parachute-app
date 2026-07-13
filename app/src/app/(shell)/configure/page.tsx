@@ -6,14 +6,15 @@ import { Icon, type IconName } from "@/components/atoms";
 type ConfigCard = {
   href: string;
   icon: IconName;
-  tone: "org" | "defaults" | "templates" | "checklists";
+  tone: "org" | "defaults" | "templates" | "responses" | "checklists";
   title: string;
   desc: string;
   tags: string[];
 };
 
-// The four org-setup surfaces. Grouped by what each shapes: identity/inputs,
-// the run defaults, the authoring libraries, and the ingested admin form.
+// The org-setup surfaces. Grouped by what each shapes: identity/inputs, the run
+// defaults, each authoring library (workbook layouts + the response library are
+// now first-class siblings, not one bundled card), and the ingested admin form.
 const CARDS: ConfigCard[] = [
   {
     href: "/configure/organization",
@@ -32,12 +33,20 @@ const CARDS: ConfigCard[] = [
     tags: ["Profile & SLA", "Quality gate", "Confidence"],
   },
   {
-    href: "/configure/templates",
+    href: "/configure/workbook-layouts",
     icon: "templates",
     tone: "templates",
-    title: "Templates & layouts",
-    desc: "Workbook layouts and the shared response library.",
-    tags: ["Workbook · Technical", "Response · shared"],
+    title: "Workbook layouts",
+    desc: "The Technical deliverable's structure — sections, order, versions.",
+    tags: ["Workbook · Technical", "Versions"],
+  },
+  {
+    href: "/configure/responses",
+    icon: "quote",
+    tone: "responses",
+    title: "Response library",
+    desc: "Reusable reply snippets that fill your findings — org & personal.",
+    tags: ["Org & personal", "Merge fields"],
   },
   {
     href: "/configure/checklists",
