@@ -2,6 +2,10 @@ import type { User } from "@/types";
 
 // The review department is a team: the signed-in reviewer (user-001) plus
 // teammates. The queue is a team view; "Mine only" filters to user-001.
+// Emails, status and last-active back the Organization → Members table.
+const DAY = 86_400_000;
+const NOW = 1_752_000_000_000; // fixed epoch — render must not call Date.now()
+
 export const seedUsers: User[] = [
   {
     id: "user-001",
@@ -9,7 +13,10 @@ export const seedUsers: User[] = [
     initials: "VV",
     designation: "Chief Appraiser, MAI",
     signatureName: "Val Vinnakota",
-    role: "admin",
+    email: "val@brandcave.co",
+    role: "owner",
+    status: "active",
+    lastActiveAt: NOW - 2 * 3_600_000,
     createdAt: 1736928000000,
   },
   {
@@ -18,7 +25,10 @@ export const seedUsers: User[] = [
     initials: "JC",
     designation: "Senior Reviewer, MAI",
     signatureName: "Jordan Chen",
-    role: "reviewer",
+    email: "jordan.chen@meridiantrust.com",
+    role: "admin",
+    status: "active",
+    lastActiveAt: NOW - 1 * DAY,
     createdAt: 1736928000000,
   },
   {
@@ -27,7 +37,57 @@ export const seedUsers: User[] = [
     initials: "PN",
     designation: "Review Appraiser, MAI",
     signatureName: "Priya Natarajan",
+    email: "priya.natarajan@meridiantrust.com",
     role: "reviewer",
+    status: "active",
+    lastActiveAt: NOW - 3 * DAY,
     createdAt: 1736928000000,
+  },
+  {
+    id: "user-004",
+    name: "Marcus Webb",
+    initials: "MW",
+    designation: "Review Appraiser",
+    signatureName: "Marcus Webb",
+    email: "marcus.webb@meridiantrust.com",
+    role: "reviewer",
+    status: "active",
+    lastActiveAt: NOW - 6 * DAY,
+    createdAt: 1738224000000,
+  },
+  {
+    id: "user-005",
+    name: "Dana Olsen",
+    initials: "DO",
+    designation: "Credit Risk Auditor",
+    signatureName: "Dana Olsen",
+    email: "dana.olsen@meridiantrust.com",
+    role: "viewer",
+    status: "active",
+    lastActiveAt: NOW - 12 * DAY,
+    createdAt: 1740643200000,
+  },
+  {
+    id: "user-006",
+    name: "Samir Haddad",
+    initials: "SH",
+    designation: "Review Appraiser",
+    signatureName: "Samir Haddad",
+    email: "samir.haddad@meridiantrust.com",
+    role: "reviewer",
+    status: "invited",
+    createdAt: NOW - 2 * DAY,
+  },
+  {
+    id: "user-007",
+    name: "Elena Rossi",
+    initials: "ER",
+    designation: "Former Reviewer",
+    signatureName: "Elena Rossi",
+    email: "elena.rossi@meridiantrust.com",
+    role: "reviewer",
+    status: "deactivated",
+    lastActiveAt: NOW - 64 * DAY,
+    createdAt: 1735718400000,
   },
 ];

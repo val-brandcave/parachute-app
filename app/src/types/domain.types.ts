@@ -1,12 +1,24 @@
 import type { BaseEntity, Timestamp, UUID } from "./common.types";
 
 /* ============ Users & Orgs ============ */
+// Org membership roles. Owner = the account holder (exactly one, immutable);
+// Admin manages the org, members, templates and defaults; Reviewer performs and
+// signs reviews (the core persona); Viewer has read-only access (auditors, bank
+// stakeholders). Ordered most→least privileged.
+export type UserRole = "owner" | "admin" | "reviewer" | "viewer";
+
+// Membership state, distinct from the review lifecycle. undefined ⇒ "active".
+export type MemberStatus = "active" | "invited" | "deactivated";
+
 export interface User extends BaseEntity {
   name: string;
   initials: string;
   designation: string; // e.g. "Chief Appraiser, MAI"
   signatureName: string;
-  role: "reviewer" | "admin";
+  role: UserRole;
+  email?: string;
+  status?: MemberStatus;
+  lastActiveAt?: number; // epoch ms of last sign-in; undefined for invited
 }
 
 export interface Org extends BaseEntity {
