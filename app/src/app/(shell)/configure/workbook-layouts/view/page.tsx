@@ -54,7 +54,7 @@ export default function WorkbookLayoutPage() {
             <Button
               variant="outline"
               iconLeft="back"
-              onClick={() => router.push("/configure/templates")}
+              onClick={() => router.push("/configure/workbook-layouts")}
             >
               All layouts
             </Button>
@@ -63,7 +63,7 @@ export default function WorkbookLayoutPage() {
                 iconLeft="publish"
                 onClick={async () => {
                   await promoteWorkbookVersion(family.id, version.id);
-                  router.push("/configure/templates");
+                  router.push("/configure/workbook-layouts");
                 }}
               >
                 Promote to published
