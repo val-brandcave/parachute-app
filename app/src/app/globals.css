@@ -1933,6 +1933,271 @@ textarea {
   line-height: 1.4;
 }
 
+/* ---- inline attestation rows (Phase 2c) — the doc IS the decision surface.
+   Everything paper-scale: the controls live inside `.wb-doc`, so var(--md-*)
+   reads the fixed --paper-* re-scope. The form stays a compliance table; only
+   the Answer cell and the expansion row are interactive. ---- */
+.attdoc-tr.is-open td {
+  border-bottom: 0; /* the expansion row carries the divider */
+}
+.attdoc-qbtn {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  width: 100%;
+  font: inherit;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  cursor: pointer;
+}
+.attdoc-qtext {
+  flex: 1;
+  line-height: 1.45;
+}
+.attdoc-needs {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+  margin-top: 1px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: var(--md-warn);
+  white-space: nowrap;
+}
+/* Always visible (the rail accordion's convention) — faint at rest so the
+   printed form still reads calm, ink on hover, rotating when open. */
+.attdoc-chev {
+  flex: none;
+  margin-top: 2px;
+  color: var(--md-on-surface-t);
+  transition: color 0.12s, transform 0.18s;
+}
+.attdoc-tr:hover .attdoc-chev {
+  color: var(--md-on-surface-v);
+}
+.attdoc-chev.on {
+  transform: rotate(180deg);
+}
+/* The live Yes/No/N-A — a document-scale sibling of `.att-ans` (28px, quiet). */
+.attdoc-ansctl {
+  display: inline-flex;
+  border: 1px solid var(--md-outline);
+  border-radius: 7px;
+  overflow: hidden;
+  background: var(--md-surface);
+}
+.attdoc-ansbtn {
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  height: 26px;
+  padding: 0 9px;
+  border: 0;
+  border-right: 1px solid var(--md-outline);
+  background: transparent;
+  color: var(--md-on-surface);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.attdoc-ansbtn:last-child {
+  border-right: 0;
+}
+.attdoc-ansbtn:hover {
+  background: var(--md-surface-1);
+}
+.attdoc-ansbtn.is-suggested {
+  background: var(--md-accent-c);
+  color: var(--md-accent-d);
+}
+.attdoc-ansbtn.on--pass {
+  background: var(--md-success);
+  color: #fff;
+}
+.attdoc-ansbtn.on--fail {
+  background: var(--md-error);
+  color: #fff;
+}
+.attdoc-ansbtn.on--neutral {
+  background: var(--md-on-surface-v);
+  color: #fff;
+}
+/* Expansion row — evidence + the divergence reason, inset on the soft tile. */
+.attdoc-xrow td {
+  padding: 0 10px 10px 40px;
+  border-bottom: 1px solid var(--md-outline-v);
+}
+.attdoc-x {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--md-surface-1);
+  border: 1px solid var(--md-outline-v);
+  border-radius: 8px;
+}
+.attdoc-x-ai {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.attdoc-x-sug {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--md-on-surface-v);
+}
+.attdoc-x-evi {
+  display: flex;
+  gap: 7px;
+  margin: 0;
+  font-size: 12px;
+  font-style: italic;
+  line-height: 1.5;
+  color: var(--md-on-surface-v);
+}
+.attdoc-x-evi svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--md-on-surface-t);
+}
+.attdoc-x-hint {
+  font-size: 11.5px;
+  color: var(--md-on-surface-t);
+}
+.attdoc-x-done {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--md-success);
+}
+.attdoc-x-reopen {
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  border: 0;
+  background: transparent;
+  color: var(--md-accent-d);
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+.attdoc-x-reason {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.attdoc-x-lbl {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--md-on-surface-v);
+  line-height: 1.45;
+}
+.attdoc-x-input {
+  font: inherit;
+  font-size: 12.5px;
+  line-height: 1.5;
+  padding: 7px 9px;
+  border: 1px solid var(--md-outline);
+  border-radius: 7px;
+  background: var(--md-surface);
+  color: var(--md-on-surface);
+  resize: vertical;
+}
+.attdoc-x-input:focus-visible {
+  outline: 2px solid var(--ring-accent);
+  outline-offset: 1px;
+}
+.attdoc-x-foot {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+}
+.attdoc-x-cancel {
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  border: 0;
+  background: transparent;
+  color: var(--md-on-surface-v);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+.attdoc-x-cancel:hover {
+  background: var(--md-surface-2);
+}
+.attdoc-x-confirm {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 7px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid var(--md-primary);
+  background: var(--md-primary);
+  color: #fff;
+  cursor: pointer;
+  transition: filter 0.12s, opacity 0.12s;
+}
+.attdoc-x-confirm:hover {
+  filter: brightness(1.1);
+}
+.attdoc-x-confirm:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+/* Cite column as a live evidence pointer (edit mode) — a text button that
+   deep-links to the cited span on the Source view. */
+.attdoc-citebtn {
+  font: inherit;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--md-accent-d);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  white-space: nowrap;
+  border-radius: 3px;
+}
+.attdoc-citebtn:hover {
+  background: var(--md-accent-c);
+}
+.attdoc-citebtn:focus-visible {
+  outline: 2px solid var(--ring-accent);
+  outline-offset: 1px;
+}
+/* "Review them" cycling flash — the row's own attention beat. */
+.attdoc-tr.is-attn td {
+  animation: attdoc-attn 1.6s ease;
+}
+@keyframes attdoc-attn {
+  0%,
+  55% {
+    background: var(--md-accent-c);
+  }
+  100% {
+    background: transparent;
+  }
+}
+
 /* ---- disposition composer (inline in the decision bar, below the action row) ---- */
 .fm-composer {
   border-top: 1px dashed var(--md-outline);
@@ -3030,8 +3295,28 @@ textarea {
 .wb-fmeta-sep {
   color: var(--md-outline);
 }
+/* Cite chip = a live evidence pointer (2c): a text button deep-linking to the
+   cited span on Source. Inherits the meta row's quiet ink; underline carries
+   the affordance, accent on hover. */
 .wb-fmeta-cite {
   white-space: nowrap;
+  font: inherit;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  border-radius: 3px;
+}
+.wb-fmeta-cite:hover {
+  color: var(--md-accent-d);
+  background: var(--md-accent-c);
+}
+.wb-fmeta-cite:focus-visible {
+  outline: 2px solid var(--ring-accent);
+  outline-offset: 1px;
 }
 .wb-fmeta-user {
   color: var(--md-accent-d);
@@ -10760,15 +11045,6 @@ select.qfilter {
   color: var(--md-warn);
   background: var(--md-warn-c);
 }
-.run-ex-state--att-attested {
-  background: var(--md-success);
-}
-.run-ex-state--att-needs {
-  background: var(--md-warn);
-}
-.run-ex-state--att-pending {
-  background: var(--md-outline);
-}
 
 /* ---- AttestationDecisionBar (F-118 Administrative decision core) ---- */
 .adb {
@@ -12138,6 +12414,28 @@ select.qfilter {
 .run-callout-text b {
   color: var(--md-warn-solid);
 }
+/* Inline text action woven into the callout sentence (Phase 2c: "attest them
+   in one click") — subordinate to the callout's single Button CTA, styled as
+   part of the copy in the callout's accent ink, never a competing pill. */
+.run-callout-act {
+  font: inherit;
+  font-weight: 600;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--md-warn-solid);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  border-radius: 3px;
+}
+.run-callout-act:hover {
+  background: color-mix(in srgb, var(--md-warn) 16%, transparent);
+}
+.run-callout-act:focus-visible {
+  outline: 2px solid var(--ring-accent);
+  outline-offset: 1px;
+}
 .run-callout-x {
   display: grid;
   place-items: center;
@@ -13053,6 +13351,11 @@ select.qfilter {
 .run-ex-state--override { background: var(--md-warn); }
 .run-ex-state--rejected { background: var(--md-error); }
 .run-ex-state--commented { background: var(--md-info); }
+/* Attestation dot tones — MUST live after the base rule above (equal
+   specificity; an earlier position let the base grey win — the 2c bug). */
+.run-ex-state--att-attested { background: var(--md-success); }
+.run-ex-state--att-needs { background: var(--md-warn); }
+.run-ex-state--att-pending { background: var(--md-outline); }
 /* disclosure chevron — points right when collapsed, rotates down when open */
 .run-ex-chev {
   flex: none;
@@ -14612,5 +14915,91 @@ select.qfilter {
 /* Embedded mode: shell chrome is not rendered; main fills the viewport. */
 .shell--embedded .maincol {
   width: 100%;
+}
+
+/* ============================== Print (exports pass, Phase 2c) ==============
+   Download on a signed document = the browser's print-to-PDF over the SAME
+   paginated `.wb-page` sheets the reviewer sees — the workbook and the
+   attestation share this path. Everything but the document is suppressed; the
+   run takeover's fixed/flex/scroll shell is flattened so print pagination can
+   flow the sheets naturally, one Letter page per `.wb-page`. */
+@media print {
+  @page {
+    size: letter;
+    margin: 0.35in;
+  }
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  /* Only the document is visible… */
+  body * {
+    visibility: hidden;
+  }
+  .wb-doc,
+  .wb-doc * {
+    visibility: visible;
+  }
+  /* …and the takeover chrome collapses so it leaves no blank space. */
+  .run-head,
+  .run-types,
+  .run-nav,
+  .run-wb-bar,
+  .run-foot,
+  .run-trust,
+  .run-callout,
+  .run-compile,
+  .run-wb-dock,
+  .wb-filebar {
+    display: none !important;
+  }
+  /* Flatten the fixed overlay + its flex/scroll chain into normal flow. */
+  .run {
+    position: absolute !important;
+    inset: auto !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    background: #fff !important;
+  }
+  .run-stage,
+  .run-main,
+  .run-body,
+  .run-wb,
+  .run-wb-main,
+  .run-wb-stage,
+  .run-wb-zoom,
+  .run-admin-ready,
+  .run-admin-railwrap {
+    display: block !important;
+    position: static !important;
+    overflow: visible !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    transform: none !important;
+  }
+  .run-wb-zoom {
+    zoom: 1 !important;
+  }
+  .wb-doc {
+    width: 100% !important;
+    max-width: none !important;
+  }
+  /* One sheet per printed page — the screen sheet chrome (shadow, border,
+     rounding) comes off; the paper is the paper. */
+  .wb-page {
+    break-after: page;
+    page-break-after: always;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+  .wb-page:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
 }
 

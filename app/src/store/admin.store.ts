@@ -2,12 +2,14 @@ import { create } from "zustand";
 import { adapter } from "@/data/adapters";
 import { Collections } from "@/data/collections";
 import { publishedVersion } from "@/lib/template-versions";
+import { generateId } from "@/types";
 import type {
   Attestation,
   AttestationState,
   AttAnswer,
   ChecklistTemplate,
 } from "@/types";
+import type { ActivityEntry } from "./workspace.store";
 
 /**
  * One working attestation row for the Administrative review — the join of a
@@ -55,6 +57,9 @@ export function attTally(states: Record<string, AttestationState>) {
   return t;
 }
 
+/** English label for a ledger line ("answered Yes"). */
+const ANS_WORD: Record<AttAnswer, string> = { YES: "Yes", NO: "No", NA: "N/A" };
+
 interface AdminState {
   reviewId: string | null;
   /** The checklist family the attestation was built from (for the doc header). */
@@ -62,6 +67,10 @@ interface AdminState {
   checklistVersion: number | null;
   rows: AttestationRow[];
   states: Record<string, AttestationState>; // itemId -> attestation state
+  /** Activity ledger (audit layer 3) — the Administrative twin of the workspace
+   *  ledger. Every attestation, change, re-open and the seal append here;
+   *  newest first, reset per-review. */
+  activity: ActivityEntry[];
   isLoading: boolean;
   /** null = DRAFT; set = signed. Per-review; reset on load. */
   signature: AttestationSignature | null;
@@ -107,6 +116,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   checklistVersion: null,
   rows: [],
   states: {},
+  activity: [],
   isLoading: false,
   signature: null,
   attDirty: false,
@@ -155,6 +165,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
       checklistVersion: version?.version ?? null,
       rows,
       states,
+      activity: [],
       signature: null,
       attDirty: false,
       compiledAt: null,
@@ -193,6 +204,26 @@ export const useAdminStore = create<AdminState>((set, get) => ({
       if (changed && !st.reason?.trim()) return {}; // reason required — UI gates this
       return {
         states: { ...s.states, [itemId]: { ...st, confirmed: true } },
+        activity: [
+          changed
+            ? entry({
+                actor: "you",
+                action: "Attested, changing the answer on",
+                target: row.question,
+                before: ANS_WORD[row.aiAnswer],
+                after: `${ANS_WORD[st.answer]} — ${st.reason!.trim()}`,
+                icon: "edit",
+                kind: "edit",
+              })
+            : entry({
+                actor: "you",
+                action: "Attested",
+                target: row.question,
+                icon: "check",
+                kind: "decision",
+              }),
+          ...s.activity,
+        ],
         attDirty: s.compiledAt != null ? true : s.attDirty,
       };
     }),
@@ -202,6 +233,16 @@ export const useAdminStore = create<AdminState>((set, get) => ({
       s.states[itemId]
         ? {
             states: { ...s.states, [itemId]: { ...s.states[itemId], confirmed: false } },
+            activity: [
+              entry({
+                actor: "you",
+                action: "Re-opened",
+                target: s.rows.find((r) => r.itemId === itemId)?.question,
+                icon: "undo",
+                kind: "decision",
+              }),
+              ...s.activity,
+            ],
             attDirty: s.compiledAt != null ? true : s.attDirty,
           }
         : {},
@@ -210,19 +251,72 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   confirmRoutine: () =>
     set((s) => {
       const states = { ...s.states };
+      let n = 0;
       s.rows.forEach((row) => {
         const st = states[row.itemId];
         if (!st.confirmed && !attNeedsAttention(row) && st.answer === row.aiAnswer) {
           states[row.itemId] = { ...st, confirmed: true };
+          n += 1;
         }
       });
-      return { states, attDirty: s.compiledAt != null ? true : s.attDirty };
+      if (!n) return {};
+      return {
+        states,
+        activity: [
+          entry({
+            actor: "you",
+            action: "Attested the routine items",
+            target: `${n} item${n === 1 ? "" : "s"} where the AI answer stood`,
+            icon: "check-all",
+            kind: "decision",
+          }),
+          ...s.activity,
+        ],
+        attDirty: s.compiledAt != null ? true : s.attDirty,
+      };
     }),
 
-  signAttestation: (sig) => set({ signature: sig }),
+  signAttestation: (sig) =>
+    set((s) => ({
+      signature: sig,
+      activity: [
+        entry({
+          actor: "you",
+          action: "Signed & sealed the attestation",
+          icon: "check-circle",
+          kind: "sign",
+        }),
+        ...s.activity,
+      ],
+    })),
   reopenAttestation: () => set({ signature: null }),
 
-  markAttCompiled: () => set((s) => (s.compiledAt ? {} : { compiledAt: Date.now(), attDirty: false })),
+  markAttCompiled: () =>
+    set((s) =>
+      s.compiledAt
+        ? {}
+        : {
+            compiledAt: Date.now(),
+            attDirty: false,
+            // Seed the ledger with the compile event — the ground truth every
+            // reviewer attestation is measured against (mirrors ensureWorkbook).
+            activity: [
+              entry({
+                actor: "ai",
+                action: "Pre-filled the attestation from the compliance checklist",
+                icon: "ai",
+                kind: "system",
+              }),
+              ...s.activity,
+            ],
+          },
+    ),
   regenerateAtt: () =>
     set({ attDirty: false, compiledAt: Date.now(), attRegeneratedAt: Date.now() }),
 }));
+
+/** Build a fresh ledger entry — id + timestamp stamped here (an action context,
+ *  never render). Mirrors the workspace store's helper. */
+function entry(partial: Omit<ActivityEntry, "id" | "at">): ActivityEntry {
+  return { id: generateId(), at: Date.now(), ...partial };
+}

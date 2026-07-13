@@ -64,6 +64,8 @@ export interface WorkbookEditingActions {
   onUpdateCapRate: (patch: Partial<WorkbookExhibitsData["capRate"]>) => void;
   /** Bring an excluded finding back into the workbook (audited as "Restored"). */
   onRestoreFinding: (findingId: string) => void;
+  /** Cite deep-link: open the Source view at this finding's cited span. */
+  onOpenCite: (findingId: string) => void;
   /** Reword a reviewer's OWN finding body (never the AI's). */
   onEditReviewer: (findingId: string, text: string) => void;
   /** Delete a reviewer's OWN finding. */
@@ -167,9 +169,13 @@ export function WorkbookFindingBlock({
         <span className="wb-fmeta-sep" aria-hidden="true">
           ·
         </span>
-        <span className="wb-fmeta-cite" title="Opens the cited span in Source (Phase 2b)">
+        <button
+          className="wb-fmeta-cite"
+          onClick={() => actions.onOpenCite(f.id)}
+          title="Open the cited span in Source"
+        >
           Cited p.{f.page}
-        </span>
+        </button>
         {f.byReviewer && (
           <>
             <span className="wb-fmeta-sep" aria-hidden="true">

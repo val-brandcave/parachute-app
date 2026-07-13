@@ -57,11 +57,18 @@ const SCANNED = false;
 export function RunExceptions({
   review,
   reviewType = "technical",
+  focusFindingId = null,
+  onFocusConsumed,
   onBack,
 }: {
   review: Review;
   /** Which review type this findings surface belongs to (scope only). */
   reviewType?: RunReviewType;
+  /** Cite deep-link target (from a workbook finding block's "Cited p.X"):
+   *  reveal the annotation layer, select the finding and scroll to its span,
+   *  then consume. */
+  focusFindingId?: string | null;
+  onFocusConsumed?: () => void;
   onBack: () => void;
 }) {
   const { findings, states, setDisposition, setComment, toggleCondition, toggleFlag } =
@@ -158,7 +165,9 @@ export function RunExceptions({
   // decision surface, so this reference view shows the pristine document until
   // the reviewer opts into the annotation layer (highlights + numbered badges +
   // the findings rail). Citation lookups + create-from-span still work clean.
-  const [showAnnotations, setShowAnnotations] = useState(false);
+  // A cite deep-link mounts the view (spoke switch) with a target — arrive
+  // annotated so the span is visible.
+  const [showAnnotations, setShowAnnotations] = useState(() => !!focusFindingId);
   const [zoom, setZoom] = useState(1);
   const [page, setPage] = useState(1);
   // Measured vertical offset (within its page) of each anchor's highlight, so the
@@ -173,6 +182,10 @@ export function RunExceptions({
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const pageRefs = useRef<Record<number, HTMLElement | null>>({});
+
+  const goPage = (n: number) => {
+    pageRefs.current[n]?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   // Measure anchor offsets for gutter-tag placement.
   const measure = () => {
@@ -232,6 +245,24 @@ export function RunExceptions({
   // its active highlight, and the visible page all agree (instant jump — the
   // view arrives via a cross-fade, so an animated scroll would fight it).
   const didInitialScroll = useRef(false);
+
+  // Cite deep-link (2c): a "Cited p.X" on a workbook finding block switches
+  // the spoke, so this view MOUNTS with the target set (annotations lazily
+  // initialized on). Land on the cited span once the layer has painted;
+  // marking the initial scroll done keeps the first-finding jump from racing.
+  useEffect(() => {
+    if (!focusFindingId) return;
+    didInitialScroll.current = true;
+    const t = setTimeout(() => {
+      selectFinding(focusFindingId, "rail");
+      onFocusConsumed?.();
+    }, 60);
+    return () => clearTimeout(t);
+    // selectFinding is stable per render; re-running on every render would
+    // re-scroll mid-animation.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusFindingId]);
+
   useEffect(() => {
     // Only once the annotation layer is on — clean mode lands at the doc top.
     if (didInitialScroll.current || !showAnnotations) return;
@@ -273,9 +304,6 @@ export function RunExceptions({
       if (el && el.getBoundingClientRect().top - top <= 120) cur = p.n;
     }
     setPage(cur);
-  };
-  const goPage = (n: number) => {
-    pageRefs.current[n]?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
   const zoomBy = (d: number) => setZoom((z) => Math.min(1.5, Math.max(0.7, +(z + d).toFixed(2))));
 

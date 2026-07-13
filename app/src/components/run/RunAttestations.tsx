@@ -3,7 +3,12 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button, Icon, Chip, type ChipTone } from "@/components/atoms";
-import { ActionMenu, ConfidenceMeter, AttestationDecisionBar } from "@/components/molecules";
+import {
+  ActionMenu,
+  ConfidenceMeter,
+  AttestationDecisionBar,
+  SegmentedControl,
+} from "@/components/molecules";
 import { useAdminStore, attNeedsAttention, type AttestationRow } from "@/store";
 import { buildAppraisalDoc, docPageIndex, type DocBlock, type DocRun } from "@/data/appraisal-doc";
 import { valueSummary, formatLongDate } from "@/lib/workbook";
@@ -26,20 +31,28 @@ function attTone(row: AttestationRow, state: AttestationState): "pass" | "flag" 
 }
 
 /**
- * S-B Attestations (Administrative) — the compliance twin of `RunExceptions`.
- * The ORIGINAL appraisal is the hero (continuous white pages); each checklist
- * item's cited span is highlighted inline with a numbered badge, synced to a
- * right-rail accordion of checklist items. Each item carries the shared
- * `AttestationDecisionBar` (Yes/No/N-A + one-click attest, reason when diverging).
- * Wired to `admin.store` (the single source of truth for attestation state).
+ * The Administrative track's "Source" view (nav-renamed in 2c, D14 parity with
+ * the Technical track) — the compliance twin of `RunExceptions`. The ORIGINAL
+ * appraisal is the hero (continuous white pages); each checklist item's cited
+ * span is highlighted inline with a numbered badge, synced to a right-rail
+ * accordion of checklist items (the rail keeps its "Checklist" title). Each
+ * item carries the shared `AttestationDecisionBar` (Yes/No/N-A + one-click
+ * attest, reason when diverging) with FULL parity to the attestation doc's
+ * inline rows — one shared `admin.store`, so the two surfaces never disagree.
  */
 export function RunAttestations({
   review,
   reviewType = "administrative",
+  focusItemId = null,
+  onFocusConsumed,
   onBack,
 }: {
   review: Review;
   reviewType?: RunReviewType;
+  /** Cite deep-link target (from the attestation doc): reveal the annotation
+   *  layer, select this item and scroll to its span, then consume. */
+  focusItemId?: string | null;
+  onFocusConsumed?: () => void;
   onBack: () => void;
 }) {
   const { rows, states, setAnswer, setReason, confirm, unconfirm, confirmRoutine } =
@@ -105,12 +118,23 @@ export function RunAttestations({
 
   const [picked, setPicked] = useState<string | null>(null);
   const selectedId = picked ?? ordered[0]?.itemId ?? null;
+  // Source defaults to the CLEAN appraisal (F-153, same as the Technical
+  // Source): the attestation doc is the decision surface, so this reference
+  // view shows the pristine document until the reviewer opts into the
+  // annotation layer (highlights + numbered badges + the checklist rail).
+  // A cite deep-link mounts the view (spoke switch) with a target — arrive
+  // annotated so the span is visible.
+  const [showAnnotations, setShowAnnotations] = useState(() => !!focusItemId);
   const [zoom, setZoom] = useState(1);
   const [page, setPage] = useState(1);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const pageRefs = useRef<Record<number, HTMLElement | null>>({});
   const itemRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+  const goPage = (n: number) => {
+    pageRefs.current[n]?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   /** Two-way sync (fixed Jul 2). From the RAIL: scroll the doc to the item's
    *  highlighted span — or, since only some items have on-page spans, fall back
@@ -134,12 +158,31 @@ export function RunAttestations({
     }
   };
 
+  const didInitialScroll = useRef(false);
+
+  // Cite deep-link (2c): a p.X on the attestation doc switches the spoke, so
+  // this view MOUNTS with the target set (annotations lazily initialized on).
+  // Land on the cited span once the layer has painted; marking the initial
+  // scroll done keeps the first-item jump from racing this one.
+  useEffect(() => {
+    if (!focusItemId) return;
+    didInitialScroll.current = true;
+    const t = setTimeout(() => {
+      selectItem(focusItemId);
+      onFocusConsumed?.();
+    }, 60);
+    return () => clearTimeout(t);
+    // selectItem is stable per render and reads live refs; re-running on every
+    // render would re-scroll mid-animation.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusItemId]);
+
   // On landing, point the document at the first item so the open accordion, its
   // active highlight, and the visible page all agree (instant jump — the view
-  // arrives via a cross-fade, so an animated scroll would fight it).
-  const didInitialScroll = useRef(false);
+  // arrives via a cross-fade, so an animated scroll would fight it). Only once
+  // the annotation layer is on — clean mode lands at the doc top.
   useEffect(() => {
-    if (didInitialScroll.current) return;
+    if (didInitialScroll.current || !showAnnotations) return;
     const first = ordered[0]?.itemId;
     if (!first) return;
     const raf = requestAnimationFrame(() => {
@@ -154,7 +197,7 @@ export function RunAttestations({
       }
     });
     return () => cancelAnimationFrame(raf);
-  }, [ordered, annoPage]);
+  }, [ordered, annoPage, showAnnotations]);
 
   const attested = rows.filter((r) => states[r.itemId]?.confirmed).length;
 
@@ -169,14 +212,13 @@ export function RunAttestations({
     }
     setPage(cur);
   };
-  const goPage = (n: number) => {
-    pageRefs.current[n]?.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
   const zoomBy = (d: number) => setZoom((z) => Math.min(1.5, Math.max(0.7, +(z + d).toFixed(2))));
 
   /* ---- document rendering ---- */
 
   const renderRun = (r: DocRun, key: number) => {
+    // Clean view: no annotation layer — the appraisal renders as plain text.
+    if (!showAnnotations) return <Fragment key={key}>{r.text}</Fragment>;
     if (!r.attAnchor || !rowByItem[r.attAnchor]) return <Fragment key={key}>{r.text}</Fragment>;
     const row = rowByItem[r.attAnchor];
     const tone = attTone(row, states[row.itemId] ?? { answer: row.aiAnswer, confirmed: false });
@@ -325,6 +367,20 @@ export function RunAttestations({
                 <Icon name="chevron-right" size={16} />
               </button>
             </div>
+            <span className="run-ex-tools-div" aria-hidden="true" />
+            {/* Clean ↔ Annotated (F-153, mirrors the Technical Source) — clean
+                is the default; annotated brings in the highlights + numbered
+                badges + the checklist rail. */}
+            <span className="run-wb-viewmode">
+              <SegmentedControl
+                options={[
+                  { value: "clean", label: "Clean" },
+                  { value: "annotated", label: "Annotated" },
+                ]}
+                value={showAnnotations ? "annotated" : "clean"}
+                onChange={(v) => setShowAnnotations(v === "annotated")}
+              />
+            </span>
           </div>
         </div>
 
@@ -382,7 +438,8 @@ export function RunAttestations({
         </div>
       </div>
 
-      {/* ---- Synced attestation thread ---- */}
+      {/* ---- Synced attestation thread (annotation layer only, F-153) ---- */}
+      {showAnnotations && (
       <aside className="run-ex-thread">
         <div className="run-ex-thread-head">
           <span className="run-ex-thread-title">
@@ -529,6 +586,7 @@ export function RunAttestations({
           </p>
         </div>
       </aside>
+      )}
     </div>
   );
 }

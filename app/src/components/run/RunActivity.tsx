@@ -2,18 +2,19 @@
 
 import { useState } from "react";
 import { Icon, IconButton } from "@/components/atoms";
-import { useWorkspaceStore } from "@/store";
 import type { ActivityActor, ActivityEntry } from "@/store";
 import type { IconName } from "@/components/atoms/Icon";
 
 /**
  * Activity ledger drawer (audit layer 3, Phase 2b) — the complete, ordered
- * record of every touch on the workbook, docked on the right like Customize but
+ * record of every touch on the document, docked on the right like Customize but
  * strictly read-only. This is the layer that answers the examiner's "did a human
  * actually work this?" — nothing is silent, every button is here.
  *
- * Docks over the live workbook via the shared `.run-wb-dock` shell; mutually
- * exclusive with Customize (the toolbar only ever opens one).
+ * Store-agnostic (Phase 2c): the host passes the ledger in, so the Technical
+ * workbook (workspace store) and the Administrative attestation (admin store)
+ * share one drawer. Docks via the shared `.run-wb-dock` shell; mutually
+ * exclusive with Customize where that panel exists.
  */
 
 const ACTOR_LABEL: Record<ActivityActor, string> = {
@@ -35,13 +36,19 @@ const fmtDay = (ms: number, todayKey: string, yesterdayKey: string) => {
 };
 
 export function RunActivityPanel({
+  entries,
+  docNoun = "workbook",
   reviewerName,
   onClose,
 }: {
+  /** The ledger, newest first (workspace or admin store). */
+  entries: ActivityEntry[];
+  /** What the document is called in the copy — "workbook" | "attestation". */
+  docNoun?: string;
   reviewerName: string;
   onClose: () => void;
 }) {
-  const activity = useWorkspaceStore((s) => s.activity);
+  const activity = entries;
 
   // "Today"/"Yesterday" anchors captured once — never recompute clock in render.
   const [{ todayKey, yesterdayKey }] = useState(() => {
@@ -61,7 +68,7 @@ export function RunActivityPanel({
   const editCount = activity.filter((e) => e.actor === "you").length;
 
   return (
-    <aside className="run-wb-dock run-act scroll" aria-label="Workbook activity">
+    <aside className="run-wb-dock run-act scroll" aria-label="Document activity">
       <div className="run-wb-dock-head">
         <div>
           <h2 className="run-cz-title">
@@ -70,7 +77,7 @@ export function RunActivityPanel({
           <p className="run-cz-sub">
             {editCount === 0
               ? "Every change you make is recorded here."
-              : `${editCount} reviewer ${editCount === 1 ? "action" : "actions"} on this workbook.`}
+              : `${editCount} reviewer ${editCount === 1 ? "action" : "actions"} on this ${docNoun}.`}
           </p>
         </div>
         <IconButton name="close" onClick={onClose} aria-label="Close activity" />
@@ -91,7 +98,7 @@ export function RunActivityPanel({
 
       <p className="run-act-foot">
         <Icon name="sso" size={13} />
-        This ledger travels with the review — it is not printed on the workbook by default.
+        This ledger travels with the review — it is not printed on the {docNoun} by default.
       </p>
     </aside>
   );
