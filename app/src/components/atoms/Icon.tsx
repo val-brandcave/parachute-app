@@ -27,6 +27,7 @@ import {
   IconArrowDown,
   IconArrowsSort,
   IconColumns,
+  IconCreditCard,
   IconArrowBackUp,
   IconLockOpen,
   IconDots,
@@ -73,6 +74,7 @@ import {
   IconHistory,
   IconGripVertical,
   IconScan,
+  IconDiamond,
   type Icon as TablerIcon,
 } from "@tabler/icons-react";
 import { ParachuteGlyph, ChuteActionMark } from "./BrandGlyph";
@@ -153,6 +155,8 @@ export const ICONS = {
   history: IconHistory,
   grip: IconGripVertical,
   scan: IconScan,
+  "credit-card": IconCreditCard,
+  diamond: IconDiamond,
 } satisfies Record<string, TablerIcon>;
 
 export type IconName = keyof typeof ICONS;

@@ -8,9 +8,10 @@ import { Icon, Tooltip } from "@/components/atoms";
 import { useIdentityStore } from "@/store";
 import { CURRENT_ORG } from "@/lib/current-user";
 
-/** Organization card pinned to the bottom of the sidebar → org settings. The
- *  avatar shows the org initials in the same navy square as the settings logo
- *  (AvatarUpload), so the two stay visually consistent. */
+/** Organization card pinned to the bottom of the sidebar → the Configure hub
+ *  (templates, checklists, defaults, org identity). The avatar shows the org
+ *  initials in the same navy square as the org logo (AvatarUpload), so the two
+ *  stay visually consistent. */
 export function OrgCard({
   collapsed,
   name = CURRENT_ORG.name,
@@ -24,11 +25,11 @@ export function OrgCard({
 }) {
   const pathname = usePathname();
   const orgAvatar = useIdentityStore((s) => s.orgAvatar);
-  const active = pathname.startsWith("/settings");
+  const active = pathname.startsWith("/configure");
 
   const card = (
     <Link
-      href="/settings"
+      href="/configure"
       className={cn("org-card", active && "active", collapsed && "collapsed")}
     >
       {orgAvatar ? (
@@ -52,7 +53,7 @@ export function OrgCard({
 
   if (collapsed) {
     return (
-      <Tooltip content={`${name} · Settings`} side="right" block>
+      <Tooltip content={`${name} · Configure`} side="right" block>
         {card}
       </Tooltip>
     );
