@@ -10982,6 +10982,142 @@ select.qfilter {
 }
 
 /* ============================================================
+   REVIEW DEFAULTS — concern tabs (Intake / Deliverables)
+   ============================================================ */
+
+/* ---- Quality gate: rule + action rows ---- */
+.rd-gate {
+  display: flex;
+  flex-direction: column;
+}
+.rd-gate-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 2px;
+}
+.rd-gate-row + .rd-gate-row {
+  border-top: 1px solid var(--md-outline-v);
+}
+.rd-gate-rule {
+  min-width: 0;
+  font-size: 14px;
+  color: var(--md-on-surface);
+}
+.rd-gate-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px 3px 8px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background: var(--md-error-c);
+  color: var(--md-error);
+}
+.rd-gate-addbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 12px;
+  padding: 8px 12px;
+  align-self: flex-start;
+  border: 1px dashed var(--md-outline);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--md-accent-d);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s;
+}
+.rd-gate-addbtn:hover {
+  border-color: var(--md-accent);
+  background: var(--md-accent-c);
+}
+.rd-gate-add {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  align-items: center;
+}
+.rd-gate-add .ui-input {
+  flex: 1;
+}
+
+/* ---- Bound defaults: read-only value owned by another config ---- */
+.rd-bound-list {
+  display: flex;
+  flex-direction: column;
+}
+.rd-bound {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 14px;
+  padding: 13px 2px;
+}
+.rd-bound + .rd-bound {
+  border-top: 1px solid var(--md-outline-v);
+}
+.rd-bound-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.rd-bound-label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--md-on-surface-t);
+}
+.rd-bound-val {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--md-on-surface);
+}
+.rd-bound-val--empty {
+  font-weight: 500;
+  font-style: italic;
+  color: var(--md-on-surface-t);
+}
+.rd-bound-meta {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--md-on-surface-v);
+}
+.rd-bound-act {
+  display: inline-flex;
+  flex: none;
+}
+
+/* Small "Review type" tag on a type card header. */
+.rd-type-tag {
+  flex: none;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  background: var(--md-accent-c);
+  color: var(--md-accent-d);
+}
+
+/* Disabled section body (auto-accept off). */
+.rd-disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* ============================================================
    TEMPLATES — checklist mapper, item drawer, upload wizard (Slice 3)
    ============================================================ */
 
