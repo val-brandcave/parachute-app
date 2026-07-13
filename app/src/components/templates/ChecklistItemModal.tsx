@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { BottomSheet } from "@/components/organisms";
-import { Button, Icon, Label, Textarea } from "@/components/atoms";
+import { Button, Icon, Label, Modal, Textarea } from "@/components/atoms";
 import { SegmentedControl } from "@/components/molecules";
 import type { ChecklistItemType, ChecklistTemplateItem } from "@/types";
 
@@ -12,15 +11,17 @@ const TYPES: { value: ChecklistItemType; label: string }[] = [
 ];
 
 // Inner form owns the editable copy. It's keyed by item id and only mounts while
-// the sheet is open, so each open starts from a fresh draft — no effects or
+// the modal is open, so each open starts from a fresh draft — no effects or
 // render-time resets needed.
 function ItemForm({
   item,
+  group,
   onSave,
   onSplit,
   onCancel,
 }: {
   item: ChecklistTemplateItem;
+  group?: string;
   onSave: (item: ChecklistTemplateItem) => void;
   onSplit: (item: ChecklistTemplateItem) => void;
   onCancel: () => void;
@@ -31,6 +32,8 @@ function ItemForm({
 
   return (
     <>
+      {group && <div className="ck-item-eyebrow">{group}</div>}
+
       {flagged && draft.hint && (
         <div className="ck-drawer-hint">
           <Icon name="warn" size={16} />
@@ -98,9 +101,10 @@ function ItemForm({
   );
 }
 
-// Focused edit surface for a single checklist item — the canonical BottomSheet
-// use (a task on top of the mapper).
-export function ChecklistItemDrawer({
+// Focused edit surface for a single checklist item — a compact, content-sized
+// Modal (was a BottomSheet; Val asked for a modal here). The item's group rides
+// as a small eyebrow above the fields.
+export function ChecklistItemModal({
   open,
   item,
   isNew,
@@ -116,22 +120,22 @@ export function ChecklistItemDrawer({
   onSplit: (item: ChecklistTemplateItem) => void;
 }) {
   return (
-    <BottomSheet
+    <Modal
       open={open}
       onClose={onClose}
-      size="half"
-      eyebrow={item?.group}
+      size="sm"
       title={isNew ? "Add checklist item" : "Edit item mapping"}
     >
       {item && (
         <ItemForm
           key={item.id}
           item={item}
+          group={item.group}
           onSave={onSave}
           onSplit={onSplit}
           onCancel={onClose}
         />
       )}
-    </BottomSheet>
+    </Modal>
   );
 }
