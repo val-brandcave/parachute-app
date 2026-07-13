@@ -31,6 +31,7 @@ export function RunWorkbook({
   pendingTypeLabel = null,
   onSign,
   onReviewFindings,
+  onOpenCite,
   onReturn,
 }: {
   review: Review;
@@ -45,6 +46,8 @@ export function RunWorkbook({
   pendingTypeLabel?: string | null;
   onSign: () => void;
   onReviewFindings: () => void;
+  /** Cite deep-link — open Source focused on this finding's cited span. */
+  onOpenCite: (findingId: string) => void;
   onReturn: () => void;
 }) {
   const {
@@ -117,7 +120,8 @@ export function RunWorkbook({
       if (!v) setCustomizing(false);
       return !v;
     });
-  const activityCount = useWorkspaceStore((s) => s.activity.length);
+  const activity = useWorkspaceStore((s) => s.activity);
+  const activityCount = activity.length;
 
   // Compile sweep (D5 feedback, Jul 2): a fresh Regenerate — whether we just
   // arrived from Findings (mount, lazy init checks freshness) or clicked the
@@ -492,6 +496,7 @@ export function RunWorkbook({
                       onUpdateSwot: updateSwotQuadrant,
                       onUpdateCapRate: updateCapRate,
                       onRestoreFinding: restoreFinding,
+                      onOpenCite,
                       onEditReviewer: (id, text) => updateReviewerFinding(id, { analysis: text }),
                       onRemoveReviewer: deleteReviewerFinding,
                       comments,
@@ -508,6 +513,7 @@ export function RunWorkbook({
         {customizing && !signed && <RunCustomizePanel onClose={() => setCustomizing(false)} />}
         {activityOpen && (
           <RunActivityPanel
+            entries={activity}
             reviewerName={ctx.reviewerName}
             onClose={() => setActivityOpen(false)}
           />
@@ -525,7 +531,12 @@ export function RunWorkbook({
         <div className="run-foot-actions">
           {signed ? (
             <>
-              <Button variant="outline" size="sm" iconLeft="download">
+              <Button
+                variant="outline"
+                size="sm"
+                iconLeft="download"
+                onClick={() => window.print()}
+              >
                 Download
               </Button>
               {canFinish ? (

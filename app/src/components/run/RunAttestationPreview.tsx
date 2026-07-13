@@ -2,16 +2,22 @@
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Button, Icon, ParachuteGlyph } from "@/components/atoms";
-import { StatusPill } from "@/components/molecules";
+import { StatusPill, SegmentedControl } from "@/components/molecules";
 import {
   useAdminStore,
   useUsersStore,
   attTally,
+  attNeedsAttention,
   type AttestationRow,
   type AttestationSignature,
 } from "@/store";
 import { CURRENT_USER } from "@/lib/current-user";
 import { formatLongDate, valueSummary, WORKBOOK_FOOTER } from "@/lib/workbook";
+import {
+  AttestationDocRow,
+  type AttestationDocActions,
+} from "@/components/review/AttestationDocInline";
+import { RunActivityPanel } from "./RunActivity";
 import type { AttestationState, AttAnswer, Review } from "@/types";
 
 const ANS_LABEL: Record<AttAnswer, string> = { YES: "Yes", NO: "No", NA: "N/A" };
@@ -23,9 +29,16 @@ const ANS_CLASS: Record<AttAnswer, string> = { YES: "yes", NO: "no", NA: "na" };
  * The document is a real multi-page PDF that MIRRORS the Technical workbook: a
  * branded navy cover, a contents page, then the compliance checklist grouped
  * into section tables, and a reviewer-attestation certification block — all on
- * the fixed white `--paper-*` sheets. Signing is gated until every item is
- * attested; on sign it seals the attestation (SHA-256) AND marks the
- * Administrative type signed at the run level so the two-type gate resolves.
+ * the fixed white `--paper-*` sheets.
+ *
+ * Phase 2c: the attestation document IS the decision surface — every checklist
+ * row answers inline (Yes/No/N-A + divergence reason, `AttestationDocRow`), so
+ * answers apply live and the old dirty→Regenerate loop is gone (Decision E,
+ * applied to the Admin twin). The Source view keeps full parity via the shared
+ * admin store. Structure stays locked — the checklist is org-authored in
+ * Templates. Signing is gated until every item is attested; on sign it seals
+ * the attestation (SHA-256) AND marks the Administrative type signed at the
+ * run level so the two-type gate resolves.
  */
 export function RunAttestationPreview({
   review,
@@ -34,6 +47,7 @@ export function RunAttestationPreview({
   canFinish = true,
   pendingTypeLabel = null,
   onReviewChecklist,
+  onOpenSource,
   onSign,
   onReturn,
 }: {
@@ -43,18 +57,30 @@ export function RunAttestationPreview({
   canFinish?: boolean;
   pendingTypeLabel?: string | null;
   onReviewChecklist: () => void;
+  /** Cite deep-link — open the Source view focused on this item's cited span. */
+  onOpenSource: (itemId: string) => void;
   onSign: () => void;
   onReturn: () => void;
 }) {
-  const { rows, states, checklistName, checklistVersion, signature } = useAdminStore();
-  const attDirty = useAdminStore((s) => s.attDirty);
-  const regenerateAtt = useAdminStore((s) => s.regenerateAtt);
+  const {
+    rows,
+    states,
+    checklistName,
+    checklistVersion,
+    signature,
+    setAnswer,
+    setReason,
+    confirm,
+    unconfirm,
+    confirmRoutine,
+  } = useAdminStore();
+  const activity = useAdminStore((s) => s.activity);
   const attRegeneratedAt = useAdminStore((s) => s.attRegeneratedAt);
   const { byId } = useUsersStore();
 
-  // Compile sweep (D5 feedback, Jul 2): a fresh Regenerate plays a ~1.2s
-  // "recompiling" beat before the fresh document settles. Mount freshness via
-  // lazy init; in-place regenerate via adjust-during-render on the stamp.
+  // Compile sweep — the SYSTEM recompute beat (Decision E): direct answers on
+  // the doc are live, but returning from the Source rail via its Regenerate
+  // still plays the ~1.2s "folding in" moment, mirroring the Technical workbook.
   const [compiling, setCompiling] = useState(
     () => attRegeneratedAt != null && Date.now() - attRegeneratedAt < 2500,
   );
@@ -73,13 +99,54 @@ export function RunAttestationPreview({
   const [zoom, setZoom] = useState(1);
   const [page, setPage] = useState(1);
   const [pageCount, setPageCount] = useState(1);
-  const [exported, setExported] = useState(false);
   const [calloutDismissed, setCalloutDismissed] = useState(false);
+  // Which checklist row is expanded on the doc (evidence + reason zone). One at
+  // a time — the row is a form line, not an accordion of cards.
+  const [openId, setOpenId] = useState<string | null>(null);
+  // Clean view (F-152 pattern, applied to the Admin twin): Edit | Preview — the
+  // true read-only deliverable render, scroll preserved across the toggle.
+  const [cleanView, setCleanView] = useState(false);
+  const savedScroll = useRef<number | null>(null);
+  const setView = (v: "edit" | "clean") => {
+    const next = v === "clean";
+    if (next === cleanView) return;
+    savedScroll.current = stageRef.current?.scrollTop ?? null;
+    setCleanView(next);
+  };
+  const [activityOpen, setActivityOpen] = useState(false);
 
   const t = attTally(states);
-  const canSign = rows.length > 0 && t.pending === 0;
   const reviewerName = byId(review.assigneeId)?.signatureName || CURRENT_USER.signatureName;
   const signed = !!signature;
+
+  // Pending split for the sign-gate callout: routine = the AI answer stands and
+  // nothing flags it (one "Attest routine" click clears them); the rest need
+  // the reviewer's judgment ("Review them" cycles those rows open in the doc).
+  const pendingRows = rows.filter((r) => !states[r.itemId]?.confirmed);
+  const routineCount = pendingRows.filter(
+    (r) => !attNeedsAttention(r) && (states[r.itemId]?.answer ?? r.aiAnswer) === r.aiAnswer,
+  ).length;
+
+  // "Review them" cycles through the pending rows IN the document — the
+  // attestation is the decision surface, so the callout never routes away.
+  const attnIdx = useRef(0);
+  const goNextPending = () => {
+    const sc = stageRef.current;
+    if (!sc || !pendingRows.length) return;
+    // Judgment items first (needs-attention), then the rest, in doc order.
+    const ordered = [
+      ...pendingRows.filter((r) => attNeedsAttention(r)),
+      ...pendingRows.filter((r) => !attNeedsAttention(r)),
+    ];
+    const target = ordered[attnIdx.current % ordered.length];
+    attnIdx.current += 1;
+    setOpenId(target.itemId);
+    const el = sc.querySelector<HTMLElement>(`[data-att-item="${target.itemId}"]`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.classList.add("is-attn");
+    setTimeout(() => el.classList.remove("is-attn"), 1600);
+  };
 
   // Count rendered sheets for "Page X of N"; MutationObserver keeps it current as
   // attestations flip (a group can gain/lose a "changed" reason row).
@@ -96,6 +163,16 @@ export function RunAttestationPreview({
     mo.observe(sc, { childList: true, subtree: true });
     return () => mo.disconnect();
   }, []);
+
+  // Restore scroll after an Edit|Preview toggle re-lays-out the document, so
+  // the reviewer's place in the doc holds across the switch.
+  useLayoutEffect(() => {
+    const el = stageRef.current;
+    if (savedScroll.current != null && el) {
+      el.scrollTo({ top: savedScroll.current });
+      savedScroll.current = null;
+    }
+  }, [cleanView]);
 
   const zoomBy = (d: number) =>
     setZoom((z) => Math.min(1.5, Math.max(0.7, +(z + d).toFixed(2))));
@@ -172,6 +249,43 @@ export function RunAttestationPreview({
               <Icon name="chevron-right" size={16} />
             </button>
           </div>
+
+          {/* View mode (F-153 taxonomy, Admin twin) — Edit | Preview. Hidden
+              once signed (a final doc is already clean). */}
+          {!signed && (
+            <>
+              <span className="run-ex-tools-div" aria-hidden="true" />
+              <span className="run-wb-viewmode">
+                <SegmentedControl
+                  options={[
+                    { value: "edit", label: "Edit" },
+                    { value: "clean", label: "Preview" },
+                  ]}
+                  value={cleanView ? "clean" : "edit"}
+                  onChange={(v) => setView(v as "edit" | "clean")}
+                />
+              </span>
+            </>
+          )}
+
+          {/* Panels — the Activity ledger (audit layer 3) docks on the right,
+              same shell as the Technical workbook. Admin has no Customize (the
+              checklist form is org-authored in Templates, never styled here). */}
+          <span className="run-ex-tools-div" aria-hidden="true" />
+          <div className="run-wb-panels" role="group" aria-label="Panels">
+            <button
+              className={`run-wb-tbtn${activityOpen ? " is-active" : ""}`}
+              onClick={() => setActivityOpen((v) => !v)}
+              aria-expanded={activityOpen}
+              aria-label="Activity ledger"
+            >
+              <Icon name="history" size={14} />
+              Activity
+              {activity.length > 1 && (
+                <span className="run-wb-tbtn-count">{activity.length}</span>
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -187,30 +301,38 @@ export function RunAttestationPreview({
               Folding your attestations in…
             </div>
           )}
-          {attDirty && !signed && (
-            <div className="run-dirty" role="status">
-              <Icon name="refresh" size={16} />
-              <span className="run-dirty-text">
-                <b>Attestations changed</b> since this was compiled — regenerate to fold your
-                latest answers into the document.
-              </span>
-              <button className="run-dirty-cta" onClick={regenerateAtt}>
-                <Icon name="refresh" size={14} /> Regenerate
-              </button>
-            </div>
-          )}
-
-          {!signed && t.pending > 0 && !calloutDismissed && (
+          {/* Answers apply LIVE on the document (Decision E, extended to the
+              Admin twin in 2c) — the old dirty-callout → Regenerate loop is
+              gone. Only the sign gate remains, and it works the doc itself. */}
+          {!signed && !cleanView && t.pending > 0 && !calloutDismissed && (
             <div className="run-callout" role="status">
               <Icon name="warn" size={16} />
               <span className="run-callout-text">
                 <b>
-                  {t.pending} attestation{t.pending === 1 ? "" : "s"}
+                  {t.pending} item{t.pending === 1 ? "" : "s"}
                 </b>{" "}
-                still need answering before you sign — review them?
+                still need your answer before you sign
+                {routineCount > 0 ? (
+                  <>
+                    {" "}
+                    — {routineCount} {routineCount === 1 ? "is" : "are"} routine (
+                    <button className="run-callout-act" onClick={confirmRoutine}>
+                      attest {routineCount === 1 ? "it" : "them"} in one click
+                    </button>
+                    ){t.pending - routineCount > 0 && (
+                      <>
+                        , {t.pending - routineCount} need{t.pending - routineCount === 1 ? "s" : ""}{" "}
+                        your judgment
+                      </>
+                    )}
+                    .
+                  </>
+                ) : (
+                  "."
+                )}
               </span>
-              <Button variant="tonal" size="sm" onClick={onReviewChecklist}>
-                Review checklist
+              <Button variant="tonal" size="sm" onClick={goNextPending}>
+                Review them
               </Button>
               <button
                 className="run-callout-x"
@@ -231,9 +353,31 @@ export function RunAttestationPreview({
               checklistVersion={checklistVersion}
               reviewerName={reviewerName}
               signature={signature}
+              editing={
+                signed || cleanView
+                  ? null
+                  : {
+                      onSetAnswer: setAnswer,
+                      onSetReason: setReason,
+                      onConfirm: confirm,
+                      onUnconfirm: unconfirm,
+                      onOpenSource,
+                    }
+              }
+              openId={openId}
+              onSetOpen={setOpenId}
             />
           </div>
         </div>
+
+        {activityOpen && (
+          <RunActivityPanel
+            entries={activity}
+            docNoun="attestation"
+            reviewerName={reviewerName}
+            onClose={() => setActivityOpen(false)}
+          />
+        )}
       </div>
 
       <footer className="run-foot">
@@ -243,10 +387,10 @@ export function RunAttestationPreview({
               <Button
                 variant="outline"
                 size="sm"
-                iconLeft={exported ? "check" : "download"}
-                onClick={() => setExported(true)}
+                iconLeft="download"
+                onClick={() => window.print()}
               >
-                {exported ? "Exported (demo)" : "Download"}
+                Download
               </Button>
               {canFinish ? (
                 <Button
@@ -266,16 +410,10 @@ export function RunAttestationPreview({
             </>
           ) : (
             <>
-              <Button variant="outline" size="sm" iconLeft="checklist" onClick={onReviewChecklist}>
-                {canSign ? "Review checklist" : "Complete checklist"}
+              <Button variant="outline" size="sm" iconLeft="pdf" onClick={onReviewChecklist}>
+                View source
               </Button>
-              <Button
-                variant="primary"
-                size="sm"
-                iconRight="check-circle"
-                disabled={!canSign}
-                onClick={onSign}
-              >
+              <Button variant="primary" size="sm" iconRight="forward" onClick={onSign}>
                 Sign attestation
               </Button>
             </>
@@ -302,6 +440,8 @@ const PAGE_BUDGET = 1.7;
  * The paginated attestation document — cover → contents → grouped checklist
  * section tables → certification, on white `.wb-page` sheets. Deliberately built
  * to read as the sibling of the Technical workbook (same cover/TOC/page shell).
+ * With `editing` set (unsigned, Edit view), every checklist row is a live
+ * decision row (`AttestationDocRow`); null renders the clean deliverable.
  */
 function AttestationBook({
   review,
@@ -311,6 +451,9 @@ function AttestationBook({
   checklistVersion,
   reviewerName,
   signature,
+  editing = null,
+  openId = null,
+  onSetOpen,
 }: {
   review: Review;
   rows: AttestationRow[];
@@ -319,9 +462,14 @@ function AttestationBook({
   checklistVersion: number | null;
   reviewerName: string;
   signature: AttestationSignature | null;
+  editing?: AttestationDocActions | null;
+  openId?: string | null;
+  onSetOpen?: (itemId: string | null) => void;
 }) {
   const value = useMemo(() => valueSummary(review), [review]);
   const draft = !signature;
+  // A signed document is final — editing never renders over the seal.
+  const edit = signature ? null : editing;
 
   // Group rows in first-seen order → one section each, plus the certification.
   const sections: Sec[] = useMemo(() => {
@@ -426,8 +574,21 @@ function AttestationBook({
           </thead>
           <tbody>
             {s.items.map((r, i) => {
-              const st = states[r.itemId];
-              const wasChanged = st?.confirmed && st.answer !== r.aiAnswer;
+              const st = states[r.itemId] ?? { answer: r.aiAnswer, confirmed: false };
+              // Edit view: the row IS the decision surface (Phase 2c).
+              if (edit && onSetOpen)
+                return (
+                  <AttestationDocRow
+                    key={r.itemId}
+                    r={r}
+                    state={st}
+                    index={i}
+                    open={openId === r.itemId}
+                    actions={edit}
+                    onSetOpen={onSetOpen}
+                  />
+                );
+              const wasChanged = st.confirmed && st.answer !== r.aiAnswer;
               return (
                 <tr key={r.itemId}>
                   <td className="attdoc-n">{i + 1}</td>
@@ -435,12 +596,12 @@ function AttestationBook({
                     {r.question}
                     {wasChanged && (
                       <div className="attdoc-changed">
-                        <b>Changed from {ANS_LABEL[r.aiAnswer]}</b> — {st?.reason}
+                        <b>Changed from {ANS_LABEL[r.aiAnswer]}</b> — {st.reason}
                       </div>
                     )}
                   </td>
                   <td className="attdoc-ans-col">
-                    {st?.confirmed ? (
+                    {st.confirmed ? (
                       <b className={`attdoc-ans attdoc-ans--${ANS_CLASS[st.answer]}`}>
                         {ANS_LABEL[st.answer]}
                       </b>
