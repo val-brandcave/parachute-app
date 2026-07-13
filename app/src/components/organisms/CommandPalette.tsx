@@ -21,10 +21,13 @@ const NAV: { label: string; href: string; icon: IconName }[] = [
   { label: "Start a review", href: "/launchpad", icon: "parachute" },
   { label: "Dashboard", href: "/dashboard", icon: "dashboard" },
   { label: "Reviews", href: "/reviews", icon: "reviews" },
-  { label: "Templates", href: "/templates", icon: "templates" },
-  { label: "Response templates", href: "/templates?tab=response", icon: "quote" },
-  { label: "Org workbook layout", href: "/templates/workbook-layout", icon: "book" },
-  { label: "Settings", href: "/settings", icon: "settings" },
+  { label: "Configure", href: "/configure", icon: "settings" },
+  { label: "Templates & layouts", href: "/configure/templates", icon: "templates" },
+  { label: "Response library", href: "/configure/templates?tab=response", icon: "quote" },
+  { label: "Org workbook layout", href: "/configure/templates/workbook-layout", icon: "book" },
+  { label: "Compliance checklists", href: "/configure/checklists", icon: "checklist" },
+  { label: "Review defaults", href: "/configure/defaults", icon: "filter" },
+  { label: "Organization", href: "/configure/organization", icon: "org" },
 ];
 
 export function CommandPalette({

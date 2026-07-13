@@ -10,10 +10,11 @@ import { usePrefsStore } from "@/store";
 import { cn } from "@/lib/utils";
 import type { IconName } from "@/components/atoms";
 
+// Configure is reached via the org card pinned at the foot of the rail (it owns
+// templates, checklists, defaults and org identity), so it isn't a primary row.
 const PRIMARY: { href: string; icon: IconName; label: string }[] = [
   { href: "/dashboard", icon: "dashboard", label: "Dashboard" },
   { href: "/reviews", icon: "reviews", label: "Reviews" },
-  { href: "/templates", icon: "templates", label: "Templates" },
 ];
 
 const MotionLink = motion.create(Link);

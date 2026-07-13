@@ -117,7 +117,7 @@ export function ChecklistUploadWizard({
       items,
     });
     close();
-    router.push(`/templates/checklist/${created.id}`);
+    router.push(`/configure/checklists/${created.id}`);
   };
 
   const warnCount = items.filter((i) => i.map === "warn").length;

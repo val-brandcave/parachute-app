@@ -83,7 +83,7 @@ export function VersionHistoryTable({
               {v.summary}
             </span>
             <span role="cell">
-              <Chip tone={STATUS_TONE[v.status]} dot={v.status !== "archived"}>
+              <Chip tone={STATUS_TONE[v.status]}>
                 {VERSION_STATUS_LABEL[v.status]}
               </Chip>
             </span>

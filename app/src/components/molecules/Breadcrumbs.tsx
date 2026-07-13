@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Icon } from "@/components/atoms";
-import { useReviewsStore } from "@/store";
+import { useReviewsStore, useTemplatesStore } from "@/store";
 
 type Crumb = { label: string; href?: string };
 
@@ -11,8 +11,7 @@ const TOP_LABELS: Record<string, string> = {
   launchpad: "Start a review",
   dashboard: "Dashboard",
   reviews: "Reviews",
-  templates: "Templates",
-  settings: "Settings",
+  configure: "Configure",
   profile: "Profile",
   components: "Components",
   styleguide: "Style Guide",
@@ -24,16 +23,18 @@ const SUB_LABELS: Record<string, string> = {
   triage: "Intake Triage",
 };
 
-// Templates sub-routes (the leaf page header carries the specific instance name).
-const TEMPLATE_SUB_LABELS: Record<string, string> = {
-  responses: "Response templates",
-  checklist: "Administrative checklist",
-  "workbook-layout": "Org workbook layout",
+// The four Configure sections (segs[1]) → label + own route.
+const CONFIG_SECTIONS: Record<string, string> = {
+  organization: "Organization",
+  defaults: "Review defaults",
+  templates: "Templates & layouts",
+  checklists: "Compliance checklists",
 };
 
 export function Breadcrumbs() {
   const pathname = usePathname();
   const reviews = useReviewsStore((s) => s.reviews);
+  const checklists = useTemplatesStore((s) => s.checklists);
   const segs = pathname.split("/").filter(Boolean);
 
   let crumbs: Crumb[] = [];
@@ -48,14 +49,33 @@ export function Breadcrumbs() {
       href: `/reviews/${segs[1]}`,
     });
     if (segs[2] && SUB_LABELS[segs[2]]) crumbs.push({ label: SUB_LABELS[segs[2]] });
-  } else if (segs[0] === "templates" && segs[1] === "responses" && segs[2]) {
-    // Scoped response libraries: keep a linked parent crumb back to the hub.
-    crumbs.push({ label: "Templates", href: "/templates" });
-    crumbs.push({ label: "Response templates", href: "/templates?tab=response" });
-    crumbs.push({ label: segs[2] === "mine" ? "Personal library" : "Org library" });
-  } else if (segs[0] === "templates" && segs[1]) {
-    crumbs.push({ label: "Templates", href: "/templates" });
-    crumbs.push({ label: TEMPLATE_SUB_LABELS[segs[1]] ?? "Template" });
+  } else if (segs[0] === "configure") {
+    crumbs.push({ label: "Configure", href: "/configure" });
+    const section = segs[1];
+    if (section && CONFIG_SECTIONS[section]) {
+      const sectionHref = `/configure/${section}`;
+      const deeper = segs.length > 2;
+
+      if (section === "templates") {
+        // .../templates/responses/[scope]  and  .../templates/workbook-layout
+        crumbs.push({ label: "Templates & layouts", href: deeper ? sectionHref : undefined });
+        if (segs[2] === "responses" && segs[3]) {
+          crumbs.push({ label: "Response library", href: `${sectionHref}?tab=response` });
+          crumbs.push({ label: segs[3] === "mine" ? "Personal library" : "Org library" });
+        } else if (segs[2] === "workbook-layout") {
+          crumbs.push({ label: "Org workbook layout" });
+        }
+      } else if (section === "checklists") {
+        // .../checklists/[id] — resolve the family name for the leaf.
+        crumbs.push({ label: "Compliance checklists", href: deeper ? sectionHref : undefined });
+        if (deeper) {
+          const family = checklists.find((c) => c.id === segs[2]);
+          crumbs.push({ label: family ? family.name : "Checklist" });
+        }
+      } else {
+        crumbs.push({ label: CONFIG_SECTIONS[section] });
+      }
+    }
   } else if (segs[0]) {
     crumbs.push({ label: TOP_LABELS[segs[0]] ?? segs[0] });
   }

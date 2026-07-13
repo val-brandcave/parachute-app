@@ -127,7 +127,7 @@ export function useChecklistMapper(familyId: string, versionId?: string) {
   // Publish the draft, then return to the library (now the new published version).
   const publish = async () => {
     await publishChecklistDraft(familyId);
-    router.push("/templates");
+    router.push("/configure/checklists");
   };
 
   // From a read-only version: branch a fresh draft (based on this version) and
@@ -136,7 +136,7 @@ export function useChecklistMapper(familyId: string, versionId?: string) {
 
   const promote = async () => {
     if (version) await promoteChecklistVersion(familyId, version.id);
-    router.push("/templates");
+    router.push("/configure/checklists");
   };
 
   return {
