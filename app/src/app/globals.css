@@ -6323,6 +6323,18 @@ body.wb-reordering .wb-adddiv {
   max-width: 620px;
   font-size: 13px;
 }
+/* Title + inline meta (version / status chips + a muted date) on one row. */
+.pagehead-titlerow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.pagehead-meta {
+  font-size: 13px;
+  color: var(--md-on-surface-v);
+  font-variant-numeric: tabular-nums;
+}
 /* page body — full width (no max-width), density padding */
 .pagebody {
   padding: var(--d-page-y) var(--d-page-x) 64px;
@@ -11355,6 +11367,16 @@ select.qfilter {
   margin-top: 24px;
   padding-top: 18px;
   border-top: 1px solid var(--md-outline-v);
+}
+/* Group eyebrow at the top of the item-mapping modal body (the modal head only
+   carries the title, so the item's group rides here). */
+.ck-item-eyebrow {
+  margin-bottom: 14px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--md-accent-d);
 }
 
 /* ---- workbook layout (light entry, Slice 4) ---- */

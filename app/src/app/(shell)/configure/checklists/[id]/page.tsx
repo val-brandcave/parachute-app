@@ -3,10 +3,11 @@
 import { useState } from "react";
 import { useParams } from "next/navigation";
 import { PageHeader } from "@/components/templates/PageHeader";
-import { Button, Card, Icon } from "@/components/atoms";
+import { Button, Card, Chip, Icon } from "@/components/atoms";
 import { ChecklistItemRow } from "@/components/templates/ChecklistItemRow";
 import { TemplateHealthRail } from "@/components/templates/TemplateHealthRail";
-import { ChecklistItemDrawer } from "@/components/templates/ChecklistItemDrawer";
+import { ChecklistItemModal } from "@/components/templates/ChecklistItemModal";
+import { VERSION_STATUS_LABEL } from "@/lib/template-versions";
 import { useChecklistMapper } from "../hooks/useChecklistMapper";
 
 function formatDate(ts?: number): string {
@@ -87,20 +88,28 @@ export default function ChecklistMapperPage() {
     };
   });
 
-  const sub =
+  // Version + status as inline chips beside the title; the date rides after as
+  // muted text (draft = not-yet-published note instead of a date).
+  const statusTone =
+    version.status === "published" ? "pass" : version.status === "draft" ? "flag" : "neutral";
+  const dateMeta =
     version.status === "draft"
-      ? "Draft · not yet published — edits go live when you publish"
-      : version.status === "published"
-        ? `v${version.version} · Published ${formatDate(version.publishedAt)}`
-        : `v${version.version} · Archived${
-            version.publishedAt ? ` · was published ${formatDate(version.publishedAt)}` : ""
-          }`;
+      ? "Not yet published"
+      : version.publishedAt
+        ? formatDate(version.publishedAt)
+        : "";
 
   return (
     <>
       <PageHeader
         title={family.name}
-        sub={sub}
+        badges={
+          <>
+            <Chip tone="neutral">v{version.version}</Chip>
+            <Chip tone={statusTone}>{VERSION_STATUS_LABEL[version.status]}</Chip>
+            {dateMeta && <span className="pagehead-meta">{dateMeta}</span>}
+          </>
+        }
         actions={
           readOnly ? (
             <>
@@ -183,7 +192,7 @@ export default function ChecklistMapperPage() {
         </div>
       </div>
 
-      <ChecklistItemDrawer
+      <ChecklistItemModal
         open={drawerOpen}
         item={drawerItem}
         isNew={drawerIsNew}
