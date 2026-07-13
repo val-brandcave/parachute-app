@@ -1,14 +1,9 @@
 import { useEffect, useMemo } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useTemplatesStore } from "@/store";
 import { publishedVersion, sortedVersions } from "@/lib/template-versions";
 import type { VersionRow } from "@/components/templates/VersionHistoryTable";
-import type { TemplateScope, WorkbookLayout } from "@/types";
-
-// Compliance checklists were promoted to their own Configure section
-// (/configure/checklists); this hub now holds the two authoring libraries:
-// Workbook layouts (Technical) and the shared Response library.
-export type TemplateTab = "workbook" | "response";
+import type { WorkbookLayout } from "@/types";
 
 function formatDate(ts?: number): string {
   if (!ts) return "—";
@@ -31,14 +26,14 @@ export interface LayoutFamilyView {
 }
 
 /**
- * Drives the tabbed Templates & layouts library: workbook-layout family views
- * (active snapshot + version history) and the response-library scope counts, so
- * the page itself stays declarative. Tab is DERIVED from the URL (?tab=).
+ * Drives the Workbook layouts library: one row per layout family (active
+ * snapshot + version history), so the page stays declarative. The Response
+ * library is its own Configure section now (/configure/responses) — this hook
+ * no longer knows about it, and there are no tabs.
  */
-export function useTemplateHub() {
+export function useWorkbookLayouts() {
   const router = useRouter();
   const {
-    responses,
     layouts,
     isLoading,
     fetchTemplates,
@@ -47,18 +42,9 @@ export function useTemplateHub() {
     setDefaultLayout,
   } = useTemplatesStore();
 
-  const searchParams = useSearchParams();
-  const tabParam = searchParams.get("tab");
-  const tab: TemplateTab = tabParam === "response" ? "response" : "workbook";
-
   useEffect(() => {
     fetchTemplates();
   }, [fetchTemplates]);
-
-  const setTab = (t: TemplateTab) => {
-    const url = t === "workbook" ? "/configure/templates" : `/configure/templates?tab=${t}`;
-    router.replace(url, { scroll: false });
-  };
 
   const layoutFamilies = useMemo<LayoutFamilyView[]>(() => {
     return layouts.map((family) => {
@@ -81,40 +67,21 @@ export function useTemplateHub() {
     });
   }, [layouts]);
 
-  const responseScopes = useMemo(() => {
-    const count = (s: TemplateScope) => responses.filter((r) => r.scope === s).length;
-    const groups = new Set(
-      responses.filter((r) => r.scope === "org").map((r) => r.group),
-    ).size;
-    return {
-      org: { count: count("org"), groups },
-      mine: { count: count("mine") },
-    };
-  }, [responses]);
-
-  // --- Workbook actions (view real; editing deferred to in-review builder) ---
+  // Editing a published org layout is deferred to the in-review Builder; the
+  // library only views a version (real) and sets the profile default.
   const viewLayout = (versionId?: string) =>
     router.push(
       versionId
-        ? `/configure/templates/workbook-layout?v=${versionId}`
-        : "/configure/templates/workbook-layout",
+        ? `/configure/workbook-layouts/view?v=${versionId}`
+        : "/configure/workbook-layouts/view",
     );
 
   return {
     isLoading,
-    tab,
-    setTab,
     layoutFamilies,
-    responseScopes,
-    // workbook
     viewLayout,
     promoteWorkbookVersion,
     deleteWorkbookVersion,
     setDefaultLayout,
-    // responses
-    openResponses: (scope: TemplateScope) =>
-      router.push(`/configure/templates/responses/${scope}`),
-    newResponse: (scope: TemplateScope) =>
-      router.push(`/configure/templates/responses/${scope}?new=1`),
   };
 }

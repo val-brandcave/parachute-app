@@ -6323,6 +6323,18 @@ body.wb-reordering .wb-adddiv {
   max-width: 620px;
   font-size: 13px;
 }
+/* Title + inline meta (version / status chips + a muted date) on one row. */
+.pagehead-titlerow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.pagehead-meta {
+  font-size: 13px;
+  color: var(--md-on-surface-v);
+  font-variant-numeric: tabular-nums;
+}
 /* page body — full width (no max-width), density padding */
 .pagebody {
   padding: var(--d-page-y) var(--d-page-x) 64px;
@@ -10028,185 +10040,218 @@ select.qfilter {
   background: none;
 }
 
-/* ---- response templates: toolbar + master/detail ---- */
-.resp-toolbar {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin-bottom: 16px;
-}
-.resp-toolbar-hint {
-  font-size: 12.5px;
-}
-/* Full-height master/detail: the rail is flush to the side nav and the top
-   (fills the content area), the detail pane takes the rest. Absolute fill so
-   it ignores the content scroller's flow and each pane scrolls on its own. */
-.resp-page {
-  position: absolute;
-  inset: 0;
-  display: flex;
-}
-.resp-rail {
-  width: 320px;
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  background: var(--md-surface);
-  border-right: 1px solid var(--md-outline-v);
-}
-.resp-rail-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 12px 12px 12px 16px;
-  border-bottom: 1px solid var(--md-outline-v);
-}
-.resp-rail-title {
+/* ============================================================
+   RESPONSE LIBRARY (rtl-) — toolbar, expandable group table, and
+   the two-column add/edit modal. Reuses the .cktable / .ck* shell
+   so it reads as a sibling of the checklist & workbook tables.
+   ============================================================ */
+
+/* The toolbar lives in the .pagehead band (Tabs + .qsearch + Add CTA), same as
+   the Reviews queue — no bespoke toolbar styles here. */
+
+/* Group rows reuse .ckrow; these are the group-specific cells. */
+.rtl-group-name {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 16px;
+  font-size: 14px;
   color: var(--md-on-surface);
 }
-.resp-rail-list {
-  flex: 1;
-  overflow-y: auto;
-  min-height: 0;
-}
-.resp-detail {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  background: var(--md-surface);
+/* Count sits left-aligned directly under the "Templates" column header. */
+.rtl-group-count {
+  font-variant-numeric: tabular-nums;
+  color: var(--md-on-surface-t);
+  text-align: left;
 }
 
-/* master list */
-.resp-list {
-  padding: 4px 0 14px;
-}
-.resp-list-empty {
-  padding: 28px 20px;
-  font-size: 13px;
-}
-/* accordion group header */
-.resp-acc-h {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  padding: 12px 16px 7px;
-  border: none;
-  background: none;
-  cursor: pointer;
-  font-family: inherit;
-}
-.resp-acc-caret {
-  color: var(--md-on-surface-t);
-  transition: transform 0.18s ease;
-  flex-shrink: 0;
-}
-.resp-acc-caret.closed {
-  transform: rotate(-90deg);
-}
-.resp-acc-name {
-  flex: 1;
-  text-align: left;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  color: var(--md-on-surface-t);
-}
-.resp-acc-h:hover .resp-acc-name,
-.resp-acc-h:hover .resp-acc-caret {
-  color: var(--md-on-surface-v);
-}
-.resp-acc-count {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--md-on-surface-v);
-  background: var(--md-surface-2);
-  border-radius: 999px;
-  padding: 1px 7px;
-  min-width: 20px;
-  text-align: center;
-}
-.resp-row {
+/* Expanded templates sit in a bordered inset panel, indented under the name
+   column — same treatment as the checklist / workbook version-history expand. */
+.rtl-items {
+  margin: 10px 20px 16px 60px;
+  padding: 6px;
+  border: 1px solid var(--md-outline-v);
+  border-radius: 10px;
+  background: var(--md-surface);
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  width: 100%;
-  text-align: left;
-  padding: 9px 18px;
-  border: none;
-  border-left: 3px solid transparent;
-  background: none;
+  gap: 2px;
+}
+.rtl-item {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.9fr) minmax(0, 1.6fr) 40px;
+  align-items: center;
+  gap: 16px;
+  padding: 9px 10px 9px 14px;
+  border-radius: 9px;
+  border: 1px solid transparent;
   cursor: pointer;
-  font-family: inherit;
+  transition: background 0.12s, border-color 0.12s;
 }
-.resp-row:hover {
-  background: var(--md-surface-2);
+.rtl-item:hover {
+  background: var(--md-surface-1);
+  border-color: var(--md-outline-v);
 }
-.resp-row.sel {
-  background: var(--md-selected);
-  border-left-color: var(--md-accent);
+.rtl-item:focus-visible {
+  outline: 2px solid var(--ring-accent);
+  outline-offset: -2px;
 }
-.resp-row-name {
+.rtl-item-name {
   font-size: 13.5px;
   font-weight: 600;
   color: var(--md-on-surface);
-}
-.resp-row-prev {
-  font-size: 12px;
-  color: var(--md-on-surface-t);
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.rtl-item-prev {
+  font-size: 12.5px;
+  color: var(--md-on-surface-t);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rtl-item-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+.rtl-empty {
+  padding: 40px 24px;
+  text-align: center;
+  font-size: 13.5px;
+  color: var(--md-on-surface-t);
 }
 
-/* detail editor */
-.resp-editor {
+/* ---- two-column add/edit modal (form left · sticky live preview right) ---- */
+.rtl-modal {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  min-height: 100%;
 }
-.resp-editor-body {
+.rtl-modal-grid {
   flex: 1;
-  overflow-y: auto;
-  padding: 24px 26px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) 1px minmax(0, 0.95fr);
+  column-gap: 28px;
 }
-.resp-editor-foot {
+.rtl-modal-form {
+  min-width: 0;
+}
+/* Full-height hairline separating the form column from the live preview. */
+.rtl-modal-divider {
+  width: 1px;
+  align-self: stretch;
+  background: var(--md-outline-v);
+}
+.rtl-modal-preview {
+  min-width: 0;
+  position: sticky;
+  top: 0;
+  align-self: start;
+}
+
+/* Inline library radios (Org / Personal), navy-derived selected dot. */
+.rtl-radio-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 24px;
+}
+.rtl-radio {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--md-on-surface-v);
+  transition: color 0.14s;
+}
+.rtl-radio input {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+}
+.rtl-radio-dot {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--md-outline);
+  display: inline-grid;
+  place-items: center;
+  transition: border-color 0.14s;
+}
+.rtl-radio-dot::after {
+  content: "";
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--md-primary);
+  transform: scale(0);
+  transition: transform 0.14s ease;
+}
+.rtl-radio.on {
+  color: var(--md-on-surface);
+  font-weight: 600;
+}
+.rtl-radio.on .rtl-radio-dot {
+  border-color: var(--md-primary);
+}
+.rtl-radio.on .rtl-radio-dot::after {
+  transform: scale(1);
+}
+.rtl-radio input:focus-visible ~ .rtl-radio-dot {
+  outline: 2px solid var(--ring-accent);
+  outline-offset: 2px;
+}
+/* The preview's inner card fills the column and drops its default top margin. */
+.rtl-modal-preview .mf-preview {
+  margin-top: 0;
+}
+.rtl-scope-hint {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 14px 26px;
-  border-top: 1px solid var(--md-outline-v);
-  background: var(--md-surface);
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--md-on-surface-t);
 }
-.resp-delete {
+/* Sticky footer, bled over the modal body's 28px padding so it sits flush. */
+.rtl-modal-foot {
+  position: sticky;
+  bottom: -28px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 24px -28px -28px;
+  padding: 14px 28px;
+  background: var(--md-surface);
+  border-top: 1px solid var(--md-outline-v);
+}
+.rtl-foot-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.rtl-del {
   color: var(--md-error) !important;
 }
-.resp-delete:hover {
+.rtl-del:hover {
   background: var(--md-error-c) !important;
 }
-.resp-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  height: 100%;
-  color: var(--md-on-surface-t);
-  text-align: center;
-  padding: 24px;
-}
-.resp-empty p {
-  font-size: 13.5px;
-  max-width: 280px;
+/* Desktop-first, but keep the modal usable if the viewport squeezes it. */
+@media (max-width: 760px) {
+  .rtl-modal-grid {
+    grid-template-columns: 1fr;
+    row-gap: 20px;
+  }
+  .rtl-modal-divider {
+    display: none;
+  }
+  .rtl-modal-preview {
+    position: static;
+  }
 }
 
 /* shared field spacing */
@@ -10937,6 +10982,142 @@ select.qfilter {
 }
 
 /* ============================================================
+   REVIEW DEFAULTS — concern tabs (Intake / Deliverables)
+   ============================================================ */
+
+/* ---- Quality gate: rule + action rows ---- */
+.rd-gate {
+  display: flex;
+  flex-direction: column;
+}
+.rd-gate-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 2px;
+}
+.rd-gate-row + .rd-gate-row {
+  border-top: 1px solid var(--md-outline-v);
+}
+.rd-gate-rule {
+  min-width: 0;
+  font-size: 14px;
+  color: var(--md-on-surface);
+}
+.rd-gate-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px 3px 8px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background: var(--md-error-c);
+  color: var(--md-error);
+}
+.rd-gate-addbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 12px;
+  padding: 8px 12px;
+  align-self: flex-start;
+  border: 1px dashed var(--md-outline);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--md-accent-d);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s;
+}
+.rd-gate-addbtn:hover {
+  border-color: var(--md-accent);
+  background: var(--md-accent-c);
+}
+.rd-gate-add {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  align-items: center;
+}
+.rd-gate-add .ui-input {
+  flex: 1;
+}
+
+/* ---- Bound defaults: read-only value owned by another config ---- */
+.rd-bound-list {
+  display: flex;
+  flex-direction: column;
+}
+.rd-bound {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 14px;
+  padding: 13px 2px;
+}
+.rd-bound + .rd-bound {
+  border-top: 1px solid var(--md-outline-v);
+}
+.rd-bound-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.rd-bound-label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--md-on-surface-t);
+}
+.rd-bound-val {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--md-on-surface);
+}
+.rd-bound-val--empty {
+  font-weight: 500;
+  font-style: italic;
+  color: var(--md-on-surface-t);
+}
+.rd-bound-meta {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--md-on-surface-v);
+}
+.rd-bound-act {
+  display: inline-flex;
+  flex: none;
+}
+
+/* Small "Review type" tag on a type card header. */
+.rd-type-tag {
+  flex: none;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  background: var(--md-accent-c);
+  color: var(--md-accent-d);
+}
+
+/* Disabled section body (auto-accept off). */
+.rd-disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* ============================================================
    TEMPLATES — checklist mapper, item drawer, upload wizard (Slice 3)
    ============================================================ */
 
@@ -11322,6 +11503,16 @@ select.qfilter {
   margin-top: 24px;
   padding-top: 18px;
   border-top: 1px solid var(--md-outline-v);
+}
+/* Group eyebrow at the top of the item-mapping modal body (the modal head only
+   carries the title, so the item's group rides here). */
+.ck-item-eyebrow {
+  margin-bottom: 14px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--md-accent-d);
 }
 
 /* ---- workbook layout (light entry, Slice 4) ---- */

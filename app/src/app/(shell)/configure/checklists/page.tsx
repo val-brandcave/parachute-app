@@ -33,18 +33,10 @@ export default function ChecklistsPage() {
   const [uploadOpen, setUploadOpen] = useState(false);
 
   const rows: FamilyRow[] = checklistFamilies.map((c) => {
-    const publishedId = c.versions.find((v) => v.status === "published")?.id;
-    // The org default can't delete itself (transfer the default first) and has
-    // no "Set as default". Everything collapses into this one ⋯ menu.
+    // Opening a checklist always lands in the editable mapper (auto-draft), so
+    // there's no separate read-only "View" — one "Edit"/"Continue draft" entry.
+    // The org default can't delete itself (transfer the default first).
     const menuItems: ActionItem[] = [
-      {
-        label: "View",
-        icon: "eye" as const,
-        onClick: () =>
-          publishedId
-            ? viewChecklist(c.family.id, publishedId)
-            : editChecklist(c.family.id),
-      },
       {
         label: c.hasDraft ? "Continue draft" : "Edit",
         icon: "edit" as const,
@@ -100,10 +92,7 @@ export default function ChecklistsPage() {
       versions: c.versions,
       contentsHeader: "Items",
       menuItems,
-      onOpen: () =>
-        publishedId
-          ? viewChecklist(c.family.id, publishedId)
-          : editChecklist(c.family.id),
+      onOpen: () => editChecklist(c.family.id),
       onViewVersion: (vid) => viewChecklist(c.family.id, vid),
       onPromoteVersion: (vid) => promoteChecklistVersion(c.family.id, vid),
       onDuplicateVersion: (vid) => editChecklist(c.family.id, vid),

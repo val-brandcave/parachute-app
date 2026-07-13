@@ -23,11 +23,12 @@ const SUB_LABELS: Record<string, string> = {
   triage: "Intake Triage",
 };
 
-// The four Configure sections (segs[1]) → label + own route.
+// The Configure sections (segs[1]) → label + own route.
 const CONFIG_SECTIONS: Record<string, string> = {
   organization: "Organization",
   defaults: "Review defaults",
-  templates: "Templates & layouts",
+  "workbook-layouts": "Workbook layouts",
+  responses: "Response library",
   checklists: "Compliance checklists",
 };
 
@@ -56,13 +57,10 @@ export function Breadcrumbs() {
       const sectionHref = `/configure/${section}`;
       const deeper = segs.length > 2;
 
-      if (section === "templates") {
-        // .../templates/responses/[scope]  and  .../templates/workbook-layout
-        crumbs.push({ label: "Templates & layouts", href: deeper ? sectionHref : undefined });
-        if (segs[2] === "responses" && segs[3]) {
-          crumbs.push({ label: "Response library", href: `${sectionHref}?tab=response` });
-          crumbs.push({ label: segs[3] === "mine" ? "Personal library" : "Org library" });
-        } else if (segs[2] === "workbook-layout") {
+      if (section === "workbook-layouts") {
+        // .../workbook-layouts/view — the single-layout viewer.
+        crumbs.push({ label: "Workbook layouts", href: deeper ? sectionHref : undefined });
+        if (segs[2] === "view") {
           crumbs.push({ label: "Org workbook layout" });
         }
       } else if (section === "checklists") {
