@@ -7,7 +7,7 @@ import { Button, Card, Icon } from "@/components/atoms";
 import { ChecklistItemRow } from "@/components/templates/ChecklistItemRow";
 import { TemplateHealthRail } from "@/components/templates/TemplateHealthRail";
 import { ChecklistItemDrawer } from "@/components/templates/ChecklistItemDrawer";
-import { useChecklistMapper } from "../../hooks/useChecklistMapper";
+import { useChecklistMapper } from "../hooks/useChecklistMapper";
 
 function formatDate(ts?: number): string {
   if (!ts) return "";
@@ -59,7 +59,7 @@ export default function ChecklistMapperPage() {
     const draftId = await createDraft();
     if (!draftId) return;
     setVersionId(draftId);
-    window.history.replaceState(null, "", `/templates/checklist/${familyId}?v=${draftId}`);
+    window.history.replaceState(null, "", `/configure/checklists/${familyId}?v=${draftId}`);
   };
 
   if (!family || !version) {

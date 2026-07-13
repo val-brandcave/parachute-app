@@ -29,7 +29,9 @@ const SEEDED_KEY = `${STORAGE_PREFIX}:__seeded__`;
 //      sensitivity, SWOT, imported sections) for the compiled workbook doc;
 // v14: per-review attestation AI pre-fill collection driving the Administrative
 //      review (checklist attestation) for review-001.
-const SEED_VERSION = "v14";
+// v15: expanded users (owner/admin/reviewer/viewer roles + email/status/
+//      last-active) backing the Organization → Members table.
+const SEED_VERSION = "v15";
 
 export const mockAdapter: DataAdapter = {
   async getAll<T>(collection: string): Promise<T[]> {
