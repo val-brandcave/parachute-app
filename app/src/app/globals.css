@@ -9888,6 +9888,125 @@ select.qfilter {
   justify-content: flex-end;
 }
 
+/* ---- Compliance checklist library — expandable family table ----
+   Hairline-separated family rows in one card; each row expands to its version
+   history. Actions collapse into a single ⋯ menu (review-queue parity). */
+.cktable {
+  background: var(--md-surface);
+  border: 1px solid var(--md-outline-v);
+  border-radius: 14px;
+  box-shadow: var(--md-elev-1);
+  overflow: hidden;
+}
+.ckcols,
+.ckrow {
+  display: grid;
+  grid-template-columns: 40px minmax(220px, 1fr) 96px 84px 84px 156px 52px;
+  align-items: center;
+  gap: 16px;
+  padding: 0 20px;
+}
+.ckcols {
+  padding-top: 10px;
+  padding-bottom: 10px;
+  background: var(--md-surface-1);
+  border-bottom: 1px solid var(--md-outline-v);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--md-on-surface-v);
+}
+.ckrow {
+  min-height: 52px;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.ckrow-wrap + .ckrow-wrap .ckrow {
+  border-top: 1px solid var(--md-hairline, var(--md-outline-v));
+}
+.ckrow:hover {
+  background: var(--md-surface-1);
+}
+/* Open parent stays on-surface (not grey) — an accent left bar + tinted caret
+   mark it as the expanded row. */
+.ckrow.is-open {
+  box-shadow: inset 3px 0 0 var(--md-accent);
+}
+.ckrow.is-open .ckrow-caret {
+  color: var(--md-accent-d);
+}
+.ckrow:focus-visible {
+  outline: 2px solid var(--ring-accent);
+  outline-offset: -2px;
+}
+.ckrow-caret {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--md-on-surface-t);
+}
+.ckrow-caret svg {
+  transition: transform 0.2s ease;
+}
+.ckrow-name {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px;
+  min-width: 0;
+}
+/* Row name is a table cell, not a card hero — smaller than the fam-card title. */
+.ckrow-name .fam-title {
+  font-size: 14px;
+}
+.ckrow-cell {
+  font-size: 13px;
+  color: var(--md-on-surface-v);
+}
+.ckrow-num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  font-weight: 600;
+  color: var(--md-on-surface);
+}
+.ckrow-date {
+  font-variant-numeric: tabular-nums;
+}
+.ckmuted {
+  color: var(--md-on-surface-t);
+}
+.ckrow-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+/* Expanded version history — a distinct bordered inset panel on the surface
+   (not a flat grey wash), indented under the parent's name column. */
+.ckexpand {
+  background: var(--md-surface);
+}
+.ckexpand-inner {
+  /* Indent to align with the parent's name column; even top/bottom breathing room. */
+  margin: 12px 20px 16px 76px;
+  padding: 6px 14px 8px;
+  border: 1px solid var(--md-outline-v);
+  border-radius: 10px;
+  background: var(--md-surface);
+}
+.ckexpand .vh-head {
+  color: var(--md-on-surface-v);
+}
+/* Give the version rows a real hover so they stop blending together. */
+.ckexpand .vh-row:not(.vh-row--active):hover {
+  background: var(--md-surface-1);
+}
+/* The active (published) row is tinted blue — give its status chip a surface
+   fill + hairline so the badge doesn't blend into the highlight. */
+.vh-row--active .ui-chip {
+  background: var(--md-surface);
+  border: 1px solid var(--md-outline-v);
+}
+
 /* ---- mapper read-only banner + non-interactive rows ---- */
 .ck-ro-banner {
   display: flex;
@@ -10152,6 +10271,669 @@ select.qfilter {
   font-weight: 600;
   border-radius: 5px;
   padding: 1px 5px;
+}
+
+/* ============================================================
+   CONFIGURE — hub landing cards, upload zone, branding, slider
+   ============================================================ */
+
+/* Hub landing: the four org-setup surfaces as a 2-up card grid that routes
+   into the depth (templates, checklists, defaults, org identity). */
+.cfg-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.cfg-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 18px 18px 16px;
+  background: var(--md-surface);
+  border: 1px solid var(--md-outline-v);
+  border-radius: 14px;
+  box-shadow: var(--md-elev-1);
+  text-decoration: none;
+  color: inherit;
+  transition: box-shadow 0.16s, border-color 0.16s, transform 0.16s;
+}
+.cfg-card:hover {
+  border-color: var(--md-accent);
+  box-shadow: var(--md-elev-2);
+  transform: translateY(-1px);
+}
+.cfg-card:focus-visible {
+  outline: 2px solid var(--ring-accent);
+  outline-offset: 2px;
+}
+/* House icon-badge pattern: soft-grey tile + navy glyph (matches StatBar). */
+.cfg-card-ic {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: var(--md-surface-2);
+  color: var(--md-primary);
+}
+.cfg-card-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.cfg-card-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 16px;
+}
+.cfg-card-desc {
+  font-size: 13px;
+  color: var(--md-on-surface-v);
+  line-height: 1.45;
+}
+.cfg-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+.cfg-card-tag {
+  font-size: 11.5px;
+  color: var(--md-on-surface-t);
+  background: var(--md-surface-1);
+  border-radius: 6px;
+  padding: 2px 8px;
+}
+.cfg-card-go {
+  flex: none;
+  align-self: center;
+  color: var(--md-on-surface-t);
+  transition: transform 0.16s, color 0.16s;
+}
+.cfg-card:hover .cfg-card-go {
+  color: var(--md-accent-d);
+  transform: translateX(3px);
+}
+
+/* Ingest affordance on the Checklists page — a checklist is uploaded, not
+   authored, so the create action is a dropzone. */
+.cfg-uploadzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  padding: 22px;
+  margin-bottom: 16px;
+  background: var(--md-surface);
+  border: 1.5px dashed var(--md-outline);
+  border-radius: 12px;
+  color: var(--md-accent-d);
+  cursor: pointer;
+  transition: border-color 0.16s, background 0.16s;
+}
+.cfg-uploadzone:hover {
+  border-color: var(--md-accent);
+  background: var(--md-accent-c);
+}
+.cfg-uploadzone-main {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--md-on-surface);
+}
+.cfg-uploadzone-sub {
+  font-size: 12px;
+  color: var(--md-on-surface-t);
+}
+
+/* ---- Invite member modal ---- */
+.inv-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.inv-roles {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.inv-role {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  text-align: left;
+  padding: 11px 13px;
+  border: 1px solid var(--md-outline-v);
+  border-radius: 10px;
+  background: var(--md-surface);
+  cursor: pointer;
+  transition: border-color 0.14s, background 0.14s;
+}
+.inv-role:hover {
+  border-color: var(--md-accent);
+}
+.inv-role.is-on {
+  border-color: var(--md-accent);
+  background: var(--md-accent-c);
+}
+.inv-role-radio {
+  position: relative;
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  border-radius: 50%;
+  border: 2px solid var(--md-outline);
+}
+.inv-role.is-on .inv-role-radio {
+  border-color: var(--md-accent);
+}
+.inv-role.is-on .inv-role-radio::after {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  border-radius: 50%;
+  background: var(--md-accent);
+}
+.inv-role-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.inv-role-label {
+  font-weight: 600;
+  font-size: 14px;
+}
+.inv-role-desc {
+  font-size: 12px;
+  color: var(--md-on-surface-v);
+}
+.inv-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+/* ---- Members table (Organization → Members) ---- */
+.mbr-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.mbr-head-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 18px;
+}
+.mbr-head-sub {
+  font-size: 13px;
+  color: var(--md-on-surface-v);
+  margin-top: 2px;
+}
+.mbr-table {
+  background: var(--md-surface);
+  border: 1px solid var(--md-outline-v);
+  border-radius: 14px;
+  box-shadow: var(--md-elev-1);
+  overflow: hidden;
+}
+.mbr-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 124px 124px 132px 124px 48px;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 18px;
+  border-top: 1px solid var(--md-outline-v);
+}
+.mbr-row:first-child {
+  border-top: none;
+}
+.mbr-row--head {
+  background: var(--md-surface-1);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--md-on-surface-t);
+}
+.mbr-row.is-off .mbr-member,
+.mbr-row.is-off .mbr-num,
+.mbr-row.is-off .mbr-muted {
+  opacity: 0.55;
+}
+.mbr-member {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+}
+.mbr-member-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.mbr-member-name {
+  font-weight: 600;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.mbr-you {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--md-accent-d);
+  background: var(--md-accent-c);
+  border-radius: 5px;
+  padding: 1px 6px;
+  letter-spacing: 0.02em;
+}
+.mbr-member-email {
+  font-size: 12px;
+  color: var(--md-on-surface-t);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mbr-num {
+  font-size: 14px;
+  font-weight: 600;
+}
+.mbr-muted {
+  font-size: 13px;
+  color: var(--md-on-surface-v);
+}
+.mbr-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+.mbr-lock {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  color: var(--md-on-surface-t);
+}
+
+/* ---- Branding (colour templates, font, live document preview) ---- */
+.brand-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 340px);
+  gap: 24px;
+  align-items: start;
+}
+.brand-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.brand-aside {
+  min-width: 0;
+}
+.brand-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+.brand-swatch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+.brand-swatch-tile {
+  position: relative;
+  width: 64px;
+  height: 48px;
+  border-radius: 10px;
+  border: 2px solid transparent;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+  transition: transform 0.14s, box-shadow 0.14s;
+}
+.brand-swatch:hover .brand-swatch-tile {
+  transform: translateY(-2px);
+}
+.brand-swatch.is-on .brand-swatch-tile {
+  border-color: var(--md-accent);
+  box-shadow: 0 0 0 3px var(--md-accent-c);
+}
+.brand-swatch-dot {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
+}
+.brand-swatch-name {
+  font-size: 12px;
+  color: var(--md-on-surface-v);
+}
+.brand-swatch.is-on .brand-swatch-name {
+  color: var(--md-on-surface);
+  font-weight: 600;
+}
+.brand-row2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.brand-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13.5px;
+  color: var(--md-on-surface);
+}
+.brand-preview {
+  position: sticky;
+  top: 16px;
+  display: flex;
+  flex-direction: column;
+  background: var(--md-surface);
+  border: 1px solid var(--md-outline-v);
+  border-radius: 14px;
+  box-shadow: var(--md-elev-1);
+  padding: 18px;
+}
+.brand-preview-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--md-on-surface-t);
+  margin-bottom: 12px;
+}
+/* Scaled window onto the REAL workbook: the cover + a section peek, clipped and
+   faded so it reads as a continuing document. Fixed width matches the scaled doc. */
+.brand-docwrap {
+  position: relative;
+  width: 302px;
+  max-width: 100%;
+  height: 64vh;
+  min-height: 430px;
+  max-height: 640px;
+  margin: 0 auto;
+  overflow: hidden;
+  border-radius: 8px;
+}
+.brand-docscale {
+  width: 720px;
+  transform: scale(0.42);
+  transform-origin: top left;
+}
+.brand-docfade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 84px;
+  background: linear-gradient(to bottom, transparent, var(--md-surface));
+  pointer-events: none;
+}
+/* Section-peek page content (paper tokens come from the enclosing .wb-doc). */
+.brand-secpage {
+  padding: 34px 40px;
+  color: var(--paper-ink);
+}
+.brand-sec-eyebrow {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  opacity: 0.7;
+  margin-bottom: 10px;
+}
+.brand-sec-h {
+  font-weight: 700;
+  margin-bottom: 14px;
+  color: var(--paper-ink);
+}
+.brand-sec-p {
+  line-height: 1.6;
+  color: var(--paper-ink-2);
+  margin: 0 0 20px;
+}
+.brand-sec-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 11px 0;
+  border-top: 1px solid var(--paper-hair);
+  color: var(--paper-ink-2);
+}
+.brand-sec-row b {
+  color: var(--paper-ink);
+  font-weight: 600;
+}
+
+/* Sortable member-table headers (mirrors the Reviews queue). */
+.mbr-th {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--md-on-surface-t);
+  transition: color 0.14s;
+}
+.mbr-th:hover {
+  color: var(--md-on-surface);
+}
+.mbr-th-ic {
+  opacity: 0;
+  transition: opacity 0.14s, color 0.14s;
+}
+.mbr-th:hover .mbr-th-ic {
+  opacity: 0.5;
+}
+.mbr-th.is-sorted {
+  color: var(--md-on-surface);
+}
+.mbr-th.is-sorted .mbr-th-ic {
+  opacity: 1;
+  color: var(--md-accent-d);
+}
+
+/* ---- Billing (plan, payment, invoice history) ---- */
+.bill {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+/* Section header — title/desc left, primary action pinned right. */
+.bill-sec-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.bill-sec-titles {
+  min-width: 0;
+}
+.bill-sec-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--md-on-surface);
+}
+.bill-sec-desc {
+  color: var(--md-on-surface-v);
+  font-size: 13px;
+  margin-top: 3px;
+}
+.bill-sec-action {
+  flex: none;
+}
+
+/* Plan section — tier name + price line + seat-usage meter. */
+.bill-plan {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.bill-plan-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.bill-plan-tier {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: -0.01em;
+  color: var(--md-on-surface);
+}
+.bill-plan-badge {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: var(--md-accent-c);
+  color: var(--md-accent-d);
+}
+.bill-plan-price {
+  font-size: 13px;
+  color: var(--md-on-surface-v);
+}
+.bill-row-sub {
+  font-size: 12.5px;
+  color: var(--md-on-surface-t);
+}
+.bill-seats {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 460px;
+}
+.bill-seats-bar {
+  flex: 1;
+  height: 7px;
+  border-radius: 4px;
+  background: var(--md-surface-2);
+  overflow: hidden;
+}
+.bill-seats-bar span {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  background: var(--grad-primary);
+}
+.bill-seats-text {
+  font-size: 12.5px;
+  color: var(--md-on-surface-v);
+  white-space: nowrap;
+}
+
+/* Payment method section — card glyph tile + masked number. */
+.bill-pay {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.bill-pay-ic {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: var(--md-surface-2);
+  color: var(--md-primary);
+}
+.bill-pay-main {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.bill-pay-num {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--md-on-surface);
+}
+
+/* Invoice history — a bordered table inside the section card. */
+.bill-inv-table {
+  border: 1px solid var(--md-outline-v);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.bill-inv-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) 1fr 1fr 110px 48px;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--md-outline-v);
+  font-size: 14px;
+}
+.bill-inv-row:first-child {
+  border-top: none;
+}
+.bill-inv-row--head {
+  background: var(--md-surface-1);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--md-on-surface-t);
+}
+.bill-inv-dl {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Confidence-threshold slider (Review defaults). */
+.cfg-slider {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.cfg-slider input[type="range"] {
+  flex: 1;
+  accent-color: var(--md-accent);
+}
+.cfg-slider-val {
+  min-width: 3ch;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--md-on-surface);
+}
+
+/* Small inline hint used across Configure sections. */
+.cfg-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  font-size: 12.5px;
+  color: var(--md-on-surface-v);
 }
 
 /* ============================================================
