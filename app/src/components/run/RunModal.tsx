@@ -145,6 +145,10 @@ export function RunModal() {
   // Admin sub-view (its own rail: Preview home + Attestations), parallel to the
   // Technical `spoke`. Local — the store owns the ordered set + sign status.
   const [adminSpoke, setAdminSpoke] = useState<"attestation" | "checklist">("attestation");
+  // Cite deep-link targets (2c): a p.X on either document routes to that
+  // track's Source view focused on the cited span; the view consumes it.
+  const [exFocusId, setExFocusId] = useState<string | null>(null);
+  const [attFocusId, setAttFocusId] = useState<string | null>(null);
 
   const twoType = reviewTypes.length > 1;
   const adminOrdered = reviewTypes.includes("administrative");
@@ -405,7 +409,7 @@ export function RunModal() {
         sealed: !!attSignature,
         signature: attSignature,
         blocked: attPending > 0,
-        blockedNote: `${attPending} item${attPending === 1 ? "" : "s"} still need attesting — open the Checklist to finish.`,
+        blockedNote: `${attPending} item${attPending === 1 ? "" : "s"} still need attesting — answer them right on the attestation before signing.`,
         title: "Sign attestation",
         statement: (
           <>
@@ -615,6 +619,10 @@ export function RunModal() {
                               pendingTypeLabel={pendingTypeLabel}
                               onSign={() => setSignOpen(true)}
                               onReviewFindings={() => go("exceptions")}
+                              onOpenCite={(id) => {
+                                setExFocusId(id);
+                                go("exceptions");
+                              }}
                               onReturn={finishReturn}
                             />
                           )}
@@ -622,6 +630,8 @@ export function RunModal() {
                             <RunExceptions
                               review={review}
                               reviewType="technical"
+                              focusFindingId={exFocusId}
+                              onFocusConsumed={() => setExFocusId(null)}
                               onBack={() => go("workbook")}
                             />
                           )}
@@ -663,13 +673,16 @@ export function RunModal() {
                                 items={[
                                   { key: "attestation", label: "Attestation", icon: "book" },
                                   {
+                                    // The evidence view (D14 naming parity with the
+                                    // Technical track): the source appraisal + the
+                                    // same checklist, answerable from either surface.
+                                    // The rail INSIDE keeps its "Checklist" title;
+                                    // no pending badge — the attestation is the
+                                    // decision surface and owns that signal (its
+                                    // callout + the sign gate), mirroring F-153.
                                     key: "checklist",
-                                    label: "Checklist",
-                                    icon: "checklist",
-                                    badge:
-                                      !signedTypes.includes("administrative") && attPending > 0
-                                        ? attPending
-                                        : null,
+                                    label: "Source",
+                                    icon: "pdf",
                                   },
                                 ]}
                                 active={adminSpoke}
@@ -695,6 +708,10 @@ export function RunModal() {
                                   canFinish={allSigned}
                                   pendingTypeLabel={pendingTypeLabel}
                                   onReviewChecklist={() => setAdminSpoke("checklist")}
+                                  onOpenSource={(id) => {
+                                    setAttFocusId(id);
+                                    setAdminSpoke("checklist");
+                                  }}
                                   onSign={() => setSignOpen(true)}
                                   onReturn={finishReturn}
                                 />
@@ -703,6 +720,8 @@ export function RunModal() {
                                 <RunAttestations
                                   review={review}
                                   reviewType="administrative"
+                                  focusItemId={attFocusId}
+                                  onFocusConsumed={() => setAttFocusId(null)}
                                   onBack={() => setAdminSpoke("attestation")}
                                 />
                               )}
