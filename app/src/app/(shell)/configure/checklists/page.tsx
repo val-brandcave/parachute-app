@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Chip, Icon } from "@/components/atoms";
 import { type ActionItem } from "@/components/molecules";
 import {
@@ -30,7 +30,14 @@ export default function ChecklistsPage() {
     deleteChecklistFamily,
   } = useChecklistLibrary();
 
-  const [uploadOpen, setUploadOpen] = useState(false);
+  // The dropzone captures the file itself (click → picker, or drag-and-drop);
+  // the wizard then opens already showing it. Non-null filename = wizard open.
+  const [uploadFile, setUploadFile] = useState<string | null>(null);
+  const [dragging, setDragging] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const capture = (name?: string) => {
+    if (name) setUploadFile(name);
+  };
 
   const rows: FamilyRow[] = checklistFamilies.map((c) => {
     // Opening a checklist always lands in the editable mapper (auto-draft), so
@@ -103,22 +110,44 @@ export default function ChecklistsPage() {
   return (
     <div className="pagebody">
       {/* Ingest affordance — a checklist is uploaded, not authored from scratch,
-          so the create action is a dropzone. */}
+          so the create action is a dropzone. It captures the file directly (click
+          to browse or drop one on it); the wizard then opens showing that file. */}
       <button
         type="button"
-        className="cfg-uploadzone"
-        onClick={() => setUploadOpen(true)}
+        className={`cfg-uploadzone${dragging ? " drag" : ""}`}
+        onClick={() => fileRef.current?.click()}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragging(true);
+        }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragging(false);
+          capture(e.dataTransfer.files?.[0]?.name);
+        }}
       >
         <Icon name="upload" size={22} />
         <span className="cfg-uploadzone-main">Upload a checklist</span>
         <span className="cfg-uploadzone-sub">
           .docx / .xlsx / .pdf — the AI extracts and maps each item
         </span>
+        <input
+          ref={fileRef}
+          type="file"
+          accept=".doc,.docx,.xls,.xlsx,.pdf"
+          hidden
+          onChange={(e) => capture(e.target.files?.[0]?.name)}
+        />
       </button>
 
       <FamilyTable columns={COLUMNS} rows={rows} ariaLabel="Compliance checklists" />
 
-      <ChecklistUploadWizard open={uploadOpen} onClose={() => setUploadOpen(false)} />
+      <ChecklistUploadWizard
+        open={!!uploadFile}
+        fileName={uploadFile ?? ""}
+        onClose={() => setUploadFile(null)}
+      />
     </div>
   );
 }

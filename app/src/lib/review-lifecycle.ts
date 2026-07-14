@@ -1,5 +1,6 @@
 import type { Review } from "@/types";
 import type { IconName, ChipTone } from "@/components/atoms";
+import type { RunSpoke } from "@/store/run.store";
 
 /**
  * Single source of truth for a review's *derived* state. The queue and dashboard
@@ -192,9 +193,38 @@ export function outcomeView(r: Review): OutcomeView {
   }
 }
 
+/* ---------- Run wizard entry (which spoke a routed review opens at) ---------- */
+
+export interface RunEntry {
+  /** The wizard spoke a review opens at when routed to `/reviews/[id]`. */
+  spoke: RunSpoke;
+  /** Completed/signed reviews open read-only (locked decisions, FINAL seal, Download). */
+  readOnly: boolean;
+}
+
+/** Where a review lands when its `/reviews/[id]` route mounts the wizard. Derived
+ *  purely from lifecycle phase: auto-rejected → the triage gate; new intake → the
+ *  confirm gate; running → live progress; ready → the workbook (admin-only renders
+ *  its attestation); completed → the read-only FINAL workbook. */
+export function runEntry(r: Review): RunEntry {
+  switch (r.status) {
+    case "autorejected":
+      return { spoke: "triage", readOnly: false };
+    case "intake":
+      return { spoke: "confirm", readOnly: false };
+    case "running":
+      return { spoke: "progress", readOnly: false };
+    case "in_review":
+    case "returned":
+      return { spoke: "workbook", readOnly: false };
+    case "completed":
+      return { spoke: "workbook", readOnly: true };
+  }
+}
+
 /* ---------- Next action (one derived primary per row) ---------- */
 
-export type NextActionKind = "order" | "route" | "download" | "none";
+export type NextActionKind = "route" | "download" | "none";
 export interface NextActionView {
   label: string;
   tone: "primary" | "quiet";
@@ -211,11 +241,13 @@ export interface NextActionView {
 export function nextActionView(r: Review): NextActionView {
   switch (r.status) {
     case "intake":
+      // New from YouConnect → the wizard's confirm/setup gate at its route.
       return {
         label: "Run",
         tone: "primary",
         icon: "parachute",
-        kind: "order",
+        kind: "route",
+        href: `/reviews/${r.id}`,
         iconOnly: true,
       };
     case "autorejected":

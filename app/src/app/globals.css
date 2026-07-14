@@ -6921,6 +6921,11 @@ body.wb-reordering .wb-adddiv {
   grid-template-columns: 232px 1fr;
   min-height: 0;
 }
+/* Solo variant — a single-step takeover with no left step rail (the compliance
+   checklist upload): the body spans the full width, content stays centered. */
+.spm--solo .spm-main {
+  grid-template-columns: minmax(0, 1fr);
+}
 .spm-rail {
   border-right: 1px solid var(--md-outline-v);
   background: var(--md-surface);
@@ -10420,9 +10425,13 @@ select.qfilter {
   cursor: pointer;
   transition: border-color 0.16s, background 0.16s;
 }
-.cfg-uploadzone:hover {
+.cfg-uploadzone:hover,
+.cfg-uploadzone.drag {
   border-color: var(--md-accent);
   background: var(--md-accent-c);
+}
+.cfg-uploadzone.drag {
+  border-style: solid;
 }
 .cfg-uploadzone-main {
   font-family: var(--font-display);
@@ -11384,6 +11393,53 @@ select.qfilter {
 /* ---- upload wizard ---- */
 .ckw-step {
   max-width: 620px;
+}
+/* Single confirm step: a short lead + the already-captured file chip + name. */
+.ckw-confirm-lead {
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--md-on-surface-v);
+  margin-bottom: 18px;
+}
+.ckw-file {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 13px 15px;
+  background: var(--md-surface);
+  border: 1px solid var(--md-outline-v);
+  border-radius: 12px;
+  box-shadow: var(--md-elev-1);
+}
+.ckw-file-ic {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  border: 1px solid var(--md-outline-v);
+  background: var(--md-surface-1);
+  color: var(--md-accent-d);
+}
+.ckw-file-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--md-on-surface);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ckw-file-tag {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--md-success);
 }
 .ckw-drop {
   display: flex;
@@ -12504,6 +12560,72 @@ select.qfilter {
   justify-content: space-between;
   gap: 12px;
   margin-top: 2px;
+}
+
+/* ---- Auto-rejected triage gate (pre-confirm spoke; reuses the .run-cf shell) ---- */
+/* Status badge in the head — error-tinted pill so the auto-reject reads at a glance. */
+.run-tri-badge {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  color: var(--md-error);
+  background: var(--md-error-c);
+  border: 1px solid var(--md-error);
+}
+/* The failed-criterion card — an error-toned block, not a passing note. A left
+   accent rail + tinted wash separate it from the neutral setup cards. */
+.run-tri-fail {
+  border-color: var(--md-error);
+  border-left-width: 3px;
+  background: linear-gradient(
+    90deg,
+    var(--md-error-c) 0%,
+    var(--md-surface) 46%
+  );
+}
+.run-tri-fail-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--md-error);
+}
+.run-tri-fail-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--md-on-surface);
+}
+.run-tri-fail-body {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--md-on-surface-v);
+}
+/* Decision row — the two mutually-exclusive calls sit right-aligned. */
+.run-tri-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.run-tri-override {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.run-tri-override-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 /* ---- Left sidebar nav (Workbook · Exceptions) + status ---- */

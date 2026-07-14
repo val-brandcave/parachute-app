@@ -10,7 +10,7 @@ import { AddFindingModal, type NewFinding } from "@/components/review/AddFinding
 import { newSection, unroutedCategories, type WbSection } from "@/lib/workbook-config";
 import type { Review } from "@/types";
 import type { RunReviewType } from "@/store";
-import type { RunContext } from "./RunModal";
+import type { RunContext } from "./RunExperience";
 import { RunCustomizePanel } from "./RunCustomize";
 import { RunActivityPanel } from "./RunActivity";
 

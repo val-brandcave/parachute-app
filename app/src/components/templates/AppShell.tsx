@@ -2,7 +2,6 @@
 
 import { Sidebar } from "@/components/organisms/Sidebar";
 import { AppHeader } from "@/components/organisms/AppHeader";
-import { OrderModal } from "@/components/organisms/OrderModal";
 import { RunModal } from "@/components/run/RunModal";
 import { useSessionStore } from "@/store";
 
@@ -19,7 +18,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {!embedded && <AppHeader />}
         <main className="content scroll">{children}</main>
       </div>
-      {!embedded && <OrderModal />}
       <RunModal />
     </div>
   );

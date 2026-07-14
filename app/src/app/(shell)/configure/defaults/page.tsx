@@ -12,7 +12,6 @@ import {
   Switch,
   Input,
   Button,
-  type IconName,
 } from "@/components/atoms";
 import { publishedVersion } from "@/lib/template-versions";
 import { useTemplatesStore } from "@/store";

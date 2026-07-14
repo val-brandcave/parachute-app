@@ -9,7 +9,7 @@ export type AttFilter = "all" | "attention" | "pending" | "attested";
 
 const FILTERS: { value: AttFilter; label: string; icon: Parameters<typeof Icon>[0]["name"] }[] = [
   { value: "all", label: "All items", icon: "checklist" },
-  { value: "attention", label: "Needs attention", icon: "flag" },
+  { value: "attention", label: "Review closely", icon: "flag" },
   { value: "pending", label: "Pending", icon: "clock" },
   { value: "attested", label: "Attested", icon: "check-circle" },
 ];

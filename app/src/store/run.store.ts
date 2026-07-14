@@ -8,6 +8,7 @@ import { create } from "zustand";
  * separate spokes. Progress is the pre-nav boot stage.
  */
 export type RunSpoke =
+  | "triage" // auto-rejected intake gate — confirm rejection or override & admit
   | "confirm" // pre-review gate — confirm the extracted identity + review type
   | "progress" // S-E live progress (classify → review → compile)
   | "workbook" // S-A home base — also hosts Customize (edit mode) + the Sign modal
@@ -76,6 +77,10 @@ interface RunState {
    *  the org-default layout for the property's profile; a non-null id is a
    *  per-review override, mirroring `checklistId`. */
   layoutId: string | null;
+  /** Read-only mode — a completed/signed review opened from the queue. Findings
+   *  decisions are locked, the sign block shows the FINAL seal instead of the CTA,
+   *  and the workbook offers Download. Set by `enterReview`, cleared by `openRun`. */
+  readOnly: boolean;
   openRun: (
     reviewId: string,
     opts?: {
@@ -85,6 +90,21 @@ interface RunState {
       source?: RunSource;
     },
   ) => void;
+  /** Initialize the store for an EXISTING review opened at its route
+   *  (`/reviews/[id]`) — mirrors `openRun` but leaves `open: false` (the route
+   *  renders `RunExperience` directly; the global overlay stays hidden) and seeds
+   *  the run state from the real review (spoke derived from status, real
+   *  `reviewTypes`, identity overlay). `adminReady` is pre-set for post-pipeline
+   *  spokes so the Admin processing animation never replays on an already-reviewed
+   *  file; `signedTypes` is all types when `readOnly`. */
+  enterReview: (opts: {
+    reviewId: string;
+    spoke: RunSpoke;
+    display?: RunDisplay | null;
+    source?: RunSource | null;
+    reviewTypes?: RunReviewType[];
+    readOnly?: boolean;
+  }) => void;
   /** Commit the confirmed identity (from the confirm gate) for the rest of the run. */
   setDisplay: (display: RunDisplay) => void;
   setReviewTypes: (types: RunReviewType[]) => void;
@@ -110,6 +130,7 @@ export const useRunStore = create<RunState>((set) => ({
   adminReady: false,
   checklistId: null,
   layoutId: null,
+  readOnly: false,
   openRun: (reviewId, opts) =>
     set({
       open: true,
@@ -123,7 +144,28 @@ export const useRunStore = create<RunState>((set) => ({
       adminReady: false,
       checklistId: null,
       layoutId: null,
+      readOnly: false,
     }),
+  enterReview: ({ reviewId, spoke, display, source, reviewTypes, readOnly }) => {
+    const types = reviewTypes?.length ? reviewTypes : ["technical" as RunReviewType];
+    // Post-pipeline spokes land on a ready surface — never replay the Admin
+    // processing animation for an already-reviewed file.
+    const postPipeline = spoke === "workbook" || spoke === "exceptions";
+    set({
+      open: false, // the route renders RunExperience directly; overlay stays hidden
+      reviewId,
+      spoke,
+      docLabel: null,
+      display: display ?? null,
+      source: source ?? null,
+      reviewTypes: types,
+      signedTypes: readOnly ? types : [],
+      adminReady: postPipeline,
+      checklistId: null,
+      layoutId: null,
+      readOnly: !!readOnly,
+    });
+  },
   setDisplay: (display) => set({ display }),
   // Changing the selected set invalidates any prior per-type signatures + resets
   // Admin processing.
@@ -140,3 +182,19 @@ export const useRunStore = create<RunState>((set) => ({
   go: (spoke) => set({ spoke }),
   close: () => set({ open: false }),
 }));
+
+/** Commit the confirm gate's choices and advance to the live pipeline, in place
+ *  (no navigation). Shared by the routed intake review and the embedded YC session
+ *  — the standalone-overlay drop/YC path instead creates a review + routes to it. */
+export function beginRunInPlace(
+  display: RunDisplay,
+  types: RunReviewType[],
+  opts?: { checklistId?: string | null; layoutId?: string | null },
+) {
+  const s = useRunStore.getState();
+  s.setDisplay(display);
+  s.setReviewTypes(types);
+  s.setChecklistId(opts?.checklistId ?? null);
+  s.setLayoutId(opts?.layoutId ?? null);
+  s.go("progress");
+}

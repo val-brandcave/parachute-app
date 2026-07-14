@@ -14,6 +14,8 @@ interface ReviewsState {
   getById: (id: string) => Review | undefined;
   /** Persist a new review (Order stepper "Run pipeline") and add it to state. */
   addReview: (review: NewReview) => Promise<Review>;
+  /** Patch an existing review + persist (e.g. Start flips intake → running). */
+  updateReview: (id: string, patch: Partial<Review>) => Promise<void>;
 }
 
 export const useReviewsStore = create<ReviewsState>((set, get) => ({
@@ -44,5 +46,13 @@ export const useReviewsStore = create<ReviewsState>((set, get) => ({
     const created = await adapter.create<Review>(Collections.REVIEWS, full);
     set((s) => ({ reviews: [created, ...s.reviews] }));
     return created;
+  },
+
+  updateReview: async (id, patch) => {
+    const current = get().reviews.find((r) => r.id === id);
+    if (!current) return;
+    const next = { ...current, ...patch };
+    await adapter.update<Review>(Collections.REVIEWS, id, patch);
+    set((s) => ({ reviews: s.reviews.map((r) => (r.id === id ? next : r)) }));
   },
 }));

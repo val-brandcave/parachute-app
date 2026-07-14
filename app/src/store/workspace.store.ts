@@ -18,6 +18,12 @@ import type {
   WbActionItem,
 } from "@/lib/workbook-config";
 
+/** The one seeded review that carries real findings/exhibits. Any routed review
+ *  without its own content reuses this as mock content (prototype rule). Kept as a
+ *  literal here (rather than importing from run.store) so the data layer stays
+ *  decoupled from the run flow. */
+const DEMO_CONTENT_ID = "review-001";
+
 /** Short status code shown on a finding pill, derived from its severity. */
 const SEV_STATUS: Record<Severity, string> = {
   crit: "CRITICAL",
@@ -238,10 +244,20 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   loadReview: async (reviewId) => {
     if (get().reviewId === reviewId && get().findings.length) return;
     set({ isLoading: true });
-    const [findings, exhibits] = await Promise.all([
+    let [findings, exhibits] = await Promise.all([
       adapter.getWhere<Finding>(Collections.FINDINGS, (f) => f.reviewId === reviewId),
       adapter.getById<WorkbookExhibits>(Collections.WORKBOOK_EXHIBITS, reviewId),
     ]);
+    // Prototype: only the seeded demo review carries findings of its own. Every
+    // other routed review reuses the demo's findings/exhibits as mock content —
+    // the wizard overlays the real review's identity on top, so each row is fully
+    // clickable end-to-end without per-review seed authoring.
+    if (findings.length === 0 && reviewId !== DEMO_CONTENT_ID) {
+      [findings, exhibits] = await Promise.all([
+        adapter.getWhere<Finding>(Collections.FINDINGS, (f) => f.reviewId === DEMO_CONTENT_ID),
+        adapter.getById<WorkbookExhibits>(Collections.WORKBOOK_EXHIBITS, DEMO_CONTENT_ID),
+      ]);
+    }
     const states: Record<string, FindingState> = {};
     findings.forEach((f) => {
       states[f.id] = { disposition: "pending" };

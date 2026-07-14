@@ -6,7 +6,6 @@ import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Avatar, Button, Chip, Icon, Tooltip } from "@/components/atoms";
 import { ActionMenu, PipelineTracker } from "@/components/molecules";
-import { useOrderStore, ORDER_STEP } from "@/store";
 import { cn, relativeDue, formatShortDate } from "@/lib/utils";
 import {
   pipelineView,
@@ -26,11 +25,10 @@ import type { Review, User } from "@/types";
 
 type SortState = { col: SortCol; dir: "asc" | "desc" } | null;
 
-/** Auto-rejected reviews open straight into triage; everything else to the workspace. */
+/** Every review opens the routed wizard; it derives the spoke (triage · confirm ·
+ *  progress · workbook) from the review's status. */
 export function reviewHref(r: Review) {
-  return r.status === "autorejected"
-    ? `/reviews/${r.id}/triage`
-    : `/reviews/${r.id}`;
+  return `/reviews/${r.id}`;
 }
 
 const TYPE_LABEL = { technical: "TECH", administrative: "ADMIN" } as const;
@@ -49,10 +47,11 @@ function TypeBadges({ types }: { types: Review["reviewTypes"] }) {
   );
 }
 
-/** Derived primary action per row. `kind` decides how it's wired. */
+/** Derived primary action per row. Every action routes to the review's wizard
+ *  (which lands on the right spoke); completed's "Download" opens the read-only
+ *  workbook where Download lives. */
 function NextAction({ review }: { review: Review }) {
   const router = useRouter();
-  const openOrder = useOrderStore((s) => s.openOrder);
   const a: NextActionView = nextActionView(review);
 
   // Quiet waits (returned → "With appraiser") carry no action — render nothing,
@@ -63,18 +62,7 @@ function NextAction({ review }: { review: Review }) {
   const onClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (a.kind === "order")
-      openOrder({
-        step: ORDER_STEP.confirm,
-        prefill: {
-          reviewId: review.id,
-          source: review.source,
-          propertyAddress: review.propertyAddress,
-          loanNo: review.loanNo,
-          bank: review.bank,
-        },
-      });
-    else router.push(a.href ?? reviewHref(review));
+    router.push(a.href ?? reviewHref(review));
   };
 
   if (a.iconOnly)
@@ -137,7 +125,7 @@ function RowMenu({ review }: { review: Review }) {
   const items = [
     { label: "Review", icon: "reviews" as const, onClick: () => router.push(reviewHref(review)) },
     ...(review.status === "autorejected"
-      ? [{ label: "Open triage", icon: "gavel" as const, onClick: () => router.push(`/reviews/${review.id}/triage`) }]
+      ? [{ label: "Open triage", icon: "gavel" as const, onClick: () => router.push(reviewHref(review)) }]
       : []),
     { label: "Download documents", icon: "download" as const, onClick: () => router.push(`/reviews/${review.id}`) },
   ];
