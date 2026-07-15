@@ -129,6 +129,7 @@ export function RunExperience({
     loadReview,
     signature,
     signWorkbook,
+    setDisposition,
     workbook,
     ensureWorkbook,
     exhibits,
@@ -305,6 +306,21 @@ export function RunExperience({
     signWorkbook,
     signAttestation,
   ]);
+
+  // A completed review is already signed off, so its findings are resolved. The
+  // reused demo findings load as `pending`, which would render "Open" chips on the
+  // FINAL document and derive the recommendation to "Review in progress". On
+  // read-only load, mark any still-pending finding as accepted (once) so the
+  // signed doc reads as concluded — Approved, with concurred findings.
+  const resolvedReadOnlyRef = useRef(false);
+  useEffect(() => {
+    if (!readOnly || resolvedReadOnlyRef.current || !findings.length) return;
+    const pending = findings.filter(
+      (f) => (states[f.id]?.disposition ?? "pending") === "pending",
+    );
+    resolvedReadOnlyRef.current = true;
+    pending.forEach((f) => setDisposition(f.id, "accepted"));
+  }, [readOnly, findings, states, setDisposition]);
 
   const ctx: RunContext = {
     reviewId,
