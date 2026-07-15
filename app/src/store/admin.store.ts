@@ -95,6 +95,13 @@ interface AdminState {
   /** Bulk-attest every routine item where the reviewer still agrees with the AI
    *  (skips anything needing attention — those stay for explicit judgment). */
   confirmRoutine: () => void;
+  /** Accept-by-default (Jul 14): attest every not-yet-attested item whose answer
+   *  still stands as the AI's suggestion — INCLUDING flagged/low-confidence ones
+   *  (Ed: accept everything unless the reviewer disagrees). Diverged items are
+   *  left untouched (they carry their own confirmed+reason). This is the human
+   *  touch behind "Confirm & sign": one explicit, logged, attributed act. Returns
+   *  how many it attested (for the ledger / summary). */
+  confirmAllStanding: () => number;
 
   // ---- Attestation lifecycle ----
   signAttestation: (sig: AttestationSignature) => void;
@@ -286,6 +293,36 @@ export const useAdminStore = create<AdminState>((set, get) => ({
         attDirty: s.compiledAt != null ? true : s.attDirty,
       };
     }),
+
+  confirmAllStanding: () => {
+    let n = 0;
+    set((s) => {
+      const states = { ...s.states };
+      s.rows.forEach((row) => {
+        const st = states[row.itemId];
+        if (!st.confirmed && st.answer === row.aiAnswer) {
+          states[row.itemId] = { ...st, confirmed: true };
+          n += 1;
+        }
+      });
+      if (!n) return {};
+      return {
+        states,
+        activity: [
+          entry({
+            actor: "you",
+            action: "Confirmed the remaining attestations as suggested",
+            target: `${n} item${n === 1 ? "" : "s"} attested as the AI answer`,
+            icon: "check-all",
+            kind: "decision",
+          }),
+          ...s.activity,
+        ],
+        attDirty: s.compiledAt != null ? true : s.attDirty,
+      };
+    });
+    return n;
+  },
 
   signAttestation: (sig) =>
     set((s) => ({

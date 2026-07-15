@@ -50,10 +50,11 @@ interface ReviewTypeSpec {
 }
 
 /**
- * Generic review-type registry. Only the two `live` specs are selectable today;
- * a short "coming soon" tail names the next types on Ed's roadmap. Each carries a
- * one-line description (rendered under the label). Add a type by adding a spec
- * (the picker, union form, and store id-space all follow).
+ * Generic review-type registry. Add a type by adding a spec (the picker, union
+ * form, and store id-space all follow). Each carries a one-line description
+ * (rendered under the label). The "coming soon" placeholder cards were removed
+ * Jul 14 (Ed) — the pattern for how a new type populates is clear, so the
+ * roadmap teasers only added noise to the run gate.
  */
 const REVIEW_TYPES: ReviewTypeSpec[] = [
   {
@@ -74,22 +75,6 @@ const REVIEW_TYPES: ReviewTypeSpec[] = [
     // Pre-checked with Technical — Ed (Jun 30): "80% of us order both."
     defaultOn: true,
     fieldGroups: ["identity", "administrative"],
-  },
-  {
-    id: "evaluation",
-    label: "Evaluation",
-    description: "A lighter valuation review for loans below the appraisal threshold.",
-    status: "soon",
-    propertyBased: true,
-    fieldGroups: ["identity"],
-  },
-  {
-    id: "vendor_short",
-    label: "Vendor short form",
-    description: "A brief, standardized review that isn't tied to a property.",
-    status: "soon",
-    propertyBased: false,
-    fieldGroups: [],
   },
 ];
 
@@ -160,6 +145,11 @@ export function RunConfirm({
   const [layoutId, setLayoutId] = useState<string | null>(null);
   const effectiveChecklistId = checklistId ?? defaultChecklist?.id ?? null;
 
+  // The per-type setup (workbook layout · compliance checklist) is tucked behind
+  // an Advanced disclosure, collapsed by default (Jul 14, Ed): the defaults are
+  // already correct, so it stays out of sight unless the reviewer goes looking.
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+
   const isSel = (id: RunReviewType) => selected.includes(id);
   const toggle = (spec: ReviewTypeSpec) => {
     if (spec.status !== "live") return;
@@ -203,10 +193,11 @@ export function RunConfirm({
   };
 
   return (
-    <div className="run-cf scroll">
-      <motion.div className="run-cf-inner" variants={WRAP_V} initial="hidden" animate="show">
+    <div className="run-cf-wrap">
+      <div className="run-cf scroll">
+        <motion.div className="run-cf-inner" variants={WRAP_V} initial="hidden" animate="show">
         <motion.div className="run-cf-head" variants={ITEM_V}>
-          <h2 className="run-cf-title">{yc ? "Confirm & set up the review" : "Set up this review"}</h2>
+          <h2 className="run-cf-title">Review setup</h2>
           <p className="run-cf-sub">
             {yc
               ? "Pulled from YouConnect — choose what to review, confirm the details, and run."
@@ -315,55 +306,81 @@ export function RunConfirm({
           </motion.div>
         )}
 
-        {/* Card — technical review setup (its own type-gated section — a
-            Technical-only run never renders Administrative config). */}
-        {showTechnical && (
-          <motion.div className="run-cf-card" variants={ITEM_V}>
-            <span className="run-cf-card-head">Technical review setup</span>
-            <InheritedTemplateField
-              icon="book"
-              label="Workbook layout"
-              defaultId={defaultLayout?.id ?? null}
-              defaultMeta={`Org default · from the ${profile} profile`}
-              options={layouts.map((l) => ({ id: l.id, name: l.name }))}
-              value={layoutId}
-              onChange={setLayoutId}
-            />
-          </motion.div>
-        )}
-
-        {/* Card — administrative setup (fades in when selected). */}
-        <AnimatePresence initial={false}>
-          {showAdmin && (
-            <motion.div
-              key="admin-setup"
-              className="run-cf-card"
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.24, ease: "easeOut" }}
-              style={{ overflow: "hidden" }}
-            >
-              <span className="run-cf-card-head">Administrative review setup</span>
-              {/* Compliance checklist is a TEMPLATE (org default, overridable per
-                  review) — same control as the workbook layout above. Bank policy
-                  is intentionally absent: it's org policy owned by Settings →
-                  Compliance (F-123), applied automatically to every run, so it has
-                  no per-review knob to show here. */}
-              <InheritedTemplateField
-                icon="checklist"
-                label="Compliance checklist"
-                defaultId={defaultChecklist?.id ?? null}
-                defaultMeta="Org default · authored in Templates"
-                options={checklists.map((c) => ({ id: c.id, name: c.name }))}
-                value={checklistId}
-                onChange={setChecklistId}
-              />
+          {/* Advanced setup (Jul 14→15) — the per-type template overrides
+              (workbook layout · compliance checklist) sit behind a lightweight
+              disclosure: a tertiary text toggle, NOT a card. Defaults are already
+              correct; only a reviewer who wants to change them for THIS review
+              opens it, revealing the two setup cards beneath. */}
+          {(showTechnical || showAdmin) && (
+            <motion.div className="run-cf-advwrap" variants={ITEM_V}>
+              <button
+                type="button"
+                className="run-cf-advbtn"
+                onClick={() => setAdvancedOpen((o) => !o)}
+                aria-expanded={advancedOpen}
+              >
+                <Icon
+                  name="chevron-down"
+                  size={16}
+                  className={`run-cf-advbtn-chev${advancedOpen ? " on" : ""}`}
+                />
+                {advancedOpen ? "Hide advanced setup" : "Advanced setup"}
+              </button>
+              <AnimatePresence initial={false}>
+                {advancedOpen && (
+                  <motion.div
+                    key="adv-body"
+                    className="run-cf-advsecs"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.24, ease: "easeOut" }}
+                    style={{ overflow: "hidden" }}
+                  >
+                    {showTechnical && (
+                      <div className="run-cf-card">
+                        <span className="run-cf-card-head">Technical review setup</span>
+                        <InheritedTemplateField
+                          icon="book"
+                          label="Workbook layout"
+                          defaultId={defaultLayout?.id ?? null}
+                          defaultMeta={`Org default · from the ${profile} profile`}
+                          options={layouts.map((l) => ({ id: l.id, name: l.name }))}
+                          value={layoutId}
+                          onChange={setLayoutId}
+                        />
+                      </div>
+                    )}
+                    {showAdmin && (
+                      <div className="run-cf-card">
+                        <span className="run-cf-card-head">Administrative review setup</span>
+                        {/* Compliance checklist is a TEMPLATE (org default, overridable
+                            per review). Bank policy is intentionally absent: it's org
+                            policy owned by Configure → Compliance (F-123), applied to
+                            every run, so it has no per-review knob here. */}
+                        <InheritedTemplateField
+                          icon="checklist"
+                          label="Compliance checklist"
+                          defaultId={defaultChecklist?.id ?? null}
+                          defaultMeta="Org default · authored in Templates"
+                          options={checklists.map((c) => ({ id: c.id, name: c.name }))}
+                          value={checklistId}
+                          onChange={setChecklistId}
+                        />
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </motion.div>
           )}
-        </AnimatePresence>
+        </motion.div>
+      </div>
 
-        <motion.div className="run-cf-foot" variants={ITEM_V}>
+      {/* Sticky footer (Jul 14) — pinned so the reviewer can Start without
+          scrolling past every card; sits outside the scroll area. */}
+      <div className="run-cf-footbar">
+        <div className="run-cf-footbar-inner">
           <Button variant="ghost" size="sm" onClick={onCancel}>
             Cancel
           </Button>
@@ -376,8 +393,8 @@ export function RunConfirm({
           >
             Start review
           </Button>
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
     </div>
   );
 }

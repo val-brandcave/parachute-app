@@ -2027,6 +2027,27 @@ textarea {
   background: var(--md-on-surface-v);
   color: #fff;
 }
+/* Provenance chip (Jul 14) under the answer control — the audit-legible state of
+   the row: AI suggested → Attested → You changed. */
+.attdoc-prov {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: 5px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.attdoc-prov--ai {
+  color: var(--md-accent-d);
+}
+.attdoc-prov--att {
+  color: var(--md-success);
+}
+.attdoc-prov--you {
+  color: var(--md-primary);
+}
 /* Expansion row — evidence + the divergence reason, inset on the soft tile. */
 .attdoc-xrow td {
   padding: 0 10px 10px 40px;
@@ -3317,6 +3338,29 @@ textarea {
 .wb-fmeta-cite:focus-visible {
   outline: 2px solid var(--ring-accent);
   outline-offset: 1px;
+}
+/* Inline prose citation (Jul 15) — a "p.N" woven into a caption/note/cross-ref;
+   petrol link that opens the side-by-side Source at that page. */
+.wb-cite-inline {
+  font: inherit;
+  color: var(--md-accent);
+  font-weight: 650;
+  background: none;
+  border: 0;
+  padding: 0 1px;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--md-accent) 45%, transparent);
+  text-underline-offset: 2px;
+  border-radius: 3px;
+}
+.wb-cite-inline:hover {
+  text-decoration-color: var(--md-accent);
+  background: var(--md-accent-c);
+}
+.wb-cite-inline:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-accent);
 }
 .wb-fmeta-user {
   color: var(--md-accent-d);
@@ -11990,6 +12034,119 @@ select.qfilter {
   display: flex;
 }
 
+/* Citation Source pane (Jul 14→15): the cited appraisal docks in the run's
+   RIGHT slot beside the document stage — the SAME slot Activity/Customize use,
+   so they're mutually exclusive and the run toolbar + footer stay full-width
+   (no split at the chrome level). On wide screens it's a ~46% column; below
+   1200px it rides in as an overlay so the primary document isn't crushed. */
+.run-wb-main > .src-doc--pane {
+  flex: 0 0 46%;
+  min-width: 0;
+  min-height: 0;
+  border-left: 1px solid var(--md-outline);
+  animation: run-srcpane-in 0.26s cubic-bezier(0.4, 0, 0.2, 1);
+}
+@keyframes run-srcpane-in {
+  from {
+    opacity: 0;
+    transform: translateX(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@media (max-width: 1200px) {
+  .run-wb-main > .src-doc--pane {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(86%, 620px);
+    flex: none;
+    z-index: 6;
+    box-shadow: var(--md-elev-3);
+  }
+  .run-wb-main {
+    position: relative;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .run-wb-main > .src-doc--pane {
+    animation: none;
+  }
+}
+
+/* SourceDoc: reuses the .run-ex viewer chrome. In pane mode the doc column fills
+   the pane (there is no rail); in full mode it fills the body. */
+.src-doc {
+  flex: 1;
+  min-width: 0;
+}
+.src-doc .run-ex-doc {
+  flex: 1;
+}
+.src-doc-cite {
+  color: var(--md-accent);
+  font-weight: 700;
+}
+.src-doc-close {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--md-outline);
+  border-radius: 8px;
+  background: var(--md-surface);
+  color: var(--md-on-surface-v);
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+.src-doc-close:hover {
+  background: var(--md-surface-2);
+  color: var(--md-on-surface);
+}
+.src-doc-close:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-accent);
+}
+
+/* The one focused citation span on the clean source (Jul 14): a persistent
+   petrol tint so it stays findable while reading around it, plus a one-time
+   attention pulse on open so the eye lands on the exact paragraph. Paper is
+   always white, so the pinned --paper-accent* light values are used directly. */
+.src-focus {
+  background: var(--paper-accent-c);
+  border-radius: 3px;
+  box-shadow: 0 0 0 2px var(--paper-accent-c);
+  border-bottom: 2px solid var(--paper-accent);
+  color: inherit;
+  scroll-margin-block: 42vh;
+}
+.src-focus.is-pulse {
+  animation: src-pulse 1.2s ease-out 1;
+}
+@keyframes src-pulse {
+  0% {
+    box-shadow:
+      0 0 0 3px var(--paper-accent),
+      0 0 0 9px rgba(42, 111, 127, 0.3);
+  }
+  55% {
+    box-shadow: 0 0 0 2px var(--paper-accent-c);
+  }
+  100% {
+    box-shadow: 0 0 0 2px var(--paper-accent-c);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .src-focus.is-pulse {
+    animation: none;
+  }
+}
+
 /* ---- Two-type shell (F-118): review-type tabs above the per-type rail+body ---- */
 .run-types {
   flex: none;
@@ -12118,6 +12275,84 @@ select.qfilter {
   display: flex;
   flex-direction: column;
   gap: 14px;
+}
+
+/* Sticky footer (Jul 14): the confirm content scrolls inside .run-cf; Cancel /
+   Start review stay pinned below it so the reviewer never has to scroll past
+   every card to act. .run-cf-wrap columns the scroll area above the footbar. */
+.run-cf-wrap {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.run-cf-footbar {
+  flex: none;
+  border-top: 1px solid var(--md-outline);
+  background: var(--md-surface);
+  padding: 12px 24px;
+  box-shadow: 0 -2px 10px rgba(16, 24, 33, 0.05);
+}
+.run-cf-footbar-inner {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* Advanced setup disclosure (Jul 15): a lightweight tertiary TEXT toggle (no
+   card chrome) in the accent ink, with a chevron. Open → the two setup cards
+   drop in beneath it; closed → just the button. */
+.run-cf-advwrap {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.run-cf-advbtn {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 10px;
+  margin: -2px 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--md-accent);
+  transition: background 0.14s;
+}
+.run-cf-advbtn:hover {
+  background: var(--md-accent-c);
+}
+.run-cf-advbtn:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-accent);
+}
+.run-cf-advbtn-chev {
+  color: var(--md-accent);
+  transition: transform 0.2s ease;
+}
+.run-cf-advbtn-chev.on {
+  transform: rotate(180deg);
+}
+.run-cf-advbtn-hint {
+  color: var(--md-on-surface-t);
+  font-weight: 500;
+}
+.run-cf-advsecs {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .run-cf-advbtn-chev {
+    transition: none;
+  }
 }
 .run-cf-head {
   text-align: center;
@@ -13488,6 +13723,26 @@ select.qfilter {
   border-radius: 10px;
   padding: 10px 14px;
 }
+/* Accept-by-default helper (Jul 14) — a calm, non-blocking one-liner that
+   replaced the old "N items still need attesting" sign-gate banner. Petrol/AI
+   ink on a soft tint; guidance, not an alarm. */
+.run-att-helper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 14px;
+  padding: 8px 13px;
+  font-size: 12.5px;
+  color: var(--md-accent-d);
+  background: var(--md-accent-c);
+  border: 1px solid color-mix(in srgb, var(--md-accent) 26%, transparent);
+  border-radius: 10px;
+}
+.run-att-helper b {
+  color: var(--md-accent-d);
+  font-weight: 700;
+}
+
 .run-callout {
   display: flex;
   align-items: center;
