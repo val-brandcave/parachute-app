@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { Icon, ParachuteGlyph } from "@/components/atoms";
 import { SeverityChip } from "@/components/molecules";
+import { CitationText } from "./CitationText";
 import {
   RECOMMENDATION_META,
   RISK_META,
@@ -346,7 +347,9 @@ export function WorkbookPreview({
                   }
                 />
                 <p className="wb-exh-note" style={{ marginBottom: 14 }}>
-                  Abbreviated grid — the full grid appears in the appraisal (p.47).
+                  <CitationText>
+                    Abbreviated grid — the full grid appears in the appraisal (p.47).
+                  </CitationText>
                 </p>
               </>
             )}

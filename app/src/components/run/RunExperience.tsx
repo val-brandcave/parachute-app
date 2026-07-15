@@ -32,9 +32,8 @@ import { PIPELINE_STAGES } from "@/lib/utils";
 import { RunConfirm } from "./RunConfirm";
 import { RunTriage } from "./RunTriage";
 import { RunWorkbook } from "./RunWorkbook";
-import { RunExceptions } from "./RunExceptions";
+import { SourceDoc } from "./SourceDoc";
 import { RunSignModal } from "./RunSign";
-import { RunAttestations } from "./RunAttestations";
 import { RunAttestationPreview } from "./RunAttestationPreview";
 import { RunAdminProgress } from "./RunAdminProgress";
 
@@ -113,6 +112,7 @@ export function RunExperience({
   const loadAdmin = useAdminStore((s) => s.loadAdmin);
   const markAttCompiled = useAdminStore((s) => s.markAttCompiled);
   const signAttestation = useAdminStore((s) => s.signAttestation);
+  const confirmAllStanding = useAdminStore((s) => s.confirmAllStanding);
   const attSignature = useAdminStore((s) => s.signature);
   const attChecklistName = useAdminStore((s) => s.checklistName);
   const attChecklistVersion = useAdminStore((s) => s.checklistVersion);
@@ -163,10 +163,10 @@ export function RunExperience({
   // Admin sub-view (its own rail: Preview home + Attestations), parallel to the
   // Technical `spoke`. Local — the store owns the ordered set + sign status.
   const [adminSpoke, setAdminSpoke] = useState<"attestation" | "checklist">("attestation");
-  // Cite deep-link targets (2c): a p.X on either document routes to that
-  // track's Source view focused on the cited span; the view consumes it.
-  const [exFocusId, setExFocusId] = useState<string | null>(null);
-  const [attFocusId, setAttFocusId] = useState<string | null>(null);
+  // Citation side-by-side (Jul 14): the Source appraisal opens in a pane docked
+  // beside the workbook / attestation document — that state now lives INSIDE
+  // RunWorkbook / RunAttestationPreview (Jul 15), where it shares the right dock
+  // with Activity/Customize, so the run toolbar + footer stay full-width.
 
   const twoType = reviewTypes.length > 1;
   const adminOrdered = reviewTypes.includes("administrative");
@@ -359,6 +359,11 @@ export function RunExperience({
 
   const doSignAttestation = async () => {
     setSigning(true);
+    // Accept-by-default: attest every untouched item as the AI suggested — the
+    // explicit, logged, attributed human touch behind "Confirm & sign" — then
+    // seal. Diverged answers are already confirmed with a reason (the sign gate
+    // requires it), so nothing unresolved slips through.
+    confirmAllStanding();
     const content = JSON.stringify({
       review: review?.id,
       checklist: `${attChecklistName} v${attChecklistVersion}`,
@@ -397,7 +402,14 @@ export function RunExperience({
       }
     : null;
 
-  const attPending = attRows.filter((r) => !attStates[r.itemId]?.confirmed).length;
+  // Accept-by-default (Jul 14): untouched rows are attested as suggested by
+  // Confirm & sign, so they never block. The ONLY blocker is an in-progress
+  // diverged answer — changed from the AI's but not yet confirmed with a reason.
+  const attDivergentOpen = attRows.filter(
+    (r) =>
+      !attStates[r.itemId]?.confirmed &&
+      (attStates[r.itemId]?.answer ?? r.aiAnswer) !== r.aiAnswer,
+  ).length;
 
   const typeStatus = (t: RunReviewType) => {
     if (signedTypes.includes(t))
@@ -420,27 +432,30 @@ export function RunExperience({
   };
 
   const reviewerLine = `${CURRENT_USER.signatureName} · ${CURRENT_USER.designation}`;
-  const attAttested = attRows.filter((r) => attStates[r.itemId]?.confirmed).length;
+  // Projected sign summary: everything gets attested (untouched → as suggested,
+  // the rest → the reviewer's changed answer with its reason).
   const attChanged = attRows.filter(
-    (r) => attStates[r.itemId]?.confirmed && attStates[r.itemId]?.answer !== r.aiAnswer,
+    (r) => (attStates[r.itemId]?.answer ?? r.aiAnswer) !== r.aiAnswer,
   ).length;
+  const attAsAI = attRows.length - attChanged;
   const signIsAdmin = effectiveType === "administrative";
   const signConfig = signIsAdmin
     ? {
         sealed: !!attSignature,
         signature: attSignature,
-        blocked: attPending > 0,
-        blockedNote: `${attPending} item${attPending === 1 ? "" : "s"} still need attesting — answer them right on the attestation before signing.`,
-        title: "Sign attestation",
+        blocked: attDivergentOpen > 0,
+        blockedNote: `${attDivergentOpen} answer${attDivergentOpen === 1 ? "" : "s"} you changed still need${attDivergentOpen === 1 ? "s" : ""} a reason — add it or revert on the attestation before signing.`,
+        title: "Confirm & sign attestation",
         statement: (
           <>
-            Signing certifies each checklist answer as your independent professional judgment and
-            applies a tamper-evident SHA-256 seal and timestamp — <b>DRAFT → SIGNED</b>.
+            Signing attests every item as your independent professional judgment — the items you
+            didn&rsquo;t change are recorded as attested per the AI&rsquo;s suggestion — and applies
+            a tamper-evident SHA-256 seal and timestamp — <b>DRAFT → SIGNED</b>.
           </>
         ),
         rows: [
-          { label: "Items attested", value: `${attAttested} of ${attRows.length}` },
-          { label: "Answers changed", value: `${attChanged} with reason` },
+          { label: "Attested as suggested", value: `${attAsAI} of ${attRows.length}` },
+          { label: "Changed by you", value: `${attChanged} with reason` },
           { label: "Reviewer", value: reviewerLine },
         ],
         sealedTitle: "Attestation signed — SEALED",
@@ -455,7 +470,7 @@ export function RunExperience({
             <b>SIGNED</b>.
           </>
         ),
-        signCta: "Sign & seal attestation",
+        signCta: "Confirm & sign attestation",
         onSign: doSignAttestation,
       }
     : {
@@ -623,21 +638,11 @@ export function RunExperience({
                           pendingTypeLabel={pendingTypeLabel}
                           onSign={() => setSignOpen(true)}
                           onReviewFindings={() => go("exceptions")}
-                          onOpenCite={(id) => {
-                            setExFocusId(id);
-                            go("exceptions");
-                          }}
                           onReturn={finishReturn}
                         />
                       )}
                       {spoke === "exceptions" && review && (
-                        <RunExceptions
-                          review={review}
-                          reviewType="technical"
-                          focusFindingId={exFocusId}
-                          onFocusConsumed={() => setExFocusId(null)}
-                          onBack={() => go("workbook")}
-                        />
+                        <SourceDoc review={review} variant="full" />
                       )}
                     </div>
                   </>
@@ -701,22 +706,12 @@ export function RunExperience({
                               canFinish={allSigned}
                               pendingTypeLabel={pendingTypeLabel}
                               onReviewChecklist={() => setAdminSpoke("checklist")}
-                              onOpenSource={(id) => {
-                                setAttFocusId(id);
-                                setAdminSpoke("checklist");
-                              }}
                               onSign={() => setSignOpen(true)}
                               onReturn={finishReturn}
                             />
                           )}
                           {adminSpoke === "checklist" && review && (
-                            <RunAttestations
-                              review={review}
-                              reviewType="administrative"
-                              focusItemId={attFocusId}
-                              onFocusConsumed={() => setAttFocusId(null)}
-                              onBack={() => setAdminSpoke("attestation")}
-                            />
+                            <SourceDoc review={review} variant="full" />
                           )}
                         </motion.div>
                       </motion.div>
