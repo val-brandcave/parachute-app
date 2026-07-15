@@ -7,7 +7,6 @@ import {
   useAdminStore,
   useUsersStore,
   attTally,
-  attNeedsAttention,
   type AttestationRow,
   type AttestationSignature,
 } from "@/store";
@@ -18,6 +17,8 @@ import {
   type AttestationDocActions,
 } from "@/components/review/AttestationDocInline";
 import { RunActivityPanel } from "./RunActivity";
+import { SourceDoc, type SourceFocus } from "./SourceDoc";
+import { SourcePaneContext } from "@/components/review/CitationText";
 import type { AttestationState, AttAnswer, Review } from "@/types";
 
 const ANS_LABEL: Record<AttAnswer, string> = { YES: "Yes", NO: "No", NA: "N/A" };
@@ -47,7 +48,6 @@ export function RunAttestationPreview({
   canFinish = true,
   pendingTypeLabel = null,
   onReviewChecklist,
-  onOpenSource,
   onSign,
   onReturn,
 }: {
@@ -57,8 +57,6 @@ export function RunAttestationPreview({
   canFinish?: boolean;
   pendingTypeLabel?: string | null;
   onReviewChecklist: () => void;
-  /** Cite deep-link — open the Source view focused on this item's cited span. */
-  onOpenSource: (itemId: string) => void;
   onSign: () => void;
   onReturn: () => void;
 }) {
@@ -72,7 +70,6 @@ export function RunAttestationPreview({
     setReason,
     confirm,
     unconfirm,
-    confirmRoutine,
   } = useAdminStore();
   const activity = useAdminStore((s) => s.activity);
   const attRegeneratedAt = useAdminStore((s) => s.attRegeneratedAt);
@@ -99,7 +96,6 @@ export function RunAttestationPreview({
   const [zoom, setZoom] = useState(1);
   const [page, setPage] = useState(1);
   const [pageCount, setPageCount] = useState(1);
-  const [calloutDismissed, setCalloutDismissed] = useState(false);
   // Which checklist row is expanded on the doc (evidence + reason zone). One at
   // a time — the row is a form line, not an accordion of cards.
   const [openId, setOpenId] = useState<string | null>(null);
@@ -113,40 +109,23 @@ export function RunAttestationPreview({
     savedScroll.current = stageRef.current?.scrollTop ?? null;
     setCleanView(next);
   };
+  // The right dock hosts one panel at a time — Activity and the citation Source
+  // pane are mutually exclusive (Jul 15), so the attestation is never sandwiched.
   const [activityOpen, setActivityOpen] = useState(false);
+  const [citeFocus, setCiteFocus] = useState<SourceFocus | null>(null);
+  const toggleActivity = () =>
+    setActivityOpen((v) => {
+      if (!v) setCiteFocus(null);
+      return !v;
+    });
+  const openSourceAt = (focus: SourceFocus) => {
+    setCiteFocus(focus);
+    setActivityOpen(false);
+  };
 
   const t = attTally(states);
   const reviewerName = byId(review.assigneeId)?.signatureName || CURRENT_USER.signatureName;
   const signed = !!signature;
-
-  // Pending split for the sign-gate callout: routine = the AI answer stands and
-  // nothing flags it (one "Attest routine" click clears them); the rest need
-  // the reviewer's judgment ("Review them" cycles those rows open in the doc).
-  const pendingRows = rows.filter((r) => !states[r.itemId]?.confirmed);
-  const routineCount = pendingRows.filter(
-    (r) => !attNeedsAttention(r) && (states[r.itemId]?.answer ?? r.aiAnswer) === r.aiAnswer,
-  ).length;
-
-  // "Review them" cycles through the pending rows IN the document — the
-  // attestation is the decision surface, so the callout never routes away.
-  const attnIdx = useRef(0);
-  const goNextPending = () => {
-    const sc = stageRef.current;
-    if (!sc || !pendingRows.length) return;
-    // Judgment items first (needs-attention), then the rest, in doc order.
-    const ordered = [
-      ...pendingRows.filter((r) => attNeedsAttention(r)),
-      ...pendingRows.filter((r) => !attNeedsAttention(r)),
-    ];
-    const target = ordered[attnIdx.current % ordered.length];
-    attnIdx.current += 1;
-    setOpenId(target.itemId);
-    const el = sc.querySelector<HTMLElement>(`[data-att-item="${target.itemId}"]`);
-    if (!el) return;
-    el.scrollIntoView({ behavior: "smooth", block: "center" });
-    el.classList.add("is-attn");
-    setTimeout(() => el.classList.remove("is-attn"), 1600);
-  };
 
   // Count rendered sheets for "Page X of N"; MutationObserver keeps it current as
   // attestations flip (a group can gain/lose a "changed" reason row).
@@ -194,6 +173,7 @@ export function RunAttestationPreview({
   };
 
   return (
+    <SourcePaneContext.Provider value={openSourceAt}>
     <div className="run-wb" data-review-type="administrative">
       <div className="run-wb-bar">
         <span className="run-wb-bar-label">
@@ -275,7 +255,7 @@ export function RunAttestationPreview({
           <div className="run-wb-panels" role="group" aria-label="Panels">
             <button
               className={`run-wb-tbtn${activityOpen ? " is-active" : ""}`}
-              onClick={() => setActivityOpen((v) => !v)}
+              onClick={toggleActivity}
               aria-expanded={activityOpen}
               aria-label="Activity ledger"
             >
@@ -301,47 +281,16 @@ export function RunAttestationPreview({
               Folding your attestations in…
             </div>
           )}
-          {/* Answers apply LIVE on the document (Decision E, extended to the
-              Admin twin in 2c) — the old dirty-callout → Regenerate loop is
-              gone. Only the sign gate remains, and it works the doc itself. */}
-          {!signed && !cleanView && t.pending > 0 && !calloutDismissed && (
-            <div className="run-callout" role="status">
-              <Icon name="warn" size={16} />
-              <span className="run-callout-text">
-                <b>
-                  {t.pending} item{t.pending === 1 ? "" : "s"}
-                </b>{" "}
-                still need your answer before you sign
-                {routineCount > 0 ? (
-                  <>
-                    {" "}
-                    — {routineCount} {routineCount === 1 ? "is" : "are"} routine (
-                    <button className="run-callout-act" onClick={confirmRoutine}>
-                      attest {routineCount === 1 ? "it" : "them"} in one click
-                    </button>
-                    ){t.pending - routineCount > 0 && (
-                      <>
-                        , {t.pending - routineCount} need{t.pending - routineCount === 1 ? "s" : ""}{" "}
-                        your judgment
-                      </>
-                    )}
-                    .
-                  </>
-                ) : (
-                  "."
-                )}
-              </span>
-              <Button variant="tonal" size="sm" onClick={goNextPending}>
-                Review them
-              </Button>
-              <button
-                className="run-callout-x"
-                onClick={() => setCalloutDismissed(true)}
-                aria-label="Dismiss"
-              >
-                <Icon name="close" size={15} />
-              </button>
-            </div>
+          {/* Accept-by-default (Jul 14): the AI's answers ARE the attestation.
+              No "review each item first" gate — a calm, non-blocking helper
+              instead. The reviewer changes only what they disagree with, then
+              Confirm & sign attests the rest as suggested (the human touch). */}
+          {!signed && !cleanView && t.pending > 0 && (
+            <p className="run-att-helper" role="status">
+              <Icon name="ai" size={14} />
+              Everything&rsquo;s pre-filled from the compliance checklist. Change what you
+              disagree with — <b>Confirm &amp; sign</b> attests the rest as suggested.
+            </p>
           )}
 
           <div className="run-wb-zoom" style={{ zoom }}>
@@ -361,7 +310,7 @@ export function RunAttestationPreview({
                       onSetReason: setReason,
                       onConfirm: confirm,
                       onUnconfirm: unconfirm,
-                      onOpenSource,
+                      onOpenSource: (id) => openSourceAt({ kind: "item", id }),
                     }
               }
               openId={openId}
@@ -370,6 +319,14 @@ export function RunAttestationPreview({
           </div>
         </div>
 
+        {citeFocus && (
+          <SourceDoc
+            review={review}
+            variant="pane"
+            focus={citeFocus}
+            onClose={() => setCiteFocus(null)}
+          />
+        )}
         {activityOpen && (
           <RunActivityPanel
             entries={activity}
@@ -413,14 +370,15 @@ export function RunAttestationPreview({
               <Button variant="outline" size="sm" iconLeft="pdf" onClick={onReviewChecklist}>
                 View source
               </Button>
-              <Button variant="primary" size="sm" iconRight="forward" onClick={onSign}>
-                Sign attestation
+              <Button variant="primary" size="sm" iconLeft="check-circle" onClick={onSign}>
+                Confirm &amp; sign attestation
               </Button>
             </>
           )}
         </div>
       </footer>
     </div>
+    </SourcePaneContext.Provider>
   );
 }
 

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/atoms";
+import { ConfidenceMeter } from "@/components/molecules";
 import { SEV_META } from "@/lib/utils";
 import { generateId } from "@/types";
 import { ResponseComposer, type ComposerMode } from "./ResponseComposer";
@@ -176,12 +177,19 @@ export function WorkbookFindingBlock({
         >
           Cited p.{f.page}
         </button>
-        {f.byReviewer && (
+        {f.byReviewer ? (
           <>
             <span className="wb-fmeta-sep" aria-hidden="true">
               ·
             </span>
             <span className="wb-fmeta-user">Added by {reviewerName}</span>
+          </>
+        ) : (
+          <>
+            <span className="wb-fmeta-sep" aria-hidden="true">
+              ·
+            </span>
+            <ConfidenceMeter value={f.confidence} />
           </>
         )}
       </div>

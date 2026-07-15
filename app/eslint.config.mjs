@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Parked for a future version — the annotated-source decision surface
+    // (see docs/V2-source-annotation.md). Excluded from the build.
+    "src/components/run/_archive/**",
   ]),
 ]);
 

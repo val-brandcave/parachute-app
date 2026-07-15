@@ -3,7 +3,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Button, Icon } from "@/components/atoms";
 import { StatusPill, SegmentedControl } from "@/components/molecules";
-import { ActionMenu } from "@/components/molecules/ActionMenu";
 import { useWorkspaceStore, useTemplatesStore } from "@/store";
 import { WorkbookPreview } from "@/components/review/WorkbookPreview";
 import { AddFindingModal, type NewFinding } from "@/components/review/AddFindingModal";
@@ -13,6 +12,8 @@ import type { RunReviewType } from "@/store";
 import type { RunContext } from "./RunExperience";
 import { RunCustomizePanel } from "./RunCustomize";
 import { RunActivityPanel } from "./RunActivity";
+import { SourceDoc, type SourceFocus } from "./SourceDoc";
+import { SourcePaneContext } from "@/components/review/CitationText";
 
 /**
  * S-A Workbook — the run flow's home base. The compiled workbook is the hero;
@@ -31,7 +32,6 @@ export function RunWorkbook({
   pendingTypeLabel = null,
   onSign,
   onReviewFindings,
-  onOpenCite,
   onReturn,
 }: {
   review: Review;
@@ -46,8 +46,6 @@ export function RunWorkbook({
   pendingTypeLabel?: string | null;
   onSign: () => void;
   onReviewFindings: () => void;
-  /** Cite deep-link — open Source focused on this finding's cited span. */
-  onOpenCite: (findingId: string) => void;
   onReturn: () => void;
 }) {
   const {
@@ -84,15 +82,11 @@ export function RunWorkbook({
   } = useWorkspaceStore();
   const regeneratedAt = useWorkspaceStore((s) => s.regeneratedAt);
   const responses = useTemplatesStore((s) => s.responses);
-  const layouts = useTemplatesStore((s) => s.layouts);
-  const saveLayoutFromWorkbook = useTemplatesStore((s) => s.saveLayoutFromWorkbook);
 
   // "＋ Add finding" composer, opened from a findings chapter's foot. `false` =
   // closed; otherwise the target findings section's id.
   const [addFindingAt, setAddFindingAt] = useState<string | null | false>(false);
   // "Save as template" (F-147) — brief confirmation state on the button.
-  const [savedTemplate, setSavedTemplate] = useState(false);
-  const [dismissed, setDismissed] = useState(false);
   const [customizing, setCustomizing] = useState(false);
   // Clean view (F-152): flips the editing chrome off so the reviewer sees the
   // exact signable deliverable — the true read-only render (findings compact, no
@@ -107,19 +101,35 @@ export function RunWorkbook({
     savedScroll.current = stageRef.current?.scrollTop ?? null;
     setCleanView(next);
   };
-  // The right dock hosts one panel at a time — opening Activity closes Customize
-  // and vice versa, so the workbook is never sandwiched between two docks.
+  // The right dock hosts ONE panel at a time — Customize, Activity, and the
+  // citation Source pane are mutually exclusive, so the workbook is never
+  // sandwiched between two docks (Jul 15: opening Activity/Customize toggles the
+  // Source pane away, and vice-versa).
   const [activityOpen, setActivityOpen] = useState(false);
+  // Cite deep-link (Jul 14) — what the docked Source pane is focused on (a
+  // finding's span, or a bare page from a prose citation); null = pane closed.
+  const [citeFocus, setCiteFocus] = useState<SourceFocus | null>(null);
   const openCustomize = () =>
     setCustomizing((v) => {
-      if (!v) setActivityOpen(false);
+      if (!v) {
+        setActivityOpen(false);
+        setCiteFocus(null);
+      }
       return !v;
     });
   const openActivity = () =>
     setActivityOpen((v) => {
-      if (!v) setCustomizing(false);
+      if (!v) {
+        setCustomizing(false);
+        setCiteFocus(null);
+      }
       return !v;
     });
+  const openSourceAt = (focus: SourceFocus) => {
+    setCiteFocus(focus);
+    setCustomizing(false);
+    setActivityOpen(false);
+  };
   const activity = useWorkspaceStore((s) => s.activity);
   const activityCount = activity.length;
 
@@ -143,25 +153,6 @@ export function RunWorkbook({
 
   // Document-toolbar state — zoom + a page indicator that tracks scroll.
   const stageRef = useRef<HTMLDivElement>(null);
-  // "Review them" (low-confidence banner) cycles through the undecided finding
-  // blocks IN the document — the workbook is the decision surface, so the
-  // banner never routes away from it.
-  const attnIdx = useRef(0);
-  const goNextPending = () => {
-    const sc = stageRef.current;
-    if (!sc) return;
-    const pendingIds = findings
-      .filter((f) => (states[f.id]?.disposition ?? "pending") === "pending")
-      .map((f) => f.id);
-    if (!pendingIds.length) return;
-    const id = pendingIds[attnIdx.current % pendingIds.length];
-    attnIdx.current += 1;
-    const el = sc.querySelector<HTMLElement>(`[data-finding="${id}"]`);
-    if (!el) return;
-    el.scrollIntoView({ behavior: "smooth", block: "center" });
-    el.classList.add("is-attn");
-    setTimeout(() => el.classList.remove("is-attn"), 1600);
-  };
   const [zoom, setZoom] = useState(1);
   const [page, setPage] = useState(1);
   const [pageCount, setPageCount] = useState(1);
@@ -222,31 +213,6 @@ export function RunWorkbook({
       });
   };
 
-  // "Save as my template" (F-147): structure + theme only — content stays
-  // per-review. Lands on the org's layout shelf for the F-133 confirm-gate tile.
-  const saveTemplate = async () => {
-    if (savedTemplate) return;
-    const base = workbook.baseLayoutId
-      ? layouts.find((l) => l.id === workbook.baseLayoutId)
-      : undefined;
-    await saveLayoutFromWorkbook({
-      name: `My layout — saved ${new Date().toLocaleDateString([], { month: "short", day: "numeric" })}`,
-      profile: base?.profile ?? "Commercial",
-      theme: workbook.settings.theme,
-      sections: workbook.sections.map((s) => ({
-        id: s.id,
-        title: s.title,
-        type: s.type,
-        enabled: s.enabled,
-      })),
-    });
-    setSavedTemplate(true);
-    setTimeout(() => setSavedTemplate(false), 2400);
-  };
-
-  // Clean view is a read-only preview, so the finding blocks it scrolls to
-  // aren't decision blocks there — hide the callout while previewing.
-  const showCallout = !dismissed && !signed && !cleanView && ctx.lowConfidenceCount > 0;
   // Categories whose findings no visible section routes — they'd silently drop
   // from the signable doc (exclusive routing), so warn instead.
   const unroutedCats =
@@ -272,6 +238,7 @@ export function RunWorkbook({
   };
 
   return (
+    <SourcePaneContext.Provider value={openSourceAt}>
     <div className="run-wb" data-review-type={reviewType}>
       <div className="run-wb-bar">
         <span className="run-wb-bar-label">
@@ -374,28 +341,6 @@ export function RunWorkbook({
             )}
           </div>
 
-          {/* Overflow (F-153) — tertiary/rare actions. Save as template (F-147)
-              captures structure + theme, not content; too rare for prime space. */}
-          {!signed && (
-            <>
-              {savedTemplate && (
-                <span className="run-wb-saved" role="status">
-                  <Icon name="check" size={13} /> Saved to templates
-                </span>
-              )}
-              <ActionMenu
-                tooltip="More actions"
-                items={[
-                  {
-                    label: savedTemplate ? "Saved to templates" : "Save as template",
-                    icon: savedTemplate ? "check" : "templates",
-                    disabled: savedTemplate,
-                    onClick: saveTemplate,
-                  },
-                ]}
-              />
-            </>
-          )}
         </div>
       </div>
 
@@ -418,29 +363,6 @@ export function RunWorkbook({
                 <b>Single document</b> · the signed result returns to {returnLabel ?? "YouConnect"}{" "}
                 on sign. Extraction wrong? Correct it in Findings before signing.
               </span>
-            </div>
-          )}
-
-          {/* Direct edits are live (Decision E, Jul 7) — the dirty-callout /
-              Regenerate loop left the primary flow; the compile beat above
-              remains only for system recompute. */}
-          {showCallout && (
-            <div className="run-callout" role="status">
-              <Icon name="warn" size={16} />
-              <span className="run-callout-text">
-                <b>{ctx.lowConfidenceCount} item{ctx.lowConfidenceCount === 1 ? "" : "s"}</b>{" "}
-                need a closer look before you sign — review them?
-              </span>
-              <Button variant="tonal" size="sm" onClick={goNextPending}>
-                Review them
-              </Button>
-              <button
-                className="run-callout-x"
-                onClick={() => setDismissed(true)}
-                aria-label="Dismiss"
-              >
-                <Icon name="close" size={15} />
-              </button>
             </div>
           )}
 
@@ -496,7 +418,7 @@ export function RunWorkbook({
                       onUpdateSwot: updateSwotQuadrant,
                       onUpdateCapRate: updateCapRate,
                       onRestoreFinding: restoreFinding,
-                      onOpenCite,
+                      onOpenCite: (id) => openSourceAt({ kind: "finding", id }),
                       onEditReviewer: (id, text) => updateReviewerFinding(id, { analysis: text }),
                       onRemoveReviewer: deleteReviewerFinding,
                       comments,
@@ -510,6 +432,14 @@ export function RunWorkbook({
           </div>
         </div>
 
+        {citeFocus && (
+          <SourceDoc
+            review={review}
+            variant="pane"
+            focus={citeFocus}
+            onClose={() => setCiteFocus(null)}
+          />
+        )}
         {customizing && !signed && <RunCustomizePanel onClose={() => setCustomizing(false)} />}
         {activityOpen && (
           <RunActivityPanel
@@ -568,5 +498,6 @@ export function RunWorkbook({
         </div>
       </footer>
     </div>
+    </SourcePaneContext.Provider>
   );
 }

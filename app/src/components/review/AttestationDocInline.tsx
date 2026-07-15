@@ -62,6 +62,16 @@ export function AttestationDocRow({
   const needs = attNeedsAttention(r) && !state.confirmed;
   const reasonRef = useRef<HTMLTextAreaElement>(null);
 
+  // Provenance chip (Jul 14) — the audit-legible state of each row. Untouched
+  // rows read "AI suggested" until the reviewer confirms them (individually or
+  // via Confirm & sign), when they become "Attested"; a diverged answer reads
+  // "You changed". Silence is never evidence — every state is on the record.
+  const prov: { label: string; tone: "ai" | "att" | "you" } = changed
+    ? { label: "You changed", tone: "you" }
+    : state.confirmed
+      ? { label: "Attested", tone: "att" }
+      : { label: "AI suggested", tone: "ai" };
+
   // A divergent pick opens the reason zone — park the caret there so the
   // required note is one keystroke away, never a hunt.
   useEffect(() => {
@@ -135,6 +145,11 @@ export function AttestationDocRow({
               );
             })}
           </div>
+          <span className={`attdoc-prov attdoc-prov--${prov.tone}`}>
+            {prov.tone === "ai" && <Icon name="ai" size={10} />}
+            {prov.tone === "att" && <Icon name="check" size={10} />}
+            {prov.label}
+          </span>
         </td>
         <td className="attdoc-cite">
           {r.page > 0 ? (

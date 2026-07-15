@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Icon } from "@/components/atoms";
+import { CitationText } from "./CitationText";
 import { formatMoney } from "@/lib/workbook";
 import type { WbAdjustmentRow, WorkbookExhibits } from "@/types";
 
@@ -253,7 +254,9 @@ export function CapRateScale({
           </span>
         ))}
       </div>
-      <p className="wb-exh-note">{cap.note}</p>
+      <p className="wb-exh-note">
+        <CitationText>{cap.note}</CitationText>
+      </p>
 
       {tools && !editingData && (
         <button className="wb-addrow" onClick={() => setEditingData(true)}>

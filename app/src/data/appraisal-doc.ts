@@ -88,6 +88,28 @@ export function docPageIndex(doc: DocPage[]): Record<string, number> {
   return map;
 }
 
+/**
+ * Map a citation's ORIGINAL report page (e.g. "p.47", "p.61" as written in the
+ * workbook prose) to the RENDERED page (1..6) of this condensed source doc, using
+ * the same `reportPages` ranges the document declares. Lets any "p.N" citation in
+ * the workbook / attestation open the side-by-side Source at the right spread.
+ * Out-of-range values clamp to the nearest rendered page (prototype: the source
+ * is a 6-page stand-in, so not every report page has an exact spread — mocking to
+ * the nearest paragraph is acceptable, Jul 15).
+ */
+const REPORT_PAGE_RANGES: { rendered: number; lo: number; hi: number }[] = [
+  { rendered: 1, lo: 0, hi: 0 }, // cover
+  { rendered: 2, lo: 1, hi: 5 },
+  { rendered: 3, lo: 6, hi: 33 },
+  { rendered: 4, lo: 34, hi: 52 }, // sales comparison (pp.45–52); 34–44 fold here
+  { rendered: 5, lo: 53, hi: 61 }, // income approach (pp.56–61)
+  { rendered: 6, lo: 62, hi: 999 }, // cost/reconciliation/cert (pp.62–64+)
+];
+export function renderedPageForReportPage(n: number): number {
+  for (const r of REPORT_PAGE_RANGES) if (n >= r.lo && n <= r.hi) return r.rendered;
+  return n < 1 ? 1 : 6;
+}
+
 /** Build the 6-page appraisal for a given review context. */
 export function buildAppraisalDoc(c: AppraisalCtx): DocPage[] {
   return [
