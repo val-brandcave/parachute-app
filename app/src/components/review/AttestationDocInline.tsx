@@ -102,7 +102,7 @@ export function AttestationDocRow({
             <span className="attdoc-qtext">{r.question}</span>
             {needs && (
               <span className="attdoc-needs">
-                <Icon name="flag" size={10} /> Needs attention
+                <Icon name="flag" size={10} /> Review closely
               </span>
             )}
             <Icon name="chevron-down" size={13} className={`attdoc-chev${open ? " on" : ""}`} />

@@ -511,7 +511,7 @@ export function RunAttestations({
                       <div className="run-ex-zone">
                         {needs && (
                           <span className="run-ex-attneeds">
-                            <Icon name="flag" size={11} /> Needs attention
+                            <Icon name="flag" size={11} /> Review closely
                           </span>
                         )}
                         <p className="run-ex-q">{r.question}</p>

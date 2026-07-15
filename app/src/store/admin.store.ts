@@ -126,10 +126,21 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   loadAdmin: async (reviewId) => {
     if (get().reviewId === reviewId && get().rows.length) return;
     set({ isLoading: true });
-    const [checklists, prefills] = await Promise.all([
+    const [checklists, prefillsOwn] = await Promise.all([
       adapter.getAll<ChecklistTemplate>(Collections.CHECKLIST_TEMPLATES),
       adapter.getWhere<Attestation>(Collections.ATTESTATIONS, (a) => a.reviewId === reviewId),
     ]);
+    let prefills = prefillsOwn;
+    // Prototype: reuse the seeded demo review's AI pre-fills for any review that
+    // has none of its own, so the attestation surface is populated end-to-end (the
+    // checklist rows already render from the org template regardless). Mirrors the
+    // workspace store's finding fallback.
+    if (prefills.length === 0 && reviewId !== "review-001") {
+      prefills = await adapter.getWhere<Attestation>(
+        Collections.ATTESTATIONS,
+        (a) => a.reviewId === "review-001",
+      );
+    }
 
     // The Administrative review is built from the org-default checklist's
     // published snapshot — the same template authored in Templates.

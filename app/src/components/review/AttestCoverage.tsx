@@ -57,7 +57,7 @@ export function AttestCoverage({
           {stats.attested} of {stats.total} attested
           {stats.attention > 0 && (
             <span className="fm-cov-judge">
-              · {stats.attention} need{stats.attention === 1 ? "s" : ""} your attention
+              · {stats.attention} to review closely
             </span>
           )}
         </span>

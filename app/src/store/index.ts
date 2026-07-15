@@ -30,5 +30,5 @@ export type { BankPolicyDoc } from "./org.store";
 export { useIdentityStore } from "./identity.store";
 export { useSessionStore } from "./session.store";
 export type { AppMode } from "./session.store";
-export { useRunStore, DEMO_RUN_REVIEW_ID } from "./run.store";
+export { useRunStore, DEMO_RUN_REVIEW_ID, beginRunInPlace } from "./run.store";
 export type { RunSpoke, RunDisplay, RunSource, RunReviewType } from "./run.store";

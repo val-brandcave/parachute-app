@@ -7,7 +7,6 @@ export { ActionNeeded, NewFromYouConnect, TrendChart } from "./dashboard-widgets
 export { IntakeWidget } from "./IntakeWidget";
 export { DashboardSkeleton, ReviewTableSkeleton } from "./Skeletons";
 export { OrderButton } from "./OrderButton";
-export { OrderModal } from "./OrderModal";
 export { StepperModal, type Step } from "./StepperModal";
 export { BottomSheet } from "./BottomSheet";
 export { CommandPalette } from "./CommandPalette";

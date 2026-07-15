@@ -149,13 +149,13 @@ export function ResponseTable({
       {groups.length === 0 ? (
         <div className="rtl-empty">{emptyLabel}</div>
       ) : (
-        groups.map((g, i) => (
+        groups.map((g) => (
           <GroupRow
             key={g.group}
             group={g.group}
             items={g.items}
-            // Open the first group by default so the table doesn't read as empty.
-            defaultOpen={i === 0}
+            // All groups start collapsed — the reviewer expands the one they want.
+            defaultOpen={false}
             onEdit={onEdit}
             onDuplicate={onDuplicate}
             onDelete={onDelete}

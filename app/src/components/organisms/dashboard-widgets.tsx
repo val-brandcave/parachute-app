@@ -6,7 +6,6 @@ import { useEffect, useRef, useState } from "react";
 import { Icon, Chip, Button } from "@/components/atoms";
 import { ActionMenu, type ActionItem } from "@/components/molecules";
 import { cn, relativeDue } from "@/lib/utils";
-import { useOrderStore, ORDER_STEP } from "@/store";
 import { reviewHref } from "./ReviewTable";
 import type { Review } from "@/types";
 
@@ -80,19 +79,11 @@ export function ActionNeeded({ reviews }: { reviews: Review[] }) {
  *  "Confirm & run" opens the Order stepper on its final step, pre-selected on
  *  that delivery (decisions #1/#2). Disjoint from Action needed by construction. */
 export function NewFromYouConnect({ reviews }: { reviews: Review[] }) {
-  const openOrder = useOrderStore((s) => s.openOrder);
+  const router = useRouter();
 
-  const runReview = (r: Review) =>
-    openOrder({
-      step: ORDER_STEP.confirm,
-      prefill: {
-        reviewId: r.id,
-        source: "yc",
-        propertyAddress: r.propertyAddress,
-        loanNo: r.loanNo,
-        bank: r.bank,
-      },
-    });
+  // A YouConnect-new delivery routes into the wizard at its confirm/setup gate,
+  // same as its queue row.
+  const runReview = (r: Review) => router.push(reviewHref(r));
 
   return (
     <div className="widget">

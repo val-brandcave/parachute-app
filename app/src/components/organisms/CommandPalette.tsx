@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { Icon, type IconName } from "@/components/atoms";
 import { cn } from "@/lib/utils";
-import { useReviewsStore, useOrderStore } from "@/store";
+import { useReviewsStore } from "@/store";
 import { reviewHref } from "./ReviewTable";
 
 type Cmd = {
@@ -59,7 +59,6 @@ export function CommandPalette({
 function PaletteBody({ onClose }: { onClose: () => void }) {
   const router = useRouter();
   const { reviews, fetchReviews } = useReviewsStore();
-  const openOrder = useOrderStore((s) => s.openOrder);
   const [q, setQ] = useState("");
   const [active, setActive] = useState(0);
   const listRef = useRef<HTMLDivElement>(null);
@@ -109,9 +108,9 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
       {
         id: "a-order",
         group: "Actions",
-        label: "Order a review",
+        label: "Start a review",
         icon: "add" as IconName,
-        run: () => go(openOrder),
+        run: () => go(() => router.push("/launchpad")),
       },
     ].filter((a) => !ql || a.label.toLowerCase().includes(ql));
 

@@ -87,7 +87,7 @@ export function AttestationFocus({
             {row.requireCitation && <span className="fm-pip">Citation required</span>}
             {needs && (
               <span className="fm-pip fm-pip--flag">
-                <Icon name="flag" size={11} /> Needs attention
+                <Icon name="flag" size={11} /> Review closely
               </span>
             )}
           </div>
