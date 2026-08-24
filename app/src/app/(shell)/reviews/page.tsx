@@ -4,8 +4,8 @@ import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useReviewQueue } from "./hooks/useReviewQueue";
 import { ReviewTable, ReviewTableSkeleton, OrderButton } from "@/components/organisms";
-import { Tabs, QueueFilters, ActiveFilters } from "@/components/molecules";
-import { Icon } from "@/components/atoms";
+import { QueueFilters, ActiveFilters } from "@/components/molecules";
+import { PageBody, PageHeader, SearchInput, Tabs } from "@realwired/ui";
 
 export default function MyReviewsPage() {
   const {
@@ -51,27 +51,37 @@ export default function MyReviewsPage() {
           searchable dropdowns) + the Order CTA share the one line. Active
           filters show as removable chips in a one-row subhead below ("+N more"
           reopens the modal). "Mine only" is folded into the Reviewer facet. */}
-      <div className="pagehead">
-        <Tabs value={tab} onChange={setTab} tabs={visibleTabs} />
-        <div style={{ flex: 1 }} />
-        <div className="qsearch">
-          <Icon name="search" size={15} />
-          <input
-            placeholder="Search reviews…"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
-        </div>
-        <QueueFilters
-          filters={filters}
-          setFilters={setFilters}
-          team={team}
-          firmOptions={firmOptions}
-          open={filterOpen}
-          onOpenChange={setFilterOpen}
-        />
-        <OrderButton />
-      </div>
+      {/* The page band is now the library's. Parachute keeps its own toolbar
+          CONTENTS — the filter modal and the Order CTA are product logic — and
+          gets the band, the tabs and the search field from @realwired/ui. */}
+      <PageHeader
+        toolbar={
+          <>
+            <Tabs
+              label="Review queue"
+              value={tab}
+              onValueChange={setTab}
+              tabs={visibleTabs}
+            />
+            <div style={{ flex: 1 }} />
+            <SearchInput
+              placeholder="Search reviews…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onClear={() => setQuery("")}
+            />
+            <QueueFilters
+              filters={filters}
+              setFilters={setFilters}
+              team={team}
+              firmOptions={firmOptions}
+              open={filterOpen}
+              onOpenChange={setFilterOpen}
+            />
+            <OrderButton />
+          </>
+        }
+      />
 
       <ActiveFilters
         filters={filters}
@@ -80,7 +90,7 @@ export default function MyReviewsPage() {
         onExpand={() => setFilterOpen(true)}
       />
 
-      <div className="pagebody">
+      <PageBody>
         <div
           style={{
             background: "var(--md-surface)",
@@ -140,7 +150,7 @@ export default function MyReviewsPage() {
             )}
           </AnimatePresence>
         </div>
-      </div>
+      </PageBody>
     </>
   );
 }
