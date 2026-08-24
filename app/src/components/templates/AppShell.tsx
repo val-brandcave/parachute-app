@@ -1,24 +1,136 @@
 "use client";
 
-import { Sidebar } from "@/components/organisms/Sidebar";
-import { AppHeader } from "@/components/organisms/AppHeader";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import {
+  AppShell as RwAppShell,
+  Button,
+  IconButton,
+  type NavGroup,
+} from "@realwired/ui";
+
+import { Logo } from "@/components/atoms";
+import { Breadcrumbs } from "@/components/molecules";
+import { OrgCard } from "@/components/organisms/OrgCard";
+import { UserMenu } from "@/components/organisms/UserMenu";
+import { SearchTrigger } from "@/components/organisms/SearchTrigger";
+import { CommandPalette } from "@/components/organisms/CommandPalette";
 import { RunModal } from "@/components/run/RunModal";
-import { useSessionStore } from "@/store";
+import { usePrefsStore, useSessionStore } from "@/store";
+
+/**
+ * Parachute's shell, now rendered by the design system.
+ *
+ * This file is the point of the whole branch. Before, Parachute owned a
+ * bespoke `.shell` grid, a bespoke `Sidebar` organism and a bespoke `AppHeader`
+ * layout — about 200 lines of CSS in `globals.css` plus two components. Now it
+ * owns none of that. It supplies its own CONTENT into the library's slots and
+ * gets the structure, the collapse behaviour, the nesting model and the active
+ * treatment from `@realwired/ui`.
+ *
+ * Two things this proves, which were previously only claims:
+ *
+ * 1. **Import-as-dependency works end to end** (Cody's C1). Parachute installs
+ *    a versioned package. Nothing was copied between repos, so nothing can
+ *    drift.
+ *
+ * 2. **The library runs unmodified on Next.js.** The shell never imports a
+ *    router — `next/link` is injected below. The Next-to-Vite migration is
+ *    therefore decoupled from library adoption and can stay where the plan put
+ *    it, after the customer ship, instead of blocking it.
+ *
+ * It also collapses the two-Bibles problem. Engineers reading this app for
+ * visual truth and importing from the library are now looking at the same
+ * artifact, so the two cannot disagree.
+ */
+
+const NAV: NavGroup[] = [
+  {
+    id: "main",
+    items: [
+      { id: "dashboard", label: "Dashboard", icon: "dashboard", href: "/dashboard" },
+      { id: "reviews", label: "Reviews", icon: "reviews", href: "/reviews" },
+    ],
+  },
+];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
   const mode = useSessionStore((s) => s.mode);
+  const navCollapsed = usePrefsStore((s) => s.navCollapsed);
+  const toggleNav = usePrefsStore((s) => s.toggleNav);
+
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  // Cmd/Ctrl+K opens the command palette anywhere in the app. Kept here rather
+  // than in the library: a command palette's CONTENTS are product knowledge,
+  // and a shortcut the shell owns is a shortcut every product has to accept.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setSearchOpen((o) => !o);
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
+
+  // Embedded (J1): the run flow takes over the viewport and returns to
+  // YouConnect on sign. The library models this as `chromeless`.
   const embedded = mode === "embedded";
 
   return (
-    <div className={`shell${embedded ? " shell--embedded" : ""}`}>
-      {/* Embedded (J1) hides the standalone chrome — single-document scope; the
-          run flow takes over the viewport and returns to YouConnect on sign. */}
-      {!embedded && <Sidebar />}
-      <div className="maincol">
-        {!embedded && <AppHeader />}
-        <main className="content scroll">{children}</main>
-      </div>
+    <>
+      <RwAppShell
+        nav={NAV}
+        currentPath={pathname}
+        // The routing seam. On Vite this becomes React Router's Link; on
+        // Inertia, @inertiajs/react's. The library is unaware of all three.
+        linkComponent={Link}
+        chromeless={embedded}
+        collapsed={navCollapsed}
+        onCollapsedChange={toggleNav}
+        brand={(collapsed) =>
+          collapsed ? (
+            <Logo themeAware full={false} height={26} />
+          ) : (
+            <Logo themeAware full height={24} />
+          )
+        }
+        navAction={(collapsed) =>
+          collapsed ? (
+            <IconButton
+              icon="parachute"
+              label="Start a review"
+              size="md"
+              className="mx-auto"
+              onClick={() => (window.location.href = "/launchpad")}
+            />
+          ) : (
+            <Button asChild block size="sm">
+              <Link href="/launchpad">Start a review</Link>
+            </Button>
+          )
+        }
+        sidebarFooter={(collapsed) => <OrgCard collapsed={collapsed} />}
+        header={{
+          start: <Breadcrumbs />,
+          end: (
+            <>
+              <SearchTrigger onOpen={() => setSearchOpen(true)} />
+              <IconButton icon="bell" label="Notifications" />
+              <UserMenu />
+            </>
+          ),
+        }}
+      >
+        {children}
+      </RwAppShell>
+
+      <CommandPalette open={searchOpen} onClose={() => setSearchOpen(false)} />
       <RunModal />
-    </div>
+    </>
   );
 }

@@ -1,6 +1,14 @@
 import type { Metadata } from "next";
 import { Schibsted_Grotesk, Inter } from "next/font/google";
 import "./globals.css";
+// The design system, consumed as a package rather than copied in.
+// Order matters: the library lands after globals.css so its components resolve
+// to library values, and the brand theme lands after the library so a brand can
+// override the contract. The bridge points the library's font tokens at the
+// faces next/font actually loaded.
+import "@realwired/ui/styles.css";
+import "@realwired/ui/themes/parachute.css";
+import "./realwired-bridge.css";
 import { SeedProvider } from "@/components/providers/SeedProvider";
 import { DensityProvider } from "@/components/providers/DensityProvider";
 
@@ -29,6 +37,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      // The brand theme keys off this. One attribute is the entire difference
+      // between Parachute and any other product in the suite.
+      data-brand="parachute"
       className={`${display.variable} ${sans.variable}`}
     >
       <body>

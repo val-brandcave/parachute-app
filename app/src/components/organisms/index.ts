@@ -1,5 +1,3 @@
-export { Sidebar } from "./Sidebar";
-export { AppHeader } from "./AppHeader";
 export { UserMenu } from "./UserMenu";
 export { StatBar, type Stat } from "./StatBar";
 export { ReviewTable, reviewHref } from "./ReviewTable";

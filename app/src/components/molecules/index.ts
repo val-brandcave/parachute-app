@@ -4,7 +4,6 @@ export { ConfidenceMeter } from "./ConfidenceMeter";
 export { StatCard } from "./StatCard";
 export { SegmentedControl } from "./SegmentedControl";
 export { Breadcrumbs } from "./Breadcrumbs";
-export { NavItem } from "./NavItem";
 export { ActionMenu, type ActionItem } from "./ActionMenu";
 export { FindingDecisionBar } from "./FindingDecisionBar";
 export { AttestationDecisionBar } from "./AttestationDecisionBar";
