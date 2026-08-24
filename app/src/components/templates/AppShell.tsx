@@ -5,12 +5,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   AppShell as RwAppShell,
-  Button,
   IconButton,
+  SidebarAction,
   type NavGroup,
 } from "@realwired/ui";
 
-import { Logo } from "@/components/atoms";
+import { Icon, Logo } from "@/components/atoms";
 import { Breadcrumbs } from "@/components/molecules";
 import { OrgCard } from "@/components/organisms/OrgCard";
 import { UserMenu } from "@/components/organisms/UserMenu";
@@ -99,21 +99,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Logo themeAware full height={24} />
           )
         }
-        navAction={(collapsed) =>
-          collapsed ? (
-            <IconButton
-              icon="parachute"
-              label="Start a review"
-              size="md"
-              className="mx-auto"
-              onClick={() => (window.location.href = "/launchpad")}
-            />
-          ) : (
-            <Button asChild block size="sm">
-              <Link href="/launchpad">Start a review</Link>
-            </Button>
-          )
-        }
+        // SidebarAction rather than a Button: its geometry mirrors the nav
+        // row (h42, padding 0 12, gap 12) so its icon lands in the SAME icon
+        // column as the rows beneath it. A Button centres its content, which
+        // breaks that column the moment the label length changes.
+        navAction={(collapsed) => (
+          <SidebarAction asChild collapsed={collapsed} label="Start a review">
+            <Link href="/launchpad">
+              <Icon name="parachute" size={19} />
+              {!collapsed && <span className="truncate">Start a review</span>}
+            </Link>
+          </SidebarAction>
+        )}
         sidebarFooter={(collapsed) => <OrgCard collapsed={collapsed} />}
         header={{
           start: <Breadcrumbs />,
