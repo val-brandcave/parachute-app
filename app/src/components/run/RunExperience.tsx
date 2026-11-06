@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Icon, IconButton, type IconName } from "@/components/atoms";
+import { Button, Icon, IconButton, type IconName } from "@/components/atoms";
+import { useRouter } from "next/navigation";
 import { Tabs, StatusPill } from "@/components/molecules";
 import { Logo } from "@/components/Logo";
 import { useReview } from "@/store/useReview";
@@ -13,6 +14,7 @@ import {
   useTemplatesStore,
   useUsersStore,
   useAdminStore,
+  useOnboardingStore,
   type RunDisplay,
   type RunReviewType,
 } from "@/store";
@@ -95,6 +97,7 @@ export function RunExperience({
   /** Confirm the auto-reject and leave the triage gate (route: back to the queue). */
   onTriageReject?: () => void;
 }) {
+  const router = useRouter();
   const {
     spoke,
     docLabel,
@@ -354,6 +357,7 @@ export function RunExperience({
       sha,
     });
     signType("technical");
+    if (!review.sample) void useOnboardingStore.getState().complete("sign_workbook");
     setSigning(false);
   };
 
@@ -382,6 +386,7 @@ export function RunExperience({
       sha,
     });
     signType("administrative");
+    if (!review?.sample) void useOnboardingStore.getState().complete("sign_workbook");
     setSigning(false);
   };
 
@@ -610,6 +615,19 @@ export function RunExperience({
                     value={activeType}
                     onChange={(t) => setActiveType(t)}
                   />
+                </div>
+              )}
+
+              {review?.sample && (
+                <div className="run-sample-banner" role="note">
+                  <Icon name="info" size={16} />
+                  <span>
+                    <b>Sample review</b> · {review.propertyAddress.split(",")[0]} is a fictional
+                    property. Explore freely — nothing here uses credits.
+                  </span>
+                  <Button variant="ghost" size="sm" iconRight="forward" onClick={() => router.push("/launchpad")}>
+                    Run your own report
+                  </Button>
                 </div>
               )}
 

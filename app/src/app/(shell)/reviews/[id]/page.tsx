@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useReview } from "@/store/useReview";
-import { useRunStore, useReviewsStore, beginRunInPlace } from "@/store";
+import { useRunStore, useReviewsStore, useOnboardingStore, beginRunInPlace } from "@/store";
 import { runEntry } from "@/lib/review-lifecycle";
 import type { ReviewType } from "@/types";
 import { RunExperience, type RunStartHandler } from "@/components/run/RunExperience";
@@ -61,8 +61,16 @@ export default function ReviewDetailPage() {
         reviewTypes: types as ReviewType[],
         pipelineStage: 1,
       });
+    if (review && !review.sample) void useOnboardingStore.getState().complete("first_review");
     beginRunInPlace(display, types, opts);
   };
+
+  // Opening the sample review completes "Open the sample review".
+  useEffect(() => {
+    if (id === "review-sample" && review?.sample) {
+      void useOnboardingStore.getState().complete("sample_review");
+    }
+  }, [id, review?.sample]);
 
   const ready = review && storeReviewId === review.id;
 

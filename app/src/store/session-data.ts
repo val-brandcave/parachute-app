@@ -14,4 +14,7 @@ export async function loadSessionData(): Promise<void> {
     useOnboardingStore.getState().fetchProgress(),
     useReviewsStore.getState().fetchReviews(),
   ]);
+  useOrgStore
+    .getState()
+    .syncBankPolicy(useOnboardingStore.getState().progress?.completed.bank_policy !== undefined);
 }

@@ -59,6 +59,9 @@ export interface Org extends BaseEntity {
 }
 
 export type SetupStepId =
+  | "account"
+  | "sign_workbook"
+  | "bank_policy"
   | "branding"
   | "layout"
   | "checklist"
@@ -116,8 +119,31 @@ export interface SetupProgress {
   orgId: UUID;
   createdAt: Timestamp;
   completed: Partial<Record<SetupStepId, Timestamp>>;
+  /** Who completed each step (user id), for the "by Dana Reyes, Marcus Ortiz" line. */
+  completedBy?: Partial<Record<SetupStepId, UUID>>;
+  /** Seeded "doing" notes: a step someone has started but not finished. */
+  inProgress?: Partial<Record<SetupStepId, SetupInProgress>>;
+  /** Security-pack sends for this org (newest last). */
+  securitySends?: SecuritySend[];
   dockDismissedAt?: Timestamp;
   homeDismissedAt?: Timestamp;
+}
+
+export interface SetupInProgress {
+  /** Meta line, e.g. "Priya has it · 220 Commerce Way". */
+  note: string;
+  /** Where "View" / "Continue" goes. Falls back to the step's own href. */
+  href?: string;
+}
+
+/** One send of the security pack to an IT contact. */
+export interface SecuritySend {
+  id: UUID;
+  to: string;
+  note?: string;
+  sentAt: Timestamp;
+  expiresAt: Timestamp;
+  byId: UUID;
 }
 
 /* ============ Reviews ============ */

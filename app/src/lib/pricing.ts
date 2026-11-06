@@ -27,7 +27,7 @@ export const EARN_CAP_CREDITS = 3;
 
 /** Setup steps that pay out a reward when first completed. Total is bounded by
  *  EARN_CAP_CREDITS regardless. */
-export const SETUP_REWARD_STEPS: SetupStepId[] = ["invite", "security_pack", "sample_review"];
+export const SETUP_REWARD_STEPS: SetupStepId[] = ["bank_policy", "checklist", "layout"];
 
 export interface CreditPack {
   id: CreditPackId;
@@ -62,6 +62,9 @@ export const SALES_THRESHOLDS = {
   /** reports a month at or above this count */
   reportsPerMonth: 200,
 };
+
+/** Days a security-pack link stays valid after it is sent. */
+export const SECURITY_LINK_DAYS = 30;
 
 /** Credits a set of review types costs (types de-duplicated). */
 export function costFor(types: readonly ReviewType[]): number {

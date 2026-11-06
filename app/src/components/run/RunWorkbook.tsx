@@ -248,7 +248,7 @@ export function RunWorkbook({
             icon={signed ? "check-circle" : undefined}
             indicatorTone={signed ? "pass" : undefined}
           >
-            {signed ? "Final" : "Draft"}
+            {review.sample ? "Sample" : signed ? "Final" : "Draft"}
           </StatusPill>
         </span>
         <div className="run-ex-tools">

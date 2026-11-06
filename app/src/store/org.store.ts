@@ -63,6 +63,9 @@ interface OrgState {
   bankPolicy: BankPolicyDoc | null;
   setBankPolicy: (doc: BankPolicyDoc) => void;
   removeBankPolicy: () => void;
+  /** Align the (single, localStorage-backed) policy with the session's org: a
+   *  trial / pay-as-you-go org has one only once it has uploaded it. */
+  syncBankPolicy: (hasPolicy: boolean) => void;
 
   /** The current org record (profile, billing model, approval, flags). */
   org: Org | null;
@@ -87,6 +90,21 @@ export const useOrgStore = create<OrgState>((set, get) => ({
   removeBankPolicy: () => {
     persist(null);
     set({ bankPolicy: null });
+  },
+  syncBankPolicy: (hasPolicy) => {
+    const org = get().org;
+    if (!org || org.billing === "invoiced") return;
+    if (!hasPolicy) {
+      set({ bankPolicy: null });
+    } else if (!get().bankPolicy) {
+      set({
+        bankPolicy: {
+          name: `${org.name} — Appraisal Review Policy.pdf`,
+          sizeLabel: "0.9 MB",
+          updatedAt: "Nov 8, 2026",
+        },
+      });
+    }
   },
 
   org: null,

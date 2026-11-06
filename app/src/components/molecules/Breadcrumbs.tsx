@@ -30,6 +30,7 @@ const CONFIG_SECTIONS: Record<string, string> = {
   "workbook-layouts": "Workbook layouts",
   responses: "Response library",
   checklists: "Compliance checklists",
+  security: "Security pack",
 };
 
 export function Breadcrumbs() {

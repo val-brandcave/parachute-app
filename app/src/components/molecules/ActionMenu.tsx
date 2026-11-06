@@ -62,7 +62,8 @@ export function ActionMenu({
   useLayoutEffect(() => {
     if (!open || !wrapRef.current) return;
     const r = wrapRef.current.getBoundingClientRect();
-    const popH = popRef.current?.offsetHeight ?? 0;
+    // First open: the popover is not mounted yet, so estimate its height from the rows.
+    const popH = popRef.current?.offsetHeight ?? items.length * 36 + 16;
     const margin = 8;
     const right = Math.max(margin, window.innerWidth - r.right);
     const flipUp =
@@ -72,7 +73,7 @@ export function ActionMenu({
         ? { right, bottom: window.innerHeight - r.top + 6 }
         : { right, top: r.bottom + 6 },
     );
-  }, [open]);
+  }, [open, items.length]);
 
   // Dismissal. Outside-click must account for the portaled popover (it's not a
   // DOM descendant of the trigger wrapper). Scroll/resize close it, since a

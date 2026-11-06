@@ -5,6 +5,9 @@ import { useDashboard } from "./hooks/useDashboard";
 import { PageHeader } from "@/components/templates/PageHeader";
 import { PeriodPicker, PERIOD_LABEL, periodLabel } from "@/components/molecules";
 import { useCurrentUser } from "@/lib/current-user";
+import { FIRST_RUN_STATBAR_MIN } from "@/lib/setup-steps";
+import { useOrgStage } from "@/store";
+import { FirstRunHome } from "@/components/organisms/home";
 import {
   StatBar,
   type Stat,
@@ -16,8 +19,10 @@ import {
 
 export default function DashboardPage() {
   const me = useCurrentUser();
+  const stage = useOrgStage();
   const {
     isLoading,
+    reviews,
     period,
     setPeriod,
     range,
@@ -73,6 +78,26 @@ export default function DashboardPage() {
       tip: "Reviews you completed in the selected period. Avg turnaround ~24 min · ≈9.5 hrs saved vs. manual review.",
     },
   ];
+
+  // First-run Home: the StatBar and trend only appear once the org has enough
+  // completed (non-sample) reviews to say something.
+  if (stage === "new") {
+    const completedReal = reviews.filter((r) => r.status === "completed").length;
+    return (
+      <FirstRunHome
+        stats={
+          completedReal >= FIRST_RUN_STATBAR_MIN ? (
+            <div style={{ marginBottom: "var(--d-gap)" }}>
+              <StatBar stats={stats} />
+              <div style={{ marginTop: "var(--d-gap)" }}>
+                <TrendChart {...trend} periodLabel={periodLabel(period, range)} />
+              </div>
+            </div>
+          ) : undefined
+        }
+      />
+    );
+  }
 
   return (
     <>

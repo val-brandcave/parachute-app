@@ -100,6 +100,11 @@ export function PendingState({
           Talk to us
         </button>
       </p>
+      <p className="wel-note">
+        <a className="kc-link" href="/configure/security">
+          Security pack for your IT team
+        </a>
+      </p>
     </div>
   );
 }

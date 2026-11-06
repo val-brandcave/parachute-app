@@ -7,6 +7,8 @@ import { DEMO_ENABLED, personaById } from "@/lib/demo";
 import { useCurrentOrg, useCurrentUser } from "@/lib/current-user";
 import { useDemoStore } from "@/store/demo.store";
 import { useWalletStore } from "@/store/wallet.store";
+import { useOnboardingStore } from "@/store/onboarding.store";
+import { SETUP_STEPS } from "@/lib/setup-steps";
 
 /**
  * PROTOTYPE ONLY. A small floating chip so the presenter can push state without
@@ -67,6 +69,16 @@ export function DemoDock() {
                 <Icon name="check-circle" size={15} /> Approve
               </button>
             )}
+            <button
+              className="demo-dock-btn"
+              onClick={() => {
+                const ob = useOnboardingStore.getState();
+                const next = SETUP_STEPS.find((s) => ob.progress?.completed[s.id] === undefined);
+                if (next) void ob.complete(next.id);
+              }}
+            >
+              <Icon name="check-circle" size={15} /> Complete next step
+            </button>
             <button className="demo-dock-btn" onClick={() => useDemoStore.getState().addCredits(5)}>
               <Icon name="coins" size={15} /> +5 credits
             </button>

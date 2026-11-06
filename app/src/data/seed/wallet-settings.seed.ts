@@ -22,7 +22,7 @@ export const seedWalletSettings: WalletSettings[] = [
     reloadPackId: "pack5",
     reloadBelow: 2,
     paymentMethod: null,
-    billingEmail: "dana.reyes@harborcommunitybank.com",
+    billingEmail: "dana.reyes@harborcb.com",
   },
   {
     id: "org-cedar",

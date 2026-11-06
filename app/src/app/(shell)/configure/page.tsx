@@ -6,7 +6,7 @@ import { Icon, type IconName } from "@/components/atoms";
 type ConfigCard = {
   href: string;
   icon: IconName;
-  tone: "org" | "defaults" | "templates" | "responses" | "checklists";
+  tone: "org" | "defaults" | "templates" | "responses" | "checklists" | "security";
   title: string;
   desc: string;
   tags: string[];
@@ -55,6 +55,14 @@ const CARDS: ConfigCard[] = [
     title: "Compliance checklists",
     desc: "The bank's admin form — upload, map, version.",
     tags: ["Upload & map", "Set active"],
+  },
+  {
+    href: "/configure/security",
+    icon: "shield",
+    tone: "security",
+    title: "Security pack",
+    desc: "What your IT team needs to approve us as a vendor.",
+    tags: ["Architecture", "Data handling", "Send to IT"],
   },
 ];
 

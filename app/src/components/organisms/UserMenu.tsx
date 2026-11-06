@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { Avatar, Icon, type IconName } from "@/components/atoms";
 import { cn } from "@/lib/utils";
-import { useIdentityStore, usePrefsStore, type ThemePref } from "@/store";
+import { useIdentityStore, useOrgStore, usePrefsStore, useSetupSummary, type ThemePref } from "@/store";
 import { useCurrentUser } from "@/lib/current-user";
 import { DEMO_ENABLED } from "@/lib/demo";
 import { useDemoStore } from "@/store/demo.store";
@@ -34,6 +34,13 @@ export function UserMenu({
   const ref = useRef<HTMLDivElement>(null);
   const { theme, setTheme } = usePrefsStore();
   const userAvatar = useIdentityStore((s) => s.userAvatar);
+  const billing = useOrgStore((s) => s.org?.billing);
+  const setupDone = useSetupSummary().allDone;
+  const showSetupGuide = (billing === "trial" || billing === "payg") && !setupDone;
+  const reopenSetup = () => {
+    usePrefsStore.getState().setSetupHidden(me.id, false);
+    go("/dashboard");
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -92,6 +99,11 @@ export function UserMenu({
             <button className="um-item" onClick={() => go("/profile")}>
               <Icon name="user" size={17} /> Profile
             </button>
+            {showSetupGuide && (
+              <button className="um-item" onClick={reopenSetup}>
+                <Icon name="checklist" size={17} /> Setup guide
+              </button>
+            )}
             <button className="um-item" onClick={() => setOpen(false)}>
               <Icon name="support" size={17} /> Support
             </button>

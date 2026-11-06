@@ -6,6 +6,7 @@ import {
   nextVersionNumber,
   publishedVersion,
 } from "@/lib/template-versions";
+import { useOnboardingStore } from "./onboarding.store";
 import {
   generateId,
   type ChecklistTemplate,
@@ -15,6 +16,13 @@ import {
   type TemplateScope,
   type WorkbookLayout,
 } from "@/types";
+
+/** Setup step "checklist": a checklist is published AND set as the default. */
+function maybeCompleteChecklistStep(checklists: ChecklistTemplate[]) {
+  if (checklists.some((c) => c.isDefault && publishedVersion(c.versions))) {
+    void useOnboardingStore.getState().complete("checklist");
+  }
+}
 
 /** Response-template fields the editor supplies; the store stamps id/timestamps. */
 type ResponseDraft = Pick<ResponseTemplate, "scope" | "group" | "name" | "body"> & {
@@ -219,6 +227,7 @@ export const useTemplatesStore = create<TemplatesState>((set, get) => ({
     set((s) => ({
       checklists: s.checklists.map((c) => (c.id === updated.id ? updated : c)),
     }));
+    maybeCompleteChecklistStep(get().checklists);
   },
 
   // Roll back: re-publish an existing snapshot, archiving the current published.
@@ -300,6 +309,7 @@ export const useTemplatesStore = create<TemplatesState>((set, get) => ({
     set((s) => ({
       checklists: s.checklists.map((c) => ({ ...c, isDefault: c.id === familyId })),
     }));
+    maybeCompleteChecklistStep(get().checklists);
   },
 
   duplicateChecklistFamily: async (familyId) => {
@@ -419,6 +429,7 @@ export const useTemplatesStore = create<TemplatesState>((set, get) => ({
       full,
     );
     set((s) => ({ layouts: [...s.layouts, created] }));
+    void useOnboardingStore.getState().complete("layout");
     return created;
   },
 }));

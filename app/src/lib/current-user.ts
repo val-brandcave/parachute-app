@@ -60,9 +60,14 @@ const KIND_LABEL: Record<OrgKind, string> = {
   appraisal_firm: "Appraisal firm",
 };
 
+const INITIALS_SKIP = new Set(["of", "the", "and", "&", "for"]);
+
+/** Up to 3 initials of the significant words ("Harbor Community Bank" = HCB). */
 function initialsOf(name: string): string {
-  const words = name.split(/\s+/).filter((w) => /[A-Za-z0-9]/.test(w[0] ?? ""));
-  return (words.length >= 2 ? words[0][0] + words[1][0] : (words[0] ?? "?").slice(0, 2)).toUpperCase();
+  const words = name
+    .split(/\s+/)
+    .filter((w) => /[A-Za-z0-9]/.test(w[0] ?? "") && !INITIALS_SKIP.has(w.toLowerCase()));
+  return (words.length >= 2 ? words.slice(0, 3).map((w) => w[0]).join("") : (words[0] ?? "?").slice(0, 2)).toUpperCase();
 }
 
 function resolveUser(

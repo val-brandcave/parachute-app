@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { adapter } from "@/data/adapters";
 import { Collections } from "@/data/collections";
 import { DEFAULT_ORG_ID } from "@/lib/identity-defaults";
-import { generateId, type Review } from "@/types";
+import { generateId, type Org, type Review } from "@/types";
 import { useSessionStore } from "./session.store";
 
 /** Reviews with no orgId belong to the default org. */
@@ -34,9 +34,20 @@ export const useReviewsStore = create<ReviewsState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const orgId = currentOrgId();
-      const reviews = (await adapter.getAll<Review>(Collections.REVIEWS)).filter((r) =>
-        belongsTo(r, orgId),
-      );
+      const all = await adapter.getAll<Review>(Collections.REVIEWS);
+      // The sample is org-agnostic: every trial / pay-as-you-go org sees it (as
+      // its own, assigned to the signed-in user); invoiced orgs do not.
+      const org = orgId ? await adapter.getById<Org>(Collections.ORGS, orgId) : null;
+      const showSample = !!org && org.billing !== "invoiced";
+      const me = useSessionStore.getState().userId;
+      const reviews = all.flatMap((r) => {
+        if (r.sample) {
+          return showSample && orgId
+            ? [{ ...r, orgId, bank: org?.name ?? r.bank, assigneeId: me ?? r.assigneeId }]
+            : [];
+        }
+        return belongsTo(r, orgId) ? [r] : [];
+      });
       set({ reviews, isLoading: false });
     } catch (err) {
       set({ isLoading: false, error: (err as Error).message });

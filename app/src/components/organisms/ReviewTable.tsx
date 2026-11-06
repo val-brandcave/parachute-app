@@ -170,7 +170,14 @@ function Cell({
     case "property":
       return (
         <div className="qprop">
-          <TruncText text={r.propertyAddress} className="addr" />
+          {r.sample ? (
+            <div className="qprop-top">
+              <TruncText text={r.propertyAddress} className="addr" />
+              <Chip tone="info">Sample</Chip>
+            </div>
+          ) : (
+            <TruncText text={r.propertyAddress} className="addr" />
+          )}
           <TruncText
             text={`${r.appraisalFirm} · Loan #${r.loanNo} · ${r.propertyType}`}
             className="meta"

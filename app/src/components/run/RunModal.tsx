@@ -6,6 +6,7 @@ import {
   useRunStore,
   useSessionStore,
   useReviewsStore,
+  useOnboardingStore,
   beginRunInPlace,
 } from "@/store";
 import { CURRENT_USER } from "@/lib/current-user";
@@ -77,6 +78,7 @@ export function RunModal() {
         pipelineStage: 1,
         slaDueAt: Date.now() + DEFAULT_SLA_DAYS * 86_400_000,
       });
+      void useOnboardingStore.getState().complete("first_review");
       close();
       router.push(`/reviews/${created.id}`);
     })();

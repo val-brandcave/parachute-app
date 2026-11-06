@@ -86,6 +86,14 @@ import {
   IconArrowsExchange,
   IconFlask,
   IconRestore,
+  IconPlayerPlay,
+  IconSend,
+  IconExternalLink,
+  IconLock,
+  IconKey,
+  IconUsers,
+  IconFileSpreadsheet,
+  IconMail,
   type Icon as TablerIcon,
 } from "@tabler/icons-react";
 import { ParachuteGlyph, ChuteActionMark } from "./BrandGlyph";
@@ -179,6 +187,14 @@ export const ICONS = {
   switch: IconArrowsExchange,
   flask: IconFlask,
   restore: IconRestore,
+  play: IconPlayerPlay,
+  send: IconSend,
+  external: IconExternalLink,
+  lock: IconLock,
+  key: IconKey,
+  users: IconUsers,
+  sheet: IconFileSpreadsheet,
+  mail: IconMail,
 } satisfies Record<string, TablerIcon>;
 
 export type IconName = keyof typeof ICONS;

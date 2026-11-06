@@ -34,7 +34,9 @@ const SEEDED_KEY = `${STORAGE_PREFIX}:__seeded__`;
 //      v16: self-serve onboarding - org profile/billing/approval, orgId on users &
 //      reviews, production roles (org_admin/approver/reviewer), demo orgs, the
 //      credit_ledger / wallet_settings / setup_progress collections, review-sample.
-const SEED_VERSION = "v16";
+//      v17: self-serve Phase 2 - setup steps aligned to the spec (account, sign_workbook,
+//      bank_policy), seeded in-progress notes, HCB reviews, earned ledger row.
+const SEED_VERSION = "v17";
 
 export const mockAdapter: DataAdapter = {
   async getAll<T>(collection: string): Promise<T[]> {

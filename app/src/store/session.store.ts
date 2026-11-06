@@ -15,6 +15,31 @@ export type AppMode = "full" | "embedded";
  *  anonymous = nobody; verified = e-mail confirmed, no org yet; signed_in = a member of an org. */
 export type AuthState = "anonymous" | "verified" | "signed_in";
 
+const SESSION_KEY = "parachute:session";
+
+export interface StoredSession {
+  userId: string;
+  orgId: string;
+  role: UserRole;
+}
+
+/** The last signed-in identity, so a reload restores a runtime-created org. */
+export function readStoredSession(): StoredSession | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(SESSION_KEY);
+    return raw ? (JSON.parse(raw) as StoredSession) : null;
+  } catch {
+    return null;
+  }
+}
+
+function storeSession(s: StoredSession | null): void {
+  if (typeof window === "undefined") return;
+  if (s) window.localStorage.setItem(SESSION_KEY, JSON.stringify(s));
+  else window.localStorage.removeItem(SESSION_KEY);
+}
+
 interface SessionState {
   mode: AppMode;
   /** Where an embedded session returns to on close/sign (e.g. "YouConnect"). */
@@ -48,11 +73,15 @@ export const useSessionStore = create<SessionState>((set) => ({
   name: null,
   setMode: (mode, opts) =>
     set({ mode, returnLabel: mode === "embedded" ? opts?.returnLabel ?? "YouConnect" : null }),
-  signIn: ({ userId, orgId, role }) =>
-    set({ userId, orgId, role, auth: "signed_in", email: null, name: null }),
+  signIn: ({ userId, orgId, role }) => {
+    storeSession({ userId, orgId, role });
+    set({ userId, orgId, role, auth: "signed_in", email: null, name: null });
+  },
   verify: (who) =>
     set({ userId: null, orgId: null, role: null, auth: "verified", email: who?.email ?? null, name: who?.name ?? null }),
-  signOut: () =>
-    set({ userId: null, orgId: null, role: null, auth: "anonymous", email: null, name: null }),
+  signOut: () => {
+    storeSession(null);
+    set({ userId: null, orgId: null, role: null, auth: "anonymous", email: null, name: null });
+  },
   reset: () => set({ mode: "full", returnLabel: null }),
 }));

@@ -6,7 +6,7 @@ const DAY = 86_400_000;
 
 /**
  * Wallet movements per org. Balance is derived from these rows — never stored.
- *  org-hcb    trial: +6 grant, one 2-credit review → 4 left
+ *  org-hcb    trial: +6 grant, one 2-credit review, +1 earned (bank policy) → 5 left
  *  org-cedar  pay-as-you-go: a 5-pack, two 2-credit reviews → 1 left
  *  org-001    invoiced via YouConnect → no wallet rows
  *  org-lakeside  awaiting approval → nothing granted yet
@@ -26,11 +26,21 @@ export const seedCreditLedger: CreditLedgerEntry[] = [
     orgId: "org-hcb",
     kind: "debit",
     credits: -2,
-    loanNo: "LN-20418",
+    loanNo: "HCB-26-0907",
     reviewTypes: ["technical", "administrative"],
     actorId: "user-dr",
-    note: "Harborview Plaza — Technical + Administrative",
+    note: "18 Lighthouse Rd — Technical + Administrative",
     createdAt: T0 + 2 * DAY,
+  },
+  {
+    id: "led-hcb-3",
+    orgId: "org-hcb",
+    kind: "earned",
+    credits: 1,
+    setupStepId: "bank_policy",
+    actorId: "user-mo",
+    note: "Setup reward",
+    createdAt: T0 + 3 * DAY,
   },
   {
     id: "led-cedar-1",

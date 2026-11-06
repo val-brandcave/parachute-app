@@ -5,6 +5,17 @@ export type ThemePref = "light" | "dark" | "system";
 
 const DKEY = "parachute:density";
 const TKEY = "parachute:theme";
+const HKEY = "parachute:setup-hidden";
+
+/** Per-user "Hide setup guide" flags, keyed by user id. */
+function initialHidden(): Record<string, boolean> {
+  if (typeof window === "undefined") return {};
+  try {
+    return JSON.parse(window.localStorage.getItem(HKEY) ?? "{}") as Record<string, boolean>;
+  } catch {
+    return {};
+  }
+}
 
 function initialDensity(): Density {
   if (typeof window === "undefined") return "comfortable";
@@ -28,6 +39,9 @@ interface PrefsState {
   density: Density;
   theme: ThemePref;
   navCollapsed: boolean;
+  /** Users who hid the setup guide (per user, not per org). */
+  setupHiddenBy: Record<string, boolean>;
+  setSetupHidden: (userId: string, hidden: boolean) => void;
   setDensity: (d: Density) => void;
   setTheme: (t: ThemePref) => void;
   toggleNav: () => void;
@@ -37,6 +51,12 @@ export const usePrefsStore = create<PrefsState>((set, get) => ({
   density: initialDensity(),
   theme: initialTheme(),
   navCollapsed: false,
+  setupHiddenBy: initialHidden(),
+  setSetupHidden: (userId, hidden) => {
+    const next = { ...get().setupHiddenBy, [userId]: hidden };
+    if (typeof window !== "undefined") window.localStorage.setItem(HKEY, JSON.stringify(next));
+    set({ setupHiddenBy: next });
+  },
   setDensity: (density) => {
     if (typeof window !== "undefined") {
       window.localStorage.setItem(DKEY, density);

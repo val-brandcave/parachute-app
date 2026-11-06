@@ -168,6 +168,7 @@ export function useReviewQueue() {
     };
     const q = query.trim().toLowerCase();
     for (const r of reviews) {
+      if (r.sample) continue; // the sample never counts
       if (!matchesQuery(r, q)) continue;
       c.all++;
       c[lifecycleBucket(r)]++;
@@ -184,8 +185,9 @@ export function useReviewQueue() {
 
   const filtered = useMemo(() => {
     let list = [...reviews];
+    // The sample shows under "All" only (it is excluded from every count).
     if (effectiveTab !== "all")
-      list = list.filter((r) => lifecycleBucket(r) === effectiveTab);
+      list = list.filter((r) => !r.sample && lifecycleBucket(r) === effectiveTab);
 
     if (filters.findings !== "all") {
       const sel = filters.findings;

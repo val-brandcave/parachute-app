@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Tabs, AvatarUpload } from "@/components/molecules";
 import { MembersPanel, BrandingPanel, BillingPanel } from "@/components/organisms";
 import { Card, Input, Label, Divider, Icon } from "@/components/atoms";
-import { useIdentityStore, useOrgStore } from "@/store";
+import { useIdentityStore, useOnboardingStore, useOrgStore } from "@/store";
 import { CURRENT_ORG } from "@/lib/current-user";
 import { formatShortDate } from "@/lib/utils";
 
@@ -63,6 +63,7 @@ export default function OrganizationPage() {
         sizeLabel: formatBytes(f.size),
         updatedAt: formatShortDate(Date.now()),
       });
+    if (f) void useOnboardingStore.getState().complete("bank_policy");
     e.target.value = ""; // allow re-picking the same file
   };
 

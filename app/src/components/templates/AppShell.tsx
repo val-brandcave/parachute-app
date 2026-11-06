@@ -13,6 +13,9 @@ import {
 import { Icon, Logo } from "@/components/atoms";
 import { Breadcrumbs } from "@/components/molecules";
 import { OrgCard } from "@/components/organisms/OrgCard";
+import { SetupDock } from "@/components/organisms/SetupDock";
+import { BalancePill } from "@/components/organisms/BalancePill";
+import { EarnedToastHost } from "@/components/organisms/EarnedToastHost";
 import { UserMenu } from "@/components/organisms/UserMenu";
 import { SearchTrigger } from "@/components/organisms/SearchTrigger";
 import { CommandPalette } from "@/components/organisms/CommandPalette";
@@ -112,7 +115,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </Link>
           </SidebarAction>
         )}
-        sidebarFooter={(collapsed) => <OrgCard collapsed={collapsed} />}
+        sidebarFooter={(collapsed) => (
+          <div className="sb-foot">
+            <SetupDock collapsed={collapsed} />
+            <BalancePill collapsed={collapsed} />
+            <OrgCard collapsed={collapsed} />
+          </div>
+        )}
         header={{
           start: <Breadcrumbs />,
           end: (
@@ -129,6 +138,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <CommandPalette open={searchOpen} onClose={() => setSearchOpen(false)} />
       <RunModal />
+      <EarnedToastHost />
       <DemoDock />
     </>
   );
