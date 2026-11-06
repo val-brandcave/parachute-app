@@ -32,7 +32,7 @@ export default function StartPage() {
   const goStandalone = async () => {
     await useDemoStore.getState().apply("returning");
     reset(); // ensure full mode
-    router.push("/login");
+    router.push("/auth/sign-in");
   };
   const pickPersona = async (id: string) => {
     const persona = await useDemoStore.getState().apply(id);

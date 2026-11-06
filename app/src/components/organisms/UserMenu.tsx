@@ -143,7 +143,7 @@ export function UserMenu({
               </>
             )}
             <div className="um-sep" />
-            <button className="um-item danger" onClick={() => go("/login")}>
+            <button className="um-item danger" onClick={() => go("/auth/sign-in")}>
               <Icon name="logout" size={17} /> Sign out
             </button>
           </motion.div>

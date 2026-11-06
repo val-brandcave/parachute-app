@@ -76,7 +76,7 @@ Compose from `@realwired/ui`; library additions (parallel track): `Chip.meta`, `
 1 Account and org (M): (auth) group + KeycloakFrame; (onboarding) group; createOrg, requestSales, approve, grantTrial.
 2 First-run Home (M): orgStage; FirstRunHome, SetupChecklist, SetupDock, WalletCard, SecurityPackCard; verified completion hooks; `/configure/security`; sample banner.
 3 Wallet and cost (L): `/configure/billing`; TopUpModal, ReceiptDialog, ledger, PlansPanel; CostLine + LowBalanceCallout in RunConfirm; debit; invoiced orgs.
-4 Bridges and polish (S–M): Bouncer bridge + mock; value placeholder; e-mail previews; docs, AGENTS.md, feedback-log rows.
+4 Bridges and polish (S–M): Bouncer bridge + mock with a full invite screen (e-mail, role pick reviewer/approver/org_admin, pending invites, resend/revoke; Val 6 Nov: show the whole invite flow, in Bouncer where Realwired puts it); value placeholder; e-mail previews; docs, AGENTS.md, feedback-log rows.
 
 Each phase ends with a persona tour; Loom per phase for Ed.
 

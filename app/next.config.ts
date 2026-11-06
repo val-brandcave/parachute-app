@@ -10,6 +10,12 @@ const nextConfig: NextConfig = {
         destination: "/start",
         permanent: false, // 307 — entry redirect, not a cacheable redirect
       },
+      // RWT-1130 removed Parachute's own sign-in; /login is the Keycloak-styled page now.
+      {
+        source: "/login",
+        destination: "/auth/sign-in",
+        permanent: false,
+      },
     ];
   },
 };

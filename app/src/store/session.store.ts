@@ -25,10 +25,13 @@ interface SessionState {
   orgId: string | null;
   role: UserRole | null;
   auth: AuthState;
+  /** Sign-up identity carried from create-account until /welcome makes the user. */
+  email: string | null;
+  name: string | null;
   setMode: (mode: AppMode, opts?: { returnLabel?: string }) => void;
   signIn: (who: { userId: string; orgId: string; role: UserRole }) => void;
   /** E-mail verified but no org yet (the prospect mid-sign-up). */
-  verify: () => void;
+  verify: (who?: { email: string; name: string }) => void;
   signOut: () => void;
   /** Reset the ENTRY MODE only (identity is untouched — use signIn/signOut). */
   reset: () => void;
@@ -41,10 +44,15 @@ export const useSessionStore = create<SessionState>((set) => ({
   orgId: DEFAULT_ORG_ID,
   role: "org_admin",
   auth: "signed_in",
+  email: null,
+  name: null,
   setMode: (mode, opts) =>
     set({ mode, returnLabel: mode === "embedded" ? opts?.returnLabel ?? "YouConnect" : null }),
-  signIn: ({ userId, orgId, role }) => set({ userId, orgId, role, auth: "signed_in" }),
-  verify: () => set({ userId: null, orgId: null, role: null, auth: "verified" }),
-  signOut: () => set({ userId: null, orgId: null, role: null, auth: "anonymous" }),
+  signIn: ({ userId, orgId, role }) =>
+    set({ userId, orgId, role, auth: "signed_in", email: null, name: null }),
+  verify: (who) =>
+    set({ userId: null, orgId: null, role: null, auth: "verified", email: who?.email ?? null, name: who?.name ?? null }),
+  signOut: () =>
+    set({ userId: null, orgId: null, role: null, auth: "anonymous", email: null, name: null }),
   reset: () => set({ mode: "full", returnLabel: null }),
 }));

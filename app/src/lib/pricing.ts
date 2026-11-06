@@ -77,3 +77,13 @@ export function usd(credits: number): number {
 export function formatUsd(amount: number): string {
   return `$${amount.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
 }
+
+/** True when the org-setup answers put "Talk to us" first (11+ reviewers or 200+ reports a month). */
+export function needsSalesFirst(profile: { teamBand: string; volumeBand: string }): boolean {
+  return profile.teamBand === "11+" || profile.volumeBand === "200+";
+}
+
+/** Indicative value of a credit balance, "~$900" style. */
+export function approxValue(credits: number): string {
+  return `~${formatUsd(usd(credits))}`;
+}

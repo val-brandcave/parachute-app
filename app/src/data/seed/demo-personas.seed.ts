@@ -47,7 +47,7 @@ export const demoPersonas: DemoPersona[] = [
     userId: null,
     orgId: null,
     mode: "full",
-    entryRoute: "/auth/create-account?size=large",
+    entryRoute: "/welcome?preset=large",
   },
   {
     id: "pending-admin",

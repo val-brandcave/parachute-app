@@ -20,3 +20,4 @@ export { AvatarUpload } from "./AvatarUpload";
 export { AvatarCropper } from "./AvatarCropper";
 export { PipelineTracker } from "./PipelineTracker";
 export { QueueFilters, ActiveFilters } from "./QueueFilters";
+export { CodeBoxes } from "./CodeBoxes";

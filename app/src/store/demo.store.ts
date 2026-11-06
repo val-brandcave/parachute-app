@@ -12,8 +12,21 @@ import { loadSessionData } from "./session-data";
 
 /* PROTOTYPE ONLY: persona switcher state. */
 
+const GATE_KEY = "parachute:demo:approval-gate";
+function readGate(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.localStorage.getItem(GATE_KEY) === "1";
+}
+function storeGate(on: boolean): void {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(GATE_KEY, on ? "1" : "0");
+}
+
 interface DemoState {
   personaId: string | null;
+  /** Staff approval (RWT-1031) for NEW workspaces and the current one. */
+  approvalGate: boolean;
+  setApprovalGate: (on: boolean) => Promise<void>;
   dockOpen: boolean;
   toggleDock: () => void;
   /** Become a persona: set the session, reload org-scoped data, close takeovers.
@@ -28,6 +41,16 @@ interface DemoState {
 
 export const useDemoStore = create<DemoState>((set) => ({
   personaId: null,
+  approvalGate: readGate(),
+  setApprovalGate: async (on) => {
+    storeGate(on);
+    set({ approvalGate: on });
+    // Also flip the flag on the current workspace so B2 reacts immediately.
+    const org = useOrgStore.getState().org;
+    if (org?.profile && org.id === useSessionStore.getState().orgId) {
+      await useOrgStore.getState().setFlag("approvalGate", on);
+    }
+  },
   dockOpen: false,
   toggleDock: () => set((s) => ({ dockOpen: !s.dockOpen })),
 
