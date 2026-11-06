@@ -13,3 +13,4 @@ export { MembersPanel } from "./MembersPanel";
 export { InviteMemberModal } from "./InviteMemberModal";
 export { BrandingPanel } from "./BrandingPanel";
 export { BillingPanel } from "./BillingPanel";
+export { DemoDock } from "./DemoDock";

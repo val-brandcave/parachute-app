@@ -2,16 +2,15 @@ import type { ChipTone } from "@/components/atoms";
 import type { MemberStatus, UserRole } from "@/types";
 
 /** Roles most→least privileged, for sorting and select order. */
-export const ROLE_ORDER: UserRole[] = ["owner", "admin", "reviewer", "viewer"];
+export const ROLE_ORDER: UserRole[] = ["org_admin", "approver", "reviewer"];
 
-/** Roles an admin can assign via invite / change-role (Owner is not assignable). */
-export const ASSIGNABLE_ROLES: UserRole[] = ["admin", "reviewer", "viewer"];
+/** Roles an org admin can assign via invite / change-role. */
+export const ASSIGNABLE_ROLES: UserRole[] = ["org_admin", "approver", "reviewer"];
 
 export const ROLE_META: Record<UserRole, { label: string; desc: string; tone: ChipTone }> = {
-  owner: { label: "Owner", desc: "Full control, billing, and org ownership.", tone: "accent" },
-  admin: { label: "Admin", desc: "Manage the org, members, templates, and defaults.", tone: "info" },
-  reviewer: { label: "Reviewer", desc: "Perform and sign reviews.", tone: "neutral" },
-  viewer: { label: "Viewer", desc: "Read-only access to reviews and reports.", tone: "na" },
+  org_admin: { label: "Org admin", desc: "Manages the workspace and billing", tone: "accent" },
+  approver: { label: "Approver", desc: "Reviews and signs off", tone: "info" },
+  reviewer: { label: "Reviewer", desc: "Performs reviews", tone: "neutral" },
 };
 
 export const STATUS_META: Record<MemberStatus, { label: string; tone: ChipTone }> = {

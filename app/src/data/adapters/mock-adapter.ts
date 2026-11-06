@@ -31,7 +31,10 @@ const SEEDED_KEY = `${STORAGE_PREFIX}:__seeded__`;
 //      review (checklist attestation) for review-001.
 // v15: expanded users (owner/admin/reviewer/viewer roles + email/status/
 //      last-active) backing the Organization → Members table.
-const SEED_VERSION = "v15";
+//      v16: self-serve onboarding - org profile/billing/approval, orgId on users &
+//      reviews, production roles (org_admin/approver/reviewer), demo orgs, the
+//      credit_ledger / wallet_settings / setup_progress collections, review-sample.
+const SEED_VERSION = "v16";
 
 export const mockAdapter: DataAdapter = {
   async getAll<T>(collection: string): Promise<T[]> {

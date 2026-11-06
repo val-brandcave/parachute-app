@@ -2,6 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { adapter } from "@/data/adapters";
+import { loadSessionData } from "@/store/session-data";
+import { useDemoStore } from "@/store/demo.store";
+import {
+  DEMO_ENABLED,
+  clearPersonaParam,
+  personaById,
+  readPersonaParam,
+  readStoredPersona,
+} from "@/lib/demo";
 
 /**
  * Seeds the mock data store (localStorage) once on the client before rendering
@@ -15,6 +24,14 @@ export function SeedProvider({ children }: { children: React.ReactNode }) {
     let active = true;
     adapter
       .seed()
+      .then(async () => {
+        // Demo only: ?persona= (read once) wins over the remembered persona, so a
+        // reload stays in character. Otherwise load the default identity's data.
+        const wanted = DEMO_ENABLED ? readPersonaParam() ?? readStoredPersona() : null;
+        clearPersonaParam();
+        if (wanted && personaById(wanted)) await useDemoStore.getState().apply(wanted);
+        else await loadSessionData();
+      })
       .catch((e) => console.error("seed failed", e))
       .finally(() => {
         if (active) setReady(true);

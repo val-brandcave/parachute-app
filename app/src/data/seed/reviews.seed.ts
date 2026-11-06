@@ -12,6 +12,7 @@ const DAY = 86400000;
 export const seedReviews: Review[] = [
   {
     id: "review-001",
+    orgId: "org-001",
     propertyAddress: "1450 Corporate Center Dr",
     propertyType: "Office (Medical)",
     bank: "Meridian Trust Bank, N.A.",
@@ -32,6 +33,7 @@ export const seedReviews: Review[] = [
   },
   {
     id: "review-002",
+    orgId: "org-001",
     propertyAddress: "88 Harbor Point Logistics Center",
     propertyType: "Industrial (Warehouse)",
     bank: "Meridian Trust Bank, N.A.",
@@ -52,6 +54,7 @@ export const seedReviews: Review[] = [
   },
   {
     id: "review-003",
+    orgId: "org-001",
     propertyAddress: "The Grove Apartments",
     propertyType: "Multifamily (Garden)",
     bank: "Summit Federal",
@@ -72,6 +75,7 @@ export const seedReviews: Review[] = [
   },
   {
     id: "review-004",
+    orgId: "org-001",
     propertyAddress: "Riverside Data Center",
     propertyType: "Special Purpose (Data Center)",
     bank: "Meridian Trust Bank, N.A.",
@@ -92,6 +96,7 @@ export const seedReviews: Review[] = [
   },
   {
     id: "review-005",
+    orgId: "org-001",
     propertyAddress: "Westgate Retail Plaza",
     propertyType: "Retail (Anchored)",
     bank: "Summit Federal",
@@ -117,6 +122,7 @@ export const seedReviews: Review[] = [
   // restore if the client confirms it should appear here.
   {
     id: "review-007",
+    orgId: "org-001",
     propertyAddress: "Pine Valley Self-Storage",
     propertyType: "Industrial (Self-Storage)",
     bank: "Summit Federal",
@@ -137,6 +143,7 @@ export const seedReviews: Review[] = [
   },
   {
     id: "review-008",
+    orgId: "org-001",
     propertyAddress: "Metro Mixed-Use Tower",
     propertyType: "Mixed-Use",
     bank: "Meridian Trust Bank, N.A.",
@@ -161,6 +168,7 @@ export const seedReviews: Review[] = [
   // createdAt = when YouConnect delivered (drives "delivered Nd ago").
   {
     id: "review-009",
+    orgId: "org-001",
     propertyAddress: "Parkview Self-Storage — 88 Canal St",
     propertyType: "Self-storage",
     bank: "Lakeside Savings Bank",
@@ -181,6 +189,7 @@ export const seedReviews: Review[] = [
   },
   {
     id: "review-010",
+    orgId: "org-001",
     propertyAddress: "Riverside Medical Plaza — 220 River Rd",
     propertyType: "Office (Medical)",
     bank: "Meridian Trust Bank, N.A.",
@@ -201,6 +210,7 @@ export const seedReviews: Review[] = [
   },
   {
     id: "review-011",
+    orgId: "org-001",
     propertyAddress: "Gateway Logistics Park — 5 Frontage Rd",
     propertyType: "Industrial (Warehouse)",
     bank: "Meridian Trust Bank, N.A.",
@@ -221,6 +231,7 @@ export const seedReviews: Review[] = [
   },
   {
     id: "review-012",
+    orgId: "org-001",
     propertyAddress: "Cedar Crossing Retail Center — 410 Market St",
     propertyType: "Retail (Anchored)",
     bank: "Summit Federal",
@@ -238,5 +249,31 @@ export const seedReviews: Review[] = [
     slaDueAt: NOW + 16 * DAY,
     orderedAt: NOW - DAY,
     createdAt: NOW - DAY,
+  },
+  // Walkthrough review for new workspaces (org-hcb). Fictional appraisal, never
+  // debits a credit and is excluded from counts. Workspace/admin stores fall back
+  // to review-001's content for any review without its own, so it is fully clickable.
+  {
+    id: "review-sample",
+    orgId: "org-hcb",
+    sample: true,
+    propertyAddress: "4410 Bayside Office Park, Norfolk, VA",
+    propertyType: "Office (Suburban)",
+    bank: "Harbor Community Bank",
+    appraisalFirm: "Example Valuation Group",
+    loanNo: "LN-SAMPLE",
+    status: "in_review",
+    reviewTypes: ["technical", "administrative"],
+    assigneeId: "user-dr",
+    source: "manual",
+    riskRating: "moderate",
+    openFindings: 2,
+    flaggedCount: 2,
+    worstSeverity: "flag",
+    pipelineStage: 5,
+    // Seed runs once on the client, so a real clock keeps the sample "on track".
+    slaDueAt: Date.now() + 10 * DAY,
+    orderedAt: Date.now() - DAY,
+    createdAt: Date.now() - DAY,
   },
 ];

@@ -9,6 +9,7 @@ import "./globals.css";
 import "@realwired/ui/styles.css";
 import "@realwired/ui/themes/parachute.css";
 import "./realwired-bridge.css";
+import { ToastHost } from "@/components/providers/ToastHost";
 import { SeedProvider } from "@/components/providers/SeedProvider";
 import { DensityProvider } from "@/components/providers/DensityProvider";
 
@@ -44,7 +45,9 @@ export default function RootLayout({
     >
       <body>
         <DensityProvider>
-          <SeedProvider>{children}</SeedProvider>
+          <ToastHost>
+            <SeedProvider>{children}</SeedProvider>
+          </ToastHost>
         </DensityProvider>
       </body>
     </html>

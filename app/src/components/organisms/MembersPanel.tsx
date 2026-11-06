@@ -12,7 +12,7 @@ import {
   STATUS_META,
   relativeTime,
 } from "@/lib/member-roles";
-import { CURRENT_USER } from "@/lib/current-user";
+import { useCurrentUser } from "@/lib/current-user";
 
 // Fixed "now" for relative times — render must not call Date.now(); matches the
 // seed's NOW anchor so "2 hours ago" reads correctly in the prototype.
@@ -26,6 +26,7 @@ export function MembersPanel() {
   const { users, fetchUsers, inviteMember, changeRole, setStatus, removeMember } =
     useUsersStore();
   const { reviews, fetchReviews } = useReviewsStore();
+  const me = useCurrentUser();
 
   const [inviteOpen, setInviteOpen] = useState(false);
   const [resent, setResent] = useState<Set<string>>(new Set());
@@ -92,6 +93,12 @@ export function MembersPanel() {
           : null,
     );
 
+  // The org's first org_admin is the account holder — locked, can't be demoted or removed.
+  const firstAdminId = useMemo(
+    () => users.filter((u) => u.role === "org_admin").sort((a, b) => a.createdAt - b.createdAt)[0]?.id,
+    [users],
+  );
+
   const activeCount = users.filter((u) => (u.status ?? "active") !== "deactivated").length;
   const resendInvite = (id: string) => setResent((s) => new Set(s).add(id));
 
@@ -142,8 +149,8 @@ export function MembersPanel() {
 
         {rows.map((m) => {
           const status = m.status ?? "active";
-          const isOwner = m.role === "owner";
-          const isYou = m.id === CURRENT_USER.id;
+          const isOwner = m.role === "org_admin" && m.id === firstAdminId;
+          const isYou = m.id === me.id;
           const wasResent = resent.has(m.id);
 
           const items: ActionItem[] = [
@@ -224,8 +231,8 @@ export function MembersPanel() {
 
               <span className="mbr-actions" role="cell">
                 {isOwner ? (
-                  <Tooltip content="Account owner — can't be changed" side="top" compact>
-                    <span className="mbr-lock" aria-label="Account owner">
+                  <Tooltip content="Account holder — can't be changed" side="top" compact>
+                    <span className="mbr-lock" aria-label="Account holder">
                       <Icon name="sso" size={16} />
                     </span>
                   </Tooltip>

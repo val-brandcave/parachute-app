@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useDashboard } from "./hooks/useDashboard";
 import { PageHeader } from "@/components/templates/PageHeader";
 import { PeriodPicker, PERIOD_LABEL, periodLabel } from "@/components/molecules";
-import { CURRENT_USER } from "@/lib/current-user";
+import { useCurrentUser } from "@/lib/current-user";
 import {
   StatBar,
   type Stat,
@@ -15,6 +15,7 @@ import {
 } from "@/components/organisms";
 
 export default function DashboardPage() {
+  const me = useCurrentUser();
   const {
     isLoading,
     period,
@@ -76,7 +77,7 @@ export default function DashboardPage() {
   return (
     <>
       <PageHeader
-        title={`Welcome back, ${CURRENT_USER.firstName}`}
+        title={`Welcome back, ${me.firstName}`}
         actions={
           <PeriodPicker
             value={period}
