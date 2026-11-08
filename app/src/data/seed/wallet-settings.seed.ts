@@ -1,4 +1,5 @@
 import type { WalletSettings } from "@/types";
+import { AUTO_RELOAD_DEFAULTS } from "@/lib/pricing";
 
 const T0 = 1_785_000_000_000;
 
@@ -19,18 +20,21 @@ export const seedWalletSettings: WalletSettings[] = [
     orgId: "org-hcb",
     createdAt: T0,
     autoReload: false,
-    reloadPackId: "pack5",
-    reloadBelow: 2,
-    paymentMethod: null,
-    billingEmail: "dana.reyes@harborcb.com",
+    reloadPackId: AUTO_RELOAD_DEFAULTS.packId,
+    reloadBelow: AUTO_RELOAD_DEFAULTS.below,
+    monthlyCap: AUTO_RELOAD_DEFAULTS.monthlyCap,
+    paymentMethod: "card",
+    cardLast4: "4242",
+    billingEmail: "billing@harborcb.com",
   },
   {
     id: "org-cedar",
     orgId: "org-cedar",
     createdAt: T0,
     autoReload: false,
-    reloadPackId: "pack5",
-    reloadBelow: 2,
+    reloadPackId: AUTO_RELOAD_DEFAULTS.packId,
+    reloadBelow: AUTO_RELOAD_DEFAULTS.below,
+    monthlyCap: AUTO_RELOAD_DEFAULTS.monthlyCap,
     paymentMethod: "card",
     cardLast4: "4242",
     billingEmail: "ap@cedarridgebank.com",

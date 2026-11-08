@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Button, Icon } from "@/components/atoms";
 import { StatusPill, SegmentedControl } from "@/components/molecules";
-import { useWorkspaceStore, useTemplatesStore } from "@/store";
+import { useWorkspaceStore, useTemplatesStore, useWalletStore } from "@/store";
 import { WorkbookPreview } from "@/components/review/WorkbookPreview";
 import { AddFindingModal, type NewFinding } from "@/components/review/AddFindingModal";
 import { newSection, unroutedCategories, type WbSection } from "@/lib/workbook-config";
@@ -48,6 +48,10 @@ export function RunWorkbook({
   onReviewFindings: () => void;
   onReturn: () => void;
 }) {
+  // D5: a signed workbook links to the receipt of the debit that paid for it.
+  const receiptId = useWalletStore(
+    (st) => st.ledger.find((e) => e.kind === "debit" && e.reviewId === review.id && e.receiptId)?.receiptId,
+  );
   const {
     findings,
     states,
@@ -469,6 +473,16 @@ export function RunWorkbook({
               >
                 Download
               </Button>
+              {receiptId && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  iconLeft="sheet"
+                  onClick={() => useWalletStore.getState().openReceipt(receiptId)}
+                >
+                  Receipt
+                </Button>
+              )}
               {canFinish ? (
                 <Button
                   variant="primary"

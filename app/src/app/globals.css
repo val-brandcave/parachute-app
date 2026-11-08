@@ -17934,3 +17934,6 @@ select.qfilter {
   line-height: 18px;
   color: var(--md-on-surface-t);
 }
+
+/* Phase 3: keep the demo dock clear of the run takeover's cost footbar */
+body:has(.run) .demo-dock { bottom: 84px; }

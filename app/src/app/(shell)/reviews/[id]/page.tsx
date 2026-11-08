@@ -5,7 +5,14 @@ import { createPortal } from "react-dom";
 import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useReview } from "@/store/useReview";
-import { useRunStore, useReviewsStore, useOnboardingStore, beginRunInPlace } from "@/store";
+import {
+  useRunStore,
+  useReviewsStore,
+  useOnboardingStore,
+  useWalletStore,
+  beginRunInPlace,
+} from "@/store";
+import { costFor } from "@/lib/pricing";
 import { runEntry } from "@/lib/review-lifecycle";
 import type { ReviewType } from "@/types";
 import { RunExperience, type RunStartHandler } from "@/components/run/RunExperience";
@@ -54,14 +61,30 @@ export default function ReviewDetailPage() {
   // Route Start: the review already exists — flip it to running + commit the
   // chosen types, then advance to the pipeline in place.
   const onStart: RunStartHandler = (display, types, opts) => {
+    // Balance is checked at Start only (backstop; the confirm gate already disables Start).
+    const wallet = useWalletStore.getState();
+    const need = review?.sample ? 0 : costFor(types as ReviewType[]);
+    if (!wallet.canAfford(need)) {
+      wallet.openTopUp({ reason: "low_balance", needed: need });
+      return;
+    }
     if (review)
       updateReview(review.id, {
+        loanNo: display.loanNo || review.loanNo,
         status: "running",
         // The confirm gate only offers the two live ReviewType members.
         reviewTypes: types as ReviewType[],
         pipelineStage: 1,
       });
-    if (review && !review.sample) void useOnboardingStore.getState().complete("first_review");
+    if (review && !review.sample) {
+      void useOnboardingStore.getState().complete("first_review");
+      void wallet.debitForReview({
+        reviewId: review.id,
+        types: types as ReviewType[],
+        loanNo: display.loanNo || undefined,
+        sample: review.sample,
+      });
+    }
     beginRunInPlace(display, types, opts);
   };
 

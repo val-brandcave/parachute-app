@@ -223,8 +223,8 @@ export function useWelcomePending() {
   }, [toast]);
 
   const addCard = useCallback(() => {
-    toast({ title: "Cards open with Billing", description: "Adding a card is part of the next build.", tone: "neutral" });
-  }, [toast]);
+    router.push("/configure/billing?tab=payment");
+  }, [router]);
 
   return { org, user, talkToUs, addCard, trialCredits: TRIAL_GRANT_CREDITS };
 }
@@ -233,10 +233,10 @@ export function useWelcomePending() {
 
 export function useWelcomeReady() {
   const org = useWorkspace();
-  const toast = useToast();
+  const router = useRouter();
   const balance = useWalletStore((s) => s.ledger.reduce((sum, e) => sum + e.credits, 0));
   const addCard = useCallback(() => {
-    toast({ title: "Cards open with Billing", description: "Adding a card is part of the next build.", tone: "neutral" });
-  }, [toast]);
+    router.push("/configure/billing?tab=payment");
+  }, [router]);
   return { org, balance, addCard, firstReportCost: costFor(["technical", "administrative"]) };
 }

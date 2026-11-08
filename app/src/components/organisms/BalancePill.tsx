@@ -18,17 +18,15 @@ export function BalancePill({ collapsed }: { collapsed: boolean }) {
   const label = nonTrial ? `${balance} credit${balance === 1 ? "" : "s"}` : `${balance} trial`;
 
   const pill = (
-    <button type="button" className={cn("sb-balance", collapsed && "is-collapsed")} onClick={openBilling} aria-label={`Balance: ${label}`}>
+    <button type="button" className={cn("sb-balance", collapsed && "is-collapsed")} onClick={openBilling} aria-label={`Balance ${label} · open billing`}>
       <Icon name="wallet" size={16} />
       {!collapsed && <span className="sb-balance-l">Balance</span>}
       <span className={cn("sb-balance-chip", nonTrial ? "is-solid" : "is-trial")}>{collapsed ? balance : label}</span>
     </button>
   );
-  return collapsed ? (
-    <Tooltip content={`Balance · ${label}`} side="right" block>
+  return (
+    <Tooltip content={collapsed ? `Balance · ${label} · open billing` : "Balance · open billing"} side="right" block>
       {pill}
     </Tooltip>
-  ) : (
-    pill
   );
 }

@@ -7,6 +7,8 @@ import { FULL_REVIEW_TYPES } from "@/lib/setup-steps";
 import { GUIDES } from "@/lib/guides";
 import { approxValue, costFor } from "@/lib/pricing";
 import { useReviewsStore, useWalletStore } from "@/store";
+import { remainingFromLedger } from "@/store/wallet.store";
+import { expiryLine } from "@/components/organisms/billing/billing-data";
 import type { Review } from "@/types";
 import { useSetupActions } from "./useSetupActions";
 
@@ -40,31 +42,11 @@ export function SampleCard() {
   );
 }
 
-/** Remaining credits by origin, spending trial first, then earned, then purchased. */
-function remainingBySource(ledger: ReturnType<typeof useWalletStore.getState>["ledger"]) {
-  let trial = 0;
-  let earned = 0;
-  let purchased = 0;
-  let used = 0;
-  for (const e of ledger) {
-    if (e.kind === "trial_grant") trial += e.credits;
-    else if (e.kind === "earned") earned += e.credits;
-    else if (e.kind === "debit" || e.kind === "rescan") used += -e.credits;
-    else purchased += e.credits;
-  }
-  const spend = (bucket: number) => {
-    const take = Math.min(bucket, used);
-    used -= take;
-    return bucket - take;
-  };
-  return { trial: spend(trial), earned: spend(earned), purchased: spend(purchased) };
-}
-
 /** Big balance, what it buys, and a trial / earned / purchased meter. */
 export function WalletCard() {
   const ledger = useWalletStore((s) => s.ledger);
   const { billing } = useSetupActions();
-  const r = remainingBySource(ledger);
+  const r = remainingFromLedger(ledger);
   const balance = r.trial + r.earned + r.purchased;
   const mixed = r.earned + r.purchased > 0;
   const fullReviews = Math.floor(balance / costFor(FULL_REVIEW_TYPES));
@@ -104,7 +86,7 @@ export function WalletCard() {
           Purchased {r.purchased}
         </span>
       </div>
-      {mixed && <p className="hm-note">Next: nothing expires soon.</p>}
+      {mixed && <p className="hm-note">{expiryLine(ledger, r)}.</p>}
     </section>
   );
 }

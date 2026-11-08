@@ -6,7 +6,7 @@ import { Icon, type IconName } from "@/components/atoms";
 type ConfigCard = {
   href: string;
   icon: IconName;
-  tone: "org" | "defaults" | "templates" | "responses" | "checklists" | "security";
+  tone: "org" | "defaults" | "templates" | "responses" | "checklists" | "security" | "billing";
   title: string;
   desc: string;
   tags: string[];
@@ -63,6 +63,14 @@ const CARDS: ConfigCard[] = [
     title: "Security pack",
     desc: "What your IT team needs to approve us as a vendor.",
     tags: ["Architecture", "Data handling", "Send to IT"],
+  },
+  {
+    href: "/configure/billing",
+    icon: "wallet",
+    tone: "billing",
+    title: "Billing & credits",
+    desc: "Your balance, receipts, payment method and auto-reload.",
+    tags: ["Balance", "Activity", "Payment"],
   },
 ];
 

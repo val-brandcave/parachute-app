@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Prototype-only: lets parallel build agents run separate dev servers without sharing .next
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   async redirects() {
     return [
       // App entry: send the root to the demo entry fork (/start) at the routing

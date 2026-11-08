@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button, Icon, YouConnectGlyph } from "@/components/atoms";
 import { useTemplatesStore } from "@/store";
 import { inheritedLayout, profileFor } from "@/lib/workbook";
 import { InheritedTemplateField } from "./InheritedTemplateField";
-import type { Review } from "@/types";
+import { CostSummary, LowBalanceCallout, TypeCostChip, useRunCost } from "./CostSummary";
+import type { Review, ReviewType } from "@/types";
 import type { RunDisplay, RunReviewType, RunSource } from "@/store";
 
 /** Property types offered in the type select (mirrors the Order flow). */
@@ -38,6 +39,8 @@ type FieldGroup = "identity" | "technical" | "administrative";
 interface ReviewTypeSpec {
   id: RunReviewType;
   label: string;
+  /** Short label used in the setup row ("Technical review"). */
+  rowLabel?: string;
   /** One-line "what it does / what it produces" — mirrors the Order flow's
    *  output-first framing (Cody, Jul 7: "each of these could use a description").
    *  Generic language ("the report's", not "the appraisal's") so it reads true
@@ -60,7 +63,8 @@ const REVIEW_TYPES: ReviewTypeSpec[] = [
   {
     id: "technical",
     label: "Technical",
-    description: "Checks the report's methodology, comps, and value conclusion. Output: a reviewer workbook.",
+    rowLabel: "Technical review",
+    description: "Workbook of findings on value, method and math.",
     status: "live",
     propertyBased: true,
     defaultOn: true,
@@ -69,7 +73,8 @@ const REVIEW_TYPES: ReviewTypeSpec[] = [
   {
     id: "administrative",
     label: "Administrative",
-    description: "Verifies the report against policy and regulatory requirements. Output: a signed attestation.",
+    rowLabel: "Administrative review",
+    description: "Compliance checklist and attestations.",
     status: "live",
     propertyBased: true,
     // Pre-checked with Technical — Ed (Jun 30): "80% of us order both."
@@ -172,9 +177,28 @@ export function RunConfirm({
   const defaultLayout = inheritedLayout(layouts, profile);
 
   // Start gates on ≥1 review type; identity only matters if a selected type asks for it.
-  const canStart = selected.length > 0 && (!showIdentity || address.trim().length > 0);
+  const cost = useRunCost(selected as ReviewType[], !!review.sample);
+  const short = cost.mode === "wallet" && !cost.affordable && selected.length > 0;
+  const canStart =
+    selected.length > 0 && (!showIdentity || address.trim().length > 0) && cost.affordable;
+
+  // Low-balance callout lives at the end of the form; bring it into view when the
+  // gate first renders short, and again if Start is pressed while short.
+  const calloutRef = useRef<HTMLDivElement>(null);
+  const showCallout = (focus: boolean) => {
+    const el = calloutRef.current;
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (focus) el.focus({ preventScroll: true });
+  };
+  useEffect(() => {
+    if (!short) return;
+    const t = setTimeout(() => showCallout(false), 500); // after the staggered entrance
+    return () => clearTimeout(t);
+  }, [short]);
 
   const start = () => {
+    if (short) return showCallout(true);
     if (!canStart) return;
     onStart(
       {
@@ -241,11 +265,12 @@ export function RunConfirm({
                   </span>
                   <span className="run-cf-opt-body">
                     <span className="run-cf-opt-label">
-                      {spec.label}
+                      {spec.rowLabel ?? spec.label}
                       {soon && <span className="run-cf-opt-soon">(coming soon)</span>}
                     </span>
                     <span className="run-cf-opt-desc">{spec.description}</span>
                   </span>
+                  {!soon && cost.mode === "wallet" && <TypeCostChip type={spec.id as ReviewType} />}
                 </>
               );
               return soon ? (
@@ -295,8 +320,9 @@ export function RunConfirm({
                 <input value={bank} onChange={(e) => setBank(e.target.value)} />
               </label>
               <label className="field">
-                <span>Loan number</span>
+                <span>Loan # or reference</span>
                 <input value={loanNo} onChange={(e) => setLoanNo(e.target.value)} />
+                <small className="cs-hint">Optional · appears on the receipt</small>
               </label>
               <label className="field">
                 <span>Appraiser firm</span>
@@ -374,6 +400,16 @@ export function RunConfirm({
               </AnimatePresence>
             </motion.div>
           )}
+
+          {short && (
+            <div className="cs-callout-slot" ref={calloutRef} tabIndex={-1}>
+              <LowBalanceCallout
+                selected={selected as ReviewType[]}
+                cost={cost}
+                onRunOnly={(t) => setSelected([t])}
+              />
+            </div>
+          )}
         </motion.div>
       </div>
 
@@ -381,6 +417,7 @@ export function RunConfirm({
           scrolling past every card; sits outside the scroll area. */}
       <div className="run-cf-footbar">
         <div className="run-cf-footbar-inner">
+          <CostSummary cost={cost} />
           <Button variant="ghost" size="sm" onClick={onCancel}>
             Cancel
           </Button>
@@ -388,7 +425,9 @@ export function RunConfirm({
             variant="primary"
             size="sm"
             iconLeft="parachute"
-            disabled={!canStart}
+            disabled={!canStart && !short}
+            aria-disabled={!canStart}
+            className={short ? "cs-start-short" : undefined}
             onClick={start}
           >
             Start review

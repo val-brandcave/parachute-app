@@ -17,6 +17,7 @@ import {
   generateId,
   type CreditLedgerEntry,
   type CreditPackId,
+  type CreditSource,
   type LedgerKind,
   type ReviewType,
   type SetupStepId,
@@ -24,6 +25,47 @@ import {
 } from "@/types";
 import { useOrgStore } from "./org.store";
 import { useSessionStore } from "./session.store";
+
+/** Credits still spendable, by origin, after applying spend order trial > earned > purchased.
+ *  Refunds and adjustments sit in the purchased bucket. */
+export interface RemainingBySource {
+  trial: number;
+  earned: number;
+  purchased: number;
+}
+
+export function remainingFromLedger(ledger: readonly CreditLedgerEntry[]): RemainingBySource {
+  let trial = 0;
+  let earned = 0;
+  let purchased = 0;
+  let used = 0;
+  for (const e of ledger) {
+    if (e.kind === "trial_grant") trial += e.credits;
+    else if (e.kind === "earned") earned += e.credits;
+    else if (e.kind === "debit" || e.kind === "rescan") used += -e.credits;
+    else purchased += e.credits;
+  }
+  const spend = (bucket: number) => {
+    const take = Math.min(Math.max(bucket, 0), used);
+    used -= take;
+    return bucket - take;
+  };
+  return { trial: spend(trial), earned: spend(earned), purchased: spend(purchased) };
+}
+
+/** Which buckets a charge of `credits` would draw from, in spend order. */
+export function sourcesFor(remaining: RemainingBySource, credits: number): CreditSource[] {
+  const out: CreditSource[] = [];
+  let left = credits;
+  for (const k of ["trial", "earned", "purchased"] as const) {
+    if (left <= 0) break;
+    if (remaining[k] > 0) {
+      out.push(k);
+      left -= remaining[k];
+    }
+  }
+  return out;
+}
 
 export type TopUpReason = "manual" | "low_balance";
 
@@ -75,6 +117,8 @@ interface WalletState {
   // --- Derived (never stored) ---
   balance: () => number;
   balanceBySource: () => BalanceBySource;
+  /** Spendable credits by origin after spend order (use this for meters). */
+  remainingBySource: () => RemainingBySource;
   cost: (types: readonly ReviewType[]) => number;
   /** Can the org run this? Invoiced orgs are billed outside the wallet, so always yes. */
   canAfford: (credits: number) => boolean;
@@ -174,6 +218,7 @@ export const useWalletStore = create<WalletState>((set, get) => {
       }
       return out;
     },
+    remainingBySource: () => remainingFromLedger(get().ledger),
     cost: (types) => costFor(types),
     canAfford: (credits) => {
       if (useOrgStore.getState().org?.billing === "invoiced") return true;
@@ -186,14 +231,41 @@ export const useWalletStore = create<WalletState>((set, get) => {
       if (get().ledger.some((e) => e.kind === "debit" && e.reviewId === reviewId)) return null;
       const credits = costFor(types);
       if (credits <= 0) return null;
-      return addEntry({
+      const paidFrom = sourcesFor(remainingFromLedger(get().ledger), credits);
+      const entry = await addEntry({
         kind: "debit",
         credits: -credits,
-        amountUsd: usd(credits),
+        // Trial credits are free runs: $0 charged (the list value shows on the receipt).
+        amountUsd: paidFrom.length === 1 && paidFrom[0] === "trial" ? 0 : usd(credits),
         reviewId,
         loanNo,
         reviewTypes: [...types],
+        paidFrom,
+        receiptId: `RCT-${generateId().slice(0, 5).toUpperCase()}`,
       });
+      // Auto-reload: top up once when the balance drops below the threshold.
+      const st = get().settings;
+      if (st?.autoReload && get().balance() < st.reloadBelow) {
+        const pack = packById(st.reloadPackId);
+        const monthStart = new Date();
+        monthStart.setDate(1);
+        monthStart.setHours(0, 0, 0, 0);
+        const spentThisMonth = get()
+          .ledger.filter((e) => e.kind === "purchase" && e.auto && e.createdAt >= monthStart.getTime())
+          .reduce((s2, e) => s2 + (e.amountUsd ?? 0), 0);
+        if (spentThisMonth + pack.priceUsd <= (st.monthlyCap ?? AUTO_RELOAD_DEFAULTS.monthlyCap)) {
+          await addEntry({
+            kind: "purchase",
+            credits: pack.credits,
+            amountUsd: pack.priceUsd,
+            packId: pack.id,
+            auto: true,
+            receiptId: `RCT-${generateId().slice(0, 5).toUpperCase()}`,
+            note: `Auto-reload · ${pack.credits}-credit pack`,
+          });
+        }
+      }
+      return entry;
     },
 
     grantTrial: async () => {

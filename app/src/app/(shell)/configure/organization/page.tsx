@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import { Tabs, AvatarUpload } from "@/components/molecules";
-import { MembersPanel, BrandingPanel, BillingPanel } from "@/components/organisms";
+import { MembersPanel, BrandingPanel } from "@/components/organisms";
 import { Card, Input, Label, Divider, Icon } from "@/components/atoms";
 import { useIdentityStore, useOnboardingStore, useOrgStore } from "@/store";
 import { CURRENT_ORG } from "@/lib/current-user";
 import { formatShortDate } from "@/lib/utils";
 
-type TabKey = "identity" | "branding" | "members" | "billing";
+type TabKey = "identity" | "branding" | "members";
 
 /** Human-readable file size for the bank-policy row. */
 function formatBytes(n: number): string {
@@ -77,7 +77,6 @@ export default function OrganizationPage() {
             { value: "identity", label: "Identity" },
             { value: "branding", label: "Branding" },
             { value: "members", label: "Members" },
-            { value: "billing", label: "Billing" },
           ]}
         />
         <div style={{ flex: 1 }} />
@@ -162,11 +161,6 @@ export default function OrganizationPage() {
         </div>
       )}
 
-      {tab === "billing" && (
-        <div className="pagebody" style={{ maxWidth: 860, margin: "0 auto" }}>
-          <BillingPanel />
-        </div>
-      )}
     </>
   );
 }

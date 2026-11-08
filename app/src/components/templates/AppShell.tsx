@@ -21,6 +21,7 @@ import { SearchTrigger } from "@/components/organisms/SearchTrigger";
 import { CommandPalette } from "@/components/organisms/CommandPalette";
 import { RunModal } from "@/components/run/RunModal";
 import { DemoDock } from "@/components/organisms/DemoDock";
+import { TopUpModal, ReceiptDialog } from "@/components/organisms/wallet";
 import { usePrefsStore, useSessionStore } from "@/store";
 
 /**
@@ -139,6 +140,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <CommandPalette open={searchOpen} onClose={() => setSearchOpen(false)} />
       <RunModal />
       <EarnedToastHost />
+      <TopUpModal />
+      <ReceiptDialog />
       <DemoDock />
     </>
   );

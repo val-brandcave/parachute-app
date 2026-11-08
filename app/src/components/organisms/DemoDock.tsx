@@ -82,6 +82,17 @@ export function DemoDock() {
             <button className="demo-dock-btn" onClick={() => useDemoStore.getState().addCredits(5)}>
               <Icon name="coins" size={15} /> +5 credits
             </button>
+            <button
+              className="demo-dock-btn"
+              disabled={org.org?.billing === "invoiced"}
+              onClick={() => {
+                const w = useWalletStore.getState();
+                const delta = 1 - w.balance();
+                if (delta !== 0) void w.adjust(delta, "Demo: low balance");
+              }}
+            >
+              <Icon name="warn" size={15} /> Low balance
+            </button>
             <button className="demo-dock-btn" onClick={() => router.push("/start")}>
               <Icon name="switch" size={15} /> Personas
             </button>

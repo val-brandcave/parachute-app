@@ -73,6 +73,8 @@ export type SetupStepId =
 
 export type CreditPackId = "pack5" | "pack10" | "pack20";
 
+export type CreditSource = "trial" | "earned" | "purchased";
+
 export type LedgerKind =
   | "trial_grant"
   | "earned"
@@ -95,6 +97,10 @@ export interface CreditLedgerEntry extends BaseEntity {
   setupStepId?: SetupStepId;
   packId?: CreditPackId;
   receiptId?: string;
+  /** Debits: which bucket(s) the credits came from (spend order trial > earned > purchased). */
+  paidFrom?: CreditSource[];
+  /** Purchases: true when auto-reload bought it. */
+  auto?: boolean;
   actorId: UUID;
   note?: string;
 }

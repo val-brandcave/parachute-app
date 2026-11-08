@@ -50,10 +50,17 @@ export function packById(id: CreditPackId): CreditPack {
 
 /** Auto-reload defaults offered when an admin switches it on. */
 export const AUTO_RELOAD_DEFAULTS: { packId: CreditPackId; below: number; monthlyCap: number } = {
-  packId: "pack5",
+  packId: "pack10",
   below: 2,
-  monthlyCap: 4000,
+  monthlyCap: 3000,
 };
+
+/** Days an earned setup credit lasts. */
+export const EARNED_LIFE_DAYS = 90;
+/** Months a purchased credit lasts. */
+export const PURCHASED_LIFE_MONTHS = 12;
+/** Pack pre-selected in the Add credits dialog. */
+export const DEFAULT_PACK_ID: CreditPackId = "pack10";
 
 /** Above these, "Talk to us" becomes the primary path. */
 export const SALES_THRESHOLDS = {

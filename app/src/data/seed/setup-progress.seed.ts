@@ -18,7 +18,7 @@ export const seedSetupProgress: SetupProgress[] = [
       account: NOV6,
       sample_review: NOV6 + 1 * HOUR,
       first_review: NOV6 + 26 * HOUR,
-      bank_policy: NOV6 + 74 * HOUR,
+      bank_policy: NOV6 + 26 * HOUR,
     },
     completedBy: {
       account: "user-dr",

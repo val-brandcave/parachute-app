@@ -31,6 +31,7 @@ const CONFIG_SECTIONS: Record<string, string> = {
   responses: "Response library",
   checklists: "Compliance checklists",
   security: "Security pack",
+  billing: "Billing & credits",
 };
 
 export function Breadcrumbs() {
@@ -71,6 +72,9 @@ export function Breadcrumbs() {
           const family = checklists.find((c) => c.id === segs[2]);
           crumbs.push({ label: family ? family.name : "Checklist" });
         }
+      } else if (section === "billing") {
+        crumbs.push({ label: "Billing & credits", href: deeper ? sectionHref : undefined });
+        if (segs[2] === "statement") crumbs.push({ label: "Monthly statement" });
       } else {
         crumbs.push({ label: CONFIG_SECTIONS[section] });
       }

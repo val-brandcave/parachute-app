@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { Button, Chip, Icon } from "@/components/atoms";
 import { StatusPill } from "@/components/molecules";
 import { approxValue } from "@/lib/pricing";
@@ -11,7 +12,7 @@ export function ReadyState({
   firstReportCost,
   onSample,
   onFirstReport,
-  onAddCard,
+  onAddCard: _legacyAddCard,
   onHome,
 }: {
   orgName: string;
@@ -19,9 +20,12 @@ export function ReadyState({
   firstReportCost: number;
   onSample: () => void;
   onFirstReport: () => void;
-  onAddCard: () => void;
+  /** Deprecated: the card now lives on the billing Payment tab. */
+  onAddCard?: () => void;
   onHome: () => void;
 }) {
+  const router = useRouter();
+  void _legacyAddCard;
   return (
     <div>
       <div className="wel-state">
@@ -68,7 +72,7 @@ export function ReadyState({
       </button>
 
       <div className="wel-actions">
-        <button type="button" className="wel-text-link" onClick={onAddCard}>
+        <button type="button" className="wel-text-link" onClick={() => router.push("/configure/billing?tab=payment")}>
           Add a card now
         </button>
         <Button type="button" size="lg" iconRight="forward" onClick={onHome}>

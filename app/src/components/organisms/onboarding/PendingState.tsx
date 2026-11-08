@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { Button, Icon } from "@/components/atoms";
 import { StatusPill } from "@/components/molecules";
 import type { Org } from "@/types";
@@ -46,7 +47,7 @@ export function PendingState({
   email,
   trialCredits,
   onOpenSample,
-  onAddCard,
+  onAddCard: _legacyAddCard,
   onTalk,
 }: {
   org: Org;
@@ -54,9 +55,12 @@ export function PendingState({
   email: string;
   trialCredits: number;
   onOpenSample: () => void;
-  onAddCard: () => void;
+  /** Deprecated: the card now lives on the billing Payment tab. */
+  onAddCard?: () => void;
   onTalk: () => void;
 }) {
+  const router = useRouter();
+  void _legacyAddCard;
   const p = org.profile;
   const kind = p?.kind === "appraisal_firm" ? "appraisal firm" : "bank or lender";
   const rows = [
@@ -90,7 +94,7 @@ export function PendingState({
         </Button>
       </div>
       <div className="wel-actions" style={{ justifyContent: "flex-end", marginTop: 14 }}>
-        <button type="button" className="wel-text-link" onClick={onAddCard}>
+        <button type="button" className="wel-text-link" onClick={() => router.push("/configure/billing?tab=payment")}>
           Add a card now
         </button>
       </div>
