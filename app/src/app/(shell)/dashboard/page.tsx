@@ -8,6 +8,7 @@ import { useCurrentUser } from "@/lib/current-user";
 import { FIRST_RUN_STATBAR_MIN } from "@/lib/setup-steps";
 import { useOrgStage } from "@/store";
 import { FirstRunHome } from "@/components/organisms/home";
+import { ValueStrip, useShowValueStrip } from "@/components/organisms/value";
 import {
   StatBar,
   type Stat,
@@ -33,6 +34,8 @@ export default function DashboardPage() {
     newFromYc,
     trend,
   } = useDashboard();
+
+  const showValue = useShowValueStrip(reviews);
 
   const stats: Stat[] = [
     // Lifecycle order: intake → processing → review → SLA → done.
@@ -133,6 +136,8 @@ export default function DashboardPage() {
               transition={{ duration: 0.28 }}
             >
               <StatBar stats={stats} />
+
+              {showValue && <ValueStrip reviews={reviews} />}
 
               <div style={{ marginTop: "var(--d-gap)" }}>
                 <TrendChart {...trend} periodLabel={periodLabel(period, range)} />

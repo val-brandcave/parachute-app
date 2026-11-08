@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Logo } from "@/components/Logo";
@@ -7,6 +8,7 @@ import { Icon, YouConnectGlyph } from "@/components/atoms";
 import { useSessionStore } from "@/store";
 import { useDemoStore } from "@/store/demo.store";
 import { DEMO_ENABLED } from "@/lib/demo";
+import "../emails/emails.css";
 import {
   demoPersonas,
   PERSONA_GROUP_LABEL,
@@ -105,6 +107,12 @@ export default function StartPage() {
               </div>
             </section>
           ))}
+
+        {DEMO_ENABLED && (
+          <p className="em-startlink">
+            <Link href="/emails">E-mail previews</Link>
+          </p>
+        )}
       </motion.div>
     </div>
   );

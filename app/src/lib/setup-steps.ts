@@ -5,8 +5,8 @@ import { EARN_CAP_CREDITS, EARN_REWARD_CREDITS, SETUP_REWARD_STEPS, costFor } fr
  * The first-run checklist ("Getting set up"), in display order. The copy and
  * the per-step metadata (minutes, video, doc, what the right-hand side shows)
  * live HERE so components stay presentational. Every number comes from
- * `pricing.ts`. `SetupStepId` also keeps `branding`, `invite` and `tutorial`
- * for later phases; they are deliberately not in this list.
+ * `pricing.ts`. `SetupStepId` also keeps `branding` and `tutorial` for later
+ * phases; they are deliberately not in this list.
  */
 
 export type SetupGroup = "first" | "team";
@@ -57,6 +57,9 @@ export const FIRST_RUN_STATBAR_MIN = 5;
 
 /** The pre-ticked first line. It counts as done but is not in `SETUP_STEPS`. */
 export const ACCOUNT_STEP = { id: "account" as SetupStepId, doneLabel: "Account created" };
+
+/** Bridge into Realwired Admin (Bouncer), where members and invites live. */
+export const INVITE_HREF = "/launch/bouncer?to=members&return=/dashboard";
 
 export const SETUP_STEPS: SetupStepDef[] = [
   {
@@ -143,6 +146,20 @@ export const SETUP_STEPS: SetupStepDef[] = [
     side: "reward",
     action: { label: "Start", href: "/configure/workbook-layouts" },
     continueLabel: "Continue",
+    adminOnly: true,
+  },
+  {
+    // Completes when an invite is accepted (bouncer store). No credit today.
+    // Deferred: reward on an accepted approver invite.
+    id: "invite",
+    group: "team",
+    label: "Invite a teammate",
+    doneLabel: "Teammate invited",
+    desc: () => "Add a reviewer or approver. You manage members in Realwired Admin.",
+    minutes: 2,
+    side: "none",
+    action: { label: "Invite", href: INVITE_HREF },
+    continueLabel: "Manage",
     adminOnly: true,
   },
 ];

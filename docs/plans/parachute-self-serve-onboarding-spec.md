@@ -44,7 +44,7 @@ D Cost at Start: D1 trial · D2 paid · D3 not enough credits (+ reviewer inset)
 E Billing: E1 Billing & credits · E2 Payment tab + auto-reload on · E3 Plans (flag) · E4 reviewer view · E5 invoiced org · E6 monthly statement.
 F Security pack: F1 page · F2 sent state. G Bouncer: G1 bridge · G2 back with a member. H Value dashboard: H1. I E-mails: I1.
 
-Demo cast: Harbor Community Bank (Dana Reyes org_admin, Marcus Ortiz reviewer, Priya Natarajan approver); sample 4410 Bayside Office Park, Norfolk VA; Meridian Trust (org-001) as the invoiced YouConnect org. Full copy per screen: session scratchpad `spec/screens-spec.md` (fold into this file after approval).
+Demo cast: Harbor Community Bank (Dana Reyes org_admin, Marcus Ortiz reviewer, Priya Natarajan approver); sample 4410 Bayside Office Park, Norfolk VA; Meridian Trust (org-001) as the invoiced YouConnect org. Full copy per screen: `self-serve/screens-spec.md` (approved 6 Nov; deviations per phase report).
 
 ## 5. Routes and structure (keep `(shell)` untouched)
 
@@ -79,6 +79,8 @@ Compose from `@realwired/ui`; library additions (parallel track): `Chip.meta`, `
 4 Bridges and polish (S–M): Bouncer bridge + mock with a full invite screen (e-mail, role pick reviewer/approver/org_admin, pending invites, resend/revoke; Val 6 Nov: show the whole invite flow, in Bouncer where Realwired puts it); value placeholder; e-mail previews; docs, AGENTS.md, feedback-log rows.
 
 Each phase ends with a persona tour; Loom per phase for Ed.
+
+**Build status (8 Nov 2026), branch `feat/self-serve-onboarding`:** Phase 0 `a539e1f` · Phase 1 `16337ad` · Phase 2 `84da718` · Phase 3 `af0cefe` · Phase 4 in progress. Each phase has a brief and a report in `self-serve/`. D1–D12 were taken as recommended on 6 Nov. The screen copy in `self-serve/screens-spec.md` is the approved copy, with the deviations listed in each phase report: 8 setup steps (9 with the invite step) instead of 6; HCB balance 13 instead of 9; pack prices from `pricing.ts`. Loom recordings for Ed are not yet made.
 
 ## 9. Decisions for Val (recommended letter first)
 

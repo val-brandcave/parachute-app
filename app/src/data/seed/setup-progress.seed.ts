@@ -6,7 +6,8 @@ const DAY = 86_400_000;
 const NOV6 = new Date(2026, 10, 6, 9, 12).getTime();
 const HOUR = 3_600_000;
 
-/** One row per org (`id` === `orgId`). org-hcb is the C2 state (4 of 8 done);
+/** One row per org (`id` === `orgId`). org-hcb is the C2 state (4 of 9 done; its `invite` step stays open, with one
+ *  pending invite shown live from the bouncer store);
  *  org-cedar is mid-setup; org-001 (invoiced) is fully set up; org-lakeside has
  *  not started. The first step, "account", is always done. */
 export const seedSetupProgress: SetupProgress[] = [
@@ -42,6 +43,7 @@ export const seedSetupProgress: SetupProgress[] = [
       sign_workbook: T0 - 38 * DAY,
       bank_policy: T0 - 52 * DAY,
       security_pack: T0 - 50 * DAY,
+      invite: T0 - 55 * DAY,
     },
     completedBy: {
       account: "user-cr1",
@@ -50,6 +52,7 @@ export const seedSetupProgress: SetupProgress[] = [
       sign_workbook: "user-cr2",
       bank_policy: "user-cr1",
       security_pack: "user-cr1",
+      invite: "user-cr1",
     },
     inProgress: {
       checklist: { note: "Draft saved · 9 of 24 items mapped", href: "/configure/checklists" },
@@ -68,6 +71,7 @@ export const seedSetupProgress: SetupProgress[] = [
       security_pack: 1_760_000_000_000,
       checklist: 1_737_000_000_000,
       layout: 1_737_000_000_000,
+      invite: 1_737_000_000_000,
     },
     homeDismissedAt: 1_737_100_000_000,
   },

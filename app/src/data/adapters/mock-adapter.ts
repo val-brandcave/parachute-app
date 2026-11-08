@@ -39,7 +39,9 @@ const SEEDED_KEY = `${STORAGE_PREFIX}:__seeded__`;
 //      v18: self-serve Phase 3 - HCB ledger tells the billing story (trial runs, refund,
 //      earned, 10-pack with receipts), HCB card 4242 + billing@harborcb.com, receipts and
 //      paidFrom on every seeded debit/purchase, Cedar Ridge card + default reload pack.
-const SEED_VERSION = "v19";
+//      v20: self-serve Phase 4 - invites collection (Harbor has one pending), the
+//      "invite" setup step (done for Cedar Ridge and Meridian, open for Harbor).
+const SEED_VERSION = "v20";
 
 export const mockAdapter: DataAdapter = {
   async getAll<T>(collection: string): Promise<T[]> {

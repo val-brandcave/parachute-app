@@ -14,7 +14,8 @@ import {
   type SetupGroup,
 } from "@/lib/setup-steps";
 import { cn, formatStamp } from "@/lib/utils";
-import { usePrefsStore, useSetupSummary, type DerivedStep, type SetupSummary } from "@/store";
+import { INVITE_HREF } from "@/lib/setup-steps";
+import { useOrgInvites, usePrefsStore, useSetupSummary, type DerivedStep, type SetupSummary } from "@/store";
 import { useSetupActions } from "./useSetupActions";
 
 const GROUPS: SetupGroup[] = ["first", "team"];
@@ -188,6 +189,22 @@ export function SetupChecklist() {
   const isAdmin = me.role === "org_admin";
   const capReached = summary.earnedCredits >= EARN_CAP_CREDITS;
   const anyDone = summary.steps.some((s) => s.done);
+  // "Invite a teammate" shows its pending invites live from Realwired Admin.
+  const { pending } = useOrgInvites();
+  const steps = summary.steps.map((s) =>
+    s.id === "invite" && !s.done && pending.length > 0
+      ? {
+          ...s,
+          doing: {
+            note:
+              pending.length === 1
+                ? `1 invite pending · ${pending[0].email}`
+                : `${pending.length} invites pending`,
+            href: INVITE_HREF,
+          },
+        }
+      : s,
+  );
 
   const hide = () => {
     setHidden(me.id, true);
@@ -229,7 +246,7 @@ export function SetupChecklist() {
       <DoneLine summary={summary} />
 
       {GROUPS.map((g) => {
-        const all = summary.steps.filter((s) => s.group === g);
+        const all = steps.filter((s) => s.group === g);
         const left = all.filter((s) => !s.done);
         if (left.length === 0) return null;
         const doneInGroup = all.length - left.length;

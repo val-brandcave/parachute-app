@@ -38,3 +38,5 @@ export { useDemoStore } from "./demo.store";
 export { loadSessionData } from "./session-data";
 export { useRunStore, DEMO_RUN_REVIEW_ID, beginRunInPlace } from "./run.store";
 export type { RunSpoke, RunDisplay, RunSource, RunReviewType } from "./run.store";
+export { useBouncerStore, useOrgInvites } from "./bouncer.store";
+export type { JoinedInfo } from "./bouncer.store";

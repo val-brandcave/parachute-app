@@ -96,6 +96,12 @@ export function DemoDock() {
             <button className="demo-dock-btn" onClick={() => router.push("/start")}>
               <Icon name="switch" size={15} /> Personas
             </button>
+            <button
+              className="demo-dock-btn"
+              onClick={() => window.open("/emails", "_blank", "noopener")}
+            >
+              <Icon name="mail" size={15} /> E-mails
+            </button>
           </div>
         </div>
       )}

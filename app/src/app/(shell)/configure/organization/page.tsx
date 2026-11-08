@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Tabs, AvatarUpload } from "@/components/molecules";
 import { MembersPanel, BrandingPanel } from "@/components/organisms";
 import { Card, Input, Label, Divider, Icon } from "@/components/atoms";
@@ -48,8 +49,21 @@ const grid2: React.CSSProperties = {
   gap: 14,
 };
 
+const TAB_KEYS: TabKey[] = ["identity", "branding", "members"];
+
 export default function OrganizationPage() {
-  const [tab, setTab] = useState<TabKey>("identity");
+  // useSearchParams needs a Suspense boundary for static prerender.
+  return (
+    <Suspense fallback={null}>
+      <OrganizationView />
+    </Suspense>
+  );
+}
+
+function OrganizationView() {
+  // `?tab=members` is how Realwired Admin returns here.
+  const wanted = useSearchParams().get("tab") as TabKey | null;
+  const [tab, setTab] = useState<TabKey>(wanted && TAB_KEYS.includes(wanted) ? wanted : "identity");
   const { orgAvatar, setOrgAvatar } = useIdentityStore();
 
   // Org bank policy (F-123) — the single upload/replace surface; the run confirm

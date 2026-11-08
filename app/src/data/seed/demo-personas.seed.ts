@@ -63,7 +63,7 @@ export const demoPersonas: DemoPersona[] = [
   {
     id: "trial-admin",
     label: "Trial admin, mid-setup",
-    description: "Dana at Harbor Community Bank. First-run Home, setup 4 of 8.",
+    description: "Dana at Harbor Community Bank. First-run Home, setup 4 of 9.",
     group: "signed_in",
     icon: "gift",
     userId: "user-dr",

@@ -1,0 +1,234 @@
+/* E-mail previews (Phase 4 I1). Prototype only. The page follows light/dark;
+   the e-mail paper is fixed white in both themes, like every other rendered document. */
+.em-page {
+  position: fixed;
+  inset: 0;
+  overflow-y: auto;
+  background: var(--md-bg);
+  color: var(--md-on-surface);
+  padding: 28px 32px 56px;
+}
+.em-band {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.em-band-main {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.em-title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  margin: 6px 0 0;
+  color: var(--md-on-surface);
+}
+.em-note {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--md-on-surface-v);
+}
+.em-band-side {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.em-back {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--md-accent-d);
+  text-decoration: none;
+  border-radius: 4px;
+}
+.em-back:hover {
+  text-decoration: underline;
+}
+.em-back:focus-visible,
+.em-chip:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-accent);
+}
+
+.em-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 22px 0 24px;
+}
+.em-chip {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--md-outline);
+  background: var(--md-surface);
+  color: var(--md-on-surface-v);
+  cursor: pointer;
+  text-decoration: none;
+}
+.em-chip:hover {
+  background: var(--md-surface-1);
+}
+.em-chip[aria-pressed="true"] {
+  background: var(--md-selected);
+  border-color: transparent;
+  color: var(--md-on-selected);
+}
+
+/* Cards keep their natural e-mail width and wrap to fit the viewport. */
+.em-grid {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 28px;
+}
+.em-card {
+  --em-navy: #10344c; /* locked brand navy: the e-mail is always on white */
+  width: 600px;
+  max-width: 100%;
+  scroll-margin-top: 24px;
+}
+.em-meta {
+  padding: 0 2px 12px;
+}
+.em-meta-line {
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--md-on-surface-v);
+  overflow-wrap: anywhere;
+}
+.em-meta-line span {
+  color: var(--md-on-surface-t);
+}
+.em-subject {
+  margin: 4px 0 0;
+  font-family: var(--font-sans-base);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--md-on-surface);
+}
+
+.em-paper {
+  background: var(--paper-bg);
+  color: var(--paper-ink);
+  border: 1px solid var(--paper-hair);
+  border-radius: var(--r);
+  box-shadow: var(--paper-elev);
+  overflow: hidden;
+}
+.em-brand {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 28px;
+  background: var(--em-navy);
+  color: var(--paper-bg);
+}
+.em-product {
+  font-size: 12.5px;
+  font-weight: 500;
+  opacity: 0.9;
+}
+.em-body {
+  padding: 28px 28px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+}
+.em-p {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--paper-ink);
+}
+.em-p strong {
+  font-weight: 700;
+}
+.em-code {
+  align-self: stretch;
+  padding: 18px 0;
+  text-align: center;
+  background: var(--paper-bg-1);
+  border-radius: var(--r);
+  font-family: var(--font-display);
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-indent: 0.22em;
+  color: var(--paper-ink);
+  font-variant-numeric: tabular-nums;
+}
+.em-rows {
+  align-self: stretch;
+  margin: 0;
+  padding: 10px 16px;
+  background: var(--paper-bg-1);
+  border-radius: var(--r);
+}
+.em-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 6px 0;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.em-row dt {
+  color: var(--paper-ink-2);
+}
+.em-row dd {
+  margin: 0;
+  text-align: right;
+  font-weight: 600;
+  color: var(--paper-ink);
+}
+.em-btn {
+  display: inline-block;
+  padding: 11px 20px;
+  border-radius: var(--r);
+  background: var(--em-navy);
+  color: var(--paper-bg);
+  font-size: 14.5px;
+  font-weight: 600;
+}
+.em-small {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--paper-ink-2);
+}
+.em-foot {
+  display: flex;
+  gap: 8px;
+  padding: 16px 28px;
+  border-top: 1px solid var(--paper-hair);
+  font-size: 12.5px;
+  color: var(--paper-ink-3);
+}
+
+/* Quiet link on /start */
+.em-startlink {
+  margin: 20px 0 0;
+  text-align: center;
+  font-size: 12.5px;
+}
+.em-startlink a {
+  color: var(--md-on-surface-v);
+  text-decoration: none;
+  border-radius: 4px;
+}
+.em-startlink a:hover {
+  color: var(--md-accent-d);
+  text-decoration: underline;
+}
+.em-startlink a:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-accent);
+}
