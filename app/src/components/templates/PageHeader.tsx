@@ -6,7 +6,8 @@ export function PageHeader({
   actions,
 }: {
   eyebrow?: string;
-  title: string;
+  /** Omit when the breadcrumb already names the page; badges (e.g. tabs) then lead the band. */
+  title?: string;
   /** Chips/labels shown inline to the right of the title (version, status, …). */
   badges?: React.ReactNode;
   sub?: string;
@@ -17,7 +18,7 @@ export function PageHeader({
       <div style={{ minWidth: 0 }}>
         {eyebrow && <div className="eyebrow">{eyebrow}</div>}
         <div className="pagehead-titlerow">
-          <h1>{title}</h1>
+          {title && <h1>{title}</h1>}
           {badges}
         </div>
         {sub && <div className="sub">{sub}</div>}

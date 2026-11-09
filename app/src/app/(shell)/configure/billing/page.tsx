@@ -42,7 +42,6 @@ function BillingPage() {
     return (
       <>
         <PageHeader
-          title="Billing"
           badges={
             <Tabs
               value={tab}
@@ -71,12 +70,9 @@ function BillingPage() {
   // Reviewers and approvers: read-only balance, credits only.
   if (!b.isAdmin) {
     return (
-      <>
-        <PageHeader title="Billing & credits" />
-        <div className="pagebody bl-page">
-          <ReviewerBilling b={b} />
-        </div>
-      </>
+      <div className="pagebody bl-page">
+        <ReviewerBilling b={b} />
+      </div>
     );
   }
 
@@ -84,7 +80,6 @@ function BillingPage() {
   return (
     <>
       <PageHeader
-        title="Billing & credits"
         badges={
           <Tabs
             value={tab}

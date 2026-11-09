@@ -53,3 +53,11 @@
 .wc-card .hm-link {
   align-self: flex-start;
 }
+
+/* Title row: icon tile + heading, same as the "For your IT team" card. */
+.wc-title {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}

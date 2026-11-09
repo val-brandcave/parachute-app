@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { CreditChip } from "@/components/atoms";
+import { CreditChip, Icon } from "@/components/atoms";
 import { spendOrderSentence } from "@/components/organisms/billing/billing-data";
 import { useCurrentUser } from "@/lib/current-user";
 import { EARN_CAP_CREDITS, TRIAL_GRANT_CREDITS, costFor } from "@/lib/pricing";
@@ -111,7 +111,12 @@ export function WalletCard() {
   return (
     <section className="card hm-card wc-card">
       <div className="hm-row-between">
-        <h2 className="hm-h">Wallet</h2>
+        <div className="wc-title">
+          <span className="hm-ico" aria-hidden="true">
+            <Icon name="wallet" size={18} />
+          </span>
+          <h2 className="hm-h">Wallet</h2>
+        </div>
         {low ? (
           <CreditChip tone="low" size="sm">
             Low

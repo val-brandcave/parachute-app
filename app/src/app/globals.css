@@ -6322,6 +6322,12 @@ body.wb-reordering .wb-adddiv {
 .statseg.alert .v {
   color: var(--md-error);
 }
+/* Dark theme: --md-primary is a deep navy there, so a navy glyph disappears on
+   the dark tile. Use the light navy-derived ink instead (alert tiles keep red). */
+:root[data-theme="dark"] .statseg:not(.alert) .statseg-badge,
+:root[data-theme="dark"] .hm-ico {
+  color: var(--md-on-selected);
+}
 
 /* ---- tooltip ---- */
 .ui-tip-wrap {
