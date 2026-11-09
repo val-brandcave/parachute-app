@@ -3,6 +3,7 @@ export { MicrosoftGlyph, YouConnectGlyph, ParachuteGlyph, ChuteEmblem } from "./
 export { Button } from "./Button";
 export { IconButton } from "./IconButton";
 export { Chip, type ChipTone } from "./Chip";
+export { CreditChip, type CreditChipTone } from "./CreditChip";
 export { Input, Textarea, Label } from "./Input";
 export { Avatar, Divider, Spinner, Kbd, Card } from "./primitives";
 export { Switch } from "./Switch";

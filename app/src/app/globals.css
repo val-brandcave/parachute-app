@@ -17937,3 +17937,48 @@ select.qfilter {
 
 /* Phase 3: keep the demo dock clear of the run takeover's cost footbar */
 body:has(.run) .demo-dock { bottom: 84px; }
+
+/* ------------------------------------------------------------------ CreditChip
+   Credits and money, tinted by meaning (variants board row 2, option 2). */
+.cchip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 9px;
+  border-radius: 7px;
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 600;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  box-sizing: border-box;
+  border: 1px solid transparent;
+}
+.cchip--sm {
+  height: 20px;
+  padding: 0 7px;
+  font-size: 11px;
+}
+.cchip--credit {
+  background: var(--md-selected);
+  color: var(--md-on-selected);
+}
+.cchip--trial {
+  background: transparent;
+  border: 1px dashed var(--md-on-surface-t);
+  color: var(--md-on-surface);
+}
+.cchip--money {
+  background: var(--md-surface-2);
+  border-color: var(--md-outline-v);
+  color: var(--md-on-surface-v);
+}
+.cchip--free {
+  background: var(--md-success-c);
+  color: var(--md-success);
+}
+.cchip--low {
+  background: var(--md-warn-c);
+  color: var(--md-warn-solid);
+}

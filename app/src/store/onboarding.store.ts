@@ -235,3 +235,10 @@ export function useSetupHidden(): boolean {
   const userId = useSessionStore((s) => s.userId);
   return usePrefsStore((s) => (userId ? !!s.setupHiddenBy[userId] : false));
 }
+
+/** The org is waiting for Realwired staff approval: no trial credits yet and no
+ *  new reviews (the sample stays open). Drives the dashboard's pending state and
+ *  every "Start a review" entry point. */
+export function useApprovalPending(): boolean {
+  return useOrgStore((s) => s.org?.approval === "pending");
+}

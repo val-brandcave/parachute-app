@@ -32,7 +32,7 @@ export { useSessionStore } from "./session.store";
 export type { AppMode, AuthState } from "./session.store";
 export { useWalletStore } from "./wallet.store";
 export type { BalanceBySource, TopUpReason } from "./wallet.store";
-export { useOnboardingStore, useSetupSummary, useOrgStage, useSetupHidden, deriveSteps } from "./onboarding.store";
+export { useOnboardingStore, useSetupSummary, useOrgStage, useSetupHidden, useApprovalPending, deriveSteps } from "./onboarding.store";
 export type { DerivedStep, SetupSummary, EarnedNotice } from "./onboarding.store";
 export { useDemoStore } from "./demo.store";
 export { loadSessionData } from "./session-data";

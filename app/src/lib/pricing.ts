@@ -93,6 +93,15 @@ export function needsSalesFirst(profile: { teamBand: string; volumeBand: string 
   return profile.teamBand === "11+" || profile.volumeBand === "200+";
 }
 
+/**
+ * Who waits for Realwired staff approval (RWT-1031 / ADR-009). Decided 9 Nov 2026:
+ * self-serve teams are approved instantly; only orgs flagged for sales (the same
+ * SALES_THRESHOLDS) wait, and they wait on the dashboard, not on a separate page.
+ */
+export function needsStaffApproval(profile: { teamBand: string; volumeBand: string }): boolean {
+  return needsSalesFirst(profile);
+}
+
 /** Indicative value of a credit balance, "~$900" style. */
 export function approxValue(credits: number): string {
   return `~${formatUsd(usd(credits))}`;
