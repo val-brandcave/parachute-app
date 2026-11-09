@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Button, CreditChip } from "@/components/atoms";
 import { HcCard } from "@/components/organisms/home/HcFrame";
@@ -7,36 +8,39 @@ import { useCurrentUser } from "@/lib/current-user";
 import { TRIAL_GRANT_CREDITS, costFor } from "@/lib/pricing";
 import { FULL_REVIEW_TYPES } from "@/lib/setup-steps";
 import { balanceGrants } from "@/lib/wallet-breakdown";
-import { useApprovalPending, useSetupSummary, useWalletStore } from "@/store";
+import { useApprovalPending, useReviewsStore, useSetupSummary, useWalletStore } from "@/store";
+import { buildUsageLines, runwayFill, runwayFor, runwayText, runwayWarn, usageAnchor } from "@/components/organisms/billing/usage/usage-data";
 
 const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
 const MAX_TOKENS = 10;
 
 /** One small page per full review the balance covers. Decorative: the sentence carries the meaning. */
 function Tokens({ full, half, mode }: { full: number; half?: boolean; mode?: "low" | "dashed" }) {
-  const shown = Math.min(full, MAX_TOKENS);
   return (
     <div className="hc-tokens" aria-hidden="true">
       {mode ? (
         <i className={`hc-tok is-${mode}`} />
       ) : (
         <>
-          {Array.from({ length: shown }, (_, i) => (
+          {Array.from({ length: full }, (_, i) => (
             <i key={i} className="hc-tok" />
           ))}
           {half && <i className="hc-tok is-half" />}
-          {full > MAX_TOKENS && <span className="hc-tok-more">+{full - MAX_TOKENS}</span>}
         </>
       )}
     </div>
   );
 }
 
-/** Home wallet card: credits shown as the reviews they buy. The bar appears only while every
- *  credit is trial credit, where it is real progress. Spend order and expiry live on Billing. */
+/** Home wallet card. One picture per stage, so it scales from a trial to a bank running hundreds of
+ *  reviews a month: trial = progress bar of the trial grant; paid with usage = runway bar (how long
+ *  the balance lasts at the last 30 days' pace, same scale as Billing); paid with no usage yet =
+ *  review tokens only while they are few enough to count (<= MAX_TOKENS). Spend order and expiry
+ *  live on Billing. */
 export function WalletCard() {
   const router = useRouter();
   const ledger = useWalletStore((s) => s.ledger);
+  const reviews = useReviewsStore((s) => s.reviews);
   const pending = useApprovalPending();
   const isAdmin = useCurrentUser().role === "org_admin";
   const { adminFirst } = useSetupSummary();
@@ -52,6 +56,10 @@ export function WalletCard() {
   const enough = `Enough for ${full} full ${plural(full, "review", "reviews")}`;
   const openTopUp = () => useWalletStore.getState().openTopUp({ reason: "low_balance", needed: fullCost - balance });
   const viewBalance = () => router.push("/configure/billing");
+  const run = useMemo(() => {
+    const lines = buildUsageLines(ledger, reviews, false);
+    return runwayFor(balance, lines, usageAnchor(lines, ledger));
+  }, [ledger, reviews, balance]);
 
   const viewBtn = (variant: "outline" | "ghost") => (
     <Button variant={variant} size="sm" onClick={viewBalance}>
@@ -154,13 +162,39 @@ export function WalletCard() {
     );
   }
 
+  // Paid, with usage to go on: how long the balance lasts. Works the same at 13 credits or 400.
+  if (run.days !== null) {
+    const warn = runwayWarn(run.days);
+    return (
+      <HcCard
+        title="Wallet"
+        actions={viewBtn("outline")}
+        meta={`${enough.replace("Enough for", "Covers")}`}
+      >
+        <div className="hc-big">
+          <span className="hc-n">{balance}</span>
+          <span className="hc-u">{plural(balance, "credit", "credits")}</span>
+        </div>
+        <div
+          className={`hc-bar${warn ? " is-warn" : ""}`}
+          role="img"
+          aria-label={`Balance lasts ${runwayText(run.days)} at your current pace`}
+        >
+          <i style={{ width: `${Math.round(runwayFill(run.days) * 100)}%` }} />
+        </div>
+        <p className="hc-line">Lasts {runwayText(run.days)} at your pace</p>
+      </HcCard>
+    );
+  }
+
+  // Paid, nothing run yet: count reviews; show the tokens only while they are few enough to count.
   return (
     <HcCard title="Wallet" actions={viewBtn("outline")} meta={`${fullCost} credits per review`}>
       <div className="hc-big">
         <span className="hc-n">{balance}</span>
         <span className="hc-u">{plural(balance, "credit", "credits")}</span>
       </div>
-      <Tokens full={full} half={spare} />
+      {full <= MAX_TOKENS && <Tokens full={full} half={spare} />}
       <p className="hc-line">{enough}</p>
     </HcCard>
   );

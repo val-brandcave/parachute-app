@@ -279,11 +279,6 @@
   border-style: dashed;
   border-color: var(--md-on-surface-t);
 }
-.hc-tok-more {
-  font-size: 12px;
-  color: var(--md-on-surface-v);
-  font-variant-numeric: tabular-nums;
-}
 .hc-bar {
   height: 8px;
   margin: 10px 0 8px;
@@ -296,6 +291,13 @@
   height: 100%;
   border-radius: 999px;
   background: var(--md-primary);
+}
+:root[data-theme="dark"] .hc-bar > i {
+  background: var(--md-on-selected);
+}
+/* Runway under a week: amber. */
+.hc-bar.is-warn > i {
+  background: var(--md-warn-solid);
 }
 
 /* Guides */

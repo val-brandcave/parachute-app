@@ -340,6 +340,20 @@ export function runwayFor(balance: number, lines: readonly UsageLine[], anchorEn
   return { pacePerDay, days, runsOut: anchorEnd - DAY + Math.ceil(days) * DAY };
 }
 
+/** One runway scale everywhere (Billing overview, Home wallet): the bar fills against a month and
+ *  turns amber when the balance lasts less than a week. */
+export const RUNWAY_SCALE_DAYS = 30;
+export const RUNWAY_WARN_DAYS = 7;
+export const runwayFill = (days: number) => Math.max(0.02, Math.min(1, days / RUNWAY_SCALE_DAYS));
+export const runwayWarn = (days: number) => days < RUNWAY_WARN_DAYS;
+/** "less than a day" · "about 5 days" · "about 3 weeks" · "more than a month". */
+export function runwayText(days: number): string {
+  if (days < 1) return "less than a day";
+  if (days < 14) return `about ${Math.round(days)} ${Math.round(days) === 1 ? "day" : "days"}`;
+  if (days > 45) return "more than a month";
+  return `about ${Math.round(days / 7)} weeks`;
+}
+
 /* --------------------------------------------------------------- display */
 
 export const credits = (n: number) => `${Math.round(n * 10) / 10}`;

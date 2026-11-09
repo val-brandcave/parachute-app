@@ -8,19 +8,13 @@ import { CREDIT_USD, approxValue, costFor, formatUsd, packById } from "@/lib/pri
 import { balanceGrants, nextExpiring } from "@/lib/wallet-breakdown";
 import { ActivityTable } from "./ActivityTable";
 import { BalanceCard } from "./BalanceCard";
-import { DAY, UsageCard, deltaOf, factsFor, runwayFor, useUsage, type Delta, type UsagePeriod } from "./usage";
+import { DAY, UsageCard, deltaOf, factsFor, runwayFill, runwayFor, runwayText, runwayWarn, useUsage, type Delta, type UsagePeriod } from "./usage";
 import { DEMO_TODAY, daysUntil } from "./billing-data";
 import type { Billing } from "./useBilling";
 
 const EXPIRY_ALERT_DAYS = 30;
 const longDate = (ts: number) => new Date(ts).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 const shortDate = (ts: number) => new Date(ts).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
-
-function weeksOrDays(days: number): string {
-  if (days < 1) return "less than a day";
-  if (days < 14) return `about ${Math.round(days)} ${Math.round(days) === 1 ? "day" : "days"}`;
-  return `about ${Math.round(days / 7)} weeks`;
-}
 
 function DeltaLine({ d }: { d: Delta }) {
   if (d.pct === null) return <>&nbsp;</>;
@@ -41,8 +35,8 @@ function BalanceHero({ b, showValue, onSettings, aside }: { b: Billing; showValu
   const run = useMemo(() => runwayFor(total, all, anchor), [total, all, anchor]);
   const s = b.settings;
   const pack = packById(s?.reloadPackId ?? "pack10");
-  const low = run.days !== null && run.days < 14;
-  const fill = run.days === null ? 0 : Math.min(1, run.days / 120);
+  const low = run.days !== null && runwayWarn(run.days);
+  const fill = run.days === null ? 0 : runwayFill(run.days);
 
   return (
     <section className="card bl-card ov-hero">
@@ -82,12 +76,12 @@ function BalanceHero({ b, showValue, onSettings, aside }: { b: Billing; showValu
           </p>
         ) : (
           <>
-            <div className={`ov-run-bar${low ? " is-low" : ""}`} role="img" aria-label={`Balance lasts ${weeksOrDays(run.days)}`}>
+            <div className={`ov-run-bar${low ? " is-low" : ""}`} role="img" aria-label={`Balance lasts ${runwayText(run.days)}`}>
               <i style={{ width: `${Math.max(2, Math.round(fill * 100))}%` }} />
             </div>
             <div className="ov-run-line">
               <span>
-                At your last 30 days&rsquo; pace ({Math.round(run.pacePerDay * 10) / 10} credits a day), this lasts {weeksOrDays(run.days)}.
+                At your last 30 days&rsquo; pace ({Math.round(run.pacePerDay * 10) / 10} credits a day), this lasts {runwayText(run.days)}.
               </span>
               <span className="ov-run-out">{run.days < 1 ? "Runs out today" : `Runs out around ${shortDate(run.runsOut!)}`}</span>
             </div>
