@@ -105,7 +105,7 @@ export function ActionMenu({
   const toggle = () => setOpen((o) => !o);
 
   const defaultTrigger = (
-    <button
+    <button type="button"
       className="ui-iconbtn"
       onClick={toggle}
       aria-haspopup="menu"
@@ -153,7 +153,7 @@ export function ActionMenu({
                       </div>
                     );
                   return (
-                    <button
+                    <button type="button"
                       key={it.label ?? `item-${idx}`}
                       role="menuitem"
                       className={cnItem(it.danger, it.description)}

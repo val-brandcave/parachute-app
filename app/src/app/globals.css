@@ -419,10 +419,22 @@ h3,
   background-size: 16px 16px;
   padding-right: 42px;
 }
-input,
-select,
-textarea {
-  background: #ffffff;
+/* Bare form controls: white in light, an elevated dark fill in dark. In the
+   base layer so utility classes (e.g. a library's bg-transparent search input)
+   still win; .field / .ui-input / .kc-code keep their own rules. */
+@layer base {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    background-color: #ffffff;
+  }
+  :root[data-theme="dark"] input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  :root[data-theme="dark"] select,
+  :root[data-theme="dark"] textarea {
+    background-color: var(--md-surface-2);
+    color: var(--md-on-surface);
+    color-scheme: dark;
+  }
 }
 /* Always-white inputs: Chrome paints autofill dark when the page color-scheme is
    dark — force white bg + dark ink so autofilled fields match the rest. */
@@ -16475,6 +16487,12 @@ select.qfilter {
 }
 .kc-code input[aria-invalid="true"] {
   border-color: var(--md-error);
+}
+/* Dark theme: code boxes follow the dark input fill like every other field. */
+:root[data-theme="dark"] .kc-code input {
+  background: var(--md-surface-2);
+  color: var(--md-on-surface);
+  color-scheme: dark;
 }
 .kc-resend {
   display: flex;
