@@ -1,0 +1,13 @@
+/* Top-up pack chips: placement only; colour comes from CreditChip. */
+.tu-pack .tu-pack-p {
+  margin-top: 6px;
+  font-size: 13px;
+}
+.tu-pack .tu-pack-note {
+  margin-top: 6px;
+}
+/* Selected pack is navy-tinted; keep the price chip legible on it. */
+.tu-pack[data-on] .cchip--money {
+  background: var(--md-surface);
+  color: var(--md-on-surface-v);
+}

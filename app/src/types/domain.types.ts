@@ -42,6 +42,8 @@ export interface OrgFlags {
   plansTab?: boolean;
   membersInBouncer?: boolean;
   approvalGate?: boolean;
+  /** Created by /welcome in this session: show the one-time "ready" banner. Seeded orgs never set it. */
+  welcomeBanner?: boolean;
 }
 
 export interface Org extends BaseEntity {

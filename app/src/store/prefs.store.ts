@@ -6,12 +6,23 @@ export type ThemePref = "light" | "dark" | "system";
 const DKEY = "parachute:density";
 const TKEY = "parachute:theme";
 const HKEY = "parachute:setup-hidden";
+const WKEY = "parachute:welcome-dismissed";
 
 /** Per-user "Hide setup guide" flags, keyed by user id. */
 function initialHidden(): Record<string, boolean> {
   if (typeof window === "undefined") return {};
   try {
     return JSON.parse(window.localStorage.getItem(HKEY) ?? "{}") as Record<string, boolean>;
+  } catch {
+    return {};
+  }
+}
+
+/** Per-user "ready" banner dismissals, keyed by user id. */
+function initialWelcome(): Record<string, boolean> {
+  if (typeof window === "undefined") return {};
+  try {
+    return JSON.parse(window.localStorage.getItem(WKEY) ?? "{}") as Record<string, boolean>;
   } catch {
     return {};
   }
@@ -42,6 +53,9 @@ interface PrefsState {
   /** Users who hid the setup guide (per user, not per org). */
   setupHiddenBy: Record<string, boolean>;
   setSetupHidden: (userId: string, hidden: boolean) => void;
+  /** Users who dismissed the one-time "your organization is ready" banner. */
+  welcomeDismissedBy: Record<string, boolean>;
+  dismissWelcome: (userId: string) => void;
   setDensity: (d: Density) => void;
   setTheme: (t: ThemePref) => void;
   toggleNav: () => void;
@@ -56,6 +70,12 @@ export const usePrefsStore = create<PrefsState>((set, get) => ({
     const next = { ...get().setupHiddenBy, [userId]: hidden };
     if (typeof window !== "undefined") window.localStorage.setItem(HKEY, JSON.stringify(next));
     set({ setupHiddenBy: next });
+  },
+  welcomeDismissedBy: initialWelcome(),
+  dismissWelcome: (userId) => {
+    const next = { ...get().welcomeDismissedBy, [userId]: true };
+    if (typeof window !== "undefined") window.localStorage.setItem(WKEY, JSON.stringify(next));
+    set({ welcomeDismissedBy: next });
   },
   setDensity: (density) => {
     if (typeof window !== "undefined") {

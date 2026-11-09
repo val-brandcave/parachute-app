@@ -7,12 +7,12 @@ import { BalanceCard } from "./BalanceCard";
 import { PaymentMethodsCard } from "./PaymentMethodsCard";
 import type { Billing } from "./useBilling";
 
-/** E1: three cards, then the latest six ledger rows. */
+/** E1: the balance breakdown, auto-reload and payment methods side by side, then the latest six ledger rows. */
 export function OverviewTab({ b, onViewAll, onStatement }: { b: Billing; onViewAll: () => void; onStatement: () => void }) {
   return (
     <div className="bl-stack">
-      <div className="bl-three">
-        <BalanceCard b={b} />
+      <BalanceCard b={b} />
+      <div className="bl-two">
         <AutoReloadCard b={b} />
         <PaymentMethodsCard b={b} />
       </div>

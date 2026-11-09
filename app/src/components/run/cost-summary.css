@@ -20,33 +20,28 @@
   color: var(--md-on-surface);
 }
 
-.cs-chip {
+.cs-sep {
+  flex: none;
+  align-self: center;
+  width: 1px;
+  height: 16px;
+  margin: 0 3px;
+  background: var(--md-outline-v);
+}
+
+/* Review-type row: credits + price pair, pushed right */
+.cs-type-cost {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  flex: none;
-  padding: 2px 9px;
-  border-radius: 999px;
-  font-size: 12px;
-  line-height: 18px;
-  font-weight: 600;
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
-}
-.cs-chip--cost {
   align-self: center;
+  gap: 6px;
   margin-left: auto;
-  background: var(--md-surface-2);
-  color: var(--md-on-surface-v);
-  font-weight: 500;
+  flex: none;
 }
-.run-cf-opt.is-on .cs-chip--cost {
+/* A selected row is already navy-tinted: lift the credit chip onto the surface so it still reads */
+.run-cf-opt.is-on .cchip--credit {
   background: var(--md-surface);
-  color: var(--md-on-surface-v);
-}
-.cs-chip--low {
-  background: var(--md-warn-c);
-  color: var(--md-warn-solid);
+  border-color: var(--md-outline-v);
 }
 
 /* Warning callout: last item in the form column, same width as the cards. */

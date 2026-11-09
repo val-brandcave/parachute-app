@@ -1,4 +1,5 @@
-import { CREDIT_USD, EARNED_LIFE_DAYS, PURCHASED_LIFE_MONTHS, formatUsd, usd } from "@/lib/pricing";
+import { CREDIT_USD, formatUsd, usd } from "@/lib/pricing";
+import { balanceGrants, nextExpiring, type BalanceGrant } from "@/lib/wallet-breakdown";
 import { remainingFromLedger, type RemainingBySource } from "@/store/wallet.store";
 import type { CreditLedgerEntry, CreditSource, Review, ReviewType } from "@/types";
 
@@ -208,23 +209,37 @@ export function downloadText(filename: string, text: string, mime = "text/csv") 
 
 /* ---------------- Expiry ---------------- */
 
-/** Plain-language line under the balance title. */
-export function expiryLine(ledger: readonly CreditLedgerEntry[], remaining: RemainingBySource): string {
-  const fmt = (ts: number) => new Date(ts).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
-  if (remaining.earned > 0) {
-    const first = [...ledger].filter((e) => e.kind === "earned").sort((a, b) => a.createdAt - b.createdAt)[0];
-    if (first) {
-      const n = Math.min(remaining.earned, first.credits);
-      return `Next expiry: ${n} earned credit${n === 1 ? "" : "s"} on ${fmt(first.createdAt + EARNED_LIFE_DAYS * 86_400_000)}`;
-    }
-  }
-  const buy = [...ledger].filter((e) => e.kind === "purchase").sort((a, b) => a.createdAt - b.createdAt)[0];
-  if (remaining.purchased > 0 && buy) {
-    const d = new Date(buy.createdAt);
-    d.setMonth(d.getMonth() + PURCHASED_LIFE_MONTHS);
-    return `Next expiry: purchased credits on ${fmt(d.getTime())}`;
-  }
-  return "Nothing expires soon";
+const fmtLong = (ts: number) => new Date(ts).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+
+/** Whole days from the demo's today to `ts` (never negative). */
+export function daysUntil(ts: number): number {
+  return Math.max(0, Math.ceil((ts - DEMO_TODAY) / 86_400_000));
+}
+
+/** "No expiry", or a long date. */
+export function expiryLabel(g: BalanceGrant): string {
+  return g.expiresAt === null ? "No expiry" : fmtLong(g.expiresAt);
+}
+
+/** One sentence: what is used first, and the next expiry (or that nothing expires soon). */
+export function spendOrderSentence(grants: readonly BalanceGrant[]): string {
+  const next = nextExpiring(grants);
+  const firsts = ["trial", "earned"].filter((s) => grants.some((g) => g.source === s && g.remaining > 0));
+  const lead =
+    firsts.length === 2 ? "Trial and earned credits are used first." : firsts.length === 1 ? `${firsts[0] === "trial" ? "Trial" : "Earned"} credits are used first.` : "Oldest credits are used first.";
+  if (!next) return `${lead} Nothing expires soon.`;
+  const n = next.remaining;
+  const what = next.source === "earned" ? `earned credit${n === 1 ? "" : "s"}` : `purchased credit${n === 1 ? "" : "s"}`;
+  return `${lead} Next expiry: ${n} ${what} on ${fmtLong(next.expiresAt!)}.`;
+}
+
+/** Plain-language line, kept for older callers. */
+export function expiryLine(ledger: readonly CreditLedgerEntry[], _remaining?: RemainingBySource): string {
+  void _remaining;
+  const next = nextExpiring(balanceGrants(ledger));
+  if (!next) return "Nothing expires soon";
+  const n = next.remaining;
+  return `Next expiry: ${n} ${next.source === "earned" ? "earned " : "purchased "}credit${n === 1 ? "" : "s"} on ${fmtLong(next.expiresAt!)}`;
 }
 
 export function remainingOf(ledger: readonly CreditLedgerEntry[]) {

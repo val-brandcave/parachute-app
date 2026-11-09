@@ -17,6 +17,12 @@
   gap: 20px;
   align-items: stretch;
 }
+.bl-two {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: stretch;
+}
 .bl-split {
   display: grid;
   grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
@@ -25,6 +31,7 @@
 }
 @media (max-width: 1100px) {
   .bl-three,
+  .bl-two,
   .bl-split {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -132,21 +139,72 @@
   gap: 8px;
   margin-top: 14px;
 }
-.bl-balance--split {
-  flex-direction: row;
-  align-items: stretch;
-  gap: 32px;
+.bl-balance-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 18px;
 }
-.bl-balance--split .bl-balance-main {
-  flex: 0 0 360px;
+.bl-order-note {
+  max-width: 420px;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--md-on-surface-v);
+}
+.bl-bd {
+  border: 1px solid var(--md-outline-v);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.bl-bd-cols {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 2.2fr) 110px minmax(180px, 1fr);
+  align-items: center;
+  column-gap: 32px;
+  padding: 0 20px;
+}
+.bl-bd .bl-thead {
+  height: 40px;
+}
+.bl-bd .bl-trow.is-used {
+  color: var(--md-on-surface-v);
+}
+.bl-order {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--md-surface-2);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--md-on-surface-v);
+  font-variant-numeric: tabular-nums;
+}
+.bl-from-cell {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  min-width: 0;
+}
+.bl-left {
+  display: block;
+}
+.bl-exp {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  font-variant-numeric: tabular-nums;
 }
 .bl-ask {
-  flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  padding-left: 32px;
-  border-left: 1px solid var(--md-outline-v);
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--md-outline-v);
 }
 .bl-ask .bl-body {
   margin-top: 0;
@@ -155,6 +213,11 @@
 }
 .bl-ask .bl-note {
   margin-top: 0;
+}
+@media (max-width: 1100px) {
+  .bl-balance-head {
+    flex-direction: column;
+  }
 }
 
 /* ---- auto-reload ---- */

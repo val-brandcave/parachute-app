@@ -20,7 +20,6 @@ export function DemoDock() {
   const open = useDemoStore((s) => s.dockOpen);
   const toggle = useDemoStore((s) => s.toggleDock);
   const personaId = useDemoStore((s) => s.personaId);
-  const gate = useDemoStore((s) => s.approvalGate);
   const me = useCurrentUser();
   const org = useCurrentOrg();
   const balance = useWalletStore((s) => s.ledger.reduce((sum, e) => sum + e.credits, 0));
@@ -51,15 +50,6 @@ export function DemoDock() {
               </span>
             )}
           </div>
-          <button
-            className="demo-dock-toggle"
-            role="switch"
-            aria-checked={gate}
-            onClick={() => useDemoStore.getState().setApprovalGate(!gate)}
-          >
-            <span>Staff approval</span>
-            <span className="demo-dock-toggle-v">{gate ? "on" : "off"}</span>
-          </button>
           <div className="demo-dock-actions">
             <button className="demo-dock-btn" onClick={reset}>
               <Icon name="restore" size={15} /> Reset org

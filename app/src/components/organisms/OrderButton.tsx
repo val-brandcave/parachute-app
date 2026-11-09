@@ -1,7 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/atoms";
+import { Button, Tooltip } from "@/components/atoms";
+import { useStartGate } from "@/components/organisms/home/useStartGate";
 
 /**
  * Reviews-queue primary CTA. Routes to the Launchpad intake front door
@@ -18,9 +19,17 @@ export function OrderButton({
   variant?: "primary" | "accent" | "outline";
 }) {
   const router = useRouter();
-  return (
-    <Button variant={variant} iconLeft="add" onClick={() => router.push("/launchpad")}>
+  const { locked, reason } = useStartGate();
+  const button = (
+    <Button
+      variant={variant}
+      iconLeft="add"
+      disabled={locked}
+      onClick={() => router.push("/launchpad")}
+    >
       Start a review
     </Button>
   );
+  if (!locked) return button;
+  return <Tooltip content={reason}>{button}</Tooltip>;
 }

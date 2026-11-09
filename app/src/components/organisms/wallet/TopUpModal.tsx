@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Dialog, Input, Switch, useToast } from "@realwired/ui";
-import { Button, Icon } from "@/components/atoms";
+import { Button, CreditChip, Icon } from "@/components/atoms";
 import { useCurrentOrg } from "@/lib/current-user";
 import {
   CREDIT_PACKS,
@@ -18,6 +18,7 @@ import { FULL_REVIEW_TYPES } from "@/lib/setup-steps";
 import { useSessionStore, useUsersStore, useWalletStore } from "@/store";
 import type { CreditPackId } from "@/types";
 import "./wallet.css";
+import "./topup-chips.css";
 
 const FULL_REVIEW_COST = costFor(FULL_REVIEW_TYPES);
 
@@ -157,7 +158,7 @@ function TopUpDialog() {
       }
       footer={
         <Button onClick={pay} disabled={!canPay} iconLeft="lock">
-          {paying ? "Processing" : `Pay ~${formatUsd(pack.priceUsd)}`}
+          {paying ? "Processing" : `Pay ${formatUsd(pack.priceUsd)}`}
         </Button>
       }
     >
@@ -187,9 +188,13 @@ function TopUpDialog() {
                   />
                   <span className="tu-pack-n">{p.credits}</span>
                   <span className="tu-pack-u">credits</span>
-                  <span className="tu-pack-p">~{formatUsd(p.priceUsd)}</span>
+                  <CreditChip tone="money" className="tu-pack-p">{formatUsd(p.priceUsd)}</CreditChip>
                   <span className="tu-pack-f">{plural(n, "full review", "full reviews")}</span>
-                  {p.note && <span className="tu-pack-note">{p.note}</span>}
+                  {p.note && (
+                    <CreditChip tone="free" size="sm" className="tu-pack-note">
+                      {p.note}
+                    </CreditChip>
+                  )}
                 </label>
               );
             })}

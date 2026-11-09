@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useToast } from "@realwired/ui";
-import { Icon } from "@/components/atoms";
+import { CreditChip, Icon } from "@/components/atoms";
 import { ActionMenu } from "@/components/molecules";
 import { useCurrentUser } from "@/lib/current-user";
 import { EARN_CAP_CREDITS, costFor } from "@/lib/pricing";
@@ -15,24 +15,33 @@ import {
 } from "@/lib/setup-steps";
 import { cn, formatStamp } from "@/lib/utils";
 import { INVITE_HREF } from "@/lib/setup-steps";
-import { useOrgInvites, usePrefsStore, useSetupSummary, type DerivedStep, type SetupSummary } from "@/store";
+import { useApprovalPending, useOrgInvites, usePrefsStore, useSetupSummary, useWalletStore, type DerivedStep, type SetupSummary } from "@/store";
+import { remainingFromLedger } from "@/store/wallet.store";
 import { useSetupActions } from "./useSetupActions";
 
 const GROUPS: SetupGroup[] = ["first", "team"];
 
 /** The credit/cost pill on a step row's right-hand side. */
 function SidePill({ step, capReached }: { step: DerivedStep; capReached: boolean }) {
+  const ledger = useWalletStore((s) => s.ledger);
+  const r = remainingFromLedger(ledger);
+  // All-trial balance: the first review is paid in trial credits.
+  const allTrial = r.earned + r.purchased === 0;
   if (step.doing) return <span className="su-pill su-pill--doing">In progress</span>;
   switch (step.side) {
     case "free":
-      return <span className="su-pill su-pill--outline">Free</span>;
+      return <CreditChip tone="free">Free</CreditChip>;
     case "cost":
-      return <span className="su-pill su-pill--cost">{costFor(FULL_REVIEW_TYPES)} credits</span>;
+      return allTrial ? (
+        <CreditChip tone="trial">{costFor(FULL_REVIEW_TYPES)} trial credits</CreditChip>
+      ) : (
+        <CreditChip tone="credit">{costFor(FULL_REVIEW_TYPES)} credits</CreditChip>
+      );
     case "reward":
       return capReached ? (
         <span className="su-pill su-pill--outline">No credit</span>
       ) : (
-        <span className="su-pill su-pill--earn">+{step.reward} credit</span>
+        <CreditChip tone="free">+{step.reward} credit</CreditChip>
       );
     case "none":
       return <span className="su-pill su-pill--outline">No credit</span>;
@@ -47,9 +56,12 @@ function StepRow({
   isAdmin,
   adminFirst,
   capReached,
+  locked,
 }: {
   step: DerivedStep;
   isNext: boolean;
+  /** Closed until the organization is approved ("After approval"). */
+  locked: boolean;
   isAdmin: boolean;
   adminFirst: string | null;
   capReached: boolean;
@@ -71,7 +83,7 @@ function StepRow({
           {step.label}
           {isNext && <span className="su-tag">Next</span>}
         </div>
-        <div className="su-desc">{step.descText}</div>
+        <div className="su-desc">{locked ? "Opens after approval." : step.descText}</div>
         <div className="su-meta">
           {step.doing ? (
             <span className="su-meta-doing">
@@ -102,8 +114,13 @@ function StepRow({
         </div>
       </div>
       <div className="su-side">
-        <SidePill step={step} capReached={capReached} />
-        {action &&
+        {locked ? (
+          <CreditChip tone="low">After approval</CreditChip>
+        ) : (
+          <SidePill step={step} capReached={capReached} />
+        )}
+        {!locked &&
+          action &&
           (blocked ? (
             <span className="su-ask">Ask {adminFirst ?? "your admin"}</span>
           ) : (
@@ -152,7 +169,11 @@ function DoneLine({ summary }: { summary: SetupSummary }) {
             <span key={s.id}>
               <span className="su-faint"> · </span>
               <b>{s.doneLabel}</b>
-              {s.rewarded && <span className="su-pill su-pill--earn su-pill--xs">+{s.reward}</span>}
+              {s.rewarded && (
+                <CreditChip tone="free" size="sm">
+                  +{s.reward}
+                </CreditChip>
+              )}
             </span>
           ))}
         </div>
@@ -186,6 +207,7 @@ export function SetupChecklist() {
   const toast = useToast();
   const setHidden = usePrefsStore((s) => s.setSetupHidden);
   const { emailList } = useSetupActions();
+  const awaiting = useApprovalPending();
   const isAdmin = me.role === "org_admin";
   const capReached = summary.earnedCredits >= EARN_CAP_CREDITS;
   const anyDone = summary.steps.some((s) => s.done);
@@ -225,12 +247,20 @@ export function SetupChecklist() {
           {anyDone ? (
             <span>
               {summary.doneCount} of {summary.total} done ·{" "}
-              <span className="su-pill su-pill--earn su-pill--sm">+{summary.earnedCredits} credit{summary.earnedCredits === 1 ? "" : "s"}</span>{" "}
-              earned of up to +{EARN_CAP_CREDITS}
+              {summary.earnedCredits > 0 ? (
+                <>
+                  <CreditChip tone="free" size="sm">+{summary.earnedCredits} credit{summary.earnedCredits === 1 ? "" : "s"}</CreditChip>{" "}
+                  earned of up to +{EARN_CAP_CREDITS}
+                </>
+              ) : (
+                <>earn up to +{EARN_CAP_CREDITS} credits</>
+              )}
             </span>
+          ) : awaiting ? (
+            <span>You can do most of this while you wait</span>
           ) : (
             <span>
-              Earn up to <span className="su-pill su-pill--earn su-pill--sm">+{EARN_CAP_CREDITS} credits</span> for setup
+              Earn up to <CreditChip tone="free" size="sm">+{EARN_CAP_CREDITS} credits</CreditChip> for setup
             </span>
           )}
           <ActionMenu
@@ -250,7 +280,8 @@ export function SetupChecklist() {
         const left = all.filter((s) => !s.done);
         if (left.length === 0) return null;
         const doneInGroup = all.length - left.length;
-        const nextId = left.find((s) => !s.doing)?.id;
+        const isLocked = (s: DerivedStep) => awaiting && s.id === "first_review";
+        const nextId = left.find((s) => !s.doing && !isLocked(s))?.id;
         return (
           <div key={g}>
             <div className="su-group">
@@ -265,6 +296,7 @@ export function SetupChecklist() {
                 isAdmin={isAdmin}
                 adminFirst={summary.adminFirst}
                 capReached={capReached}
+                locked={isLocked(s)}
               />
             ))}
           </div>

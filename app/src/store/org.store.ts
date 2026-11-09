@@ -55,7 +55,7 @@ export interface NewOrgInput {
   profile: OrgProfile;
   /** First org_admin (becomes the billing contact). */
   adminId?: string;
-  /** Hold the workspace for staff approval (RWT-1031). Off = instant sign-up. */
+  /** Hold the workspace for staff approval (RWT-1031): set from needsStaffApproval(profile). */
   approvalGate?: boolean;
 }
 
@@ -125,7 +125,7 @@ export const useOrgStore = create<OrgState>((set, get) => ({
       profile,
       billing: "trial",
       approval: approvalGate ? "pending" : "none",
-      flags: { approvalGate, membersInBouncer: true },
+      flags: { approvalGate, membersInBouncer: true, welcomeBanner: true },
       billingContactId: adminId,
     };
     const created = await adapter.create<Org>(Collections.ORGS, org);

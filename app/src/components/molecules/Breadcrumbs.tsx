@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Icon } from "@/components/atoms";
+import { CreditChip, Icon } from "@/components/atoms";
+import { useStartGate } from "@/components/organisms/home/useStartGate";
 import { useReviewsStore, useTemplatesStore } from "@/store";
 
 type Crumb = { label: string; href?: string };
@@ -39,6 +40,7 @@ export function Breadcrumbs() {
   const reviews = useReviewsStore((s) => s.reviews);
   const checklists = useTemplatesStore((s) => s.checklists);
   const segs = pathname.split("/").filter(Boolean);
+  const startGate = useStartGate();
 
   let crumbs: Crumb[] = [];
 
@@ -97,6 +99,11 @@ export function Breadcrumbs() {
               <span className={last ? "cur" : undefined}>{c.label}</span>
             )}
             {!last && <Icon name="chevron-right" size={15} className="sep" />}
+            {last && segs[0] === "launchpad" && startGate.locked && (
+              <CreditChip tone="low" size="sm" className="crumb-lock">
+                {startGate.reason}
+              </CreditChip>
+            )}
           </span>
         );
       })}

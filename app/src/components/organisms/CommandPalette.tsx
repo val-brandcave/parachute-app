@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { Icon, type IconName } from "@/components/atoms";
 import { cn } from "@/lib/utils";
+import { useStartGate } from "@/components/organisms/home/useStartGate";
 import { useReviewsStore } from "@/store";
 import { reviewHref } from "./ReviewTable";
 
@@ -15,6 +16,8 @@ type Cmd = {
   sub?: string;
   icon: IconName;
   run: () => void;
+  /** Shown instead of `sub` and blocks `run` (e.g. awaiting approval). */
+  disabledReason?: string;
 };
 
 const NAV: { label: string; href: string; icon: IconName }[] = [
@@ -59,6 +62,7 @@ export function CommandPalette({
 function PaletteBody({ onClose }: { onClose: () => void }) {
   const router = useRouter();
   const { reviews, fetchReviews } = useReviewsStore();
+  const gate = useStartGate();
   const [q, setQ] = useState("");
   const [active, setActive] = useState(0);
   const listRef = useRef<HTMLDivElement>(null);
@@ -101,6 +105,7 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
       group: "Go to",
       label: n.label,
       icon: n.icon,
+      disabledReason: gate.locked && n.href === "/launchpad" ? gate.reason : undefined,
       run: () => go(() => router.push(n.href)),
     }));
 
@@ -110,13 +115,14 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
         group: "Actions",
         label: "Start a review",
         icon: "add" as IconName,
+        disabledReason: gate.locked ? gate.reason : undefined,
         run: () => go(() => router.push("/launchpad")),
       },
     ].filter((a) => !ql || a.label.toLowerCase().includes(ql));
 
     return [...reviewItems, ...navItems, ...actionItems];
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q, reviews]);
+  }, [q, reviews, gate.locked, gate.reason]);
 
   // Keep the active row scrolled into view (DOM sync, no setState).
   useEffect(() => {
@@ -143,7 +149,7 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
       setActive((a) => (a - 1 + items.length) % items.length);
     } else if (e.key === "Enter") {
       e.preventDefault();
-      items[active]?.run();
+      if (!items[active]?.disabledReason) items[active]?.run();
     } else if (e.key === "Escape") {
       onClose();
     }
@@ -190,16 +196,19 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
               {g.items.map(({ cmd, idx }) => (
                 <div
                   key={cmd.id}
-                  className={cn("cmdk-item", idx === active && "active")}
+                  className={cn("cmdk-item", idx === active && "active", cmd.disabledReason && "is-disabled")}
+                  aria-disabled={cmd.disabledReason ? true : undefined}
                   onMouseMove={() => setActive(idx)}
-                  onClick={cmd.run}
+                  onClick={cmd.disabledReason ? undefined : cmd.run}
                 >
                   <span className="cmdk-ic">
                     <Icon name={cmd.icon} size={16} />
                   </span>
                   <span className="cmdk-main">
                     <div className="cmdk-label">{cmd.label}</div>
-                    {cmd.sub && <div className="cmdk-sub">{cmd.sub}</div>}
+                    {(cmd.disabledReason ?? cmd.sub) && (
+                      <div className="cmdk-sub">{cmd.disabledReason ?? cmd.sub}</div>
+                    )}
                   </span>
                   <Icon name="chevron-right" size={16} className="cmdk-go" />
                 </div>

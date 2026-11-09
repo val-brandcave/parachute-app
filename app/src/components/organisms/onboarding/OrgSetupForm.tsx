@@ -1,8 +1,9 @@
 "use client";
 
 import { Button, Icon } from "@/components/atoms";
+import { Callout } from "@realwired/ui";
 import { SegmentedControl } from "@/components/molecules";
-import { TRIAL_GRANT_CREDITS, costFor } from "@/lib/pricing";
+import { TRIAL_GRANT_CREDITS } from "@/lib/pricing";
 import type { OrgKind, TeamBand, VolumeBand } from "@/types";
 
 export interface OrgSetupOption<T extends string> {
@@ -10,46 +11,7 @@ export interface OrgSetupOption<T extends string> {
   label: string;
 }
 
-/** Step line: two dashes and a label, e.g. "1 of 2 · Organization". */
-export function WelcomeStepLine({ step, label }: { step: 1 | 2; label: string }) {
-  return (
-    <div className="wel-steps" role="img" aria-label={`Step ${step} of 2, ${label}`}>
-      <span className={step >= 1 ? "wel-dash on" : "wel-dash"} />
-      <span className={step >= 2 ? "wel-dash on" : "wel-dash"} />
-      <span>
-        {step} of 2 · {label}
-      </span>
-    </div>
-  );
-}
-
-/** The quiet "What happens next" aside, wide screens only. */
-export function WelcomeAside() {
-  const fullReviews = Math.floor(TRIAL_GRANT_CREDITS / costFor(["technical", "administrative"]));
-  return (
-    <aside className="wel-aside" aria-label="What happens next">
-      <h2>What happens next</h2>
-      <p>
-        A free sample review, then {fullReviews} reviews on the house. No card needed.
-      </p>
-      <ul>
-        <li>
-          <Icon name="check" size={15} />A finished sample review to explore
-        </li>
-        <li>
-          <Icon name="check" size={15} />
-          {TRIAL_GRANT_CREDITS} trial credits, about {fullReviews} full reviews
-        </li>
-        <li>
-          <Icon name="check" size={15} />
-          Add a card only when you top up
-        </li>
-      </ul>
-    </aside>
-  );
-}
-
-/** B1: organization name, what you are, and the two bands that decide the start path. */
+/** The one setup card: organization name, what you are, and two size bands. */
 export function OrgSetupForm({
   name,
   onName,
@@ -62,6 +24,9 @@ export function OrgSetupForm({
   kindOptions,
   teamOptions,
   volumeOptions,
+  needsSales,
+  callRequested,
+  onBookCall,
   canContinue,
   onSubmit,
 }: {
@@ -76,6 +41,10 @@ export function OrgSetupForm({
   kindOptions: OrgSetupOption<OrgKind>[];
   teamOptions: OrgSetupOption<TeamBand>[];
   volumeOptions: OrgSetupOption<VolumeBand>[];
+  /** Answers meet the sales rule: show the optional call box. */
+  needsSales: boolean;
+  callRequested: boolean;
+  onBookCall: () => void;
   canContinue: boolean;
   onSubmit: () => void;
 }) {
@@ -86,9 +55,8 @@ export function OrgSetupForm({
         if (canContinue) onSubmit();
       }}
     >
-      <WelcomeStepLine step={1} label="Organization" />
       <h1 className="wel-title">Set up your organization</h1>
-      <p className="wel-sub">Two short questions decide how we help you get started.</p>
+      <p className="wel-sub">Three quick answers, then you&apos;re in.</p>
 
       <div className="field">
         <label htmlFor="wel-org">Organization name</label>
@@ -107,10 +75,37 @@ export function OrgSetupForm({
         <span className="wel-lb">Reports a month, roughly</span>
         <SegmentedControl block label="Reports a month" options={volumeOptions} value={volume} onChange={onVolume} />
       </div>
-      <p className="wel-help">This only decides how we help you get started.</p>
+      {needsSales ? (
+        <div className="wel-sales">
+          <Callout
+            tone="info"
+            icon="calendar"
+            action={
+              callRequested ? undefined : (
+                <Button type="button" variant="outline" size="sm" onClick={onBookCall}>
+                  Book a call
+                </Button>
+              )
+            }
+          >
+            <strong>A team your size usually starts with a call</strong>
+            <br />
+            {callRequested
+              ? "Call requested. We will email you. You can go in now: Realwired confirms larger organizations within one business day, and the sample review is open meanwhile."
+              : "Optional: you can go in now. Realwired confirms larger organizations within one business day, and the sample review is open while you wait."}
+          </Callout>
+        </div>
+      ) : (
+        <p className="wel-reassure">
+          <Icon name="check" size={16} />
+          <span>
+            You start with a free sample review and {TRIAL_GRANT_CREDITS} trial credits. No card needed.
+          </span>
+        </p>
+      )}
 
       <Button type="submit" size="lg" block disabled={!canContinue}>
-        Continue
+        Continue to Parachute
       </Button>
     </form>
   );

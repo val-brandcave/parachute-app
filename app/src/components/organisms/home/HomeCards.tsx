@@ -2,13 +2,9 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Button, Chip, Icon } from "@/components/atoms";
-import { FULL_REVIEW_TYPES } from "@/lib/setup-steps";
+import { Button, Chip, CreditChip, Icon } from "@/components/atoms";
 import { GUIDES } from "@/lib/guides";
-import { approxValue, costFor } from "@/lib/pricing";
-import { useReviewsStore, useWalletStore } from "@/store";
-import { remainingFromLedger } from "@/store/wallet.store";
-import { expiryLine } from "@/components/organisms/billing/billing-data";
+import { useReviewsStore } from "@/store";
 import type { Review } from "@/types";
 import { useSetupActions } from "./useSetupActions";
 
@@ -33,60 +29,11 @@ export function SampleCard() {
         </div>
       </div>
       <div className="hm-row-between">
-        <span className="su-pill su-pill--outline">Free · uses no credits</span>
+        <CreditChip tone="free">Free · uses no credits</CreditChip>
         <Button variant="outline" size="sm" iconRight="forward" onClick={() => router.push("/reviews/review-sample")}>
           Open sample
         </Button>
       </div>
-    </section>
-  );
-}
-
-/** Big balance, what it buys, and a trial / earned / purchased meter. */
-export function WalletCard() {
-  const ledger = useWalletStore((s) => s.ledger);
-  const { billing } = useSetupActions();
-  const r = remainingFromLedger(ledger);
-  const balance = r.trial + r.earned + r.purchased;
-  const mixed = r.earned + r.purchased > 0;
-  const fullReviews = Math.floor(balance / costFor(FULL_REVIEW_TYPES));
-  const seg = (n: number) => (balance > 0 ? (n / balance) * 100 : 0);
-
-  return (
-    <section className="card hm-card">
-      <div className="hm-row-between">
-        <h2 className="hm-h">Wallet</h2>
-        <button type="button" className="hm-link" onClick={billing}>
-          Billing
-        </button>
-      </div>
-      <div className="hm-big">
-        <span className="hm-big-n">{balance}</span>
-        <span className="hm-big-u">{mixed ? (balance === 1 ? "credit" : "credits") : balance === 1 ? "trial credit" : "trial credits"}</span>
-      </div>
-      <p className="hm-p">
-        About {fullReviews} full review{fullReviews === 1 ? "" : "s"} · {approxValue(balance)} value
-      </p>
-      <div className="meter" role="img" aria-label={`Trial ${r.trial}, earned ${r.earned}, purchased ${r.purchased}`}>
-        {r.trial > 0 && <i className="meter-trial" style={{ width: `${seg(r.trial)}%` }} />}
-        {r.earned > 0 && <i className="meter-earn" style={{ width: `${seg(r.earned)}%` }} />}
-        {r.purchased > 0 && <i className="meter-buy" style={{ width: `${seg(r.purchased)}%` }} />}
-      </div>
-      <div className="meter-legend">
-        <span>
-          <i className="meter-trial" />
-          Trial {r.trial}
-        </span>
-        <span>
-          <i className="meter-earn" />
-          Earned {r.earned}
-        </span>
-        <span>
-          <i className="meter-buy" />
-          Purchased {r.purchased}
-        </span>
-      </div>
-      {mixed && <p className="hm-note">{expiryLine(ledger, r)}.</p>}
     </section>
   );
 }

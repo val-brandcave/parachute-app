@@ -10,7 +10,7 @@ import {
   type NavGroup,
 } from "@realwired/ui";
 
-import { Icon, Logo } from "@/components/atoms";
+import { Icon, Logo, Tooltip } from "@/components/atoms";
 import { Breadcrumbs } from "@/components/molecules";
 import { OrgCard } from "@/components/organisms/OrgCard";
 import { SetupDock } from "@/components/organisms/SetupDock";
@@ -22,6 +22,7 @@ import { CommandPalette } from "@/components/organisms/CommandPalette";
 import { RunModal } from "@/components/run/RunModal";
 import { DemoDock } from "@/components/organisms/DemoDock";
 import { TopUpModal, ReceiptDialog } from "@/components/organisms/wallet";
+import { useStartGate } from "@/components/organisms/home/useStartGate";
 import { usePrefsStore, useSessionStore } from "@/store";
 
 /**
@@ -67,6 +68,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const toggleNav = usePrefsStore((s) => s.toggleNav);
 
   const [searchOpen, setSearchOpen] = useState(false);
+  const startGate = useStartGate();
 
   // Cmd/Ctrl+K opens the command palette anywhere in the app. Kept here rather
   // than in the library: a command palette's CONTENTS are product knowledge,
@@ -108,14 +110,43 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         // row (h42, padding 0 12, gap 12) so its icon lands in the SAME icon
         // column as the rows beneath it. A Button centres its content, which
         // breaks that column the moment the label length changes.
-        navAction={(collapsed) => (
-          <SidebarAction asChild collapsed={collapsed} label="Start a review">
-            <Link href="/launchpad">
-              <Icon name="parachute" size={19} />
-              {!collapsed && <span className="truncate">Start a review</span>}
-            </Link>
-          </SidebarAction>
-        )}
+        navAction={(collapsed) =>
+          startGate.locked ? (
+            // Pending approval: same structure as the enabled link (an element
+            // handed to SidebarAction asChild) so icon + label keep their row.
+            // Expanded: our Tooltip carries the reason. Collapsed: the library
+            // already wraps a tooltip around `label`, so the reason rides there.
+            collapsed ? (
+              <SidebarAction
+                asChild
+                collapsed
+                label={`Start a review. ${startGate.reason}`}
+                aria-disabled="true"
+                className="start-locked"
+              >
+                <span role="button" tabIndex={0}>
+                  <Icon name="parachute" size={19} />
+                </span>
+              </SidebarAction>
+            ) : (
+              <Tooltip side="right" block content={startGate.reason}>
+                <SidebarAction asChild aria-disabled="true" className="start-locked">
+                  <span role="button" tabIndex={-1}>
+                    <Icon name="parachute" size={19} />
+                    <span className="truncate">Start a review</span>
+                  </span>
+                </SidebarAction>
+              </Tooltip>
+            )
+          ) : (
+            <SidebarAction asChild collapsed={collapsed} label="Start a review">
+              <Link href="/launchpad">
+                <Icon name="parachute" size={19} />
+                {!collapsed && <span className="truncate">Start a review</span>}
+              </Link>
+            </SidebarAction>
+          )
+        }
         sidebarFooter={(collapsed) => (
           <div className="sb-foot">
             <SetupDock collapsed={collapsed} />

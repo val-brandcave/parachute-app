@@ -2,7 +2,7 @@
 
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { OrgSetupForm, WelcomeAside } from "@/components/organisms/onboarding";
+import { OrgSetupForm } from "@/components/organisms/onboarding";
 import { KIND_OPTIONS, TEAM_OPTIONS, VOLUME_OPTIONS, useWelcomeSetup } from "./hooks/useWelcome";
 
 function Setup() {
@@ -11,7 +11,6 @@ function Setup() {
   if (w.jumping) return null;
   return (
     <div className="wel-stage">
-      <WelcomeAside />
       <div className="wel-card">
         <OrgSetupForm
           name={w.name}
@@ -25,6 +24,9 @@ function Setup() {
           kindOptions={KIND_OPTIONS}
           teamOptions={TEAM_OPTIONS}
           volumeOptions={VOLUME_OPTIONS}
+          needsSales={w.needsSales}
+          callRequested={w.callRequested}
+          onBookCall={w.bookCall}
           canContinue={w.canContinue}
           onSubmit={w.submit}
         />

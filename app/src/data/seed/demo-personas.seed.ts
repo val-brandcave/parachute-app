@@ -52,13 +52,13 @@ export const demoPersonas: DemoPersona[] = [
   {
     id: "pending-admin",
     label: "Admin awaiting approval",
-    description: "Lakeside Valuation. Workspace is being reviewed.",
+    description: "Lakeside Valuation, 11+ reviewers. Waits on the dashboard for Realwired to confirm.",
     group: "signed_in",
     icon: "clock",
     userId: "user-lv1",
     orgId: "org-lakeside",
     mode: "full",
-    entryRoute: "/welcome/pending",
+    entryRoute: "/dashboard",
   },
   {
     id: "trial-admin",

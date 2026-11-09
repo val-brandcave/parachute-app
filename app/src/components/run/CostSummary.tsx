@@ -3,7 +3,7 @@
 import "./cost-summary.css";
 import { useMemo } from "react";
 import { useToast } from "@realwired/ui";
-import { Button, Icon } from "@/components/atoms";
+import { Button, CreditChip, Icon } from "@/components/atoms";
 import { useOrgStore, useUsersStore, useWalletStore } from "@/store";
 import { remainingFromLedger, sourcesFor } from "@/store/wallet.store";
 import { useCurrentUser } from "@/lib/current-user";
@@ -86,40 +86,49 @@ export function CostSummary({ cost }: { cost: RunCost }) {
     return (
       <div className="cs-summary">
         <Icon name="coins" size={16} />
-        <span>
-          This review uses <b>{plural(cost.credits, "credit")}</b> ({value})
-        </span>
-        <span className="cs-chip cs-chip--low">
+        <span>This review uses</span>
+        <CreditChip tone="credit">{plural(cost.credits, "credit")}</CreditChip>
+        <CreditChip tone="money">{value}</CreditChip>
+        <span className="cs-sep" aria-hidden="true" />
+        <CreditChip tone="low">
           <Icon name="warn" size={13} />
-          Balance: {cost.balance}
-        </span>
+          Balance {cost.balance}
+        </CreditChip>
       </div>
     );
   }
   return (
     <div className="cs-summary">
       <Icon name="coins" size={16} />
+      <span>This review uses</span>
       {cost.trialOnly ? (
-        <span>
-          This review uses <b>{plural(cost.credits, "trial credit")}</b> (list {value}) ·{" "}
-          {plural(cost.trialLeft, "trial credit")} left after
-        </span>
+        <>
+          <CreditChip tone="trial">{plural(cost.credits, "trial credit")}</CreditChip>
+          <CreditChip tone="money">list {value}</CreditChip>
+          <span className="cs-sep" aria-hidden="true" />
+          <span>Left after</span>
+          <CreditChip tone="trial">{plural(cost.trialLeft, "trial credit")}</CreditChip>
+        </>
       ) : (
-        <span>
-          This review uses <b>{plural(cost.credits, "credit")}</b> ({value}) · Balance after:{" "}
-          <b>{cost.afterBalance}</b>
-        </span>
+        <>
+          <CreditChip tone="credit">{plural(cost.credits, "credit")}</CreditChip>
+          <CreditChip tone="money">{value}</CreditChip>
+          <span className="cs-sep" aria-hidden="true" />
+          <span>Balance after</span>
+          <CreditChip tone="credit">{plural(cost.afterBalance, "credit")}</CreditChip>
+        </>
       )}
     </div>
   );
 }
 
-/** Right-aligned chip on a review-type row: `1 credit · ~$150`. */
+/** Right-aligned pair on a review-type row: `[1 credit] [~$150]`. */
 export function TypeCostChip({ type }: { type: ReviewType }) {
   const credits = REVIEW_TYPE_COST[type];
   return (
-    <span className="cs-chip cs-chip--cost">
-      {plural(credits, "credit")} · {approxValue(credits)}
+    <span className="cs-type-cost">
+      <CreditChip tone="credit">{plural(credits, "credit")}</CreditChip>
+      <CreditChip tone="money">{approxValue(credits)}</CreditChip>
     </span>
   );
 }
@@ -182,7 +191,7 @@ export function LowBalanceCallout({
                 useWalletStore.getState().openTopUp({ reason: "low_balance", needed: cost.credits })
               }
             >
-              Add {pack.credits} credits · ~{formatUsd(pack.priceUsd)}
+              Add {pack.credits} credits · {formatUsd(pack.priceUsd)}
             </Button>
           )}
           {runOnly && (

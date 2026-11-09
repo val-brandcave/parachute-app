@@ -58,7 +58,7 @@ export const seedOrgs: Org[] = [
     brandAccent: "#2a6f7f",
     brandFont: "Inter",
     createdAt: T0 + 20 * 86_400_000,
-    profile: { kind: "appraisal_firm", teamBand: "1", volumeBand: "lt50" },
+    profile: { kind: "appraisal_firm", teamBand: "11+", volumeBand: "50-200", salesRequested: true },
     billing: "trial",
     approval: "pending",
     flags: { approvalGate: true, membersInBouncer: true },

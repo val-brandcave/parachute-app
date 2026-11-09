@@ -1,47 +1,102 @@
 "use client";
 
-import { FULL_REVIEW_TYPES } from "@/lib/setup-steps";
-import { approxValue, costFor } from "@/lib/pricing";
-import { expiryLine } from "./billing-data";
+import { useMemo, useState } from "react";
+import { CreditChip, type CreditChipTone } from "@/components/atoms";
+import { FULL_REVIEW_TYPES, stepDef } from "@/lib/setup-steps";
+import { approxValue, costFor, formatUsd, packById } from "@/lib/pricing";
+import { balanceGrants, type BalanceGrant } from "@/lib/wallet-breakdown";
+import { DEMO_TODAY, daysUntil, expiryLabel, spendOrderSentence } from "./billing-data";
 import type { Billing } from "./useBilling";
 
-/** Big balance, what it buys, the trial / earned / purchased meter. `showValue` is off for non-admins. */
+const EXPIRY_WARN_DAYS = 14;
+const shortDate = (ts: number) => new Date(ts).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+
+function describe(g: BalanceGrant, userName: Billing["userName"], showValue: boolean): { tone: CreditChipTone; label: string; sub: string } {
+  const e = g.entry;
+  const when = shortDate(e.createdAt);
+  if (g.source === "trial") return { tone: "trial", label: "Trial", sub: `Granted ${when} · ${g.granted} credits` };
+  if (g.source === "earned") {
+    const step = e.setupStepId ? stepDef(e.setupStepId)?.doneLabel : undefined;
+    return { tone: "free", label: "Earned", sub: `${step ?? "Setup reward"} · ${when}` };
+  }
+  if (e.kind === "purchase") {
+    const by = userName(e.actorId);
+    const price = showValue && e.amountUsd ? ` · ${formatUsd(e.amountUsd)}` : "";
+    return {
+      tone: "credit",
+      label: e.packId ? `Pack of ${packById(e.packId).credits}` : `${g.granted} credits`,
+      sub: `${e.auto ? "Auto-reload" : "Bought"} ${when}${by ? ` by ${by}` : ""}${price}`,
+    };
+  }
+  return { tone: "credit", label: e.kind === "refund" ? "Refund" : "Adjustment", sub: `${e.note ?? (e.kind === "refund" ? "Credited back" : "Added by Realwired")} · ${when}` };
+}
+
+/** "What's in your balance": the big number, one sentence on spend order, and one row per grant
+ *  in the order credits are used. `showValue` is off for non-admins (no dollars). */
 export function BalanceCard({ b, showValue = true, aside }: { b: Billing; showValue?: boolean; aside?: React.ReactNode }) {
-  const r = b.remaining;
-  const full = Math.floor(r.total / costFor(FULL_REVIEW_TYPES));
-  const seg = (n: number) => (r.total > 0 ? (n / r.total) * 100 : 0);
+  const [showUsed, setShowUsed] = useState(false);
+  const grants = useMemo(() => balanceGrants(b.ledger), [b.ledger]);
+  const total = b.remaining.total;
+  const full = Math.floor(total / costFor(FULL_REVIEW_TYPES));
+  const live = grants.filter((g) => g.remaining > 0).sort((a, c) => (a.useOrder ?? 0) - (c.useOrder ?? 0));
+  const used = grants.filter((g) => g.remaining === 0);
+  const rows = showUsed ? [...live, ...used] : live;
+
   return (
-    <section className={`card bl-card bl-balance${aside ? " bl-balance--split" : ""}`}>
-      <div className="bl-balance-main">
-        <h2 className="bl-h">Balance</h2>
-        {showValue && <p className="bl-sub">{expiryLine(b.ledger, r)}</p>}
-        <div className="bl-big">
-          <span className="bl-big-n">{r.total}</span>
-          <span className="bl-big-u">
-            {r.total === 1 ? "credit" : "credits"}
-            {showValue && ` · ${approxValue(r.total)} value · about ${full} full review${full === 1 ? "" : "s"}`}
-          </span>
+    <section className="card bl-card bl-balance">
+      <div className="bl-balance-head">
+        <div>
+          <h2 className="bl-h">What&rsquo;s in your balance</h2>
+          <div className="bl-big">
+            <span className="bl-big-n">{total}</span>
+            <span className="bl-big-u">
+              {total === 1 ? "credit" : "credits"} · about {full} full review{full === 1 ? "" : "s"}
+              {showValue && ` · worth about ${approxValue(total).replace("~", "")}`}
+            </span>
+          </div>
         </div>
-        <div className="meter" role="img" aria-label={`Trial ${r.trial}, earned ${r.earned}, purchased ${r.purchased}`}>
-          {r.trial > 0 && <i className="meter-trial" style={{ width: `${seg(r.trial)}%` }} />}
-          {r.earned > 0 && <i className="meter-earn" style={{ width: `${seg(r.earned)}%` }} />}
-          {r.purchased > 0 && <i className="meter-buy" style={{ width: `${seg(r.purchased)}%` }} />}
+        <p className="bl-order-note">{spendOrderSentence(grants)}</p>
+      </div>
+
+      <div className="bl-bd" role="table" aria-label="What's in your balance">
+        <div className="bl-bd-cols bl-thead" role="row">
+          <span role="columnheader">Used</span>
+          <span role="columnheader">Credits from</span>
+          <span role="columnheader" className="bl-num">Left</span>
+          <span role="columnheader">Expires</span>
         </div>
-        <div className="meter-legend">
-          <span>
-            <i className="meter-trial" />
-            Trial {r.trial}
-          </span>
-          <span>
-            <i className="meter-earn" />
-            Earned {r.earned}
-          </span>
-          <span>
-            <i className="meter-buy" />
-            Purchased {r.purchased}
-          </span>
+        {rows.length === 0 && <div className="bl-empty"><p>No credits yet.</p></div>}
+        {rows.map((g) => {
+          const d = describe(g, b.userName, showValue);
+          const days = g.expiresAt !== null && g.remaining > 0 ? daysUntil(g.expiresAt) : null;
+          const soon = days !== null && g.expiresAt! - DEMO_TODAY <= EXPIRY_WARN_DAYS * 86_400_000;
+          return (
+            <div key={g.id} className={`bl-bd-cols bl-trow${g.remaining === 0 ? " is-used" : ""}`} role="row">
+              <span role="cell">
+                <span className="bl-order" aria-label={g.useOrder ? `Used ${g.useOrder}` : "Used up"}>{g.useOrder ?? "–"}</span>
+              </span>
+              <span role="cell" className="bl-from-cell">
+                <CreditChip tone={d.tone}>{d.label}</CreditChip>
+                <span className="bl-what-s">{d.sub}</span>
+              </span>
+              <span role="cell" className="bl-num bl-left">
+                <span><b>{g.remaining}</b> of {g.granted}</span>
+              </span>
+              <span role="cell" className="bl-exp">
+                <span className={g.expiresAt === null ? "bl-what-s" : undefined}>{expiryLabel(g)}</span>
+                {soon && <CreditChip tone="low" size="sm">in {days} day{days === 1 ? "" : "s"}</CreditChip>}
+              </span>
+            </div>
+          );
+        })}
+        <div className="bl-tfoot bl-tfoot--split">
+          <span>Total <b>{total}</b></span>
+          {used.length > 0 && (
+            <button type="button" className="hm-link" onClick={() => setShowUsed((v) => !v)}>
+              {showUsed ? "Hide used" : `Show used (${used.length})`}
+            </button>
+          )}
         </div>
-        {showValue && <p className="bl-note">Spent in this order: trial, earned, purchased.</p>}
       </div>
       {aside}
     </section>
