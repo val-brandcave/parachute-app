@@ -1,8 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
-import { Icon, Modal, Tooltip } from "@/components/atoms";
+import { Icon, Tooltip } from "@/components/atoms";
 import type { VideoGuide } from "@/lib/guides";
 
 const clock = (s: number) => {
@@ -26,9 +25,7 @@ export interface Handoff {
 
 /**
  * One guide video: a poster with a big play button, then an inline player with
- * play/pause, seek, time, mute and expand. Used in the card and again, large,
- * inside the Modal. Both report their position into `report` so the other can
- * resume from it.
+ * play/pause, seek, time, mute and full screen.
  */
 export function GuidePlayer({
   guide,
@@ -54,6 +51,27 @@ export function GuidePlayer({
   const [time, setTime] = useState(handoff?.time ?? 0);
   const [dur, setDur] = useState(0);
   const [muted, setMuted] = useState(false);
+  const shell = useRef<HTMLDivElement>(null);
+  const [full, setFull] = useState(false);
+
+  // Expand = real full screen of the player (our controls stay), Esc exits. iPhone Safari can only
+  // full-screen a bare <video>, so it falls back to the system player there.
+  useEffect(() => {
+    const sync = () => setFull(document.fullscreenElement === shell.current && !!shell.current);
+    document.addEventListener("fullscreenchange", sync);
+    return () => document.removeEventListener("fullscreenchange", sync);
+  }, []);
+  const toggleFull = () => {
+    const el = shell.current;
+    const v = ref.current as (HTMLVideoElement & { webkitEnterFullscreen?: () => void }) | null;
+    if (document.fullscreenElement) {
+      void document.exitFullscreen();
+    } else if (el?.requestFullscreen) {
+      void el.requestFullscreen().catch(() => v?.webkitEnterFullscreen?.());
+    } else {
+      v?.webkitEnterFullscreen?.();
+    }
+  };
 
   const play = useCallback(() => {
     setStarted(true);
@@ -106,7 +124,7 @@ export function GuidePlayer({
   const pct = dur > 0 ? Math.min(100, (time / dur) * 100) : 0;
 
   return (
-    <div className={large ? "hc-player hc-player--large" : "hc-player"}>
+    <div ref={shell} className={large ? "hc-player hc-player--large" : "hc-player"}>
       <video
         ref={ref}
         className="hc-video"
@@ -169,77 +187,24 @@ export function GuidePlayer({
           <button type="button" className="hc-cbtn" onClick={() => setMuted((m) => !m)} aria-label={muted ? "Unmute" : "Mute"}>
             <Icon name={muted ? "volume-off" : "volume"} size={16} />
           </button>
-          {onExpand && (
-            <Tooltip content="Expand" compact>
-              <button type="button" ref={expandRef} className="hc-cbtn" onClick={onExpand} aria-label="Expand video">
-                <Icon name="maximize" size={16} />
-              </button>
-            </Tooltip>
-          )}
+          <Tooltip content={full ? "Exit full screen" : "Full screen"} compact>
+            <button
+              type="button"
+              ref={expandRef}
+              className="hc-cbtn"
+              onClick={onExpand ?? toggleFull}
+              aria-label={full ? "Exit full screen" : "Full screen"}
+            >
+              <Icon name={full ? "minimize" : "maximize"} size={16} />
+            </button>
+          </Tooltip>
         </div>
       )}
     </div>
   );
 }
 
-/** The card's player plus the large one in a portaled Modal, with time handed back and forth. */
+/** The card's player. Full screen is handled by the player itself (no dialog). */
 export function GuideStage({ guide, autoPlay }: { guide: VideoGuide; autoPlay: boolean }) {
-  const [open, setOpen] = useState(false);
-  const [handoff, setHandoff] = useState<Handoff>({ time: 0, playing: false, n: 0 });
-  const cardPos = useRef({ time: 0, playing: false });
-  const bigPos = useRef({ time: 0, playing: false });
-  const expandBtn = useRef<HTMLButtonElement>(null);
-  const [modalStart, setModalStart] = useState<Handoff>({ time: 0, playing: false, n: 0 });
-
-  const openBig = () => {
-    const v = cardPos.current;
-    bigPos.current = { ...v };
-    setModalStart({ time: v.time, playing: v.playing, n: 0 });
-    setOpen(true);
-  };
-  const closeBig = useCallback(() => {
-    setOpen(false);
-    setHandoff((h) => ({ time: bigPos.current.time, playing: false, n: h.n + 1 }));
-    // Modal unmounts after its exit animation; give focus back to the expand button.
-    requestAnimationFrame(() => expandBtn.current?.focus());
-  }, []);
-
-  return (
-    <>
-      <CardPlayerSlot
-        guide={guide}
-        autoPlay={autoPlay}
-        handoff={handoff}
-        onReport={(p) => (cardPos.current = p)}
-        onExpand={openBig}
-        expandRef={expandBtn}
-        paused={open}
-      />
-      {typeof document !== "undefined" &&
-        createPortal(
-          <Modal open={open} onClose={closeBig} title={guide.label}>
-            <div className="hc-modal-body">
-              <GuidePlayer guide={guide} large autoPlay={modalStart.playing} handoff={modalStart} onReport={(p) => (bigPos.current = p)} />
-            </div>
-          </Modal>,
-          document.body,
-        )}
-    </>
-  );
-}
-
-/** Card player that pauses while the expanded one is open. */
-function CardPlayerSlot({
-  paused,
-  ...props
-}: React.ComponentProps<typeof GuidePlayer> & { paused: boolean }) {
-  const wrap = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (paused) wrap.current?.querySelector("video")?.pause();
-  }, [paused]);
-  return (
-    <div ref={wrap}>
-      <GuidePlayer {...props} />
-    </div>
-  );
+  return <GuidePlayer guide={guide} autoPlay={autoPlay} onReport={() => {}} />;
 }

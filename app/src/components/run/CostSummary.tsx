@@ -135,7 +135,7 @@ export function TypeCostChip({ type }: { type: ReviewType }) {
 
 /**
  * D3 / D3b — shown above the footbar when the balance can't cover the selected types.
- * org_admin: Add credits (opens C's modal) · Run X only · Ask your admin.
+ * org_admin: Add credits (opens C's modal) · Run X only.
  * Everyone else: Run X only · Ask your admin (no purchase path).
  */
 export function LowBalanceCallout({
@@ -199,9 +199,12 @@ export function LowBalanceCallout({
               Run {TYPE_LABEL[runOnly]} only · {plural(REVIEW_TYPE_COST[runOnly], "credit")}
             </Button>
           )}
-          <button type="button" className="cs-callout-link" onClick={askAdmin}>
-            Ask your admin
-          </button>
+          {/* The admin is the person who buys, so only others are offered "Ask your admin". */}
+          {!isAdmin && (
+            <button type="button" className="cs-callout-link" onClick={askAdmin}>
+              Ask your admin
+            </button>
+          )}
           {!isAdmin && admin && <span className="cs-callout-note">We&apos;ll email {admin.name}</span>}
         </div>
       </div>

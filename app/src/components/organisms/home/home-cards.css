@@ -315,6 +315,21 @@
   background: var(--paper-accent-d);
   color: var(--paper-bg);
 }
+/* Full screen: the player fills the screen, square corners, video letterboxed. */
+.hc-player:fullscreen {
+  aspect-ratio: auto;
+  width: 100vw;
+  height: 100vh;
+  border-radius: 0;
+  background: #000;
+}
+.hc-player:fullscreen .hc-video {
+  background: #000;
+}
+.hc-player:fullscreen .hc-ctrls {
+  padding: 32px 20px 16px;
+  gap: 10px;
+}
 .hc-player--large {
   width: min(100%, calc((min(86vh, 760px) - 120px) * 16 / 9));
   border-radius: 10px;
@@ -568,14 +583,6 @@ button.hc-row:focus-visible {
 .hc-pdf {
   color: var(--md-error);
   flex-shrink: 0;
-}
-.hc-modal-body {
-  height: 100%;
-  min-height: 320px;
-  padding: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 @media (prefers-reduced-motion: reduce) {
