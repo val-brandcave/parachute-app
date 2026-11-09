@@ -1,3 +1,4 @@
+import { useSyncExternalStore } from "react";
 import { create } from "zustand";
 
 export type Density = "comfortable" | "compact";
@@ -93,3 +94,42 @@ export const usePrefsStore = create<PrefsState>((set, get) => ({
   },
   toggleNav: () => set({ navCollapsed: !get().navCollapsed }),
 }));
+
+/* ---- Build notes (PROTOTYPE ONLY) -------------------------------------------
+ * Engineering annotations (Keycloak theme tag, template names, "needs API sample"
+ * callouts). OFF by default so a demo shows none; engineers turn them on from the
+ * DemoDock. Persisted per browser and readable outside the AppShell (the auth
+ * pages), so it is a tiny external store rather than state in the shell. */
+const BNKEY = "parachute:build-notes";
+const BN_EVENT = "parachute:build-notes-change";
+
+function readBuildNotes(): boolean {
+  try {
+    return window.localStorage.getItem(BNKEY) === "on";
+  } catch {
+    return false;
+  }
+}
+
+export function setBuildNotes(on: boolean): void {
+  try {
+    window.localStorage.setItem(BNKEY, on ? "on" : "off");
+  } catch {
+    /* storage blocked: the switch still works for this page view */
+  }
+  window.dispatchEvent(new Event(BN_EVENT));
+}
+
+function subscribeBuildNotes(cb: () => void): () => void {
+  window.addEventListener(BN_EVENT, cb);
+  window.addEventListener("storage", cb);
+  return () => {
+    window.removeEventListener(BN_EVENT, cb);
+    window.removeEventListener("storage", cb);
+  };
+}
+
+/** Are build notes switched on? False on the server and on first paint. */
+export function useBuildNotes(): boolean {
+  return useSyncExternalStore(subscribeBuildNotes, readBuildNotes, () => false);
+}

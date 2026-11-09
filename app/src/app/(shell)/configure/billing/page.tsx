@@ -4,6 +4,7 @@ import { Suspense, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button, Chip, Icon } from "@/components/atoms";
 import { Tabs } from "@/components/molecules";
+import { useBuildNotes } from "@/store";
 import { PageHeader } from "@/components/templates/PageHeader";
 import {
   InvoicesTab,
@@ -32,6 +33,9 @@ function BillingPage() {
   const params = useSearchParams();
   const b = useBilling();
   const plansOn = !!b.org?.flags?.plansTab;
+  // The locked Plans preview is a build note: shown only when the flag is on or build notes are.
+  const buildNotes = useBuildNotes();
+  const showPlans = plansOn || buildNotes;
 
   const go = useCallback(
     (tab: string) => router.replace(`/configure/billing?tab=${tab}`, { scroll: false }),
@@ -103,7 +107,7 @@ function BillingPage() {
     );
   }
 
-  const tab = asTab(raw, ["overview", "usage", "invoices", "settings", "plans"], "overview");
+  const tab = asTab(raw, showPlans ? ["overview", "usage", "invoices", "settings", "plans"] : ["overview", "usage", "invoices", "settings"], "overview");
   return (
     <>
       <PageHeader
@@ -116,12 +120,16 @@ function BillingPage() {
               { value: "usage", label: "Usage" },
               { value: "invoices", label: "Invoices" },
               { value: "settings", label: "Settings" },
-              {
-                value: "plans",
-                label: "Plans",
-                leading: plansOn ? undefined : <Icon name="lock" size={14} />,
-                trailing: plansOn ? undefined : <Chip>Hidden · flag</Chip>,
-              },
+              ...(showPlans
+                ? [
+                    {
+                      value: "plans",
+                      label: "Plans",
+                      leading: plansOn ? undefined : <Icon name="lock" size={14} />,
+                      trailing: plansOn ? undefined : <Chip>Hidden · flag</Chip>,
+                    },
+                  ]
+                : []),
             ]}
           />
         }

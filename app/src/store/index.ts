@@ -16,7 +16,7 @@ export {
   type AttestationRow,
   type AttestationSignature,
 } from "./admin.store";
-export { usePrefsStore, resolveTheme } from "./prefs.store";
+export { usePrefsStore, resolveTheme, useBuildNotes, setBuildNotes } from "./prefs.store";
 export type { Density, ThemePref } from "./prefs.store";
 export {
   useOrderStore,

@@ -15334,11 +15334,7 @@ select.qfilter {
 .crumb-lock {
   margin-left: 8px;
 }
-.su-locked {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
+
 .intake-drop-ic {
   width: 46px;
   height: 46px;
@@ -16278,6 +16274,59 @@ select.qfilter {
 .demo-dock-btn:hover {
   background: var(--md-surface-1);
 }
+.demo-dock-switch {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--md-outline-v);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--md-on-surface);
+  cursor: pointer;
+}
+.demo-dock-switch input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  margin: 0;
+  cursor: pointer;
+}
+.demo-dock-track {
+  position: relative;
+  flex: none;
+  width: 30px;
+  height: 18px;
+  border-radius: 9px;
+  background: var(--md-surface-2);
+  border: 1px solid var(--md-outline);
+  transition: background 0.15s;
+}
+.demo-dock-track::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--md-on-surface-t);
+  transition: transform 0.15s, background 0.15s;
+}
+.demo-dock-switch input:checked + .demo-dock-track {
+  background: var(--md-primary);
+  border-color: var(--md-primary);
+}
+.demo-dock-switch input:checked + .demo-dock-track::after {
+  transform: translateX(12px);
+  background: var(--md-on-primary);
+}
+.demo-dock-switch input:focus-visible + .demo-dock-track {
+  box-shadow: var(--ring-accent);
+}
 
 .ui-seg--block {
   display: flex;
@@ -16732,9 +16781,7 @@ select.qfilter {
   background: transparent;
   border: 1px solid var(--md-outline);
 }
-.su-pill--cost {
-  background: var(--md-surface-2);
-}
+
 .su-pill--earn {
   background: var(--md-success-c);
   color: var(--md-success);
@@ -16752,23 +16799,8 @@ select.qfilter {
   padding: 0 8px;
   font-size: 11px;
 }
-.su-pill--xs {
-  height: 18px;
-  padding: 0 6px;
-  margin-left: 6px;
-  font-size: 11px;
-}
-.su-tag {
-  display: inline-flex;
-  align-items: center;
-  height: 20px;
-  padding: 0 8px;
-  border-radius: 7px;
-  font-size: 11px;
-  font-weight: 600;
-  background: var(--md-selected);
-  color: var(--md-on-selected);
-}
+
+
 
 /* ---- Home grid ---- */
 .home-grid {
@@ -16791,246 +16823,44 @@ select.qfilter {
 }
 
 /* ---- SetupChecklist ---- */
-.su-card {
-  padding: var(--d-card-pad);
-  scroll-margin-top: 72px;
-}
-.su-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-}
-.su-h {
-  font-family: var(--font-display, inherit);
-  font-size: 20px;
-  line-height: 28px;
-  font-weight: 700;
-  color: var(--md-on-surface);
-}
-.su-sub {
-  margin-top: 2px;
-  font-size: 13px;
-  line-height: 20px;
-  color: var(--md-on-surface-v);
-}
-.su-prog {
-  margin-top: 16px;
-}
-.su-prog-meta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-top: 8px;
-  font-size: 13px;
-  line-height: 20px;
-  color: var(--md-on-surface-v);
-  font-variant-numeric: tabular-nums;
-}
-.su-prog-meta b {
-  color: var(--md-on-surface);
-  font-weight: 600;
-}
-.su-prog-earn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-.su-done {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 14px;
-  padding: 7px 12px;
-  border-radius: 9px;
-  background: var(--md-surface-1);
-  font-size: 13px;
-  line-height: 20px;
-  color: var(--md-on-surface-v);
-  min-width: 0;
-}
-.su-done > svg {
-  flex-shrink: 0;
-  color: var(--md-success);
-}
-.su-done b {
-  color: var(--md-on-surface);
-  font-weight: 600;
-}
-.su-done--wrap {
-  align-items: flex-start;
-}
-.su-done--wrap > svg {
-  margin-top: 3px;
-}
-.su-done-text {
-  flex: 1;
-  min-width: 0;
-}
-.su-faint {
-  color: var(--md-on-surface-t);
-}
-.su-done-list {
-  margin: 8px 0 2px;
-  padding: 8px 0 0;
-  border-top: 1px solid var(--md-outline-v);
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: 12px;
-  color: var(--md-on-surface-v);
-}
-.su-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  flex-shrink: 0;
-  border: 0;
-  background: transparent;
-  cursor: pointer;
-  font: inherit;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--md-accent-d);
-  border-radius: 6px;
-  padding: 2px 4px;
-}
-.su-toggle:focus-visible {
-  outline: none;
-  box-shadow: var(--ring-accent);
-}
-.su-toggle-ic {
-  transition: transform 0.15s;
-}
-.su-toggle-ic.is-open {
-  transform: rotate(180deg);
-}
-.su-group {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-top: 18px;
-  padding-bottom: 6px;
-  border-bottom: 1px solid var(--md-outline-v);
-  font-size: 11px;
-  line-height: 16px;
-  font-weight: 600;
-  letter-spacing: 0.4px;
-  text-transform: uppercase;
-  color: var(--md-on-surface-v);
-}
-.su-group-n {
-  color: var(--md-on-surface-t);
-  letter-spacing: 0;
-  text-transform: none;
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
-}
-.su-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 14px 0;
-  border-bottom: 1px solid var(--md-outline-v);
-}
-.su-row:last-child {
-  border-bottom: 0;
-  padding-bottom: 2px;
-}
-.su-ico {
-  display: grid;
-  width: 24px;
-  height: 24px;
-  flex-shrink: 0;
-  place-items: center;
-  border-radius: 50%;
-  border: 2px solid var(--md-outline);
-  background: var(--md-surface);
-  color: transparent;
-  margin-top: 1px;
-}
-.su-row.is-next .su-ico {
-  border-color: var(--md-primary);
-}
-.su-row.is-doing .su-ico {
-  border-color: var(--md-accent);
-  background: var(--md-selected);
-  color: var(--md-on-selected);
-}
-.su-body {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-.su-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  line-height: 21px;
-  font-weight: 600;
-  color: var(--md-on-surface);
-}
-.su-desc {
-  font-size: 13px;
-  line-height: 20px;
-  color: var(--md-on-surface-v);
-}
-.su-meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 14px;
-  font-size: 12px;
-  line-height: 18px;
-  color: var(--md-on-surface-t);
-}
-.su-meta > span,
-.su-meta > button {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  white-space: nowrap;
-}
-.su-meta-doing {
-  color: var(--md-accent-d);
-  font-weight: 600;
-}
-.su-link {
-  border: 0;
-  background: transparent;
-  padding: 0;
-  cursor: pointer;
-  font: inherit;
-  font-weight: 600;
-  color: var(--md-accent-d);
-  border-radius: 4px;
-}
-.su-link:hover {
-  text-decoration: underline;
-}
-.su-link:focus-visible {
-  outline: none;
-  box-shadow: var(--ring-accent);
-}
-.su-side {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-shrink: 0;
-  padding-top: 1px;
-}
-.su-ask {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--md-on-surface-t);
-  white-space: nowrap;
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /* ---- Home side cards ---- */
 .hm-card {
@@ -17154,29 +16984,12 @@ select.qfilter {
   flex-direction: column;
   gap: 8px;
 }
-.su-bar {
-  display: block;
-  overflow: hidden;
-  border-radius: 999px;
-  background: var(--md-surface-2);
-}
-.su-bar {
-  height: 8px;
-}
-.su-bar > i {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: var(--md-primary);
-  transition: width 0.35s var(--ease-out, ease);
-}
-:root[data-theme="dark"] .su-bar > i {
-  background: var(--md-on-selected);
-}
+
+
+
+
 @media (prefers-reduced-motion: reduce) {
-  .su-bar > i {
-    transition: none;
-  }
+
 }
 .sb-balance {
   display: flex;
@@ -17361,16 +17174,99 @@ select.qfilter {
   color: var(--md-on-surface-v);
 }
 
-.su-hidden {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
+
 
 /* Get started: rail count + done state */
-.nav-count {
+/* Get started rail item: the library row, a little taller, with the count on the
+   label line and a thin progress bar under the label. Selected via the href because
+   the library owns the anchor. */
+a[href="/get-started"] {
+  --rw-nav-row-h: 52px;
+}
+.gs-label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  width: 100%;
+}
+.gs-label-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  line-height: 1.2;
+}
+.gs-label-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.gs-label-count {
+  flex: none;
+  font-size: 12px;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
+  color: var(--md-on-surface-t);
+}
+.gs-bar {
+  display: block;
+  height: 4px;
+  border-radius: 2px;
+  overflow: hidden;
+  background: var(--md-surface-2);
+}
+.gs-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--md-primary);
+  transition: width 0.4s var(--ease-standard, ease);
+}
+:root[data-theme="dark"] .gs-bar-fill {
+  background: var(--md-on-selected);
+}
+a[href="/get-started"][aria-current="page"] .gs-label-count {
+  color: inherit;
+  opacity: 0.8;
+}
+a[href="/get-started"][aria-current="page"] .gs-bar {
+  background: color-mix(in srgb, currentColor 20%, transparent);
+}
+a[href="/get-started"][aria-current="page"] .gs-bar-fill {
+  background: currentColor;
+}
+/* Collapsed rail: no label, so a 3px bar sits under the icon inside the item. */
+a[href="/get-started"].justify-center {
+  --rw-nav-row-h: 46px;
+}
+a[href="/get-started"].justify-center::before,
+a[href="/get-started"].justify-center::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 7px;
+  width: 22px;
+  height: 3px;
+  margin-left: -11px;
+  border-radius: 2px;
+  z-index: 1;
+}
+a[href="/get-started"].justify-center::before {
+  background: var(--md-surface-2);
+}
+a[href="/get-started"].justify-center::after {
+  width: calc(22px * var(--gs-pct-n, 0));
+  background: var(--md-primary);
+}
+:root[data-theme="dark"] a[href="/get-started"].justify-center::after {
+  background: var(--md-on-selected);
+}
+a[href="/get-started"][aria-current="page"].justify-center::before {
+  background: color-mix(in srgb, currentColor 20%, transparent);
+}
+a[href="/get-started"][aria-current="page"].justify-center::after {
+  background: currentColor;
 }
 .gs-done {
   display: flex;

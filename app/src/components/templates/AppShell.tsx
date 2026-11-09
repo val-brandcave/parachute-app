@@ -70,25 +70,43 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // carries the progress count; finishing or hiding the guide removes the row.
   const setupVisible = useSetupGuideVisible();
   const { doneCount, total } = useSetupSummary();
+  const pct = total > 0 ? Math.round((doneCount / total) * 100) : 0;
+  // The library row takes a string label and a pill badge, which cannot hold a
+  // progress bar. Its label slot renders any node at runtime, so the expanded row
+  // passes a two-line label (name + count, then the bar) and the library keeps the
+  // row, the sliding pill and the focus ring. Collapsed, the tooltip needs a string.
+  useEffect(() => {
+    document.documentElement.style.setProperty("--gs-pct-n", String(pct / 100));
+  }, [pct]);
   const nav = useMemo<NavGroup[]>(() => {
+    const expandedLabel = (
+      <span className="gs-label" aria-label={`Get started, ${doneCount} of ${total} steps done`}>
+        <span className="gs-label-row">
+          <span className="gs-label-name">Get started</span>
+          <span className="gs-label-count" aria-hidden="true">
+            {doneCount}/{total}
+          </span>
+        </span>
+        <span className="gs-bar" aria-hidden="true">
+          <span className="gs-bar-fill" style={{ width: `${pct}%` }} />
+        </span>
+      </span>
+    );
     const items: NavNode[] = setupVisible
       ? [
           {
             id: "get-started",
-            label: "Get started",
+            label: (navCollapsed
+              ? `Get started, ${doneCount} of ${total}`
+              : expandedLabel) as unknown as string,
             icon: "rocket",
             href: "/get-started",
-            badge: (
-              <span className="nav-count" aria-label={`${doneCount} of ${total} steps done`}>
-                {doneCount}/{total}
-              </span>
-            ),
           },
           ...MAIN_ITEMS,
         ]
       : MAIN_ITEMS;
     return [{ id: "main", items }];
-  }, [setupVisible, doneCount, total]);
+  }, [setupVisible, doneCount, total, pct, navCollapsed]);
 
   // Cmd/Ctrl+K opens the command palette anywhere in the app. Kept here rather
   // than in the library: a command palette's CONTENTS are product knowledge,

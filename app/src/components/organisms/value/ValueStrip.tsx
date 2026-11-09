@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Callout } from "@realwired/ui";
 import { Icon, Tooltip } from "@/components/atoms";
 import { formatUsd } from "@/lib/pricing";
-import { useOrgStore, useSessionStore, useWalletStore } from "@/store";
+import { useBuildNotes, useOrgStore, useSessionStore, useWalletStore } from "@/store";
 import type { Review } from "@/types";
 import { deriveValue, methodLine } from "./value-model";
 import "./value.css";
@@ -51,6 +51,7 @@ export function ValueStrip({ reviews }: { reviews: readonly Review[] }) {
   const billing = useOrgStore((s) => s.org?.billing);
   const ledger = useWalletStore((s) => s.ledger);
   const userId = useSessionStore((s) => s.userId);
+  const buildNotes = useBuildNotes();
   const [now] = useState(() => Date.now());
   const [dismissed, setDismissed] = useState(() => readDismissed(userId));
 
@@ -59,7 +60,7 @@ export function ValueStrip({ reviews }: { reviews: readonly Review[] }) {
 
   return (
     <section className="vl" aria-label="Value this month">
-      {!dismissed && (
+      {buildNotes && !dismissed && (
         <div className="vl-banner">
           <Callout
             tone="info"

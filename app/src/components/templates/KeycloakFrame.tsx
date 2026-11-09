@@ -1,3 +1,6 @@
+"use client";
+
+import { useBuildNotes } from "@/store/prefs.store";
 import { Icon, Logo } from "@/components/atoms";
 
 /**
@@ -19,12 +22,17 @@ export function KeycloakFrame({
   /** Content after the template chip (e.g. the demo-accounts disclosure). */
   after?: React.ReactNode;
 }) {
+  // Engineering annotations (the corner tag, the template name) show only when
+  // "Show build notes" is on in the DemoDock. Off by default for demos.
+  const buildNotes = useBuildNotes();
   return (
     <div className="kc">
-      <div className="kc-tag" role="note">
-        <Icon name="info" size={14} />
-        Keycloak theme reference · RWT-1061
-      </div>
+      {buildNotes && (
+        <div className="kc-tag" role="note">
+          <Icon name="info" size={14} />
+          Keycloak theme reference · RWT-1061
+        </div>
+      )}
       <main className="kc-main">
         <div className="kc-card">
           <Logo full height={30} themeAware />
@@ -37,7 +45,7 @@ export function KeycloakFrame({
           </span>
         </div>
         {below}
-        {template && (
+        {buildNotes && template && (
           <div className="kc-secure" style={{ marginTop: 8 }} aria-hidden="true">
             <span className="ui-chip">{template}</span>
           </div>

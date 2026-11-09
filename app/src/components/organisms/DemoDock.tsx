@@ -6,6 +6,7 @@ import { Icon } from "@/components/atoms";
 import { DEMO_ENABLED, personaById } from "@/lib/demo";
 import { useCurrentOrg, useCurrentUser } from "@/lib/current-user";
 import { useDemoStore } from "@/store/demo.store";
+import { setBuildNotes, useBuildNotes } from "@/store/prefs.store";
 import { useWalletStore } from "@/store/wallet.store";
 import { useOnboardingStore } from "@/store/onboarding.store";
 import { SETUP_STEPS } from "@/lib/setup-steps";
@@ -22,6 +23,7 @@ export function DemoDock() {
   const personaId = useDemoStore((s) => s.personaId);
   const me = useCurrentUser();
   const org = useCurrentOrg();
+  const buildNotes = useBuildNotes();
   const balance = useWalletStore((s) => s.ledger.reduce((sum, e) => sum + e.credits, 0));
 
   // Children only render after SeedProvider is ready (client side), so `document` exists.
@@ -93,6 +95,16 @@ export function DemoDock() {
               <Icon name="mail" size={15} /> E-mails
             </button>
           </div>
+          <label className="demo-dock-switch">
+            <span>Show build notes</span>
+            <input
+              type="checkbox"
+              role="switch"
+              checked={buildNotes}
+              onChange={(e) => setBuildNotes(e.target.checked)}
+            />
+            <span className="demo-dock-track" aria-hidden="true" />
+          </label>
         </div>
       )}
       <button
