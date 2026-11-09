@@ -21,6 +21,8 @@ import {
   type SetupSummary,
 } from "@/store";
 import { useSetupActions } from "./useSetupActions";
+import { GuidePlayer } from "./GuideVideo";
+import { stepVideo } from "@/lib/guides";
 import "./setup-checklist.css";
 
 const GROUPS: SetupGroup[] = ["first", "team"];
@@ -118,7 +120,7 @@ function UpNext({
 }) {
   const router = useRouter();
   const complete = useOnboardingStore((s) => s.complete);
-  const { playVideo, openDoc } = useSetupActions();
+  const { openDoc } = useSetupActions();
 
   if (!step) {
     return (
@@ -133,8 +135,11 @@ function UpNext({
   const href = step.doing ? (step.doing.href ?? step.action?.href) : step.action?.href;
   const label = step.doing ? (step.continueLabel ?? "Continue") : (NEXT_CTA[step.id] ?? step.action?.label ?? "Continue");
 
+  const video = step.video ? stepVideo(step.id, step.video) : null;
+
   return (
-    <div className="sc-next">
+    <div className={cn("sc-next", video && "sc-next--media")}>
+      <div className="sc-next-main">
       <div className="sc-next-label">Up next</div>
       <div className="sc-next-title">{step.label}</div>
       <p className="sc-next-desc">{step.descText}</p>
@@ -143,12 +148,6 @@ function UpNext({
           <Icon name="clock" size={13} />
           {step.doing ? inlineState(step) : `About ${step.minutes} min`}
         </span>
-        {step.video && (
-          <button type="button" className="sc-link" onClick={() => playVideo(step.video!.label)}>
-            <Icon name="play" size={13} />
-            {step.video.label} · {step.video.length}
-          </button>
-        )}
         {step.doc && (
           <button
             type="button"
@@ -177,6 +176,13 @@ function UpNext({
           </button>
         )}
       </div>
+      </div>
+      {video && (
+        <div className="sc-next-media">
+          {/* Keyed by step so skipping to another step loads its own video. */}
+          <GuidePlayer key={video.id} guide={video} onReport={() => {}} />
+        </div>
+      )}
     </div>
   );
 }

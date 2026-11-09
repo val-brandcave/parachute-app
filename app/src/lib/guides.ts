@@ -24,7 +24,7 @@ export interface DocGuide {
 
 export type GuideItem = VideoGuide | DocGuide;
 
-const PLACEHOLDER_VIDEO = "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4";
+export const PLACEHOLDER_VIDEO = "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4";
 
 export const GUIDES: GuideItem[] = [
   { id: "upload-start", kind: "video", label: "Upload and start", duration: "1:15", src: PLACEHOLDER_VIDEO },
@@ -52,3 +52,8 @@ export const GUIDES: GuideItem[] = [
 
 export const VIDEO_GUIDES = GUIDES.filter((g): g is VideoGuide => g.kind === "video");
 export const DOC_GUIDES = GUIDES.filter((g): g is DocGuide => g.kind === "pdf");
+
+/** A setup step's short video as a playable guide (same player as the Guides card). */
+export function stepVideo(stepId: string, video: { label: string; length: string }): VideoGuide {
+  return { id: `step-${stepId}`, kind: "video", label: video.label, duration: video.length, src: PLACEHOLDER_VIDEO };
+}

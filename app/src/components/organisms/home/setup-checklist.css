@@ -79,6 +79,29 @@
   border-radius: 12px;
   background: var(--md-surface-1);
 }
+/* Up next with a video: text left, the step's video right. Stacks on narrow cards. */
+.sc-next--media {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(200px, 280px);
+  gap: 24px;
+  align-items: center;
+}
+.sc-next-main {
+  min-width: 0;
+}
+.sc-next-media {
+  min-width: 0;
+}
+@media (max-width: 1180px) {
+  .sc-next--media {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+  /* Stacked: keep the video a supporting size, not the hero. */
+  .sc-next-media {
+    max-width: 320px;
+  }
+}
 .sc-next-label {
   font-size: 12px;
   line-height: 16px;
