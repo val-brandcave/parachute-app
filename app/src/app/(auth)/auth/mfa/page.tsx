@@ -6,10 +6,10 @@ import { KeycloakFrame } from "@/components/templates/KeycloakFrame";
 import { MfaForm } from "@/components/organisms/auth/MfaForm";
 
 function Mfa() {
-  const next = useSearchParams().get("next") ?? "/dashboard";
+  const next = useSearchParams().get("next") ?? "/get-started";
   return (
     <KeycloakFrame template="login-otp.ftl">
-      <MfaForm next={next.startsWith("/") ? next : "/dashboard"} />
+      <MfaForm next={next.startsWith("/") ? next : "/get-started"} />
     </KeycloakFrame>
   );
 }

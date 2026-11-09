@@ -17,7 +17,7 @@ export function EarnedToastHost() {
       title: notice.title,
       description: `${notice.credits} credit${notice.credits === 1 ? "" : "s"} added to ${notice.orgName}.`,
       tone: "success",
-      action: { label: "View", onClick: () => router.push("/dashboard") },
+      action: { label: "View", onClick: () => router.push("/get-started") },
     });
     useOnboardingStore.getState().clearEarnedNotice();
   }, [notice, toast, router]);

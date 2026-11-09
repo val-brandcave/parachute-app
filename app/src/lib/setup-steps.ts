@@ -52,8 +52,6 @@ export interface SetupStepDef {
 /** Types a "full review" runs. */
 export const FULL_REVIEW_TYPES: ReviewType[] = ["technical", "administrative"];
 
-/** Completed non-sample reviews before the Home StatBar and trend chart appear. */
-export const FIRST_RUN_STATBAR_MIN = 5;
 
 /** The pre-ticked first line. It counts as done but is not in `SETUP_STEPS`. */
 export const ACCOUNT_STEP = { id: "account" as SetupStepId, doneLabel: "Account created" };

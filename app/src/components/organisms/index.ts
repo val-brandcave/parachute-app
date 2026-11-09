@@ -13,6 +13,5 @@ export { MembersPanel } from "./MembersPanel";
 export { InviteMemberModal } from "./InviteMemberModal";
 export { BrandingPanel } from "./BrandingPanel";
 export { DemoDock } from "./DemoDock";
-export { SetupDock } from "./SetupDock";
 export { BalancePill } from "./BalancePill";
 export { EarnedToastHost } from "./EarnedToastHost";

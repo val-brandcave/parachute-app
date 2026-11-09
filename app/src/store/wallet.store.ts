@@ -143,6 +143,9 @@ interface WalletState {
     patch: Partial<Pick<WalletSettings, "paymentMethod" | "cardLast4" | "billingEmail">>,
   ) => Promise<void>;
 
+  /** Finance details and alert preferences (Billing > Settings). */
+  setBillingSettings: (patch: Partial<Omit<WalletSettings, "id" | "orgId" | "createdAt">>) => Promise<void>;
+
   openTopUp: (opts?: { reason?: TopUpReason; needed?: number }) => void;
   closeTopUp: () => void;
   openReceipt: (receiptId: string) => void;
@@ -305,6 +308,7 @@ export const useWalletStore = create<WalletState>((set, get) => {
 
     setAutoReload: (patch) => patchSettings(patch),
     setPaymentMethod: (patch) => patchSettings(patch),
+    setBillingSettings: (patch) => patchSettings(patch),
 
     openTopUp: (opts) =>
       set({

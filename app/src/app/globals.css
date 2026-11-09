@@ -17130,122 +17130,21 @@ select.qfilter {
   border-radius: 2px;
 }
 
-/* recent reviews */
-.hm-recent {
-  padding: 0;
-  overflow: hidden;
-}
-.hm-recent-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 18px 12px;
-}
-.hm-recent-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 12px 18px;
-  border-top: 1px solid var(--md-outline-v);
-  text-decoration: none;
-  color: inherit;
-}
-.hm-recent-row:hover {
-  background: var(--md-surface-1);
-}
-.hm-recent-main {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-.hm-recent-addr {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--md-on-surface);
-}
-.hm-recent-meta {
-  font-size: 12px;
-  color: var(--md-on-surface-v);
-}
-
-/* ---- sidebar footer: dock + balance pill ---- */
+/* ---- sidebar footer: balance pill ---- */
 .sb-foot {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
-.sb-dock {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  width: 100%;
-  padding: 10px 12px;
-  border-radius: 12px;
-  border: 1px solid var(--md-outline-v);
-  background: var(--md-surface);
-  color: var(--md-on-surface-v);
-  text-decoration: none;
-  font: inherit;
-}
-.sb-dock:hover {
-  background: var(--md-surface-1);
-}
-.sb-dock:focus-visible {
-  outline: none;
-  box-shadow: var(--ring-accent);
-}
-.sb-dock.is-collapsed {
-  align-items: center;
-  gap: 5px;
-  padding: 6px 0;
-  border: 0;
-  background: transparent;
-}
-.sb-dock.is-collapsed:hover {
-  background: var(--md-surface-1);
-}
-.sb-dock-row {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-}
-.sb-dock-title {
-  font-size: 13px;
-  line-height: 18px;
-  font-weight: 600;
-  color: var(--md-on-surface);
-}
-.sb-dock-n {
-  font-size: 12px;
-  line-height: 18px;
-  font-weight: 600;
-  color: var(--md-on-surface-v);
-  font-variant-numeric: tabular-nums;
-}
-.sb-dock.is-collapsed .sb-dock-n {
-  font-size: 11px;
-  line-height: 14px;
-  color: var(--md-on-surface);
-}
-.sb-bar,
 .su-bar {
   display: block;
   overflow: hidden;
   border-radius: 999px;
   background: var(--md-surface-2);
 }
-.sb-bar {
-  height: 4px;
-}
-.sb-dock.is-collapsed .sb-bar {
-  width: 28px;
-}
 .su-bar {
   height: 8px;
 }
-.sb-bar > i,
 .su-bar > i {
   display: block;
   height: 100%;
@@ -17253,12 +17152,10 @@ select.qfilter {
   background: var(--md-primary);
   transition: width 0.35s var(--ease-out, ease);
 }
-:root[data-theme="dark"] .sb-bar > i,
 :root[data-theme="dark"] .su-bar > i {
   background: var(--md-on-selected);
 }
 @media (prefers-reduced-motion: reduce) {
-  .sb-bar > i,
   .su-bar > i {
     transition: none;
   }
@@ -17451,6 +17348,30 @@ select.qfilter {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+}
+
+/* Get started: rail count + done state */
+.nav-count {
+  font-variant-numeric: tabular-nums;
+}
+.gs-done {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.gs-done-ic {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--md-success-c);
+  color: var(--md-success);
+}
+.gs-done-body {
+  flex: 1;
+  min-width: 0;
 }
 
 /* Phase 3: keep the demo dock clear of the run takeover's cost footbar */

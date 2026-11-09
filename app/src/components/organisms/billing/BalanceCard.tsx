@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { CreditChip, type CreditChipTone } from "@/components/atoms";
-import { FULL_REVIEW_TYPES, stepDef } from "@/lib/setup-steps";
-import { approxValue, costFor, formatUsd, packById } from "@/lib/pricing";
+import { stepDef } from "@/lib/setup-steps";
+import { formatUsd, packById } from "@/lib/pricing";
 import { balanceGrants, type BalanceGrant } from "@/lib/wallet-breakdown";
 import { DEMO_TODAY, daysUntil, expiryLabel, spendOrderSentence } from "./billing-data";
 import type { Billing } from "./useBilling";
@@ -33,28 +33,19 @@ function describe(g: BalanceGrant, userName: Billing["userName"], showValue: boo
 
 /** "What's in your balance": the big number, one sentence on spend order, and one row per grant
  *  in the order credits are used. `showValue` is off for non-admins (no dollars). */
-export function BalanceCard({ b, showValue = true, aside }: { b: Billing; showValue?: boolean; aside?: React.ReactNode }) {
+export function BalanceCard({ b, showValue = true }: { b: Billing; showValue?: boolean }) {
   const [showUsed, setShowUsed] = useState(false);
   const grants = useMemo(() => balanceGrants(b.ledger), [b.ledger]);
   const total = b.remaining.total;
-  const full = Math.floor(total / costFor(FULL_REVIEW_TYPES));
   const live = grants.filter((g) => g.remaining > 0).sort((a, c) => (a.useOrder ?? 0) - (c.useOrder ?? 0));
   const used = grants.filter((g) => g.remaining === 0);
-  const rows = showUsed ? [...live, ...used] : live;
+  const recentUsed = used.slice(-8);
+  const rows = showUsed ? [...live, ...recentUsed] : live;
 
   return (
     <section className="card bl-card bl-balance">
       <div className="bl-balance-head">
-        <div>
-          <h2 className="bl-h">What&rsquo;s in your balance</h2>
-          <div className="bl-big">
-            <span className="bl-big-n">{total}</span>
-            <span className="bl-big-u">
-              {total === 1 ? "credit" : "credits"} · about {full} full review{full === 1 ? "" : "s"}
-              {showValue && ` · worth about ${approxValue(total).replace("~", "")}`}
-            </span>
-          </div>
-        </div>
+        <h2 className="bl-h">What&rsquo;s in your balance</h2>
         <p className="bl-order-note">{spendOrderSentence(grants)}</p>
       </div>
 
@@ -93,12 +84,11 @@ export function BalanceCard({ b, showValue = true, aside }: { b: Billing; showVa
           <span>Total <b>{total}</b></span>
           {used.length > 0 && (
             <button type="button" className="hm-link" onClick={() => setShowUsed((v) => !v)}>
-              {showUsed ? "Hide used" : `Show used (${used.length})`}
+              {showUsed ? "Hide used" : `Show recently used (${recentUsed.length})`}
             </button>
           )}
         </div>
       </div>
-      {aside}
     </section>
   );
 }

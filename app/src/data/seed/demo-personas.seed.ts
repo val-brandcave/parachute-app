@@ -52,18 +52,18 @@ export const demoPersonas: DemoPersona[] = [
   {
     id: "pending-admin",
     label: "Admin awaiting approval",
-    description: "Lakeside Valuation, 11+ reviewers. Waits on the dashboard for Realwired to confirm.",
+    description: "Lakeside Valuation, 11+ reviewers. Waits on Get started for Realwired to confirm.",
     group: "signed_in",
     icon: "clock",
     userId: "user-lv1",
     orgId: "org-lakeside",
     mode: "full",
-    entryRoute: "/dashboard",
+    entryRoute: "/dashboard", // resolves to /get-started while setup is open
   },
   {
     id: "trial-admin",
     label: "Trial admin, mid-setup",
-    description: "Dana at Harbor Community Bank. First-run Home, setup 4 of 9.",
+    description: "Dana at Harbor Community Bank. Get started open, setup 4 of 9.",
     group: "signed_in",
     icon: "gift",
     userId: "user-dr",
@@ -91,7 +91,7 @@ export const demoPersonas: DemoPersona[] = [
     userId: "user-mo",
     orgId: "org-hcb",
     mode: "full",
-    entryRoute: "/launchpad",
+    entryRoute: "/dashboard",
   },
   {
     id: "approver",

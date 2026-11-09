@@ -7,6 +7,7 @@ import { Logo } from "@/components/Logo";
 import { Icon, YouConnectGlyph } from "@/components/atoms";
 import { useSessionStore } from "@/store";
 import { useDemoStore } from "@/store/demo.store";
+import { resolveEntryRoute } from "@/lib/landing";
 import { DEMO_ENABLED } from "@/lib/demo";
 import "../emails/emails.css";
 import {
@@ -38,7 +39,7 @@ export default function StartPage() {
   };
   const pickPersona = async (id: string) => {
     const persona = await useDemoStore.getState().apply(id);
-    if (persona) router.push(persona.entryRoute);
+    if (persona) router.push(resolveEntryRoute(persona.entryRoute));
   };
   const groups: PersonaGroup[] = ["signup", "signed_in", "yc"];
 

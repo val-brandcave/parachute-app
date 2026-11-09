@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button, Icon, MicrosoftGlyph } from "@/components/atoms";
 import { demoPersonas } from "@/data/seed/demo-personas.seed";
+import { landingRoute, resolveEntryRoute } from "@/lib/landing";
 import { seedUsers } from "@/data/seed/users.seed";
 import { useDemoStore } from "@/store/demo.store";
 import { useSessionStore } from "@/store/session.store";
@@ -41,7 +42,7 @@ export function SignInForm() {
     const known = signInPersonas().find((p) => p.email.toLowerCase() === wanted);
     if (password && known) {
       const persona = await useDemoStore.getState().apply(known.persona.id);
-      if (persona) router.push(persona.entryRoute);
+      if (persona) router.push(resolveEntryRoute(persona.entryRoute));
       return;
     }
     // A member created at runtime (the sign-up flow) signs in too.
@@ -49,7 +50,7 @@ export function SignInForm() {
     if (password && member) {
       useSessionStore.getState().signIn({ userId: member.id, orgId: member.orgId, role: member.role });
       await loadSessionData();
-      router.push("/dashboard");
+      router.push(landingRoute());
       return;
     }
     setError(BAD_CREDENTIALS);
@@ -57,7 +58,7 @@ export function SignInForm() {
 
   const microsoft = async () => {
     const persona = await useDemoStore.getState().apply("returning");
-    if (persona) router.push(persona.entryRoute);
+    if (persona) router.push(resolveEntryRoute(persona.entryRoute));
   };
 
   if (step === "password") {

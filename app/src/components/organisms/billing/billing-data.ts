@@ -1,6 +1,6 @@
-import { CREDIT_USD, formatUsd, usd } from "@/lib/pricing";
-import { balanceGrants, nextExpiring, type BalanceGrant } from "@/lib/wallet-breakdown";
-import { remainingFromLedger, type RemainingBySource } from "@/store/wallet.store";
+import { CREDIT_USD, REVIEW_TYPE_COST, formatUsd, usd } from "@/lib/pricing";
+import { nextExpiring, type BalanceGrant } from "@/lib/wallet-breakdown";
+import { remainingFromLedger } from "@/store/wallet.store";
 import type { CreditLedgerEntry, CreditSource, Review, ReviewType } from "@/types";
 
 /** The demo's "today" (6 Nov 2026). Prototype-only: keeps the statements and invoice copy on one month. */
@@ -69,6 +69,8 @@ export interface ActivityRow {
   /** Chips in the "Paid from" column. */
   from: { label: string; tone: "buy" | "trial" | "earn" | "card" | "refund" }[];
   by: string;
+  /** Who did it, for the person filter. */
+  byId?: string;
   receiptId?: string;
   kind: CreditLedgerEntry["kind"];
   /** Label for the row action: "Receipt", or "Details" on a failed-and-refunded run. */
@@ -123,6 +125,7 @@ export function buildActivity(
           amountUsd: 0,
           from: [{ label: "Refund", tone: "refund" }],
           by: "System",
+          byId: e.actorId,
           receiptId: refund.receiptId,
           kind: "refund",
           actionLabel: "Details",
@@ -152,10 +155,35 @@ export function buildActivity(
         listUsd: isDebit && trialOnly ? usd(-credits) : undefined,
         from,
         by: e.actorId ? shortName(userName(e.actorId)) : "System",
+        byId: e.actorId,
         receiptId: e.receiptId,
         kind: e.kind,
       };
     });
+}
+
+/** Invoiced orgs have no ledger: one row per review run, billed at list value. */
+export function invoicedActivity(reviews: readonly Review[], userName: UserName): ActivityRow[] {
+  const list = invoicedReviews(reviews);
+  return list
+    .map((r): ActivityRow => {
+      const credits = r.reviewTypes.reduce((n, t) => n + (REVIEW_TYPE_COST[t] ?? 0), 0);
+      return {
+        id: r.id,
+        at: rebasedDate(r, list),
+        title: r.propertyAddress,
+        sub: r.propertyType,
+        loan: r.loanNo,
+        types: typesLabel(r.reviewTypes),
+        credits: -credits,
+        amountUsd: credits * CREDIT_USD,
+        from: [],
+        by: shortName(userName(r.assigneeId)),
+        byId: r.assigneeId,
+        kind: "debit",
+      };
+    })
+    .sort((a, b) => b.at - a.at);
 }
 
 export function signed(n: number): string {
@@ -231,15 +259,6 @@ export function spendOrderSentence(grants: readonly BalanceGrant[]): string {
   const n = next.remaining;
   const what = next.source === "earned" ? `earned credit${n === 1 ? "" : "s"}` : `purchased credit${n === 1 ? "" : "s"}`;
   return `${lead} Next expiry: ${n} ${what} on ${fmtLong(next.expiresAt!)}.`;
-}
-
-/** Plain-language line, kept for older callers. */
-export function expiryLine(ledger: readonly CreditLedgerEntry[], _remaining?: RemainingBySource): string {
-  void _remaining;
-  const next = nextExpiring(balanceGrants(ledger));
-  if (!next) return "Nothing expires soon";
-  const n = next.remaining;
-  return `Next expiry: ${n} ${next.source === "earned" ? "earned " : "purchased "}credit${n === 1 ? "" : "s"} on ${fmtLong(next.expiresAt!)}`;
 }
 
 export function remainingOf(ledger: readonly CreditLedgerEntry[]) {
@@ -348,7 +367,11 @@ export function invoicedStatement(reviews: readonly Review[], userName: UserName
   let creditsUsed = 0;
   let chargedUsd = 0;
   let reviewTypes = 0;
-  for (const r of invoicedReviews(reviews)) {
+  const all = invoicedReviews(reviews);
+  for (const r of all) {
+    // Only reviews run in this statement's month (seed dates are re-based onto the demo "today").
+    const at = rebasedDate(r, all);
+    if (at < start || at >= end) continue;
     const g: StatementGroup = { key: r.id, loan: r.loanNo, address: r.propertyAddress, kind: r.propertyType, lines: [] };
     for (const t of r.reviewTypes) {
       g.lines.push({
@@ -368,7 +391,7 @@ export function invoicedStatement(reviews: readonly Review[], userName: UserName
   return { monthStart: start, monthEnd: end, groups, creditsUsed, chargedUsd, freeRuns: 0, reviewTypes };
 }
 
-/** Non-sample reviews of the org, newest first. Prototype: all of them count as "this month". */
+/** Non-sample reviews of the org, newest first. */
 export function invoicedReviews(reviews: readonly Review[]): Review[] {
   return reviews.filter((r) => !r.sample).sort((a, b) => b.orderedAt - a.orderedAt);
 }

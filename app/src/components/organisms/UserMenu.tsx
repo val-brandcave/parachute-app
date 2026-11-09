@@ -39,7 +39,7 @@ export function UserMenu({
   const showSetupGuide = (billing === "trial" || billing === "payg") && !setupDone;
   const reopenSetup = () => {
     usePrefsStore.getState().setSetupHidden(me.id, false);
-    go("/dashboard");
+    go("/get-started");
   };
 
   useEffect(() => {

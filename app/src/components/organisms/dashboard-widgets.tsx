@@ -3,7 +3,11 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Icon, Chip, Button } from "@/components/atoms";
+import { Icon, Chip, Button, Tooltip, type IconName } from "@/components/atoms";
+import { useStartGate } from "./home/useStartGate";
+import { useOrgStore, useWalletStore } from "@/store";
+import { costFor } from "@/lib/pricing";
+import { FULL_REVIEW_TYPES } from "@/lib/setup-steps";
 import { ActionMenu, type ActionItem } from "@/components/molecules";
 import { cn, relativeDue } from "@/lib/utils";
 import { reviewHref } from "./ReviewTable";
@@ -20,12 +24,25 @@ const riskColor = (rating: Review["riskRating"]) =>
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
+/** Calm empty row for a dashboard widget. */
+function WidgetEmpty({ icon, title, hint }: { icon: IconName; title: string; hint: string }) {
+  return (
+    <div className="db-wempty">
+      <span className="db-wempty-icon" aria-hidden="true">
+        <Icon name={icon} size={20} />
+      </span>
+      <b>{title}</b>
+      <span>{hint}</span>
+    </div>
+  );
+}
+
 /** Action-needed widget: the most urgent items waiting on the reviewer.
  *  Leading risk dot, then the property; the right-hand badge carries the one
  *  meaningful signal per row — due urgency (neutral/amber/red) or, for an
  *  auto-rejected item, its failure state. No status text (the widget IS the
  *  status) and no decorative icon tiles. */
-export function ActionNeeded({ reviews }: { reviews: Review[] }) {
+export function ActionNeeded({ reviews, fresh = false }: { reviews: Review[]; fresh?: boolean }) {
   return (
     <div className="widget">
       <div className="widget-head">
@@ -36,7 +53,19 @@ export function ActionNeeded({ reviews }: { reviews: Review[] }) {
       </div>
       <div className="widget-body">
         {reviews.length === 0 ? (
-          <div className="widget-empty">You&apos;re all caught up. 🎉</div>
+          fresh ? (
+          <WidgetEmpty
+            icon="flag"
+            title="Nothing needs you yet"
+            hint="Reviews waiting on your decision or sign-off will show up here."
+          />
+        ) : (
+          <WidgetEmpty
+            icon="check-circle"
+            title="You're all caught up"
+            hint="Nothing is waiting on your decision right now."
+          />
+        )
         ) : (
           reviews.map((r) => {
             const due = relativeDue(r.slaDueAt);
@@ -95,7 +124,11 @@ export function NewFromYouConnect({ reviews }: { reviews: Review[] }) {
       </div>
       <div className="widget-body">
         {reviews.length === 0 ? (
-          <div className="widget-empty">No new deliveries from YouConnect.</div>
+          <WidgetEmpty
+            icon="connect"
+            title="No new deliveries"
+            hint="Appraisals delivered through YouConnect will wait here until you run them."
+          />
         ) : (
           reviews.map((r) => (
             <div key={r.id} className="yc-row">
@@ -116,6 +149,92 @@ export function NewFromYouConnect({ reviews }: { reviews: Review[] }) {
             </div>
           ))
         )}
+      </div>
+    </div>
+  );
+}
+
+const GHOST_BARS = [34, 52, 44, 66, 48, 72, 58, 82, 54, 70, 60, 46];
+
+/** Review volume before the org has run anything of its own: a designed way in
+ *  rather than a chart of zeros. Start respects the approval gate; the sample is
+ *  always open. */
+export function TrendChartEmpty({ periodLabel }: { periodLabel: string }) {
+  const router = useRouter();
+  const { locked, reason } = useStartGate();
+  const metered = useOrgStore((s) => s.org?.billing === "trial" || s.org?.billing === "payg");
+  const credits = useWalletStore((s) => s.ledger.reduce((sum, e) => sum + e.credits, 0));
+  const full = Math.floor(credits / costFor(FULL_REVIEW_TYPES));
+  const start = (
+    <Button iconLeft="rocket" disabled={locked} onClick={() => router.push("/launchpad")}>
+      Start a review
+    </Button>
+  );
+  return (
+    <div className="widget">
+      <div className="widget-head rv-head">
+        <div className="rv-title">
+          <h3>Review volume</h3>
+          <span className="rv-badge">{periodLabel}</span>
+        </div>
+      </div>
+      <div className="db-empty-chart">
+        <div className="db-ghost" aria-hidden="true">
+          {GHOST_BARS.map((h, i) => (
+            <i key={i} style={{ height: `${h}%` }} />
+          ))}
+        </div>
+        <div className="db-empty-card">
+          <span className="db-empty-icon" aria-hidden="true">
+            <Icon name="parachute" size={26} />
+          </span>
+          <h4>Your first review will show here</h4>
+          <p>
+            Run an appraisal through Parachute and this chart starts tracking volume, turnaround and
+            on-time delivery. Want to see a finished review first? The sample is ready.
+          </p>
+          <div className="db-empty-actions">
+            {locked ? <Tooltip content={reason}>{start}</Tooltip> : start}
+            <Button
+              variant="outline"
+              iconRight="forward"
+              onClick={() => router.push("/reviews/review-sample")}
+            >
+              Open the sample review
+            </Button>
+          </div>
+          {locked ? (
+            <div className="db-empty-note lock">{reason}. The sample is open in the meantime.</div>
+          ) : metered && credits > 0 ? (
+            <div className="db-empty-note">
+              You have {credits} credit{credits === 1 ? "" : "s"}, enough for about {full} full review
+              {full === 1 ? "" : "s"}.
+            </div>
+          ) : null}
+        </div>
+      </div>
+      <div className="db-steps">
+        <div className="db-step">
+          <span className="db-step-n">1</span>
+          <div>
+            <b>Add an appraisal</b>
+            <span>Drop a PDF or pick a delivery from YouConnect.</span>
+          </div>
+        </div>
+        <div className="db-step">
+          <span className="db-step-n">2</span>
+          <div>
+            <b>Parachute checks it</b>
+            <span>Every figure is traced to the source and findings are drafted.</span>
+          </div>
+        </div>
+        <div className="db-step">
+          <span className="db-step-n">3</span>
+          <div>
+            <b>You decide and sign</b>
+            <span>Accept or flag each finding, then sign the workbook.</span>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -213,7 +332,11 @@ export function TrendChart({
   const router = useRouter();
   const wrapRef = useRef<HTMLDivElement>(null);
   const [w, setW] = useState(680);
-  const [overlay, setOverlay] = useState<Overlay>("turnaround");
+  const [overlayPick, setOverlay] = useState<Overlay>("turnaround");
+  // Orgs with their own data have no turnaround / on-time history yet: don't
+  // draw flat zero lines or offer them.
+  const hasLines = points.some((p) => p.t > 0);
+  const overlay: Overlay = hasLines ? overlayPick : "none";
   const [hover, setHover] = useState<number | null>(null);
 
   useEffect(() => {
@@ -278,13 +401,17 @@ export function TrendChart({
     { v: "none", label: "None" },
   ];
   const menuItems: ActionItem[] = [
-    { header: true, label: "Overlay line" },
-    ...overlayOpts.map((o) => ({
-      label: o.label,
-      selected: overlay === o.v,
-      onClick: () => setOverlay(o.v),
-    })),
-    { divider: true },
+    ...(hasLines
+      ? ([
+          { header: true, label: "Overlay line" },
+          ...overlayOpts.map((o) => ({
+            label: o.label,
+            selected: overlay === o.v,
+            onClick: () => setOverlay(o.v),
+          })),
+          { divider: true },
+        ] as ActionItem[])
+      : []),
     { label: "View all reviews", icon: "reviews" as const, onClick: () => router.push("/reviews") },
     { label: "Export PDF", icon: "download" as const, onClick: exportPdf },
   ];
@@ -402,6 +529,10 @@ export function TrendChart({
           ))}
         </svg>
 
+        {completed === 0 && (
+          <div className="db-chart-quiet">No reviews completed in this period</div>
+        )}
+
         {hp && (
           <div
             className="rv-tip"
@@ -414,18 +545,22 @@ export function TrendChart({
               </span>
               <b>{hp.v}</b>
             </div>
-            <div className="rv-tip-row">
-              <span>
-                <SeriesGlyph kind="line" /> Turnaround
-              </span>
-              <b>{hp.t}m</b>
-            </div>
-            <div className="rv-tip-row">
-              <span>
-                <SeriesGlyph kind="dashed" /> On-time
-              </span>
-              <b>{hp.onTime}%</b>
-            </div>
+            {hasLines && (
+              <>
+                <div className="rv-tip-row">
+                  <span>
+                    <SeriesGlyph kind="line" /> Turnaround
+                  </span>
+                  <b>{hp.t}m</b>
+                </div>
+                <div className="rv-tip-row">
+                  <span>
+                    <SeriesGlyph kind="dashed" /> On-time
+                  </span>
+                  <b>{hp.onTime}%</b>
+                </div>
+              </>
+            )}
             <button
               type="button"
               className="rv-tip-btn"

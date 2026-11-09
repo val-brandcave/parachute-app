@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -8,12 +8,12 @@ import {
   IconButton,
   SidebarAction,
   type NavGroup,
+  type NavNode,
 } from "@realwired/ui";
 
 import { Icon, Logo, Tooltip } from "@/components/atoms";
 import { Breadcrumbs } from "@/components/molecules";
 import { OrgCard } from "@/components/organisms/OrgCard";
-import { SetupDock } from "@/components/organisms/SetupDock";
 import { BalancePill } from "@/components/organisms/BalancePill";
 import { EarnedToastHost } from "@/components/organisms/EarnedToastHost";
 import { UserMenu } from "@/components/organisms/UserMenu";
@@ -23,7 +23,8 @@ import { RunModal } from "@/components/run/RunModal";
 import { DemoDock } from "@/components/organisms/DemoDock";
 import { TopUpModal, ReceiptDialog } from "@/components/organisms/wallet";
 import { useStartGate } from "@/components/organisms/home/useStartGate";
-import { usePrefsStore, useSessionStore } from "@/store";
+import { useSetupGuideVisible } from "@/lib/landing";
+import { usePrefsStore, useSessionStore, useSetupSummary } from "@/store";
 
 /**
  * Parachute's shell, now rendered by the design system.
@@ -51,14 +52,9 @@ import { usePrefsStore, useSessionStore } from "@/store";
  * artifact, so the two cannot disagree.
  */
 
-const NAV: NavGroup[] = [
-  {
-    id: "main",
-    items: [
-      { id: "dashboard", label: "Dashboard", icon: "dashboard", href: "/dashboard" },
-      { id: "reviews", label: "Reviews", icon: "reviews", href: "/reviews" },
-    ],
-  },
+const MAIN_ITEMS: NavNode[] = [
+  { id: "dashboard", label: "Dashboard", icon: "dashboard", href: "/dashboard" },
+  { id: "reviews", label: "Reviews", icon: "reviews", href: "/reviews" },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -69,6 +65,30 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const [searchOpen, setSearchOpen] = useState(false);
   const startGate = useStartGate();
+
+  // "Get started" sits above Dashboard while setup is open and not hidden. It
+  // carries the progress count; finishing or hiding the guide removes the row.
+  const setupVisible = useSetupGuideVisible();
+  const { doneCount, total } = useSetupSummary();
+  const nav = useMemo<NavGroup[]>(() => {
+    const items: NavNode[] = setupVisible
+      ? [
+          {
+            id: "get-started",
+            label: "Get started",
+            icon: "rocket",
+            href: "/get-started",
+            badge: (
+              <span className="nav-count" aria-label={`${doneCount} of ${total} steps done`}>
+                {doneCount}/{total}
+              </span>
+            ),
+          },
+          ...MAIN_ITEMS,
+        ]
+      : MAIN_ITEMS;
+    return [{ id: "main", items }];
+  }, [setupVisible, doneCount, total]);
 
   // Cmd/Ctrl+K opens the command palette anywhere in the app. Kept here rather
   // than in the library: a command palette's CONTENTS are product knowledge,
@@ -91,7 +111,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <>
       <RwAppShell
-        nav={NAV}
+        nav={nav}
         currentPath={pathname}
         // The routing seam. On Vite this becomes React Router's Link; on
         // Inertia, @inertiajs/react's. The library is unaware of all three.
@@ -149,7 +169,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         }
         sidebarFooter={(collapsed) => (
           <div className="sb-foot">
-            <SetupDock collapsed={collapsed} />
             <BalancePill collapsed={collapsed} />
             <OrgCard collapsed={collapsed} />
           </div>

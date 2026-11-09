@@ -119,6 +119,19 @@ export interface WalletSettings {
   paymentMethod: "card" | "invoice" | "ach" | null;
   cardLast4?: string;
   billingEmail?: string;
+  /** Finance details printed on receipts and statements. */
+  poNumber?: string;
+  taxId?: string;
+  /** Multi-line, one line per row. */
+  billingAddress?: string;
+  /** Alerts (all optional; defaults live in billing-settings). */
+  alertLow?: boolean;
+  alertLowBelow?: number;
+  alertExpiry?: boolean;
+  alertSpend?: boolean;
+  alertSpendUsd?: number;
+  /** Comma-separated; empty means the billing email. */
+  alertEmails?: string;
 }
 
 /** One row per org; `id` === `orgId`. */

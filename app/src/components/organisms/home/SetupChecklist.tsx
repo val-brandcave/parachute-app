@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useToast } from "@realwired/ui";
@@ -240,13 +240,6 @@ export function SetupChecklist() {
   const returning = anyDone;
   const pct = summary.total > 0 ? Math.round((summary.doneCount / summary.total) * 100) : 0;
   const orgName = useOrgStore((o) => o.org?.name);
-
-  // Arriving on /dashboard#setup (from the sidebar widget) scrolls the card in.
-  useEffect(() => {
-    if (window.location.hash !== "#setup") return;
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    document.getElementById("setup")?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
-  }, []);
 
   return (
     <section className="card su-card" id="setup" aria-labelledby="su-title">

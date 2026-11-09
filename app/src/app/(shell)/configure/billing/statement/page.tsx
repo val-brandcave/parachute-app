@@ -15,6 +15,7 @@ import {
   useBilling,
   walletStatement,
 } from "@/components/organisms/billing";
+import { addressOf } from "@/components/organisms/billing/settings/settings-data";
 import { useCurrentOrg } from "@/lib/current-user";
 import "../billing.css";
 
@@ -89,6 +90,7 @@ function StatementPage() {
           monthKey={key}
           s={s}
           invoiced={b.invoiced}
+          billTo={{ po: b.settings?.poNumber, taxId: b.settings?.taxId, address: addressOf(b.settings, b.org?.id, b.org?.name) }}
         />
       </div>
     </>

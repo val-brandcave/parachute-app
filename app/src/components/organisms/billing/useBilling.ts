@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { useToast } from "@realwired/ui";
 import { useCurrentOrg, useCurrentUser } from "@/lib/current-user";
 import { useOrgStore, useReviewsStore, useUsersStore, useWalletStore } from "@/store";
-import { activityCsv, buildActivity, downloadText, remainingOf, shortName } from "./billing-data";
+import { buildActivity, remainingOf, shortName } from "./billing-data";
 
 /** Everything the billing screens read: org, role, wallet, derived activity. */
 export function useBilling() {
@@ -33,12 +33,6 @@ export function useBilling() {
   const askAdmin = () =>
     toast({ title: `We emailed ${adminName}`, description: "They can add credits from Billing & credits.", tone: "success" });
 
-  const exportCsv = () =>
-    downloadText(
-      "parachute-credit-activity.csv",
-      activityCsv(buildActivity(ledger, reviews, userName, undefined, false)),
-    );
-
   return {
     me,
     org,
@@ -55,7 +49,6 @@ export function useBilling() {
     remaining,
     rows,
     askAdmin,
-    exportCsv,
     openTopUp: () => useWalletStore.getState().openTopUp({ reason: "manual" }),
     openReceipt: (id: string) => useWalletStore.getState().openReceipt(id),
     patchOrg: (p: Parameters<ReturnType<typeof useOrgStore.getState>["patchOrg"]>[0]) => useOrgStore.getState().patchOrg(p),

@@ -42,7 +42,7 @@ const SEEDED_KEY = `${STORAGE_PREFIX}:__seeded__`;
 //      v20: self-serve Phase 4 - invites collection (Harbor has one pending), the
 //      "invite" setup step (done for Cedar Ridge and Meridian, open for Harbor).
 //      v21: self-serve v2 - Lakeside Valuation is a 11+ team (sales-flagged), pending, no trial.
-const SEED_VERSION = "v21";
+const SEED_VERSION = "v22";
 
 export const mockAdapter: DataAdapter = {
   async getAll<T>(collection: string): Promise<T[]> {

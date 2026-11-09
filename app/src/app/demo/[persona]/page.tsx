@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Logo } from "@/components/Logo";
+import { resolveEntryRoute } from "@/lib/landing";
 import { personaById } from "@/lib/demo";
 import { useDemoStore } from "@/store/demo.store";
 
@@ -26,7 +27,7 @@ export default function DemoPersonaPage() {
       .getState()
       .apply(persona.id)
       .then((p) => {
-        if (active && p) router.replace(p.entryRoute);
+        if (active && p) router.replace(resolveEntryRoute(p.entryRoute));
       });
     return () => {
       active = false;

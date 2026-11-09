@@ -10,6 +10,7 @@ type Crumb = { label: string; href?: string };
 
 const TOP_LABELS: Record<string, string> = {
   launchpad: "Start a review",
+  "get-started": "Get started",
   dashboard: "Dashboard",
   reviews: "Reviews",
   configure: "Configure",

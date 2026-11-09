@@ -1,11 +1,11 @@
 "use client";
 
-import { Suspense, useState, type ReactNode } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Callout, CalloutAction, useToast } from "@realwired/ui";
 import { useCurrentUser } from "@/lib/current-user";
-import { Button } from "@/components/atoms";
+import { Button, Icon } from "@/components/atoms";
 import { WalletCard } from "@/components/organisms/wallet";
 import { FULL_REVIEW_TYPES } from "@/lib/setup-steps";
 import { TRIAL_GRANT_CREDITS, costFor } from "@/lib/pricing";
@@ -17,11 +17,12 @@ import {
   useUsersStore,
   useWalletStore,
   useSetupHidden,
+  useSetupSummary,
 } from "@/store";
 import { ROLE_META } from "@/lib/member-roles";
 import "@/app/bouncer/bouncer.css";
 import { SetupChecklist } from "./SetupChecklist";
-import { GuidesCard, RecentReviews, SampleCard, SecurityPackCard } from "./HomeCards";
+import { GuidesCard, SampleCard, SecurityPackCard } from "./HomeCards";
 
 /** G2: "<Name> accepted your invite as <role>", driven by `?joined=<inviteId>` from
  *  the Realwired Admin return link. Dismissing also clears the param. */
@@ -144,49 +145,59 @@ function PendingCallout() {
   );
 }
 
-/** First-run Home: the setup checklist is the empty state (C1 / C2). `stats`
- *  (StatBar + trend) is only passed once the org has enough completed reviews. */
-export function FirstRunHome({ stats }: { stats?: ReactNode }) {
-  const me = useCurrentUser();
-  const hidden = useSetupHidden();
+/** Shown once every step is done (or the guide was dismissed org-wide). */
+function DoneCard() {
+  const router = useRouter();
   return (
-    <>
-      <div className="pagebody">
-        <PendingCallout />
-        <WelcomeCallout />
-        <Suspense fallback={null}>
-          <JoinedCallout />
-        </Suspense>
-        {stats}
-        <div className="home-grid">
-          <div className="home-main">
-            {hidden ? (
-              <section className="card hm-card su-hidden">
-                <div>
-                  <h2 className="hm-h">Setup guide hidden</h2>
-                  <p className="hm-p">It stays hidden for you only. Your team still sees it.</p>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => usePrefsStore.getState().setSetupHidden(me.id, false)}
-                >
-                  Show setup guide
-                </Button>
-              </section>
-            ) : (
-              <SetupChecklist />
-            )}
-            <RecentReviews />
-          </div>
-          <div className="home-side">
-            <SampleCard />
-            <WalletCard />
-            <SecurityPackCard />
-            <GuidesCard />
-          </div>
+    <section className="card hm-card gs-done">
+      <span className="gs-done-ic" aria-hidden="true">
+        <Icon name="check-circle" size={22} />
+      </span>
+      <div className="gs-done-body">
+        <h2 className="hm-h">You&apos;re set up</h2>
+        <p className="hm-p">Every step is done. Get started leaves the sidebar, and your reviews live on the Dashboard.</p>
+      </div>
+      <Button variant="primary" size="sm" iconRight="forward" onClick={() => router.push("/dashboard")}>
+        Go to Dashboard
+      </Button>
+    </section>
+  );
+}
+
+/** The Get started page body: the setup checklist as the main column, the sample,
+ *  wallet, IT pack and guides alongside. Self-serve orgs only; everyone else, and
+ *  anyone who hid the guide, goes to the Dashboard. */
+export function GetStarted() {
+  const router = useRouter();
+  const billing = useOrgStore((s) => s.org?.billing);
+  const hidden = useSetupHidden();
+  const { ready, allDone } = useSetupSummary();
+  const selfServe = billing === "trial" || billing === "payg";
+  const away = (!!billing && !selfServe) || hidden;
+
+  useEffect(() => {
+    if (away) router.replace("/dashboard");
+  }, [away, router]);
+
+  if (away || !ready) return null;
+
+  return (
+    <div className="pagebody">
+      <PendingCallout />
+      <WelcomeCallout />
+      <Suspense fallback={null}>
+        <JoinedCallout />
+      </Suspense>
+      <div className="home-grid">
+        <div className="home-main">{allDone ? <DoneCard /> : <SetupChecklist />}</div>
+        <div className="home-side">
+          <SampleCard />
+          {/* Once setup is done the wallet lives on Billing; keep what still helps. */}
+          {!allDone && <WalletCard />}
+          {!allDone && <SecurityPackCard />}
+          <GuidesCard />
         </div>
       </div>
-    </>
+    </div>
   );
 }

@@ -76,7 +76,8 @@
   cursor: pointer;
 }
 .tu-pack-n {
-  font-family: var(--font-display, inherit);
+  font-family: var(--font-sans-base), system-ui, sans-serif;
+  letter-spacing: -0.02em;
   font-size: 28px;
   line-height: 32px;
   font-weight: 600;

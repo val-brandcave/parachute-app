@@ -238,7 +238,8 @@
   color: var(--md-on-surface-dis);
 }
 .hc-n {
-  font-family: var(--font-display, inherit);
+  font-family: var(--font-sans-base), system-ui, sans-serif;
+  letter-spacing: -0.02em;
   font-size: 36px;
   line-height: 40px;
   font-weight: 700;

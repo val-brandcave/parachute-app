@@ -12,6 +12,7 @@ export function StatementPaper({
   monthKey,
   s,
   invoiced,
+  billTo,
 }: {
   orgName: string;
   orgInitials: string;
@@ -19,6 +20,8 @@ export function StatementPaper({
   monthKey: string;
   s: Statement;
   invoiced?: boolean;
+  /** PO number, tax ID and billing address from Billing settings. */
+  billTo?: { po?: string; taxId?: string; address?: string };
 }) {
   const range = `${new Date(s.monthStart).getDate()}-${new Date(s.monthEnd).getDate()} ${new Date(s.monthStart).toLocaleDateString("en-US", { month: "short", year: "numeric" })}`;
   return (
@@ -36,6 +39,29 @@ export function StatementPaper({
           <strong>{range}</strong>
         </div>
       </header>
+
+      {billTo && (billTo.po || billTo.taxId || billTo.address) && (
+        <dl className="bl-paper-billto">
+          {billTo.address && (
+            <div>
+              <dt>Bill to</dt>
+              <dd>{billTo.address}</dd>
+            </div>
+          )}
+          {billTo.po && (
+            <div>
+              <dt>PO number</dt>
+              <dd>{billTo.po}</dd>
+            </div>
+          )}
+          {billTo.taxId && (
+            <div>
+              <dt>Tax ID</dt>
+              <dd>{billTo.taxId}</dd>
+            </div>
+          )}
+        </dl>
+      )}
 
       <table className="bl-paper-table">
         <thead>

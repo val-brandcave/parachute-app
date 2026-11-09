@@ -6,6 +6,7 @@ import { useToast } from "@realwired/ui";
 import { adapter } from "@/data/adapters";
 import { Collections } from "@/data/collections";
 import { needsStaffApproval } from "@/lib/pricing";
+import { landingRoute } from "@/lib/landing";
 import { loadSessionData } from "@/store/session-data";
 import { useOrgStore } from "@/store/org.store";
 import { useSessionStore } from "@/store/session.store";
@@ -126,7 +127,7 @@ export function useWelcomeSetup(opts: { preset?: string | null; step?: string | 
     let live = true;
     (async () => {
       await ensureDemoWorkspace(DEMO_LARGE_PROFILE);
-      if (live) router.replace("/dashboard");
+      if (live) router.replace(landingRoute());
     })();
     return () => {
       live = false;
@@ -151,7 +152,7 @@ export function useWelcomeSetup(opts: { preset?: string | null; step?: string | 
       ...(needsSales && callRequested ? { salesRequested: true } : {}),
     };
     await createWorkspace(name.trim(), profile);
-    router.push("/dashboard");
+    router.push(landingRoute());
   }, [name, kind, team, volume, needsSales, callRequested, router]);
 
   return {

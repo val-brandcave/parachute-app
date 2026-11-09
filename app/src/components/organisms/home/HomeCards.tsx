@@ -1,14 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useToast } from "@realwired/ui";
-import { Button, Chip, CreditChip, Icon, IconButton, Tooltip } from "@/components/atoms";
+import { Button, CreditChip, Icon, IconButton, Tooltip } from "@/components/atoms";
 import { DOC_GUIDES, VIDEO_GUIDES, type DocGuide } from "@/lib/guides";
 import { PACK_DOCS } from "@/lib/security-pack";
 import { useReviewsStore } from "@/store";
-import type { Review } from "@/types";
 import { useSetupActions } from "./useSetupActions";
 import { HcCard } from "./HcFrame";
 import { GuideStage } from "./GuideVideo";
@@ -175,47 +173,5 @@ export function GuidesCard() {
         </ul>
       </div>
     </HcCard>
-  );
-}
-
-function pillFor(r: Review): { tone: "info" | "pass" | "accent" | "neutral"; label: string } {
-  if (r.status === "completed") return { tone: "pass", label: "Completed" };
-  if (r.status === "in_review") return { tone: "info", label: "Awaiting signature" };
-  if (r.status === "running") return { tone: "accent", label: "In pipeline" };
-  return { tone: "neutral", label: "Intake" };
-}
-
-/** The org's own recent reviews (never the sample). Shown once there are some. */
-export function RecentReviews() {
-  const reviews = useReviewsStore((s) => s.reviews);
-  const rows = reviews
-    .filter((r) => !r.sample)
-    .sort((a, b) => b.orderedAt - a.orderedAt)
-    .slice(0, 3);
-  if (rows.length === 0) return null;
-  return (
-    <section className="card hm-recent">
-      <div className="hm-recent-head">
-        <h2 className="hm-h">Recent reviews</h2>
-        <Link href="/reviews" className="hm-link">
-          View all <Icon name="chevron-right" size={14} />
-        </Link>
-      </div>
-      {rows.map((r) => {
-        const p = pillFor(r);
-        const [, ...rest] = r.propertyAddress.split(", ");
-        return (
-          <Link key={r.id} href={`/reviews/${r.id}`} className="hm-recent-row">
-            <span className="hm-recent-main">
-              <span className="hm-recent-addr">{r.propertyAddress.split(", ")[0]}</span>
-              <span className="hm-recent-meta">
-                {rest.join(", ")} · {r.propertyType.replace(/\s*\((.*)\)/, (_m, a: string) => ` ${a.toLowerCase()}`)} · Loan {r.loanNo}
-              </span>
-            </span>
-            <Chip tone={p.tone === "neutral" ? "neutral" : p.tone}>{p.label}</Chip>
-          </Link>
-        );
-      })}
-    </section>
   );
 }

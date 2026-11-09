@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Icon, type IconName } from "@/components/atoms";
 import { cn } from "@/lib/utils";
 import { useStartGate } from "@/components/organisms/home/useStartGate";
+import { useSetupGuideVisible } from "@/lib/landing";
 import { useReviewsStore } from "@/store";
 import { reviewHref } from "./ReviewTable";
 
@@ -19,6 +20,8 @@ type Cmd = {
   /** Shown instead of `sub` and blocks `run` (e.g. awaiting approval). */
   disabledReason?: string;
 };
+
+const GET_STARTED_NAV = { label: "Get started", href: "/get-started", icon: "rocket" as IconName };
 
 const NAV: { label: string; href: string; icon: IconName }[] = [
   { label: "Start a review", href: "/launchpad", icon: "parachute" },
@@ -63,6 +66,7 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
   const router = useRouter();
   const { reviews, fetchReviews } = useReviewsStore();
   const gate = useStartGate();
+  const setupVisible = useSetupGuideVisible();
   const [q, setQ] = useState("");
   const [active, setActive] = useState(0);
   const listRef = useRef<HTMLDivElement>(null);
@@ -98,7 +102,8 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
         run: () => go(() => router.push(reviewHref(r))),
       }));
 
-    const navItems: Cmd[] = NAV.filter(
+    const nav = setupVisible ? [GET_STARTED_NAV, ...NAV] : NAV;
+    const navItems: Cmd[] = nav.filter(
       (n) => !ql || n.label.toLowerCase().includes(ql),
     ).map((n) => ({
       id: "n-" + n.href,
@@ -122,7 +127,7 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
 
     return [...reviewItems, ...navItems, ...actionItems];
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q, reviews, gate.locked, gate.reason]);
+  }, [q, reviews, gate.locked, gate.reason, setupVisible]);
 
   // Keep the active row scrolled into view (DOM sync, no setState).
   useEffect(() => {

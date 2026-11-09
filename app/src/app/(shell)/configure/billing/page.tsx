@@ -6,21 +6,25 @@ import { Button, Chip, Icon } from "@/components/atoms";
 import { Tabs } from "@/components/molecules";
 import { PageHeader } from "@/components/templates/PageHeader";
 import {
-  ActivityTable,
-  InvoicedBilling,
+  InvoicesTab,
   OverviewTab,
-  PaymentTab,
   PlansTab,
   ReviewerBilling,
+  SettingsTab,
+  UsageTab,
   useBilling,
 } from "@/components/organisms/billing";
 import "./billing.css";
+import "@/components/organisms/billing/usage/usage.css";
 
-type WalletTab = "overview" | "activity" | "payment" | "plans";
-type InvoiceTab = "usage" | "invoices";
+type Tab = "overview" | "usage" | "invoices" | "settings" | "plans";
 
-function asTab<T extends string>(raw: string | null, allowed: readonly T[], fallback: T): T {
-  return (allowed as readonly string[]).includes(raw ?? "") ? (raw as T) : fallback;
+/** Old links keep working: Activity folded into Usage, Payment became Settings. */
+const ALIASES: Record<string, Tab> = { activity: "usage", payment: "settings" };
+
+function asTab(raw: string | null, allowed: readonly Tab[], fallback: Tab): Tab {
+  const t = (raw && ALIASES[raw]) || raw;
+  return (allowed as readonly string[]).includes(t ?? "") ? (t as Tab) : fallback;
 }
 
 function BillingPage() {
@@ -33,12 +37,18 @@ function BillingPage() {
     (tab: string) => router.replace(`/configure/billing?tab=${tab}`, { scroll: false }),
     [router],
   );
-  const statement = () => router.push("/configure/billing/statement");
   const raw = params.get("tab");
 
-  // Invoiced orgs: no wallet. Usage and invoices.
+  // Invoiced orgs have no wallet: Usage, Invoices, Settings. Reviewers see their own usage only.
   if (b.invoiced) {
-    const tab = asTab<InvoiceTab>(raw, ["usage", "invoices"], "usage");
+    if (!b.isAdmin) {
+      return (
+        <div className="pagebody bl-page">
+          <UsageTab b={b} invoiced />
+        </div>
+      );
+    }
+    const tab = asTab(raw, ["usage", "invoices", "settings"], "usage");
     return (
       <>
         <PageHeader
@@ -49,34 +59,51 @@ function BillingPage() {
               tabs={[
                 { value: "usage", label: "Usage" },
                 { value: "invoices", label: "Invoices" },
+                { value: "settings", label: "Settings" },
               ]}
             />
           }
           actions={
-            b.isAdmin ? (
-              <Button variant="outline" iconLeft="download" onClick={statement}>
-                Download statement
-              </Button>
-            ) : undefined
+            <Button variant="outline" iconLeft="download" onClick={() => router.push("/configure/billing/statement")}>
+              Download statement
+            </Button>
           }
         />
         <div className="pagebody bl-page">
-          <InvoicedBilling b={b} tab={tab} showAmounts={b.isAdmin} />
+          {tab === "usage" && <UsageTab b={b} invoiced />}
+          {tab === "invoices" && <InvoicesTab b={b} invoiced />}
+          {tab === "settings" && <SettingsTab b={b} invoiced />}
         </div>
       </>
     );
   }
 
-  // Reviewers and approvers: read-only balance, credits only.
+  // Reviewers and approvers: the org balance, read-only, plus their own usage. Credits only.
   if (!b.isAdmin) {
+    const tab = asTab(raw, ["overview", "usage"], "overview");
     return (
-      <div className="pagebody bl-page">
-        <ReviewerBilling b={b} />
-      </div>
+      <>
+        <PageHeader
+          badges={
+            <Tabs
+              value={tab}
+              onChange={go}
+              tabs={[
+                { value: "overview", label: "Overview" },
+                { value: "usage", label: "My usage" },
+              ]}
+            />
+          }
+        />
+        <div className="pagebody bl-page">
+          {tab === "overview" && <ReviewerBilling b={b} onViewAll={() => go("usage")} />}
+          {tab === "usage" && <UsageTab b={b} invoiced={false} />}
+        </div>
+      </>
     );
   }
 
-  const tab = asTab<WalletTab>(raw, ["overview", "activity", "payment", "plans"], "overview");
+  const tab = asTab(raw, ["overview", "usage", "invoices", "settings", "plans"], "overview");
   return (
     <>
       <PageHeader
@@ -86,8 +113,9 @@ function BillingPage() {
             onChange={go}
             tabs={[
               { value: "overview", label: "Overview" },
-              { value: "activity", label: "Activity" },
-              { value: "payment", label: "Payment" },
+              { value: "usage", label: "Usage" },
+              { value: "invoices", label: "Invoices" },
+              { value: "settings", label: "Settings" },
               {
                 value: "plans",
                 label: "Plans",
@@ -104,24 +132,10 @@ function BillingPage() {
         }
       />
       <div className="pagebody bl-page">
-        {tab === "overview" && <OverviewTab b={b} onViewAll={() => go("activity")} onStatement={statement} />}
-        {tab === "activity" && (
-          <div className="bl-stack">
-            <div className="bl-row bl-sechead">
-              <h2 className="bl-section">Activity</h2>
-              <div className="bl-actions">
-                <Button variant="outline" iconLeft="download" onClick={b.exportCsv}>
-                  Export CSV
-                </Button>
-                <Button variant="outline" iconLeft="document" onClick={statement}>
-                  Monthly statement
-                </Button>
-              </div>
-            </div>
-            <ActivityTable rows={b.rows} onReceipt={b.openReceipt} footer={`${b.rows.length} events · every credit movement for ${b.org?.name ?? "your organization"}`} />
-          </div>
-        )}
-        {tab === "payment" && <PaymentTab b={b} />}
+        {tab === "overview" && <OverviewTab b={b} onViewAll={() => go("usage")} onUsage={() => go("usage")} onSettings={() => go("settings")} />}
+        {tab === "usage" && <UsageTab b={b} invoiced={false} />}
+        {tab === "invoices" && <InvoicesTab b={b} invoiced={false} />}
+        {tab === "settings" && <SettingsTab b={b} invoiced={false} />}
         {tab === "plans" && <PlansTab enabled={plansOn} />}
       </div>
     </>

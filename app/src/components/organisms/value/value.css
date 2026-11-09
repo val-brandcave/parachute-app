@@ -42,7 +42,8 @@
   align-items: baseline;
   gap: 8px;
   margin-top: 12px;
-  font-family: var(--font-display);
+  font-family: var(--font-sans-base), system-ui, sans-serif;
+  letter-spacing: -0.02em;
   font-size: 30px;
   font-weight: 700;
   line-height: 1;

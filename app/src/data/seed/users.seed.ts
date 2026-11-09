@@ -168,6 +168,33 @@ export const seedUsers: User[] = [
     createdAt: NEW - 58 * DAY,
   },
 
+  {
+    id: "user-cr3",
+    name: "Naomi Fischer",
+    initials: "NF",
+    designation: "Review Appraiser",
+    signatureName: "Naomi Fischer",
+    email: "naomi.fischer@cedarridgebank.com",
+    role: "reviewer",
+    orgId: "org-cedar",
+    status: "active",
+    lastActiveAt: NEW - 2 * DAY,
+    createdAt: NEW - 300 * DAY,
+  },
+  {
+    id: "user-cr4",
+    name: "Eli Whitaker",
+    initials: "EW",
+    designation: "Review Appraiser",
+    signatureName: "Eli Whitaker",
+    email: "eli.whitaker@cedarridgebank.com",
+    role: "reviewer",
+    orgId: "org-cedar",
+    status: "active",
+    lastActiveAt: NEW - 3 * DAY,
+    createdAt: NEW - 280 * DAY,
+  },
+
   // ---- Lakeside Valuation (org-lakeside) — awaiting approval ----
   {
     id: "user-lv1",

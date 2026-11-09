@@ -11,6 +11,8 @@ export type Stat = {
   alert?: boolean;
   /** Marks a point-in-time ("now") tile that is NOT scoped by the period picker. */
   live?: boolean;
+  /** Quiets the number (empty state: zero is expected, not a signal). */
+  muted?: boolean;
 };
 
 /** Unified, informational stat bar (not interactive). */
@@ -18,7 +20,7 @@ export function StatBar({ stats }: { stats: Stat[] }) {
   return (
     <div className="statbar">
       {stats.map((s) => (
-        <div key={s.label} className={cn("statseg", s.alert && "alert")}>
+        <div key={s.label} className={cn("statseg", s.alert && "alert", s.muted && "db-zero")}>
           <div className="statseg-main">
             <div className="k">
               {s.label}

@@ -1,0 +1,205 @@
+/* ==========================================================================
+   Billing: Invoices and Settings tabs (v4, B2). Prefix bs-. Tokens only.
+   ========================================================================== */
+
+/* ---- settings sections ---- */
+.bs-section {
+  padding: 0;
+  overflow: hidden;
+}
+.bs-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 24px 16px;
+}
+.bs-rows {
+  display: flex;
+  flex-direction: column;
+}
+.bs-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 2fr) minmax(0, 3fr);
+  column-gap: 32px;
+  align-items: start;
+  padding: 18px 24px;
+  border-top: 1px solid var(--md-outline-v);
+}
+.bs-meta {
+  min-width: 0;
+}
+.bs-label {
+  display: block;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+  color: var(--md-on-surface);
+}
+.bs-desc {
+  margin-top: 2px;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--md-on-surface-v);
+}
+.bs-ctl {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+.bs-inline {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 40px;
+}
+.bs-value {
+  font-size: 14px;
+  line-height: 40px;
+  color: var(--md-on-surface);
+}
+.bs-handed {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 40px;
+  font-size: 14px;
+  color: var(--md-on-surface);
+}
+.bs-handed strong {
+  font-weight: 600;
+}
+.bs-people {
+  width: 100%;
+  margin-top: 0;
+}
+.bs-card-line {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.bs-method.bl-method {
+  margin-top: 0;
+  min-width: 320px;
+}
+.bs-lock {
+  margin-top: 0;
+}
+
+/* ---- inputs ---- */
+.bs-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+.bs-field .field {
+  flex: 1;
+  margin: 0;
+  min-width: 0;
+}
+.bs-field--sm {
+  width: 200px;
+}
+.bs-field--md {
+  width: 300px;
+}
+.bs-field .field textarea {
+  width: 100%;
+  resize: vertical;
+}
+.bs-prefixed {
+  position: relative;
+}
+.bs-prefix {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  color: var(--md-on-surface-v);
+  pointer-events: none;
+}
+.bs-prefixed input {
+  padding-left: 26px;
+}
+.bs-saved {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 56px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--md-success);
+}
+.bs-select.field {
+  margin: 0;
+  width: 160px;
+}
+.bs-select--md.field {
+  width: 150px;
+}
+.bs-select--lg.field {
+  width: 260px;
+}
+.bs-select.field select {
+  padding: 8px 12px;
+  font-size: 14px;
+}
+
+/* ---- invoices tables ---- */
+.bs-block {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.bs-blockhead {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+.bl-cols.bs-cols--rcpt {
+  grid-template-columns: 110px 110px minmax(150px, 1.4fr) minmax(140px, 1.2fr) 100px 80px 150px;
+}
+.bl-cols.bs-cols--stmt {
+  grid-template-columns: minmax(180px, 2fr) 100px 120px 120px 150px;
+}
+.bl-cols.bs-cols--inv {
+  grid-template-columns: 130px minmax(150px, 1.4fr) 90px 90px 110px 110px 150px;
+}
+.bs-cols .bl-num {
+  display: block;
+}
+.bs-pnote {
+  margin-top: 0;
+}
+
+@media (max-width: 1100px) {
+  .bs-row {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 12px;
+  }
+}
+
+/* ---- statement paper: bill-to block (paper tokens, same in both themes) ---- */
+.bl-paper-billto {
+  display: flex;
+  gap: 40px;
+  margin: 0 0 18px;
+  font-size: 12px;
+  line-height: 18px;
+}
+.bl-paper-billto dt {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+.bl-paper-billto dd {
+  margin: 2px 0 0;
+  white-space: pre-line;
+}

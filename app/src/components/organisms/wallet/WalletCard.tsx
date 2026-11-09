@@ -124,7 +124,7 @@ export function WalletCard() {
         right={<CreditChip tone="trial" size="sm">Trial</CreditChip>}
         actions={
           isAdmin ? (
-            <Button variant="outline" size="sm" onClick={() => router.push("/configure/billing?tab=payment")}>
+            <Button variant="outline" size="sm" onClick={() => router.push("/configure/billing?tab=settings")}>
               Add a card
             </Button>
           ) : (

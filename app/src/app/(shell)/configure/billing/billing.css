@@ -118,7 +118,8 @@
   margin-top: 14px;
 }
 .bl-big-n {
-  font-family: var(--font-display, inherit);
+  font-family: var(--font-sans-base), system-ui, sans-serif;
+  letter-spacing: -0.02em;
   font-size: 44px;
   line-height: 48px;
   font-weight: 700;
@@ -414,7 +415,8 @@
 }
 .bl-plan-price {
   margin-top: 16px;
-  font-family: var(--font-display, inherit);
+  font-family: var(--font-sans-base), system-ui, sans-serif;
+  letter-spacing: -0.02em;
   font-size: 24px;
   line-height: 30px;
   font-weight: 700;
@@ -716,7 +718,8 @@
   color: var(--paper-ink-2);
 }
 .bl-paper-totals strong {
-  font-family: var(--font-display, inherit);
+  font-family: var(--font-sans-base), system-ui, sans-serif;
+  letter-spacing: -0.02em;
   font-size: 26px;
   line-height: 32px;
 }

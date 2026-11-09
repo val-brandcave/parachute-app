@@ -175,6 +175,8 @@ export function useDashboard() {
 
   return {
     isLoading: initial,
+    /** The org has no reviews of its own yet (the sample never counts). */
+    isEmpty: reviews.length === 0,
     reviews,
     period,
     setPeriod,
