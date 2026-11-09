@@ -1,133 +1,167 @@
 "use client";
 
-import Link from "next/link";
-import { CreditChip, Icon } from "@/components/atoms";
-import { spendOrderSentence } from "@/components/organisms/billing/billing-data";
+import { useRouter } from "next/navigation";
+import { Button, CreditChip } from "@/components/atoms";
+import { HcCard } from "@/components/organisms/home/HcFrame";
 import { useCurrentUser } from "@/lib/current-user";
-import { EARN_CAP_CREDITS, TRIAL_GRANT_CREDITS, costFor } from "@/lib/pricing";
+import { TRIAL_GRANT_CREDITS, costFor } from "@/lib/pricing";
 import { FULL_REVIEW_TYPES } from "@/lib/setup-steps";
 import { balanceGrants } from "@/lib/wallet-breakdown";
-import { useApprovalPending, useWalletStore } from "@/store";
-import "./wallet-card.css";
+import { useApprovalPending, useSetupSummary, useWalletStore } from "@/store";
 
 const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
+const MAX_TOKENS = 10;
 
-function Pips({ filled, dashed }: { filled: number; dashed?: boolean }) {
+/** One small page per full review the balance covers. Decorative: the sentence carries the meaning. */
+function Tokens({ full, half, mode }: { full: number; half?: boolean; mode?: "low" | "dashed" }) {
+  const shown = Math.min(full, MAX_TOKENS);
   return (
-    <div
-      className="wc-pips"
-      role="img"
-      aria-label={dashed ? `${TRIAL_GRANT_CREDITS} trial credits on the way` : `${filled} of ${TRIAL_GRANT_CREDITS} trial credits left`}
-    >
-      {Array.from({ length: TRIAL_GRANT_CREDITS }, (_, i) => (
-        <i key={i} className={dashed ? "is-dashed" : i < filled ? "is-on" : undefined} />
-      ))}
+    <div className="hc-tokens" aria-hidden="true">
+      {mode ? (
+        <i className={`hc-tok is-${mode}`} />
+      ) : (
+        <>
+          {Array.from({ length: shown }, (_, i) => (
+            <i key={i} className="hc-tok" />
+          ))}
+          {half && <i className="hc-tok is-half" />}
+          {full > MAX_TOKENS && <span className="hc-tok-more">+{full - MAX_TOKENS}</span>}
+        </>
+      )}
     </div>
   );
 }
 
-/** Home wallet card. One big number, what it buys, and one sentence. No composition bar:
- *  pips appear only while every credit is trial credit, where they are real progress. */
+/** Home wallet card: credits shown as the reviews they buy. The bar appears only while every
+ *  credit is trial credit, where it is real progress. Spend order and expiry live on Billing. */
 export function WalletCard() {
+  const router = useRouter();
   const ledger = useWalletStore((s) => s.ledger);
   const pending = useApprovalPending();
   const isAdmin = useCurrentUser().role === "org_admin";
+  const { adminFirst } = useSetupSummary();
 
   const grants = balanceGrants(ledger);
   const live = grants.filter((g) => g.remaining > 0);
   const balance = live.reduce((n, g) => n + g.remaining, 0);
   const fullCost = costFor(FULL_REVIEW_TYPES);
   const full = Math.floor(balance / fullCost);
+  const spare = balance - full * fullCost > 0;
   const allTrial = live.length > 0 && live.every((g) => g.source === "trial");
   const low = !pending && balance < fullCost;
+  const enough = `Enough for ${full} full ${plural(full, "review", "reviews")}`;
   const openTopUp = () => useWalletStore.getState().openTopUp({ reason: "low_balance", needed: fullCost - balance });
+  const viewBalance = () => router.push("/configure/billing");
 
-  let body: React.ReactNode;
+  const viewBtn = (variant: "outline" | "ghost") => (
+    <Button variant={variant} size="sm" onClick={viewBalance}>
+      View balance
+    </Button>
+  );
+
   if (pending) {
-    body = (
-      <>
-        <div className="wc-big is-muted">
-          <span className="wc-n">{TRIAL_GRANT_CREDITS}</span>
-          <span className="wc-u">trial credits on the way</span>
+    return (
+      <HcCard
+        title="Wallet"
+        right={
+          <CreditChip tone="low" size="sm">
+            Pending
+          </CreditChip>
+        }
+        meta="Usually within one business day"
+      >
+        <div className="hc-big is-muted">
+          <span className="hc-n">{TRIAL_GRANT_CREDITS}</span>
+          <span className="hc-u">trial credits</span>
         </div>
-        <Pips filled={0} dashed />
-        <p className="wc-note">They arrive when Realwired confirms your organization, usually within one business day.</p>
-      </>
-    );
-  } else if (low) {
-    body = (
-      <>
-        <div className="wc-big">
-          <span className="wc-n">{balance}</span>
-          <span className="wc-u">{plural(balance, "credit", "credits")} · not enough for a full review</span>
+        <div className="hc-tokens" aria-hidden="true">
+          {Array.from({ length: Math.floor(TRIAL_GRANT_CREDITS / fullCost) }, (_, i) => (
+            <i key={i} className="hc-tok is-dashed" />
+          ))}
         </div>
-        <p className="wc-note">
-          A full review uses {fullCost} credits. {isAdmin ? "Add credits to keep going." : "Ask your organization admin to add credits."}
-        </p>
-        {isAdmin && (
-          <button type="button" className="hm-link" onClick={openTopUp}>
-            Add credits
-          </button>
-        )}
-      </>
+        <p className="hc-line">Arrives when Realwired confirms your organization.</p>
+      </HcCard>
     );
-  } else if (allTrial) {
-    body = (
-      <>
-        <div className="wc-big">
-          <span className="wc-n">{balance}</span>
-          <span className="wc-u">
-            trial {plural(balance, "credit", "credits")} · about {full} full review{full === 1 ? "" : "s"}
+  }
+
+  if (low) {
+    return (
+      <HcCard
+        title="Wallet"
+        right={
+          <CreditChip tone="low" size="sm">
+            Low
+          </CreditChip>
+        }
+        actions={
+          isAdmin ? (
+            <>
+              <Button variant="primary" size="sm" onClick={openTopUp}>
+                Add credits
+              </Button>
+              {viewBtn("ghost")}
+            </>
+          ) : (
+            viewBtn("outline")
+          )
+        }
+        meta={isAdmin ? `${fullCost} credits per review` : `Ask ${adminFirst ?? "your admin"} to add credits`}
+      >
+        <div className="hc-big">
+          <span className="hc-n">{balance}</span>
+          <span className="hc-u">{plural(balance, "credit", "credits")}</span>
+        </div>
+        <Tokens full={1} mode="low" />
+        <p className="hc-line">Not enough for a full review</p>
+      </HcCard>
+    );
+  }
+
+  if (allTrial) {
+    return (
+      <HcCard
+        title="Wallet"
+        right={<CreditChip tone="trial" size="sm">Trial</CreditChip>}
+        actions={
+          isAdmin ? (
+            <Button variant="outline" size="sm" onClick={() => router.push("/configure/billing?tab=payment")}>
+              Add a card
+            </Button>
+          ) : (
+            viewBtn("outline")
+          )
+        }
+        meta={isAdmin ? "No card needed yet" : `${fullCost} credits per review`}
+      >
+        <div className="hc-big">
+          <span className="hc-n">{balance}</span>
+          <span className="hc-u">
+            of {TRIAL_GRANT_CREDITS} trial {plural(TRIAL_GRANT_CREDITS, "credit", "credits")} left
           </span>
         </div>
-        <Pips filled={balance} />
-        <p className="wc-note">
-          {balance} of {TRIAL_GRANT_CREDITS} left. Finish setup to earn up to {EARN_CAP_CREDITS} more.
-        </p>
-        {isAdmin && (
-          <Link className="hm-link" href="/configure/billing?tab=payment">
-            Add a card
-          </Link>
-        )}
-      </>
-    );
-  } else {
-    body = (
-      <>
-        <div className="wc-big">
-          <span className="wc-n">{balance}</span>
-          <span className="wc-u">
-            {plural(balance, "credit", "credits")} · about {full} full review{full === 1 ? "" : "s"}
-          </span>
+        <div
+          className="hc-bar"
+          role="progressbar"
+          aria-label="Trial credits left"
+          aria-valuemin={0}
+          aria-valuemax={TRIAL_GRANT_CREDITS}
+          aria-valuenow={balance}
+        >
+          <i style={{ width: `${Math.min(100, (balance / TRIAL_GRANT_CREDITS) * 100)}%` }} />
         </div>
-        <p className="wc-note">{spendOrderSentence(grants)}</p>
-        <Link className="hm-link" href="/configure/billing">
-          See what&rsquo;s in your balance
-        </Link>
-      </>
+        <p className="hc-line">{enough}</p>
+      </HcCard>
     );
   }
 
   return (
-    <section className="card hm-card wc-card">
-      <div className="hm-row-between">
-        <div className="wc-title">
-          <span className="hm-ico" aria-hidden="true">
-            <Icon name="wallet" size={18} />
-          </span>
-          <h2 className="hm-h">Wallet</h2>
-        </div>
-        {low ? (
-          <CreditChip tone="low" size="sm">
-            Low
-          </CreditChip>
-        ) : (
-          <Link className="hm-link" href="/configure/billing">
-            Billing
-          </Link>
-        )}
+    <HcCard title="Wallet" actions={viewBtn("outline")} meta={`${fullCost} credits per review`}>
+      <div className="hc-big">
+        <span className="hc-n">{balance}</span>
+        <span className="hc-u">{plural(balance, "credit", "credits")}</span>
       </div>
-      {body}
-    </section>
+      <Tokens full={full} half={spare} />
+      <p className="hc-line">{enough}</p>
+    </HcCard>
   );
 }

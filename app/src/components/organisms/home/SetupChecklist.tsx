@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useToast } from "@realwired/ui";
@@ -15,7 +15,7 @@ import {
 } from "@/lib/setup-steps";
 import { cn, formatStamp } from "@/lib/utils";
 import { INVITE_HREF } from "@/lib/setup-steps";
-import { useApprovalPending, useOrgInvites, usePrefsStore, useSetupSummary, useWalletStore, type DerivedStep, type SetupSummary } from "@/store";
+import { useApprovalPending, useOrgInvites, useOrgStore, usePrefsStore, useSetupSummary, useWalletStore, type DerivedStep, type SetupSummary } from "@/store";
 import { remainingFromLedger } from "@/store/wallet.store";
 import { useSetupActions } from "./useSetupActions";
 
@@ -237,39 +237,67 @@ export function SetupChecklist() {
     });
   };
 
+  const returning = anyDone;
+  const pct = summary.total > 0 ? Math.round((summary.doneCount / summary.total) * 100) : 0;
+  const orgName = useOrgStore((o) => o.org?.name);
+
+  // Arriving on /dashboard#setup (from the sidebar widget) scrolls the card in.
+  useEffect(() => {
+    if (window.location.hash !== "#setup") return;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    document.getElementById("setup")?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+  }, []);
+
   return (
-    <section className="card su-card" aria-labelledby="su-title">
+    <section className="card su-card" id="setup" aria-labelledby="su-title">
       <div className="su-head">
-        <h2 className="su-h" id="su-title">
-          Getting set up
-        </h2>
-        <div className="su-head-end">
-          {anyDone ? (
-            <span>
-              {summary.doneCount} of {summary.total} done ·{" "}
-              {summary.earnedCredits > 0 ? (
-                <>
-                  <CreditChip tone="free" size="sm">+{summary.earnedCredits} credit{summary.earnedCredits === 1 ? "" : "s"}</CreditChip>{" "}
-                  earned of up to +{EARN_CAP_CREDITS}
-                </>
-              ) : (
-                <>earn up to +{EARN_CAP_CREDITS} credits</>
-              )}
+        <div>
+          <h2 className="su-h" id="su-title">
+            {returning ? "Welcome back" : "Welcome"}, {me.firstName}
+          </h2>
+          <p className="su-sub">
+            {awaiting
+              ? "You can do most of this while you wait."
+              : `Finish setting up ${orgName ?? "your organization"}.${capReached ? "" : ` Each verified step can earn a credit, up to ${EARN_CAP_CREDITS}.`}`}
+          </p>
+        </div>
+        <ActionMenu
+          tooltip="Setup guide options"
+          items={[
+            { label: "Hide setup guide", icon: "eye-off", onClick: hide },
+            { label: "Email me this list", icon: "mail", onClick: emailList },
+          ]}
+        />
+      </div>
+
+      <div className="su-prog">
+        <span
+          className="su-bar"
+          role="progressbar"
+          aria-label="Setup progress"
+          aria-valuemin={0}
+          aria-valuemax={summary.total}
+          aria-valuenow={summary.doneCount}
+        >
+          <i style={{ width: `${pct}%` }} />
+        </span>
+        <div className="su-prog-meta">
+          <span>
+            <b>
+              {summary.doneCount} of {summary.total}
+            </b>{" "}
+            steps done
+          </span>
+          {summary.earnedCredits > 0 ? (
+            <span className="su-prog-earn">
+              <CreditChip tone="free" size="sm">
+                +{summary.earnedCredits} credit{summary.earnedCredits === 1 ? "" : "s"}
+              </CreditChip>
+              earned of {EARN_CAP_CREDITS}
             </span>
-          ) : awaiting ? (
-            <span>You can do most of this while you wait</span>
           ) : (
-            <span>
-              Earn up to <CreditChip tone="free" size="sm">+{EARN_CAP_CREDITS} credits</CreditChip> for setup
-            </span>
+            <span>Earn up to {EARN_CAP_CREDITS} credits</span>
           )}
-          <ActionMenu
-            tooltip="Setup guide options"
-            items={[
-              { label: "Hide setup guide", icon: "eye-off", onClick: hide },
-              { label: "Email me this list", icon: "mail", onClick: emailList },
-            ]}
-          />
         </div>
       </div>
 

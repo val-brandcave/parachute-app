@@ -4,7 +4,6 @@ import { Suspense, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Callout, CalloutAction, useToast } from "@realwired/ui";
-import { PageHeader } from "@/components/templates/PageHeader";
 import { useCurrentUser } from "@/lib/current-user";
 import { Button } from "@/components/atoms";
 import { WalletCard } from "@/components/organisms/wallet";
@@ -18,29 +17,11 @@ import {
   useUsersStore,
   useWalletStore,
   useSetupHidden,
-  useSetupSummary,
 } from "@/store";
 import { ROLE_META } from "@/lib/member-roles";
 import "@/app/bouncer/bouncer.css";
 import { SetupChecklist } from "./SetupChecklist";
 import { GuidesCard, RecentReviews, SampleCard, SecurityPackCard } from "./HomeCards";
-
-/** "Getting set up · 4 of 8" with a segmented progress bar. */
-export function SetupMeta() {
-  const { doneCount, total } = useSetupSummary();
-  return (
-    <div className="setupmeta" aria-label={`Getting set up, ${doneCount} of ${total} steps done`}>
-      <span>
-        Getting set up · <b>{doneCount} of {total}</b>
-      </span>
-      <span className="segbar" aria-hidden="true">
-        {Array.from({ length: total }, (_, i) => (
-          <i key={i} className={i < doneCount ? "is-on" : undefined} />
-        ))}
-      </span>
-    </div>
-  );
-}
 
 /** G2: "<Name> accepted your invite as <role>", driven by `?joined=<inviteId>` from
  *  the Realwired Admin return link. Dismissing also clears the param. */
@@ -167,15 +148,9 @@ function PendingCallout() {
  *  (StatBar + trend) is only passed once the org has enough completed reviews. */
 export function FirstRunHome({ stats }: { stats?: ReactNode }) {
   const me = useCurrentUser();
-  const { steps } = useSetupSummary();
   const hidden = useSetupHidden();
-  const returning = steps.some((s) => s.done);
   return (
     <>
-      <PageHeader
-        title={`${returning ? "Welcome back" : "Welcome"}, ${me.firstName}.`}
-        actions={<SetupMeta />}
-      />
       <div className="pagebody">
         <PendingCallout />
         <WelcomeCallout />

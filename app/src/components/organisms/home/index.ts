@@ -1,4 +1,4 @@
-export { FirstRunHome, SetupMeta } from "./FirstRunHome";
+export { FirstRunHome } from "./FirstRunHome";
 export { SetupChecklist } from "./SetupChecklist";
 export { SampleCard, SecurityPackCard, GuidesCard, RecentReviews } from "./HomeCards";
 export { useSetupActions } from "./useSetupActions";
