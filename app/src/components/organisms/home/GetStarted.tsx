@@ -21,6 +21,8 @@ import {
 } from "@/store";
 import { ROLE_META } from "@/lib/member-roles";
 import "@/app/bouncer/bouncer.css";
+import { AnimatePresence, motion } from "framer-motion";
+import { GetStartedSkeleton } from "@/components/organisms/Skeletons";
 import { SetupChecklist } from "./SetupChecklist";
 import { GuidesCard, SampleCard, SecurityPackCard } from "./HomeCards";
 
@@ -179,10 +181,25 @@ export function GetStarted() {
     if (away) router.replace("/dashboard");
   }, [away, router]);
 
-  if (away || !ready) return null;
+  // Same feel as Dashboard and Reviews: a short skeleton while "loading".
+  const [minDone, setMinDone] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setMinDone(true), 700);
+    return () => clearTimeout(t);
+  }, []);
+  const loading = !ready || !minDone;
+
+  if (away) return null;
 
   return (
     <div className="pagebody">
+      <AnimatePresence mode="wait">
+        {loading ? (
+          <motion.div key="skeleton" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+            <GetStartedSkeleton />
+          </motion.div>
+        ) : (
+          <motion.div key="content" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.28 }}>
       <PendingCallout />
       <WelcomeCallout />
       <Suspense fallback={null}>
@@ -198,6 +215,9 @@ export function GetStarted() {
           <GuidesCard />
         </div>
       </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
