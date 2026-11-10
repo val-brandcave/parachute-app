@@ -77,7 +77,7 @@ function BouncerAdminPage() {
 
         {tab === "members" && <MembersTable admin={admin} />}
         {tab === "invites" && (
-          <PendingTable admin={admin} onInvite={() => setInviteOpen(true)} />
+          <PendingTable admin={admin} />
         )}
         {tab === "sso" && <SsoCard domain={admin.domain} canManage={admin.canManage} />}
       </main>

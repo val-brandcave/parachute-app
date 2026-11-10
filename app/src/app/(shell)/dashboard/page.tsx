@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useDashboard } from "./hooks/useDashboard";
 import "./dashboard.css";
 import { PageHeader } from "@/components/templates/PageHeader";
-import { PeriodPicker, PERIOD_LABEL, periodLabel } from "@/components/molecules";
+import { PeriodPicker, PERIOD_LABEL, periodLabel, type Period } from "@/components/molecules";
 import { useCurrentUser } from "@/lib/current-user";
 import { useOrgStage, useSetupSummary } from "@/store";
 import { ValueStrip, useShowValueStrip } from "@/components/organisms/value";
@@ -16,7 +16,22 @@ import {
   TrendChart,
   DashboardSkeleton,
 } from "@/components/organisms";
-import { TrendChartEmpty } from "@/components/organisms/dashboard-widgets";
+import { DashboardFirstRun } from "@/components/organisms/dashboard-widgets";
+
+const PERIOD_PHRASE: Record<Period, string> = {
+  week: "this week",
+  month: "this month",
+  quarter: "this quarter",
+  year: "this year",
+  custom: "in this range",
+};
+/** The next wider period, offered as the way out of an empty chart. */
+const WIDEN: Partial<Record<Period, Period>> = {
+  week: "month",
+  month: "quarter",
+  quarter: "year",
+  custom: "year",
+};
 
 export default function DashboardPage() {
   const me = useCurrentUser();
@@ -41,15 +56,12 @@ export default function DashboardPage() {
 
   const showValue = useShowValueStrip(reviews);
 
-  const hint = (text: string) => (isEmpty ? { text } : undefined);
   const stats: Stat[] = [
     // Lifecycle order: intake → processing → review → SLA → done.
     {
       label: "Intake",
       value: kpis.intake,
       icon: "connect",
-      muted: isEmpty && kpis.intake === 0,
-      trend: hint("Deliveries land here"),
       tip: "New appraisals delivered from YouConnect, waiting to be ordered — a current backlog, not affected by the period picker.",
     },
     {
@@ -57,16 +69,12 @@ export default function DashboardPage() {
       value: kpis.running,
       icon: "parachute",
       live: true,
-      muted: isEmpty && kpis.running === 0,
-      trend: hint("Starts when you run one"),
       tip: "Appraisals being processed by Parachute's pipeline right now — a live count, not affected by the period picker.",
     },
     {
       label: "Needs my action",
       value: kpis.needsAction,
       icon: "flag",
-      muted: isEmpty && kpis.needsAction === 0,
-      trend: hint("Nothing waiting yet"),
       tip: "Reviews that needed your decision or sign-off within the selected period.",
     },
     {
@@ -74,8 +82,6 @@ export default function DashboardPage() {
       value: kpis.overdue,
       icon: "warn",
       alert: kpis.overdue > 0,
-      muted: isEmpty && kpis.overdue === 0,
-      trend: hint("On track"),
       tip: "Reviews that went past their SLA due date within the selected period.",
     },
     {
@@ -91,8 +97,6 @@ export default function DashboardPage() {
         </>
       ),
       icon: "check-all",
-      muted: isEmpty && completed === 0,
-      trend: hint("None yet"),
       tip: "Reviews you completed in the selected period. Avg turnaround ~24 min · ≈9.5 hrs saved vs. manual review.",
     },
   ];
@@ -130,22 +134,32 @@ export default function DashboardPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.28 }}
             >
-              <StatBar stats={stats} />
+              {isEmpty ? (
+                <DashboardFirstRun />
+              ) : (
+                <>
+                  <StatBar stats={stats} />
 
-              {showValue && <ValueStrip reviews={reviews} />}
+                  {showValue && <ValueStrip reviews={reviews} />}
 
-              <div style={{ marginTop: "var(--d-gap)" }}>
-                {isEmpty ? (
-                  <TrendChartEmpty periodLabel={periodLabel(period, range)} />
-                ) : (
-                  <TrendChart {...trend} periodLabel={periodLabel(period, range)} />
-                )}
-              </div>
+                  <div style={{ marginTop: "var(--d-gap)" }}>
+                    <TrendChart
+                      {...trend}
+                      periodLabel={periodLabel(period, range)}
+                      emptyText={`No reviews completed ${PERIOD_PHRASE[period]}.`}
+                      widen={WIDEN[period] && {
+                        label: `Show ${PERIOD_LABEL[WIDEN[period]!].toLowerCase()}`,
+                        onClick: () => setPeriod(WIDEN[period]!),
+                      }}
+                    />
+                  </div>
 
-              <div className="dash-grid">
-                <ActionNeeded reviews={actionNeeded} fresh={isEmpty} />
-                <NewFromYouConnect reviews={newFromYc} />
-              </div>
+                  <div className="dash-grid">
+                    <ActionNeeded reviews={actionNeeded} />
+                    <NewFromYouConnect reviews={newFromYc} />
+                  </div>
+                </>
+              )}
             </motion.div>
           )}
         </AnimatePresence>

@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { IconCloudFilled } from "@tabler/icons-react";
-import { Icon, Chip, ChuteEmblem } from "@/components/atoms";
-import { SegmentedControl } from "@/components/molecules";
+import { Button, Icon, Chip, ChuteEmblem } from "@/components/atoms";
+import { EmptyLine, SegmentedControl } from "@/components/molecules";
 import { cn, formatShortDate } from "@/lib/utils";
 import { useStartGate } from "@/components/organisms/home/useStartGate";
 import { useRunStore, useOrderStore, DEMO_RUN_REVIEW_ID, type RunDisplay } from "@/store";
@@ -169,7 +169,9 @@ export function IntakeWidget() {
             <p className="ih-sub">
               {drop
                 ? "Parachute reads it, runs the review, and compiles your workbook."
-                : `Search and pick one of the ${totalNew} new deliveries to start.`}
+                : totalNew === 0
+                  ? "Parachute pulls new deliveries straight from YouConnect."
+                  : `Search and pick one of the ${totalNew} new deliveries to start.`}
             </p>
           </motion.div>
         </AnimatePresence>
@@ -242,6 +244,7 @@ export function IntakeWidget() {
               </div>
             ) : (
               <div className="ih-yc">
+                {totalNew > 0 && (
                 <label className="intake-search">
                   <Icon name="search" size={15} />
                   <input
@@ -261,13 +264,22 @@ export function IntakeWidget() {
                     </button>
                   )}
                 </label>
+                )}
                 <div className="intake-yc-list scroll">
                   {newDeliveries.length === 0 ? (
-                    <div className="intake-yc-empty">
+                    <EmptyLine
+                      action={
+                        totalNew > 0 ? (
+                          <Button variant="ghost" size="sm" onClick={() => setQuery("")}>
+                            Clear search
+                          </Button>
+                        ) : undefined
+                      }
+                    >
                       {totalNew === 0
-                        ? "No new deliveries right now."
-                        : `No deliveries match “${query.trim()}”.`}
-                    </div>
+                        ? "New YouConnect deliveries appear here as they arrive."
+                        : `Nothing matches “${query.trim()}”.`}
+                    </EmptyLine>
                   ) : (
                     newDeliveries.map((d) => (
                       <button

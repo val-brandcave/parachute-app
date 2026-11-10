@@ -310,16 +310,7 @@
   color: var(--md-error);
 }
 
-/* ---- Empty + SSO ---- */
-.bx-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  padding: 44px 24px;
-  text-align: center;
-}
-.bx-empty-ic,
+/* ---- SSO ---- */
 .bx-sso-ic {
   display: grid;
   place-items: center;
@@ -329,14 +320,12 @@
   background: var(--md-surface-2);
   color: var(--md-on-surface-v);
 }
-.bx-empty h2,
 .bx-sso-title h2 {
   margin: 4px 0 0;
   font-family: var(--font-display);
   font-size: 16px;
   font-weight: 700;
 }
-.bx-empty p,
 .bx-sso-title p {
   margin: 0 0 8px;
   font-size: 13px;

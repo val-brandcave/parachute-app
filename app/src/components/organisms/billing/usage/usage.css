@@ -618,3 +618,10 @@
 .us .bl-table .us-by-cols {
   min-width: 660px;
 }
+
+/* Empty line inside a card that already pads its content (chart, balance). */
+.us-card .el,
+.bl-balance .el {
+  padding-left: 0;
+  padding-right: 0;
+}

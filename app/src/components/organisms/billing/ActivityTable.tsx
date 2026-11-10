@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Icon } from "@/components/atoms";
+import { Button } from "@/components/atoms";
 import { formatUsd } from "@/lib/pricing";
 import { dateLabel, signed, type ActivityRow } from "./billing-data";
 
@@ -50,6 +50,8 @@ export function ActivityTable({
     .filter(Boolean)
     .join(" ");
   const cols = "bl-cols";
+  // Column headers never sit over nothing: callers show their own empty line.
+  if (shown.length === 0) return null;
   const style = { gridTemplateColumns: tpl };
   return (
     <div className="card bl-table" role="table" aria-label={label}>
@@ -72,12 +74,6 @@ export function ActivityTable({
         <span role="columnheader">By</span>
         <span role="columnheader" aria-label="Actions" />
       </div>
-      {shown.length === 0 && (
-        <div className="bl-empty">
-          <Icon name="receipt" size={20} />
-          <p>No activity yet. Credits and reviews show up here.</p>
-        </div>
-      )}
       {shown.map((r) => (
         <div key={r.id} className={`${cols} bl-trow`} style={style} role="row">
           <span className="bl-date" role="cell">

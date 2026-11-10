@@ -2,29 +2,24 @@
 
 import { useState } from "react";
 import { Button, Chip, Icon } from "@/components/atoms";
+import { EmptyState, GhostRows } from "@/components/molecules";
 import { ROLE_META } from "@/lib/member-roles";
 import { formatDayMonth } from "@/lib/utils";
 import type { BouncerAdmin } from "../useBouncerAdmin";
 
 /** Pending invites with Resend, an inline-confirmed Revoke, and the prototype-only Simulate accept. */
-export function PendingTable({ admin, onInvite }: { admin: BouncerAdmin; onInvite: () => void }) {
+export function PendingTable({ admin }: { admin: BouncerAdmin }) {
   const { pending, inviter, resend, revoke, simulateAccept, canManage } = admin;
   const [confirming, setConfirming] = useState<string | null>(null);
 
   if (pending.length === 0) {
     return (
-      <div className="card bx-card bx-empty">
-        <span className="bx-empty-ic" aria-hidden="true">
-          <Icon name="mail" size={20} />
-        </span>
-        <h2>No pending invites</h2>
-        <p>Invites you send show up here until they&rsquo;re accepted, revoked or expired.</p>
-        {canManage && (
-          <Button variant="outline" iconLeft="user-plus" onClick={onInvite}>
-            Invite people
-          </Button>
-        )}
-      </div>
+      <EmptyState
+        title="No pending invites"
+        preview={<GhostRows rows={2} />}
+      >
+        Invites you send show up here until they&rsquo;re accepted, revoked or expire.
+      </EmptyState>
     );
   }
 

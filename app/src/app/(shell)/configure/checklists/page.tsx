@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { Chip, Icon } from "@/components/atoms";
-import { type ActionItem } from "@/components/molecules";
+import { EmptyLine, type ActionItem } from "@/components/molecules";
 import {
   FamilyTable,
   type FamilyColumn,
@@ -141,7 +141,16 @@ export default function ChecklistsPage() {
         />
       </button>
 
-      <FamilyTable columns={COLUMNS} rows={rows} ariaLabel="Compliance checklists" />
+      <FamilyTable
+        columns={COLUMNS}
+        rows={rows}
+        ariaLabel="Compliance checklists"
+        empty={
+          <div className="card">
+            <EmptyLine>Checklists you upload appear here, ready to set as the default.</EmptyLine>
+          </div>
+        }
+      />
 
       <ChecklistUploadWizard
         open={!!uploadFile}

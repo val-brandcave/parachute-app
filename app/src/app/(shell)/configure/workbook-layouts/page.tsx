@@ -1,7 +1,7 @@
 "use client";
 
 import { Chip } from "@/components/atoms";
-import { type ActionItem } from "@/components/molecules";
+import { EmptyLine, type ActionItem } from "@/components/molecules";
 import {
   FamilyTable,
   type FamilyColumn,
@@ -72,6 +72,11 @@ export default function WorkbookLayoutsPage() {
         columns={LAYOUT_COLUMNS}
         rows={layoutRows}
         ariaLabel="Workbook layouts"
+        empty={
+          <div className="card">
+            <EmptyLine>Workbook layouts appear here once your organization has one.</EmptyLine>
+          </div>
+        }
       />
     </div>
   );

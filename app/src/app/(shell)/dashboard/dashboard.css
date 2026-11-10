@@ -8,127 +8,33 @@
   opacity: 0.7;
 }
 
-/* ---- Review volume, empty ---- */
-.db-empty-chart {
-  position: relative;
-  min-height: 300px;
-  display: grid;
-  place-items: center;
-  padding: 28px 20px;
-  overflow: hidden;
-}
-.db-ghost {
-  position: absolute;
-  inset: 24px 28px 36px;
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 4%;
-  pointer-events: none;
-  background-image: linear-gradient(
-    to bottom,
-    transparent calc(25% - 1px),
-    var(--md-outline-v) calc(25% - 1px),
-    var(--md-outline-v) 25%,
-    transparent 25%,
-    transparent calc(50% - 1px),
-    var(--md-outline-v) calc(50% - 1px),
-    var(--md-outline-v) 50%,
-    transparent 50%,
-    transparent calc(75% - 1px),
-    var(--md-outline-v) calc(75% - 1px),
-    var(--md-outline-v) 75%,
-    transparent 75%
-  );
-  -webkit-mask-image: radial-gradient(ellipse at center, transparent 42%, #000 92%);
-  mask-image: radial-gradient(ellipse at center, transparent 42%, #000 92%);
-}
-.db-ghost i {
-  flex: 1;
-  max-width: 30px;
-  border-radius: 5px 5px 0 0;
-  background: var(--md-surface-2);
-  opacity: 0.6;
-}
-.db-empty-card {
-  position: relative;
-  z-index: 1;
-  max-width: 430px;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-}
-.db-empty-icon {
-  width: 52px;
-  height: 52px;
-  border-radius: 15px;
-  display: grid;
-  place-items: center;
-  background: var(--md-selected);
-  color: var(--md-on-selected);
-  margin-bottom: 6px;
-}
-.db-empty-card h4 {
-  font-family: var(--font-display);
-  font-size: 19px;
-  font-weight: 700;
-  color: var(--md-on-surface);
-  margin: 0;
-}
-.db-empty-card p {
-  margin: 0;
-  font-size: 13.5px;
-  line-height: 1.5;
-  color: var(--md-on-surface-v);
-}
-.db-empty-actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 10px;
-  margin-top: 12px;
-}
-.db-empty-note {
-  font-size: 12.5px;
-  color: var(--md-on-surface-t);
-  margin-top: 4px;
-}
-.db-empty-note.lock {
-  color: var(--md-warn-solid);
-}
-
-/* Three-step strip under the empty chart */
+/* ---- First run: the three steps inside <EmptyState layout="split"> ---- */
 .db-steps {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  list-style: none;
+  margin: 0;
+  padding: 16px 0 0;
   border-top: 1px solid var(--md-outline-v);
+  display: grid;
+  gap: 12px;
 }
 .db-step {
   display: flex;
   gap: 12px;
   align-items: flex-start;
-  padding: 16px 18px;
-  border-right: 1px solid var(--md-outline-v);
-}
-.db-step:last-child {
-  border-right: none;
+  text-align: left;
 }
 .db-step-n {
   flex: none;
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   display: grid;
   place-items: center;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
-  background: var(--md-surface-1);
-  border: 1px solid var(--md-outline);
-  color: var(--md-on-surface-v);
-  margin-top: 1px;
+  background: var(--md-selected);
+  color: var(--md-on-selected);
 }
 .db-step b {
   display: block;
@@ -136,55 +42,12 @@
   font-weight: 600;
   color: var(--md-on-surface);
 }
-.db-step span {
+.db-step span span {
   display: block;
-  margin-top: 2px;
-  font-size: 12.5px;
-  line-height: 1.4;
-  color: var(--md-on-surface-v);
-}
-@media (max-width: 900px) {
-  .db-steps {
-    grid-template-columns: 1fr;
-  }
-  .db-step {
-    border-right: none;
-    border-bottom: 1px solid var(--md-outline-v);
-  }
-  .db-step:last-child {
-    border-bottom: none;
-  }
-}
-
-/* ---- Widget empty rows ---- */
-.db-wempty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 34px 24px;
-  text-align: center;
-}
-.db-wempty-icon {
-  width: 38px;
-  height: 38px;
-  border-radius: 11px;
-  display: grid;
-  place-items: center;
-  background: var(--md-surface-1);
-  color: var(--md-on-surface-t);
-  margin-bottom: 6px;
-}
-.db-wempty b {
-  font-size: 13.5px;
-  font-weight: 600;
-  color: var(--md-on-surface);
-}
-.db-wempty span {
+  margin-top: 1px;
   font-size: 12.5px;
   line-height: 1.45;
   color: var(--md-on-surface-v);
-  max-width: 300px;
 }
 
 /* Chart with real data but nothing completed in this period */

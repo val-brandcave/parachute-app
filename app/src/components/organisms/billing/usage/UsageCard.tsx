@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { SegmentedControl } from "@/components/molecules";
+import { Button } from "@/components/atoms";
+import { EmptyLine, SegmentedControl } from "@/components/molecules";
 import { CREDIT_USD, formatUsd } from "@/lib/pricing";
 import type { UserName } from "../billing-data";
 import { UsageChart, type ChartUnit, type ChartView } from "./UsageChart";
@@ -119,6 +120,12 @@ export function UsageCard({
   const paid = usdOf(inWin);
   const delta = comparableDelta(lines, w, total, creditsOf(prev));
   const reviews = new Set(inWin.map((l) => l.reviewKey)).size;
+  const empty = inWin.length === 0;
+  const w12 = useMemo(() => windowFor("12m", anchor), [anchor]);
+  const longerHasUse = useMemo(
+    () => within(lines, w12.from, w12.to).length > 0,
+    [lines, w12.from, w12.to],
+  );
   const groupTotals = groups.map((_, i) =>
     columns.reduce((sum, c) => sum + c.values[i], 0),
   );
@@ -163,7 +170,22 @@ export function UsageCard({
         </div>
       </div>
 
-      {!compact && (
+      {empty && (
+        <EmptyLine
+          action={
+            period !== "12m" && longerHasUse ? (
+              <Button variant="ghost" size="sm" onClick={() => onPeriod("12m")}>
+                Show 12 months
+              </Button>
+            ) : undefined
+          }
+        >
+          {unit === "usd" ? "No reviews" : "No credits used"} in{" "}
+          {SINCE_PHRASE[period]}.
+        </EmptyLine>
+      )}
+
+      {!empty && !compact && (
         <div className="us-sum">
           {cumulativeOn && cum ? (
             <>
@@ -206,36 +228,40 @@ export function UsageCard({
         </div>
       )}
 
-      <div className="us-legend" role="group" aria-label="Series">
-        {groups.map((g) => {
-          const off = hidden.has(g.key);
-          return (
-            <button
-              key={g.key}
-              type="button"
-              className={`us-leg${off ? " is-off" : ""}`}
-              aria-pressed={!off}
-              onClick={() => toggle(g.key)}
-            >
-              <i className={`us-sw us-t${g.tone}`} />
-              {g.label}
-              <b>{fmtUnit(unit, groupTotals[groups.indexOf(g)])}</b>
-            </button>
-          );
-        })}
-      </div>
+      {!empty && (
+        <>
+          <div className="us-legend" role="group" aria-label="Series">
+            {groups.map((g) => {
+              const off = hidden.has(g.key);
+              return (
+                <button
+                  key={g.key}
+                  type="button"
+                  className={`us-leg${off ? " is-off" : ""}`}
+                  aria-pressed={!off}
+                  onClick={() => toggle(g.key)}
+                >
+                  <i className={`us-sw us-t${g.tone}`} />
+                  {g.label}
+                  <b>{fmtUnit(unit, groupTotals[groups.indexOf(g)])}</b>
+                </button>
+              );
+            })}
+          </div>
 
-      <UsageChart
-        columns={columns}
-        groups={groups}
-        hidden={hidden}
-        view={cumulativeOn ? "cumulative" : "daily"}
-        cum={cum}
-        period={period}
-        unit={unit}
-        compact={compact}
-        ariaLabel={`${title}, ${SINCE_PHRASE[period]}, by ${BY_LABEL[by].toLowerCase()}`}
-      />
+          <UsageChart
+            columns={columns}
+            groups={groups}
+            hidden={hidden}
+            view={cumulativeOn ? "cumulative" : "daily"}
+            cum={cum}
+            period={period}
+            unit={unit}
+            compact={compact}
+            ariaLabel={`${title}, ${SINCE_PHRASE[period]}, by ${BY_LABEL[by].toLowerCase()}`}
+          />
+        </>
+      )}
     </section>
   );
 }

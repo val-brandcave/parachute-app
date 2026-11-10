@@ -184,10 +184,10 @@ export function useReviewQueue() {
     searching && tab !== "all" && counts[tab] === 0 ? "all" : tab;
 
   const filtered = useMemo(() => {
-    let list = [...reviews];
-    // The sample shows under "All" only (it is excluded from every count).
+    // The sample is not part of the queue at all (it has its own card on the empty state).
+    let list = reviews.filter((r) => !r.sample);
     if (effectiveTab !== "all")
-      list = list.filter((r) => !r.sample && lifecycleBucket(r) === effectiveTab);
+      list = list.filter((r) => lifecycleBucket(r) === effectiveTab);
 
     if (filters.findings !== "all") {
       const sel = filters.findings;
@@ -244,13 +244,19 @@ export function useReviewQueue() {
     return list.sort((a, b) => rank(a) - rank(b) || a.slaDueAt - b.slaDueAt);
   }, [reviews, effectiveTab, filters, query, now, sort, team]);
 
+  const real = useMemo(() => reviews.filter((r) => !r.sample), [reviews]);
+  const sample = useMemo(() => reviews.find((r) => r.sample), [reviews]);
+
   return {
     isLoading: initial,
+    /** The org has no reviews of its own yet. */
+    isEmpty: real.length === 0,
+    sample,
     counts,
     team,
     firmOptions,
     reviews: filtered,
-    total: reviews.length,
+    total: real.length,
     tab: effectiveTab,
     setTab,
     searching,

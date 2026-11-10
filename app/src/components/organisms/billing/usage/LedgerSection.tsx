@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Button } from "@/components/atoms";
-import { SegmentedControl } from "@/components/molecules";
+import { EmptyLine, SegmentedControl } from "@/components/molecules";
 import { ActivityTable } from "../ActivityTable";
 import { activityCsv, downloadText, type ActivityRow } from "../billing-data";
 
@@ -58,24 +58,55 @@ export function LedgerSection({
     );
   }, [rows, filter, who, query]);
 
-  const reset = <T,>(set: (v: T) => void) => (v: T) => {
-    set(v);
-    setShown(PAGE);
-  };
+  const reset =
+    <T,>(set: (v: T) => void) =>
+    (v: T) => {
+      set(v);
+      setShown(PAGE);
+    };
   const visible = filtered.slice(0, shown);
   const left = filtered.length - visible.length;
+  const narrowed = filter !== "all" || !!who || !!query.trim();
+  const clear = () => {
+    setFilter("all");
+    setWho("");
+    setQuery("");
+    setShown(PAGE);
+  };
+  const emptyText = query.trim()
+    ? `Nothing matches “${query.trim()}”.`
+    : who
+      ? "Nothing here for this person."
+      : filter === "refunds"
+        ? "No refunds yet."
+        : filter === "topups"
+          ? "No top-ups yet."
+          : filter === "rewards"
+            ? "No rewards yet."
+            : filter === "reviews"
+              ? "No reviews yet."
+              : "Nothing to show.";
+
+  if (rows.length === 0) return null;
 
   return (
     <div className="bl-stack">
       <div className="bl-row bl-sechead us-sechead">
         <h2 className="bl-section">{title}</h2>
-        <Button variant="outline" iconLeft="download" onClick={() => downloadText(filename, activityCsv(filtered))}>
-          Export CSV
-        </Button>
+        {filtered.length > 0 && (
+          <Button variant="outline" iconLeft="download" onClick={() => downloadText(filename, activityCsv(filtered))}>
+            Export CSV
+          </Button>
+        )}
       </div>
       <div className="us-filters">
         {filters.length > 1 && (
-          <SegmentedControl<Filter> label="Filter movements" value={filter} onChange={reset(setFilter)} options={OPTIONS.filter((o) => filters.includes(o.value))} />
+          <SegmentedControl<Filter>
+            label="Filter movements"
+            value={filter}
+            onChange={reset(setFilter)}
+            options={OPTIONS.filter((o) => filters.includes(o.value))}
+          />
         )}
         {people && people.length > 1 && (
           <div className="field us-who">
@@ -99,28 +130,44 @@ export function LedgerSection({
           />
         </div>
       </div>
-      <div>
-        <ActivityTable
-          rows={visible}
-          showAmounts={showAmounts}
-          showSource={showSource}
-          showCredits={showCredits}
-          onReceipt={onReceipt}
-          label={title}
-          footer={
-            <span className="us-more-row">
-              <span>
-                Showing {visible.length} of {filtered.length} {filtered.length === 1 ? "movement" : "movements"}
-              </span>
-              {left > 0 && (
-                <Button variant="ghost" size="sm" onClick={() => setShown((n) => n + PAGE)}>
-                  Show {Math.min(PAGE, left)} more
+      {filtered.length === 0 ? (
+        <div className="card">
+          <EmptyLine
+            action={
+              narrowed && (
+                <Button variant="ghost" size="sm" onClick={clear}>
+                  {query.trim() ? "Clear search" : "Show all"}
                 </Button>
-              )}
-            </span>
-          }
-        />
-      </div>
+              )
+            }
+          >
+            {emptyText}
+          </EmptyLine>
+        </div>
+      ) : (
+        <div>
+          <ActivityTable
+            rows={visible}
+            showAmounts={showAmounts}
+            showSource={showSource}
+            showCredits={showCredits}
+            onReceipt={onReceipt}
+            label={title}
+            footer={
+              <span className="us-more-row">
+                <span>
+                  Showing {visible.length} of {filtered.length} {filtered.length === 1 ? "movement" : "movements"}
+                </span>
+                {left > 0 && (
+                  <Button variant="ghost" size="sm" onClick={() => setShown((n) => n + PAGE)}>
+                    Show {Math.min(PAGE, left)} more
+                  </Button>
+                )}
+              </span>
+            }
+          />
+        </div>
+      )}
     </div>
   );
 }

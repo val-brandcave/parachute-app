@@ -2,7 +2,9 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useApprovalPending } from "@/store";
 import { Button } from "@/components/atoms";
+import { EmptyLine, EmptyState, GhostRows } from "@/components/molecules";
 import { formatUsd } from "@/lib/pricing";
 import { DEMO_TODAY, invoicedStatement, monthKey, monthTitle, walletStatement } from "../billing-data";
 import type { useBilling } from "../useBilling";
@@ -10,11 +12,12 @@ import "../billing-settings.css";
 
 type B = ReturnType<typeof useBilling>;
 
-const fmtDate = (t: number) => new Date(t).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
-
-function Empty({ children }: { children: React.ReactNode }) {
-  return <div className="bl-empty">{children}</div>;
-}
+const fmtDate = (t: number) =>
+  new Date(t).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 
 function Receipts({ b }: { b: B }) {
   const last4 = b.settings?.paymentMethod === "card" ? b.settings.cardLast4 : undefined;
@@ -30,48 +33,53 @@ function Receipts({ b }: { b: B }) {
         <h2 className="bl-section">Receipts</h2>
         <p className="bl-sub">One for every purchase, including auto-reload.</p>
       </div>
-      <div className="card bl-table" role="table" aria-label="Receipts">
-        <div className="bl-cols bs-cols bs-cols--rcpt bl-thead" role="row">
-          <span>Date</span>
-          <span>Receipt</span>
-          <span>For</span>
-          <span>Paid with</span>
-          <span className="bl-num">Amount</span>
-          <span>Status</span>
-          <span />
+      {rows.length === 0 ? (
+        <div className="card">
+          <EmptyLine>No purchases yet. A receipt appears here after each top-up.</EmptyLine>
         </div>
-        {rows.length === 0 && <Empty>No purchases yet. Receipts for credit packs show up here.</Empty>}
-        {shown.map((e) => (
-          <div key={e.id} className="bl-cols bs-cols bs-cols--rcpt bl-trow" role="row">
-            <span className="bl-date">{fmtDate(e.createdAt)}</span>
-            <span className="bl-what-t">{e.receiptId}</span>
-            <span className="bl-what">
-              <span className="bl-what-t">{e.credits} credits</span>
-              <span className="bl-what-s">{e.auto ? "Auto-reload" : "Top-up"}</span>
-            </span>
-            <span>{last4 ? `Visa •••• ${last4}` : "Card"}</span>
-            <span className="bl-num">{formatUsd(e.amountUsd ?? 0)}</span>
-            <span>
-              <span className="su-pill su-pill--sm su-pill--earn">Paid</span>
-            </span>
-            <span className="bl-act">
-              <Button variant="outline" size="sm" iconLeft="download" onClick={() => b.openReceipt(e.receiptId!)}>
-                Download PDF
-              </Button>
-            </span>
+      ) : (
+        <div className="card bl-table" role="table" aria-label="Receipts">
+          <div className="bl-cols bs-cols bs-cols--rcpt bl-thead" role="row">
+            <span>Date</span>
+            <span>Receipt</span>
+            <span>For</span>
+            <span>Paid with</span>
+            <span className="bl-num">Amount</span>
+            <span>Status</span>
+            <span />
           </div>
-        ))}
-        {rows.length > 8 && (
-          <div className="bl-tfoot bl-tfoot--split">
-            <span>
-              Showing {shown.length} of {rows.length} receipts.
-            </span>
-            <button type="button" className="hm-link" onClick={() => setAll((v) => !v)}>
-              {all ? "Show fewer" : "Show all"}
-            </button>
-          </div>
-        )}
-      </div>
+          {shown.map((e) => (
+            <div key={e.id} className="bl-cols bs-cols bs-cols--rcpt bl-trow" role="row">
+              <span className="bl-date">{fmtDate(e.createdAt)}</span>
+              <span className="bl-what-t">{e.receiptId}</span>
+              <span className="bl-what">
+                <span className="bl-what-t">{e.credits} credits</span>
+                <span className="bl-what-s">{e.auto ? "Auto-reload" : "Top-up"}</span>
+              </span>
+              <span>{last4 ? `Visa •••• ${last4}` : "Card"}</span>
+              <span className="bl-num">{formatUsd(e.amountUsd ?? 0)}</span>
+              <span>
+                <span className="su-pill su-pill--sm su-pill--earn">Paid</span>
+              </span>
+              <span className="bl-act">
+                <Button variant="outline" size="sm" iconLeft="download" onClick={() => b.openReceipt(e.receiptId!)}>
+                  Download PDF
+                </Button>
+              </span>
+            </div>
+          ))}
+          {rows.length > 8 && (
+            <div className="bl-tfoot bl-tfoot--split">
+              <span>
+                Showing {shown.length} of {rows.length} receipts.
+              </span>
+              <button type="button" className="hm-link" onClick={() => setAll((v) => !v)}>
+                {all ? "Show fewer" : "Show all"}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </section>
   );
 }
@@ -81,15 +89,23 @@ function Statements({ b }: { b: B }) {
   const rows = useMemo(() => {
     const keys = new Set<string>();
     b.ledger.filter((e) => e.kind === "debit" || e.kind === "rescan").forEach((e) => keys.add(monthKey(e.createdAt)));
-    if (keys.size === 0) keys.add(monthKey(DEMO_TODAY));
-    return [...keys].sort().reverse().map((key) => {
-      const s = walletStatement(b.ledger, b.reviews, b.userName, key);
-      const bought = b.ledger
-        .filter((e) => e.kind === "purchase" && monthKey(e.createdAt) === key)
-        .reduce((n, e) => n + (e.amountUsd ?? 0), 0);
-      return { key, reviews: s.groups.length, credits: s.creditsUsed, bought };
-    });
+    return [...keys]
+      .sort()
+      .reverse()
+      .map((key) => {
+        const s = walletStatement(b.ledger, b.reviews, b.userName, key);
+        const bought = b.ledger
+          .filter((e) => e.kind === "purchase" && monthKey(e.createdAt) === key)
+          .reduce((n, e) => n + (e.amountUsd ?? 0), 0);
+        return {
+          key,
+          reviews: s.groups.length,
+          credits: s.creditsUsed,
+          bought,
+        };
+      });
   }, [b.ledger, b.reviews, b.userName]);
+  if (rows.length === 0) return null;
   return (
     <section className="bs-block">
       <div className="bs-blockhead">
@@ -111,7 +127,12 @@ function Statements({ b }: { b: B }) {
             <span className="bl-num">{r.credits}</span>
             <span className="bl-num">{formatUsd(r.bought)}</span>
             <span className="bl-act">
-              <Button variant="outline" size="sm" iconLeft="download" onClick={() => router.push(`/configure/billing/statement?month=${r.key}`)}>
+              <Button
+                variant="outline"
+                size="sm"
+                iconLeft="download"
+                onClick={() => router.push(`/configure/billing/statement?month=${r.key}`)}
+              >
                 Download
               </Button>
             </span>
@@ -162,12 +183,19 @@ function Invoices({ b }: { b: B }) {
             <span className="bl-num">{r.credits}</span>
             <span className="bl-num">{formatUsd(r.amount)}</span>
             <span>
-              <span className={`su-pill su-pill--sm${r.status === "paid" ? " su-pill--earn" : r.status === "due" ? " su-pill--doing" : ""}`}>
+              <span
+                className={`su-pill su-pill--sm${r.status === "paid" ? " su-pill--earn" : r.status === "due" ? " su-pill--doing" : ""}`}
+              >
                 {r.status === "paid" ? "Paid" : r.status === "due" ? "Due 30 Nov" : "Open"}
               </span>
             </span>
             <span className="bl-act">
-              <Button variant="outline" size="sm" iconLeft="download" onClick={() => router.push(`/configure/billing/statement?month=${r.key}`)}>
+              <Button
+                variant="outline"
+                size="sm"
+                iconLeft="download"
+                onClick={() => router.push(`/configure/billing/statement?month=${r.key}`)}
+              >
                 Download
               </Button>
             </span>
@@ -180,6 +208,43 @@ function Invoices({ b }: { b: B }) {
 
 /** Receipts and statements for wallet orgs; invoices for invoiced orgs. Admin only. */
 export function InvoicesTab({ b, invoiced }: { b: B; invoiced: boolean }) {
+  const pending = useApprovalPending();
+  const hasPurchase = b.ledger.some((e) => e.kind === "purchase" && e.receiptId);
+  const hasUse = b.ledger.some((e) => e.kind === "debit" || e.kind === "rescan");
+  // Level 1: nothing to receipt or statement yet. One block, admins can start from here.
+  if (!invoiced && !hasPurchase && !hasUse) {
+    return (
+      <div className="bl-stack">
+        <EmptyState
+          title="Receipts and statements appear after your first top-up"
+          preview={<GhostRows rows={3} />}
+          status={
+            pending ? (
+              <>
+                <b>{b.org?.name ?? "Your organization"} is waiting for approval.</b> You can add credits once it is approved.
+              </>
+            ) : undefined
+          }
+          actions={
+            <Button iconLeft="add" onClick={b.openTopUp}>
+              Add credits
+            </Button>
+          }
+        >
+          Every purchase gets a receipt, and each month gets a statement of the reviews and credits in it.
+        </EmptyState>
+      </div>
+    );
+  }
+  if (invoiced && b.reviews.length === 0) {
+    return (
+      <div className="bl-stack">
+        <EmptyState title="Invoices appear after your first month of reviews" preview={<GhostRows rows={3} />}>
+          Each month closes into one invoice, net 30, sent to {b.settings?.billingEmail ?? "your billing contact"}.
+        </EmptyState>
+      </div>
+    );
+  }
   return (
     <div className="bl-stack">
       {invoiced ? (

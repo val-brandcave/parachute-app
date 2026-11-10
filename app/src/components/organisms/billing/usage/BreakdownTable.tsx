@@ -72,38 +72,59 @@ export function BreakdownTable({
   const totals = useMemo(() => {
     const w = windowFor(period, anchor);
     const cur = within(lines, w.from, w.to);
-    return { credits: creditsOf(cur), reviews: reviewsOf(cur), paid: usdOf(cur) };
+    return {
+      credits: creditsOf(cur),
+      reviews: reviewsOf(cur),
+      paid: usdOf(cur),
+    };
   }, [lines, anchor, period]);
 
   const showCredits = unit === "credits";
-  const tpl = ["minmax(180px, 2fr)", "80px", showCredits && "90px", "minmax(120px, 1.4fr)", showCost && "100px", "110px"].filter(Boolean).join(" ");
+  const tpl = ["minmax(180px, 2fr)", "80px", showCredits && "90px", "minmax(120px, 1.4fr)", showCost && "100px", "110px"]
+    .filter(Boolean)
+    .join(" ");
   const style = { gridTemplateColumns: tpl };
   const cost = (credits: number, paid: number) =>
     paid > 0 ? formatUsd(paid) : credits > 0 ? <span className="us-free">Free</span> : <span className="us-muted">&ndash;</span>;
+
+  if (rows.length === 0) return null;
 
   return (
     <div className="card bl-table" role="table" aria-label={BY_TITLE[by]}>
       <div className="us-by-cols bl-thead" style={style} role="row">
         <span role="columnheader">{by === "type" ? "Review type" : by === "person" ? "Person" : "Paid from"}</span>
-        <span role="columnheader" className="bl-num">Reviews</span>
-        {showCredits && <span role="columnheader" className="bl-num">Credits</span>}
+        <span role="columnheader" className="bl-num">
+          Reviews
+        </span>
+        {showCredits && (
+          <span role="columnheader" className="bl-num">
+            Credits
+          </span>
+        )}
         <span role="columnheader">Share</span>
-        {showCost && <span role="columnheader" className="bl-num">{unit === "usd" ? "Amount" : "Cost"}</span>}
-        <span role="columnheader" className="bl-num">vs previous</span>
+        {showCost && (
+          <span role="columnheader" className="bl-num">
+            {unit === "usd" ? "Amount" : "Cost"}
+          </span>
+        )}
+        <span role="columnheader" className="bl-num">
+          vs previous
+        </span>
       </div>
-      {rows.length === 0 && (
-        <div className="bl-empty">
-          <p>No usage in this period.</p>
-        </div>
-      )}
       {rows.map((r) => (
         <div key={r.key} className="us-by-cols bl-trow" style={style} role="row">
           <span role="cell" className="us-name">
             <i className={`us-sw us-t${r.tone}`} />
             <span>{r.label}</span>
           </span>
-          <span role="cell" className="bl-num">{r.reviews}</span>
-          {showCredits && <span role="cell" className="bl-num">{fmtCredits(r.credits)}</span>}
+          <span role="cell" className="bl-num">
+            {r.reviews}
+          </span>
+          {showCredits && (
+            <span role="cell" className="bl-num">
+              {fmtCredits(r.credits)}
+            </span>
+          )}
           <span role="cell" className="us-share">
             <span className="us-share-bar">
               <i className={`us-t${r.tone}`} style={{ width: `${Math.round(r.share * 100)}%` }} />
@@ -117,7 +138,9 @@ export function BreakdownTable({
           )}
           <span role="cell" className="us-chg">
             {r.delta.isNew ? (
-              <CreditChip tone="credit" size="sm">New</CreditChip>
+              <CreditChip tone="credit" size="sm">
+                New
+              </CreditChip>
             ) : r.delta.pct === null ? (
               <span className="us-muted">&ndash;</span>
             ) : (
@@ -126,13 +149,25 @@ export function BreakdownTable({
           </span>
         </div>
       ))}
-      <div className="us-by-cols bl-tfoot bl-tfoot--split" style={{ ...style, display: "grid", alignItems: "center", columnGap: 20 }}>
-        <span><b>Total</b></span>
+      <div
+        className="us-by-cols bl-tfoot bl-tfoot--split"
+        style={{
+          ...style,
+          display: "grid",
+          alignItems: "center",
+          columnGap: 20,
+        }}
+      >
+        <span>
+          <b>Total</b>
+        </span>
         <span className="bl-num">{totals.reviews}</span>
         {showCredits && <span className="bl-num">{fmtCredits(totals.credits)}</span>}
         <span />
         {showCost && (
-          <span className="bl-num">{unit === "usd" ? formatUsd(Math.round(totals.credits * CREDIT_USD)) : cost(totals.credits, totals.paid)}</span>
+          <span className="bl-num">
+            {unit === "usd" ? formatUsd(Math.round(totals.credits * CREDIT_USD)) : cost(totals.credits, totals.paid)}
+          </span>
         )}
         <span />
       </div>
