@@ -1,14 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Tabs, AvatarUpload } from "@/components/molecules";
-import { MembersPanel, BrandingPanel, BillingPanel } from "@/components/organisms";
+import { MembersPanel, BrandingPanel } from "@/components/organisms";
 import { Card, Input, Label, Divider, Icon } from "@/components/atoms";
-import { useIdentityStore, useOrgStore } from "@/store";
+import { useIdentityStore, useOnboardingStore, useOrgStore } from "@/store";
 import { CURRENT_ORG } from "@/lib/current-user";
 import { formatShortDate } from "@/lib/utils";
 
-type TabKey = "identity" | "branding" | "members" | "billing";
+type TabKey = "identity" | "branding" | "members";
 
 /** Human-readable file size for the bank-policy row. */
 function formatBytes(n: number): string {
@@ -48,8 +49,21 @@ const grid2: React.CSSProperties = {
   gap: 14,
 };
 
+const TAB_KEYS: TabKey[] = ["identity", "branding", "members"];
+
 export default function OrganizationPage() {
-  const [tab, setTab] = useState<TabKey>("identity");
+  // useSearchParams needs a Suspense boundary for static prerender.
+  return (
+    <Suspense fallback={null}>
+      <OrganizationView />
+    </Suspense>
+  );
+}
+
+function OrganizationView() {
+  // `?tab=members` is how Realwired Admin returns here.
+  const wanted = useSearchParams().get("tab") as TabKey | null;
+  const [tab, setTab] = useState<TabKey>(wanted && TAB_KEYS.includes(wanted) ? wanted : "identity");
   const { orgAvatar, setOrgAvatar } = useIdentityStore();
 
   // Org bank policy (F-123) — the single upload/replace surface; the run confirm
@@ -63,6 +77,7 @@ export default function OrganizationPage() {
         sizeLabel: formatBytes(f.size),
         updatedAt: formatShortDate(Date.now()),
       });
+    if (f) void useOnboardingStore.getState().complete("bank_policy");
     e.target.value = ""; // allow re-picking the same file
   };
 
@@ -76,7 +91,6 @@ export default function OrganizationPage() {
             { value: "identity", label: "Identity" },
             { value: "branding", label: "Branding" },
             { value: "members", label: "Members" },
-            { value: "billing", label: "Billing" },
           ]}
         />
         <div style={{ flex: 1 }} />
@@ -161,11 +175,6 @@ export default function OrganizationPage() {
         </div>
       )}
 
-      {tab === "billing" && (
-        <div className="pagebody" style={{ maxWidth: 860, margin: "0 auto" }}>
-          <BillingPanel />
-        </div>
-      )}
     </>
   );
 }

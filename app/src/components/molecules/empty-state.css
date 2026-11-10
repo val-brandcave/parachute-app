@@ -1,0 +1,238 @@
+/* ============================================================
+   Empty states (EmptyState / EmptyLine / Ghost*) — 10 Nov 2026
+   One block when a page has never had data; one line when a
+   section or filter is empty. Tokens only, both themes.
+   ============================================================ */
+
+.es {
+  --es-ghost: var(--md-surface-2);
+  --es-ghost-strong: var(--md-surface-3);
+  --es-tint: var(--md-selected);
+  display: grid;
+  gap: 0;
+  color: var(--md-on-surface);
+}
+.es--framed {
+  background: var(--md-surface);
+  border: 1px solid var(--md-outline);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+
+/* ---- stack: centred, preview on top ---- */
+.es--stack {
+  justify-items: center;
+  text-align: center;
+  padding: calc(var(--d-card-pad) * 2) var(--d-card-pad);
+  gap: 18px;
+}
+.es--stack .es-body { justify-items: center; max-width: 520px; }
+.es--stack .es-actions { justify-content: center; }
+.es--stack .es-preview { width: min(360px, 100%); }
+.es--stack .es-preview-label { display: none; }
+
+/* ---- split: text left, preview panel right ---- */
+.es--split {
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  align-items: stretch;
+}
+.es--split .es-body {
+  padding: calc(var(--d-card-pad) * 1.6) calc(var(--d-card-pad) * 1.5);
+  align-content: center;
+}
+.es--split .es-preview {
+  background: var(--md-bg);
+  border-left: 1px solid var(--md-outline-v);
+  padding: calc(var(--d-card-pad) * 1.4);
+  align-content: center;
+}
+@media (max-width: 1100px) {
+  .es--split { grid-template-columns: minmax(0, 1fr); }
+  .es--split .es-preview { border-left: 0; border-top: 1px solid var(--md-outline-v); }
+}
+
+.es-body {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+  min-width: 0;
+}
+.es-title {
+  font-family: var(--font-display), system-ui, sans-serif;
+  font-size: 22px;
+  line-height: 1.25;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin: 0;
+  text-wrap: balance;
+  color: var(--md-on-surface);
+}
+.es--stack .es-title { font-size: 19px; }
+.es-text {
+  color: var(--md-on-surface-v);
+  font-size: 14px;
+  line-height: 1.55;
+  max-width: 54ch;
+}
+.es-text p { margin: 0; }
+.es-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+.es-aside {
+  margin-top: 8px;
+  width: 100%;
+}
+
+/* status line: the one thing blocking the primary action */
+.es-status {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 10px;
+  justify-self: start;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.45;
+  text-align: left;
+}
+.es--stack .es-status { justify-self: center; }
+.es-status b { font-weight: 600; }
+.es-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  margin-top: 6px;
+  flex: none;
+  background: currentColor;
+}
+.es-status--warn { background: var(--md-warn-c); color: var(--md-warn-solid); }
+.es-status--info { background: var(--md-info-c); color: var(--md-info); }
+:root[data-theme="dark"] .es-status--warn { color: var(--md-warn); }
+
+/* preview frame */
+.es-preview {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  pointer-events: none;
+  user-select: none;
+}
+.es-preview-label {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--md-on-surface-t);
+}
+.es-preview-art {
+  display: grid;
+  gap: 10px;
+  /* fades out toward the bottom so it reads as a picture, not live UI */
+  -webkit-mask-image: linear-gradient(to bottom, #000 62%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 62%, transparent 100%);
+}
+
+/* ---- ghost parts ---- */
+.gh-stats { display: grid; gap: 8px; }
+.gh-tile {
+  background: var(--md-surface);
+  border: 1px solid var(--md-outline-v);
+  border-radius: 8px;
+  padding: 10px;
+  display: grid;
+  gap: 7px;
+}
+.gh-line {
+  display: block;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--es-ghost, var(--md-surface-2));
+}
+.gh-line--label { width: 62%; }
+.gh-line--num { height: 12px; background: var(--es-ghost-strong, var(--md-surface-3)); }
+.gh-line--strong { background: var(--es-ghost-strong, var(--md-surface-3)); height: 7px; }
+
+.gh-chart {
+  position: relative;
+  background: var(--md-surface);
+  border: 1px solid var(--md-outline-v);
+  border-radius: 8px;
+  padding: 12px 12px 0;
+  overflow: hidden;
+}
+.gh-bars {
+  position: absolute;
+  inset: 12px 12px 0;
+  display: flex;
+  align-items: flex-end;
+  gap: 6%;
+}
+.gh-bars i {
+  flex: 1;
+  border-radius: 3px 3px 0 0;
+  background: var(--es-tint, var(--md-selected));
+}
+.gh-trend {
+  position: absolute;
+  inset: 12px 12px 0;
+  width: calc(100% - 24px);
+  height: calc(100% - 12px);
+  overflow: visible;
+}
+.gh-trend polyline {
+  stroke: var(--md-primary);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  opacity: 0.45;
+}
+:root[data-theme="dark"] .gh-trend polyline { stroke: var(--md-on-selected); opacity: 0.5; }
+
+.gh-rows {
+  background: var(--md-surface);
+  border: 1px solid var(--md-outline-v);
+  border-radius: 8px;
+  display: grid;
+}
+.gh-row {
+  display: grid;
+  grid-template-columns: minmax(0, 2.4fr) minmax(0, 1fr) 44px;
+  gap: 14px;
+  align-items: center;
+  padding: 11px 12px;
+  border-top: 1px solid var(--md-outline-v);
+}
+.gh-row:first-child { border-top: 0; }
+.gh-cell { display: grid; gap: 6px; }
+.gh-pill {
+  display: block;
+  height: 14px;
+  border-radius: 999px;
+  background: var(--es-tint, var(--md-selected));
+}
+
+/* ---- EmptyLine: levels 2 and 3 ---- */
+.el {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  padding: 14px var(--d-card-pad);
+  font-size: 13.5px;
+  color: var(--md-on-surface-v);
+}
+.el-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.el-text svg { color: var(--md-on-surface-t); flex: none; }
+.el-action { display: inline-flex; gap: 6px; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .es { animation: es-in 0.28s ease-out both; }
+  @keyframes es-in { from { opacity: 0; } to { opacity: 1; } }
+}

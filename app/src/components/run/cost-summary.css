@@ -1,0 +1,122 @@
+/* Cost at Start (Phase 3 · Workstream A). Tokens only; prefix cs-. */
+
+.cs-summary {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  margin-right: auto;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--md-on-surface-v);
+  font-variant-numeric: tabular-nums;
+}
+.cs-summary > svg {
+  flex: none;
+  color: var(--md-on-surface-t);
+}
+.cs-summary b {
+  font-weight: 600;
+  color: var(--md-on-surface);
+}
+
+.cs-sep {
+  flex: none;
+  align-self: center;
+  width: 1px;
+  height: 16px;
+  margin: 0 3px;
+  background: var(--md-outline-v);
+}
+
+/* Review-type row: credits + price pair, pushed right */
+.cs-type-cost {
+  display: inline-flex;
+  align-items: center;
+  align-self: center;
+  gap: 6px;
+  margin-left: auto;
+  flex: none;
+}
+/* A selected row is already navy-tinted: lift the credit chip onto the surface so it still reads */
+.run-cf-opt.is-on .cchip--credit {
+  background: var(--md-surface);
+  border-color: var(--md-outline-v);
+}
+
+/* Warning callout: last item in the form column, same width as the cards. */
+.cs-callout-slot {
+  border-radius: 10px;
+  scroll-margin-bottom: 24px;
+}
+.cs-callout-slot:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-accent);
+}
+.cs-callout-slot:focus {
+  outline: none;
+}
+.cs-callout-slot:focus .cs-callout {
+  box-shadow: var(--ring-accent);
+}
+/* Start while short: looks disabled but stays pressable (it scrolls to the callout). */
+.cs-start-short {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.cs-callout {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px 14px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--md-warn) 38%, transparent);
+  background: var(--md-warn-c);
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--md-on-surface);
+}
+.cs-callout > svg {
+  flex: none;
+  margin-top: 1.5px;
+  color: var(--md-warn-solid);
+}
+.cs-callout-body {
+  min-width: 0;
+  flex: 1;
+}
+.cs-callout-body b {
+  font-weight: 600;
+  color: var(--md-warn-solid);
+}
+.cs-callout-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  margin-top: 9px;
+}
+.cs-callout-link {
+  padding: 4px 6px;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: var(--md-accent-d);
+  cursor: pointer;
+}
+.cs-callout-link:hover {
+  text-decoration: underline;
+}
+.cs-callout-note {
+  font-size: 12px;
+  color: var(--md-on-surface-v);
+}
+
+/* Loan field hint */
+.cs-hint {
+  font-size: 12px;
+  color: var(--md-on-surface-v);
+  margin-top: 4px;
+}

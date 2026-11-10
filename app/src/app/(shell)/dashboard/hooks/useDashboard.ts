@@ -1,12 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
-import { useReviewsStore } from "@/store";
-import { isOverdue } from "@/lib/review-lifecycle";
+import { useOrgStore, useReviewsStore, useSessionStore } from "@/store";
+import { isOverdue, needsMyAction } from "@/lib/review-lifecycle";
 import type { Period, DateRange } from "@/components/molecules";
 
 const DAY = 86400000;
 
 export function useDashboard() {
-  const { reviews, fetchReviews } = useReviewsStore();
+  const { reviews: allReviews, fetchReviews } = useReviewsStore();
+  // The sample review is excluded from every dashboard number and list.
+  const reviews = useMemo(() => allReviews.filter((r) => !r.sample), [allReviews]);
+  // Trial / pay-as-you-go orgs never see the seeded demo numbers: their stats
+  // are derived from their own (non-sample) reviews.
+  const billing = useOrgStore((s) => s.org?.billing);
+  const own = billing === "trial" || billing === "payg";
+  const meId = useSessionStore((s) => s.userId);
   const [initial, setInitial] = useState(true);
   const [period, setPeriod] = useState<Period>("month");
   const [range, setRangeState] = useState<DateRange | null>(null);
@@ -67,6 +74,8 @@ export function useDashboard() {
     let target: number; // approx total completed for the period
     let label: (i: number) => string;
     let tickEvery: number;
+    let stepMs: number; // width of one bucket
+    let endMs = now; // right edge of the last bucket
 
     if (period === "custom" && range) {
       const span = Math.max(DAY, range.end - range.start);
@@ -76,26 +85,32 @@ export function useDashboard() {
       const step = span / Math.max(1, count - 1);
       target = Math.max(count, Math.round(days * 1.0));
       tickEvery = Math.max(1, Math.ceil(count / 6));
+      stepMs = Math.max(DAY, step);
+      endMs = range.start + step * (count - 1) + stepMs / 2;
       label = (i) => md(new Date(range.start + step * i));
     } else if (period === "week") {
       count = 7;
       target = 8;
       tickEvery = 1;
+      stepMs = DAY;
       label = (i) => DOW[new Date(now - (count - 1 - i) * DAY).getDay()];
     } else if (period === "month") {
       count = 5; // weekly buckets
       target = 20;
       tickEvery = 1;
+      stepMs = 7 * DAY;
       label = (i) => md(new Date(now - (count - 1 - i) * 7 * DAY));
     } else if (period === "quarter") {
       count = 13; // weekly buckets
       target = 55;
       tickEvery = 3;
+      stepMs = 7 * DAY;
       label = (i) => md(new Date(now - (count - 1 - i) * 7 * DAY));
     } else {
       count = 12; // monthly buckets
       target = 200;
       tickEvery = 1;
+      stepMs = 30 * DAY;
       const m0 = new Date(now).getMonth();
       label = (i) => MONTHS[(m0 - (count - 1 - i) + 1200) % 12];
     }
@@ -113,22 +128,41 @@ export function useDashboard() {
       };
     });
 
+    if (own) {
+      // Real counts: completed reviews per bucket. No turnaround / on-time data yet.
+      const done = reviews.filter((r) => r.status === "completed");
+      points.forEach((pt, i) => {
+        const hi = endMs - (count - 1 - i) * stepMs;
+        const lo = hi - stepMs;
+        pt.v = done.filter((r) => r.orderedAt > lo && r.orderedAt <= hi).length;
+        pt.t = 0;
+        pt.onTime = 0;
+      });
+    }
+
     const completed = points.reduce((s, p) => s + p.v, 0);
     const avgT = Math.round(points.reduce((s, p) => s + p.t, 0) / count);
     const avgOn = Math.round(points.reduce((s, p) => s + p.onTime, 0) / count);
-    const prev = {
-      completed: Math.round(completed * 0.92),
-      avgT: avgT + 2,
-      avgOn: Math.max(0, avgOn - 2),
-    };
+    // No history for an org's own data yet, so no period-over-period delta.
+    const prev = own
+      ? { completed, avgT, avgOn }
+      : { completed: Math.round(completed * 0.92), avgT: avgT + 2, avgOn: Math.max(0, avgOn - 2) };
     return { points, completed, avgT, avgOn, prev };
-  }, [period, range, now]);
+  }, [period, range, now, own, reviews]);
 
   // KPIs. Historical tiles are PERIOD-SCOPED (counts of events within the selected
   // range, derived from the period volume); "running" and "intake" stay point-in-time
   // "now" counts (current backlog, not affected by the period picker).
   const kpis = useMemo(() => {
     const c = trend.completed;
+    if (own) {
+      return {
+        needsAction: reviews.filter((r) => meId && needsMyAction(r, meId)).length,
+        running: reviews.filter((r) => r.status === "running").length,
+        overdue: reviews.filter((r) => isOverdue(r, now)).length,
+        intake: reviews.filter((r) => r.status === "intake" && r.source === "yc").length,
+      };
+    }
     return {
       needsAction: Math.round(c * 0.13), // needed your action during the period
       running: reviews.filter((r) => r.status === "running").length, // LIVE — now
@@ -137,10 +171,13 @@ export function useDashboard() {
       intake: reviews.filter((r) => r.status === "intake" && r.source === "yc")
         .length,
     };
-  }, [trend.completed, reviews]);
+  }, [trend.completed, reviews, own, meId, now]);
 
   return {
     isLoading: initial,
+    /** The org has no reviews of its own yet (the sample never counts). */
+    isEmpty: reviews.length === 0,
+    reviews,
     period,
     setPeriod,
     range,

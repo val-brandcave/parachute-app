@@ -1,0 +1,122 @@
+"use client";
+
+import { createPortal } from "react-dom";
+import { useRouter } from "next/navigation";
+import { Icon } from "@/components/atoms";
+import { DEMO_ENABLED, personaById } from "@/lib/demo";
+import { useCurrentOrg, useCurrentUser } from "@/lib/current-user";
+import { useDemoStore } from "@/store/demo.store";
+import { setBuildNotes, useBuildNotes } from "@/store/prefs.store";
+import { useWalletStore } from "@/store/wallet.store";
+import { useOnboardingStore } from "@/store/onboarding.store";
+import { SETUP_STEPS } from "@/lib/setup-steps";
+
+/**
+ * PROTOTYPE ONLY. A small floating chip so the presenter can push state without
+ * leaving the page: current persona, reset the org, approve a pending workspace,
+ * add credits. Mounted once in AppShell; gated by NEXT_PUBLIC_DEMO_PERSONAS.
+ */
+export function DemoDock() {
+  const router = useRouter();
+  const open = useDemoStore((s) => s.dockOpen);
+  const toggle = useDemoStore((s) => s.toggleDock);
+  const personaId = useDemoStore((s) => s.personaId);
+  const me = useCurrentUser();
+  const org = useCurrentOrg();
+  const buildNotes = useBuildNotes();
+  const balance = useWalletStore((s) => s.ledger.reduce((sum, e) => sum + e.credits, 0));
+
+  // Children only render after SeedProvider is ready (client side), so `document` exists.
+  if (!DEMO_ENABLED) return null;
+
+  const persona = personaById(personaId);
+  const pending = org.org?.approval === "pending";
+
+  const reset = async () => {
+    const { removed } = await useDemoStore.getState().resetOrg();
+    if (removed) router.push("/start");
+  };
+
+  return createPortal(
+    <div className="demo-dock" data-open={open || undefined}>
+      {open && (
+        <div className="demo-dock-panel" role="group" aria-label="Demo controls">
+          <div className="demo-dock-id">
+            <span className="demo-dock-name">{me.name}</span>
+            <span className="demo-dock-sub">
+              {me.role.replace("_", " ")} at {org.name}
+            </span>
+            {org.org?.billing !== "invoiced" && (
+              <span className="demo-dock-sub">
+                {balance} {balance === 1 ? "credit" : "credits"}
+              </span>
+            )}
+          </div>
+          <div className="demo-dock-actions">
+            <button className="demo-dock-btn" onClick={reset}>
+              <Icon name="restore" size={15} /> Reset org
+            </button>
+            {pending && (
+              <button className="demo-dock-btn" onClick={() => useDemoStore.getState().approveOrg()}>
+                <Icon name="check-circle" size={15} /> Approve
+              </button>
+            )}
+            <button
+              className="demo-dock-btn"
+              onClick={() => {
+                const ob = useOnboardingStore.getState();
+                const next = SETUP_STEPS.find((s) => ob.progress?.completed[s.id] === undefined);
+                if (next) void ob.complete(next.id);
+              }}
+            >
+              <Icon name="check-circle" size={15} /> Complete next step
+            </button>
+            <button className="demo-dock-btn" onClick={() => useDemoStore.getState().addCredits(5)}>
+              <Icon name="coins" size={15} /> +5 credits
+            </button>
+            <button
+              className="demo-dock-btn"
+              disabled={org.org?.billing === "invoiced"}
+              onClick={() => {
+                const w = useWalletStore.getState();
+                const delta = 1 - w.balance();
+                if (delta !== 0) void w.adjust(delta, "Demo: low balance");
+              }}
+            >
+              <Icon name="warn" size={15} /> Low balance
+            </button>
+            <button className="demo-dock-btn" onClick={() => router.push("/start")}>
+              <Icon name="switch" size={15} /> Personas
+            </button>
+            <button
+              className="demo-dock-btn"
+              onClick={() => window.open("/emails", "_blank", "noopener")}
+            >
+              <Icon name="mail" size={15} /> E-mails
+            </button>
+          </div>
+          <label className="demo-dock-switch">
+            <span>Show build notes</span>
+            <input
+              type="checkbox"
+              role="switch"
+              checked={buildNotes}
+              onChange={(e) => setBuildNotes(e.target.checked)}
+            />
+            <span className="demo-dock-track" aria-hidden="true" />
+          </label>
+        </div>
+      )}
+      <button
+        className="demo-dock-chip"
+        onClick={toggle}
+        aria-expanded={open}
+        aria-label="Demo controls"
+      >
+        <Icon name="flask" size={15} />
+        <span>{persona ? persona.label : "Demo"}</span>
+      </button>
+    </div>,
+    document.body,
+  );
+}

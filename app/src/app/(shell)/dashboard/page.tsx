@@ -2,9 +2,12 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { useDashboard } from "./hooks/useDashboard";
+import "./dashboard.css";
 import { PageHeader } from "@/components/templates/PageHeader";
-import { PeriodPicker, PERIOD_LABEL, periodLabel } from "@/components/molecules";
-import { CURRENT_USER } from "@/lib/current-user";
+import { PeriodPicker, PERIOD_LABEL, periodLabel, type Period } from "@/components/molecules";
+import { useCurrentUser } from "@/lib/current-user";
+import { useOrgStage, useSetupSummary } from "@/store";
+import { ValueStrip, useShowValueStrip } from "@/components/organisms/value";
 import {
   StatBar,
   type Stat,
@@ -13,10 +16,33 @@ import {
   TrendChart,
   DashboardSkeleton,
 } from "@/components/organisms";
+import { DashboardFirstRun } from "@/components/organisms/dashboard-widgets";
+
+const PERIOD_PHRASE: Record<Period, string> = {
+  week: "this week",
+  month: "this month",
+  quarter: "this quarter",
+  year: "this year",
+  custom: "in this range",
+};
+/** The next wider period, offered as the way out of an empty chart. */
+const WIDEN: Partial<Record<Period, Period>> = {
+  week: "month",
+  month: "quarter",
+  quarter: "year",
+  custom: "year",
+};
 
 export default function DashboardPage() {
+  const me = useCurrentUser();
+  const stage = useOrgStage();
+  const { steps } = useSetupSummary();
+  // Same rule as the Get started card: a brand-new org has not done anything yet.
+  const returning = stage !== "new" || steps.some((s) => s.done);
   const {
     isLoading,
+    isEmpty,
+    reviews,
     period,
     setPeriod,
     range,
@@ -27,6 +53,8 @@ export default function DashboardPage() {
     newFromYc,
     trend,
   } = useDashboard();
+
+  const showValue = useShowValueStrip(reviews);
 
   const stats: Stat[] = [
     // Lifecycle order: intake → processing → review → SLA → done.
@@ -76,7 +104,7 @@ export default function DashboardPage() {
   return (
     <>
       <PageHeader
-        title={`Welcome back, ${CURRENT_USER.firstName}`}
+        title={`${returning ? "Welcome back" : "Welcome"}, ${me.firstName}`}
         actions={
           <PeriodPicker
             value={period}
@@ -106,16 +134,32 @@ export default function DashboardPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.28 }}
             >
-              <StatBar stats={stats} />
+              {isEmpty ? (
+                <DashboardFirstRun />
+              ) : (
+                <>
+                  <StatBar stats={stats} />
 
-              <div style={{ marginTop: "var(--d-gap)" }}>
-                <TrendChart {...trend} periodLabel={periodLabel(period, range)} />
-              </div>
+                  {showValue && <ValueStrip reviews={reviews} />}
 
-              <div className="dash-grid">
-                <ActionNeeded reviews={actionNeeded} />
-                <NewFromYouConnect reviews={newFromYc} />
-              </div>
+                  <div style={{ marginTop: "var(--d-gap)" }}>
+                    <TrendChart
+                      {...trend}
+                      periodLabel={periodLabel(period, range)}
+                      emptyText={`No reviews completed ${PERIOD_PHRASE[period]}.`}
+                      widen={WIDEN[period] && {
+                        label: `Show ${PERIOD_LABEL[WIDEN[period]!].toLowerCase()}`,
+                        onClick: () => setPeriod(WIDEN[period]!),
+                      }}
+                    />
+                  </div>
+
+                  <div className="dash-grid">
+                    <ActionNeeded reviews={actionNeeded} />
+                    <NewFromYouConnect reviews={newFromYc} />
+                  </div>
+                </>
+              )}
             </motion.div>
           )}
         </AnimatePresence>

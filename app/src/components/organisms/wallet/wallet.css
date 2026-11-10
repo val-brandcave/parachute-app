@@ -1,0 +1,440 @@
+/* Add credits dialog (tu-) and Receipt dialog (rc-). Tokens only; paper stays white in both themes. */
+
+.tu-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.tu-label {
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 600;
+  color: var(--md-on-surface);
+  padding: 0;
+  margin-bottom: 8px;
+}
+.tu-context {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--md-on-surface);
+  background: var(--md-flag-c, var(--md-surface-1));
+}
+.tu-context svg {
+  flex: none;
+  color: var(--md-flag, var(--md-on-surface-v));
+}
+.tu-packs {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+.tu-pack-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.tu-pack {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 14px 8px 12px;
+  border: 1px solid var(--md-outline-v);
+  border-radius: 10px;
+  background: var(--md-surface);
+  cursor: pointer;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  transition:
+    border-color 0.12s,
+    background-color 0.12s;
+}
+.tu-pack:hover {
+  background: var(--md-surface-1);
+}
+.tu-pack[data-on] {
+  border-color: var(--md-primary);
+  background: var(--md-selected);
+  box-shadow: inset 0 0 0 1px var(--md-primary);
+}
+.tu-pack:has(input:focus-visible) {
+  box-shadow: var(--ring-accent);
+}
+.tu-pack input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+  margin: 0;
+  cursor: pointer;
+}
+.tu-pack-n {
+  font-family: var(--font-sans-base), system-ui, sans-serif;
+  letter-spacing: -0.02em;
+  font-size: 28px;
+  line-height: 32px;
+  font-weight: 600;
+  color: var(--md-on-surface);
+}
+.tu-pack[data-on] .tu-pack-n,
+.tu-pack[data-on] .tu-pack-p,
+.tu-pack[data-on] .tu-pack-u,
+.tu-pack[data-on] .tu-pack-f {
+  color: var(--md-on-selected, var(--md-on-surface));
+}
+.tu-pack-u {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--md-on-surface-v);
+}
+.tu-pack-p {
+  margin-top: 6px;
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 600;
+  color: var(--md-on-surface);
+}
+.tu-pack-f {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--md-on-surface-v);
+}
+.tu-pack-note {
+  margin-top: 6px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 600;
+  color: var(--md-success);
+  background: var(--md-success-c, var(--md-surface-2));
+}
+
+.tu-method {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--md-surface-1);
+  font-size: 14px;
+  line-height: 20px;
+}
+.tu-visa {
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--md-outline-v);
+  background: var(--md-surface);
+  color: var(--md-on-surface);
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+.tu-method-n {
+  font-weight: 600;
+  color: var(--md-on-surface);
+  font-variant-numeric: tabular-nums;
+}
+.tu-method-s {
+  color: var(--md-on-surface-v);
+}
+.tu-method-c {
+  margin-left: auto;
+}
+.tu-link {
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--md-accent-d);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+}
+.tu-link:hover {
+  text-decoration: underline;
+}
+.tu-link:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-accent);
+  border-radius: 4px;
+}
+
+.tu-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.tu-card-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.tu-f {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.tu-f label {
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 500;
+  color: var(--md-on-surface-v);
+}
+.tu-hosted {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 18px;
+  color: var(--md-on-surface-v);
+}
+.tu-hosted svg {
+  flex: none;
+}
+
+.tu-reload {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--md-on-surface);
+}
+.tu-fine {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 18px;
+  color: var(--md-on-surface-v);
+}
+.tu-ask {
+  margin: 0;
+  font-size: 14px;
+  line-height: 21px;
+  color: var(--md-on-surface-v);
+}
+
+/* ---- Receipt ---- */
+.rc-paper {
+  /* A receipt is a document: fixed white-paper values in both themes. */
+  --rc-bg: #ffffff;
+  --rc-ink: #1a1d21;
+  --rc-ink-2: #545a62;
+  --rc-ink-3: #888f97;
+  --rc-edge: #d6dbe1;
+  --rc-line: #e7eaee;
+  padding: 20px 22px 18px;
+  border: 1px solid var(--rc-edge);
+  border-radius: 10px;
+  background: var(--rc-bg);
+  color: var(--rc-ink);
+  box-shadow: 0 1px 2px rgba(16, 24, 33, 0.06);
+}
+.rc-items {
+  font-variant-numeric: tabular-nums;
+}
+.rc-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.rc-id {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--rc-ink-3);
+}
+.rc-h {
+  margin: 20px 0 2px;
+  font-family: var(--font-display, inherit);
+  font-size: 19px;
+  line-height: 26px;
+  font-weight: 600;
+  color: var(--rc-ink);
+}
+.rc-sub {
+  margin: 0 0 14px;
+  font-size: 13.5px;
+  line-height: 20px;
+  color: var(--rc-ink-2);
+}
+.rc-items {
+  margin: 0;
+}
+.rc-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 9px 10px;
+  border-top: 1px solid var(--rc-line);
+  font-size: 14px;
+  line-height: 20px;
+}
+.rc-item:last-child {
+  border-bottom: 1px solid var(--rc-line);
+}
+.rc-item dt {
+  color: var(--rc-ink-2);
+}
+.rc-item dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+  color: var(--rc-ink);
+}
+.rc-note {
+  margin: 12px 0 0;
+  font-size: 12.5px;
+  line-height: 18px;
+  color: var(--rc-ink-2);
+}
+.rc-also {
+  margin: 10px 0 0;
+  font-size: 12.5px;
+  color: var(--md-on-surface-v);
+}
+.rc-missing {
+  margin: 0;
+  font-size: 14px;
+  color: var(--md-on-surface-v);
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .rc-paper,
+  .rc-paper * {
+    visibility: visible;
+  }
+  .rc-paper {
+    position: fixed;
+    inset: 24px 24px auto 24px;
+    box-shadow: none;
+  }
+}
+
+/* The run takeover (.run) sits at z-index 120, above the library's modal (60) and toast (70)
+   tiers. Add credits opens from inside it, and so does its Receipt toast action, so lift the
+   library's upper tiers above 120 with their order unchanged. */
+:root {
+  --rw-z-overlay: 130;
+  --rw-z-modal: 140;
+  --rw-z-dropdown-in-modal: 145;
+  --rw-z-overlay-in-modal: 146;
+  --rw-z-modal-in-modal: 147;
+  --rw-z-toast: 150;
+  --rw-z-tooltip: 160;
+}
+
+.tu-dialog,
+.rc-dialog {
+  max-height: min(92vh, 820px);
+}
+
+/* ---- Add credits: four tiles (3 packs + custom), approval wait, custom hints (10 Nov 2026) ---- */
+.tu-pack-row {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.tu-context--pending {
+  align-items: flex-start;
+  background: var(--md-warn-c);
+  color: var(--md-warn-solid);
+}
+.tu-context--pending svg {
+  margin-top: 1px;
+  color: currentColor;
+}
+:root[data-theme="dark"] .tu-context--pending {
+  color: var(--md-warn);
+}
+.tu-pack--custom {
+  cursor: default;
+}
+.tu-pack--custom > input[type="radio"] {
+  pointer-events: none;
+}
+.tu-custom-l {
+  font-weight: 600;
+  color: var(--md-on-surface);
+}
+.tu-step {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  margin: 2px 0 0;
+  border: 1px solid var(--md-outline);
+  border-radius: 8px;
+  background: var(--md-surface);
+  overflow: hidden;
+}
+.tu-step button {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 30px;
+  border: 0;
+  background: transparent;
+  color: var(--md-on-surface-v);
+  cursor: pointer;
+}
+.tu-step button:hover:not(:disabled) {
+  background: var(--md-surface-1);
+  color: var(--md-on-surface);
+}
+.tu-step button:disabled {
+  color: var(--md-on-surface-dis);
+  cursor: default;
+}
+.tu-step button:focus-visible,
+.tu-step-n:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-accent);
+}
+.tu-step-n {
+  width: 40px;
+  height: 30px;
+  border: 0;
+  border-inline: 1px solid var(--md-outline-v);
+  background: transparent;
+  text-align: center;
+  font: 600 16px/1 var(--font-sans-base), system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  color: var(--md-on-surface);
+}
+.tu-pack--custom[data-on] .tu-custom-l {
+  color: var(--md-on-selected, var(--md-on-surface));
+}
+.tu-custom-hint {
+  margin-top: 8px;
+}
+.tu-over {
+  margin: 10px 0 0;
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--md-on-surface-v);
+}
+/* `.tu-pack input` hides each tile's radio; the custom amount field must stay visible. */
+.tu-pack .tu-step-n {
+  position: static;
+  inset: auto;
+  opacity: 1;
+  margin: 0;
+  cursor: text;
+}

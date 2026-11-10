@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Icon, Tooltip } from "@/components/atoms";
 import { useIdentityStore } from "@/store";
-import { CURRENT_ORG } from "@/lib/current-user";
+import { useCurrentOrg } from "@/lib/current-user";
 
 /** Organization card pinned to the bottom of the sidebar → the Configure hub
  *  (templates, checklists, defaults, org identity). The avatar shows the org
@@ -14,15 +14,19 @@ import { CURRENT_ORG } from "@/lib/current-user";
  *  stay visually consistent. */
 export function OrgCard({
   collapsed,
-  name = CURRENT_ORG.name,
-  sub = CURRENT_ORG.kind,
-  initials = CURRENT_ORG.initials,
+  name: nameProp,
+  sub: subProp,
+  initials: initialsProp,
 }: {
   collapsed: boolean;
   name?: string;
   sub?: string;
   initials?: string;
 }) {
+  const cur = useCurrentOrg();
+  const name = nameProp ?? cur.name;
+  const sub = subProp ?? cur.kind;
+  const initials = initialsProp ?? cur.initials;
   const pathname = usePathname();
   const orgAvatar = useIdentityStore((s) => s.orgAvatar);
   const active = pathname.startsWith("/configure");

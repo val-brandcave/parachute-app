@@ -71,7 +71,7 @@ export function PeriodPicker({
 
   return (
     <div className="periodpick" ref={ref}>
-      <button className="periodpick-btn" onClick={toggle}>
+      <button type="button" className="periodpick-btn" onClick={toggle}>
         <Icon name={isCustom ? "calendar" : "checklist"} size={16} />
         {periodLabel(value, range)}
         <Icon name="chevron-down" size={15} />
@@ -91,7 +91,7 @@ export function PeriodPicker({
             {mode === "list" ? (
               <>
                 {PRESETS.map((p) => (
-                  <button
+                  <button type="button"
                     key={p}
                     className={cn("periodpick-item", value === p && "on")}
                     onClick={() => {
@@ -104,7 +104,7 @@ export function PeriodPicker({
                   </button>
                 ))}
                 <div className="periodpick-sep" />
-                <button
+                <button type="button"
                   className={cn(
                     "periodpick-item",
                     value === "custom" && "on",

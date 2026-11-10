@@ -95,3 +95,19 @@ export function fillTemplate(
     .replace(/\{\{\s*topic\s*\}\}/g, ctx.topic)
     .replace(/\{\{\s*(\w+)\s*\}\}/g, (_, k: string) => `[${k}]`);
 }
+
+/** "6 Nov 09:12": day, short month and 24h time, for receipts and logs. */
+export function formatStamp(ts: number): string {
+  const d = new Date(ts);
+  const day = d.getDate();
+  const mon = d.toLocaleString("en-US", { month: "short" });
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mm = String(d.getMinutes()).padStart(2, "0");
+  return `${day} ${mon} ${hh}:${mm}`;
+}
+
+/** "6 Dec": day and short month. */
+export function formatDayMonth(ts: number): string {
+  const d = new Date(ts);
+  return `${d.getDate()} ${d.toLocaleString("en-US", { month: "short" })}`;
+}

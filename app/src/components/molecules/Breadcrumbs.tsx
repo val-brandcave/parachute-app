@@ -2,13 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Icon } from "@/components/atoms";
+import { CreditChip, Icon } from "@/components/atoms";
+import { useStartGate } from "@/components/organisms/home/useStartGate";
 import { useReviewsStore, useTemplatesStore } from "@/store";
 
 type Crumb = { label: string; href?: string };
 
 const TOP_LABELS: Record<string, string> = {
   launchpad: "Start a review",
+  "get-started": "Get started",
   dashboard: "Dashboard",
   reviews: "Reviews",
   configure: "Configure",
@@ -30,6 +32,8 @@ const CONFIG_SECTIONS: Record<string, string> = {
   "workbook-layouts": "Workbook layouts",
   responses: "Response library",
   checklists: "Compliance checklists",
+  security: "Security pack",
+  billing: "Billing & credits",
 };
 
 export function Breadcrumbs() {
@@ -37,6 +41,7 @@ export function Breadcrumbs() {
   const reviews = useReviewsStore((s) => s.reviews);
   const checklists = useTemplatesStore((s) => s.checklists);
   const segs = pathname.split("/").filter(Boolean);
+  const startGate = useStartGate();
 
   let crumbs: Crumb[] = [];
 
@@ -70,6 +75,9 @@ export function Breadcrumbs() {
           const family = checklists.find((c) => c.id === segs[2]);
           crumbs.push({ label: family ? family.name : "Checklist" });
         }
+      } else if (section === "billing") {
+        crumbs.push({ label: "Billing & credits", href: deeper ? sectionHref : undefined });
+        if (segs[2] === "statement") crumbs.push({ label: "Monthly statement" });
       } else {
         crumbs.push({ label: CONFIG_SECTIONS[section] });
       }
@@ -92,6 +100,11 @@ export function Breadcrumbs() {
               <span className={last ? "cur" : undefined}>{c.label}</span>
             )}
             {!last && <Icon name="chevron-right" size={15} className="sep" />}
+            {last && segs[0] === "launchpad" && startGate.locked && (
+              <CreditChip tone="low" size="sm" className="crumb-lock">
+                {startGate.reason}
+              </CreditChip>
+            )}
           </span>
         );
       })}

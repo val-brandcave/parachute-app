@@ -153,14 +153,14 @@ export function FindingDecisionBar({
             {/* Reviewer's own finding — manage it, don't adjudicate it. Mirrors the
                 AI bar's shape (primary actions + ⋯): Edit / Remove up front, the
                 secondary Comment / Flag folded behind the overflow. */}
-            <button
+            <button type="button"
               className={`fdb-act fdb-act--edit${composer === "edit" ? " on" : ""}`}
               onClick={() => openComposer("edit")}
             >
               <Icon name="edit" size={iconSize} />
               Edit
             </button>
-            <button className="fdb-act fdb-act--reject" onClick={onRemove}>
+            <button type="button" className="fdb-act fdb-act--reject" onClick={onRemove}>
               <Icon name="trash" size={iconSize} />
               Remove
             </button>
@@ -182,14 +182,14 @@ export function FindingDecisionBar({
           </>
         ) : (
           <>
-            <button
+            <button type="button"
               className={`fdb-act fdb-act--accept${!composer && disp === "accepted" ? " on" : ""}`}
               onClick={accept}
             >
               <Icon name="check" size={iconSize} />
               Concur
             </button>
-            <button
+            <button type="button"
               className={`fdb-act fdb-act--edit${
                 composer === "edit" || (!composer && disp === "edited") ? " on" : ""
               }`}
@@ -198,7 +198,7 @@ export function FindingDecisionBar({
               <Icon name="edit" size={iconSize} />
               Edit
             </button>
-            <button
+            <button type="button"
               className={`fdb-act fdb-act--reject${
                 composer === "rejected" || (!composer && disp === "rejected") ? " on" : ""
               }`}

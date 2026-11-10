@@ -25,7 +25,7 @@ export function Button({
 } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
   const iconSize = size === "sm" ? 15 : 17;
   return (
-    <button
+    <button type="button"
       className={cn(
         "ui-btn",
         `ui-btn--${variant}`,

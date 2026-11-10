@@ -4,7 +4,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Icon } from "@/components/atoms";
-import { SegmentedControl } from "@/components/molecules";
+import { EmptyLine, SegmentedControl } from "@/components/molecules";
 import type { ResponseTemplate, TemplateScope } from "@/types";
 
 /**
@@ -139,7 +139,9 @@ export function ResponseTemplatePicker({
                     </div>
                   ))}
                   {groups.length === 0 && (
-                    <div className="rtpick-empty">No templates in this set.</div>
+                    <EmptyLine>
+                      {scope === "org" ? "No org templates yet." : "No personal templates yet."} Add them in Settings.
+                    </EmptyLine>
                   )}
                 </div>
               </motion.div>

@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Icon, IconButton, type IconName } from "@/components/atoms";
+import { Button, Icon, IconButton, type IconName } from "@/components/atoms";
+import { useRouter } from "next/navigation";
 import { Tabs, StatusPill } from "@/components/molecules";
 import { Logo } from "@/components/Logo";
 import { useReview } from "@/store/useReview";
@@ -13,9 +14,13 @@ import {
   useTemplatesStore,
   useUsersStore,
   useAdminStore,
+  useOnboardingStore,
+  useOrgStore,
+  DEMO_RUN_REVIEW_ID,
   type RunDisplay,
   type RunReviewType,
 } from "@/store";
+import type { Review } from "@/types";
 import { CURRENT_USER } from "@/lib/current-user";
 import {
   type RiskRating,
@@ -95,6 +100,7 @@ export function RunExperience({
   /** Confirm the auto-reject and leave the triage gate (route: back to the queue). */
   onTriageReject?: () => void;
 }) {
+  const router = useRouter();
   const {
     spoke,
     docLabel,
@@ -141,18 +147,46 @@ export function RunExperience({
 
   // Overlay the confirmed/real identity on the loaded review so the picked
   // property carries through the header + workbook (findings stay mock content).
+  const orgName = useOrgStore((s) => s.org?.name);
   const review = useMemo(() => {
-    if (!baseReview) return undefined;
-    if (!display) return baseReview;
+    // The dropped-file gate runs on the demo review, which only exists in the
+    // Meridian org's list. For every other org (trial / pay-as-you-go) synthesise a
+    // stand-in from the extracted identity so the confirm gate still renders.
+    const base: Review | undefined =
+      baseReview ??
+      (reviewId === DEMO_RUN_REVIEW_ID
+        ? {
+            id: reviewId,
+            createdAt: 0,
+            propertyAddress: "220 Commerce Way, Norfolk, VA",
+            propertyType: "Retail (Anchored)",
+            bank: orgName ?? "",
+            appraisalFirm: "Tidewater Valuation Group",
+            loanNo: "HCB-26-0918",
+            status: "intake",
+            reviewTypes: ["technical", "administrative"],
+            assigneeId: CURRENT_USER.id,
+            source: "manual",
+            riskRating: null,
+            openFindings: 0,
+            flaggedCount: 0,
+            worstSeverity: null,
+            pipelineStage: 0,
+            slaDueAt: 0,
+            orderedAt: 0,
+          }
+        : undefined);
+    if (!base) return undefined;
+    if (!display) return base;
     return {
-      ...baseReview,
+      ...base,
       propertyAddress: display.address,
       propertyType: display.propertyType,
       bank: display.bank,
       loanNo: display.loanNo,
       appraisalFirm: display.firm,
     };
-  }, [baseReview, display]);
+  }, [baseReview, display, reviewId, orgName]);
 
   const [signing, setSigning] = useState(false);
   const [signOpen, setSignOpen] = useState(false);
@@ -354,6 +388,7 @@ export function RunExperience({
       sha,
     });
     signType("technical");
+    if (!review.sample) void useOnboardingStore.getState().complete("sign_workbook");
     setSigning(false);
   };
 
@@ -382,6 +417,7 @@ export function RunExperience({
       sha,
     });
     signType("administrative");
+    if (!review?.sample) void useOnboardingStore.getState().complete("sign_workbook");
     setSigning(false);
   };
 
@@ -610,6 +646,19 @@ export function RunExperience({
                     value={activeType}
                     onChange={(t) => setActiveType(t)}
                   />
+                </div>
+              )}
+
+              {review?.sample && (
+                <div className="run-sample-banner" role="note">
+                  <Icon name="info" size={16} />
+                  <span>
+                    <b>Sample review</b> · {review.propertyAddress.split(",")[0]} is a fictional
+                    property. Explore freely — nothing here uses credits.
+                  </span>
+                  <Button variant="ghost" size="sm" iconRight="forward" onClick={() => router.push("/launchpad")}>
+                    Run your own report
+                  </Button>
                 </div>
               )}
 

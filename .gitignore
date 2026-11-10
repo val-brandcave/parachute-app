@@ -37,3 +37,10 @@ desktop.ini
 
 # Local-only design prototypes (kept for reference, never shipped)
 /prototype-icons/
+
+# Local-only working notes / briefs (kept on machine, never committed)
+/docs/local/
+
+# Meeting records (raw transcripts, processed calls, notes): never committed.
+# They can hold client-confidential remarks; this repo is mirrored to the client.
+/docs/meetings/

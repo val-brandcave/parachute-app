@@ -709,7 +709,11 @@ export function WorkbookPreview({
 
       {/* PAGE 1 — full-bleed branded cover (D7: cover is its own page) */}
       <section className="wb-page wb-page--cover">
-        {draft && <div className="wb-ribbon">Draft</div>}
+        {review.sample ? (
+          <div className="wb-ribbon wb-ribbon--sample">Sample</div>
+        ) : (
+          draft && <div className="wb-ribbon">Draft</div>
+        )}
         <span className="wb-cover-mark" aria-hidden="true">
           <ParachuteGlyph size={420} />
         </span>
