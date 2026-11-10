@@ -7,30 +7,39 @@ import { useCurrentOrg } from "@/lib/current-user";
 import {
   CREDIT_PACKS,
   CREDIT_USD,
+  CUSTOM_CREDITS,
   DEFAULT_PACK_ID,
   PURCHASED_LIFE_MONTHS,
   costFor,
+  creditRateUsd,
+  customPriceUsd,
   formatUsd,
   packById,
   type CreditPack,
 } from "@/lib/pricing";
 import { FULL_REVIEW_TYPES } from "@/lib/setup-steps";
-import { useSessionStore, useUsersStore, useWalletStore } from "@/store";
+import { useApprovalPending, useSessionStore, useUsersStore, useWalletStore } from "@/store";
 import type { CreditPackId } from "@/types";
 import "./wallet.css";
 import "./topup-chips.css";
 
 const FULL_REVIEW_COST = costFor(FULL_REVIEW_TYPES);
 
-const fullReviews = (p: CreditPack) => Math.floor(p.credits / FULL_REVIEW_COST);
+const fullReviews = (credits: number) => Math.floor(credits / FULL_REVIEW_COST);
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
-/** Pack pre-selected on open: the default, or the smallest pack that covers what a blocked run needs. */
-function initialPack(needed: number | null): CreditPackId {
+type Choice = CreditPackId | "custom";
+/** Custom amount shown before the buyer types one: sits in the middle tier. */
+const CUSTOM_DEFAULT = 15;
+
+/** Selected on open: the default pack, the smallest pack that covers what a blocked run needs, or Custom
+ *  pre-filled with the exact shortfall when no pack covers it. */
+function initialChoice(needed: number | null): { choice: Choice; custom: number } {
   const def = packById(DEFAULT_PACK_ID);
-  if (needed == null) return def.id;
+  if (needed == null) return { choice: def.id, custom: CUSTOM_DEFAULT };
   const covering = CREDIT_PACKS.find((p) => p.credits >= needed);
-  return covering && covering.credits > def.credits ? covering.id : def.id;
+  if (!covering) return { choice: "custom", custom: Math.min(needed, CUSTOM_CREDITS.max) };
+  return { choice: covering.credits > def.credits ? covering.id : def.id, custom: needed };
 }
 
 /** Mounted once in the shell. Admins get the purchase dialog; anyone else is sent to their admin. */
@@ -88,14 +97,29 @@ function TopUpDialog() {
   const me = useSessionStore((s) => s.userId);
   const meEmail = useUsersStore((s) => s.users.find((u) => u.id === me)?.email);
 
-  const [packId, setPackId] = useState<CreditPackId>(() => initialPack(needed));
+  const pending = useApprovalPending();
+  const [start] = useState(() => initialChoice(needed));
+  const [choice, setChoice] = useState<Choice>(start.choice);
+  // Raw text so the field can be cleared while typing; parsed below.
+  const [customText, setCustomText] = useState(String(start.custom));
   const hasCard = settings?.paymentMethod === "card" && !!settings.cardLast4;
   const [editingCard, setEditingCard] = useState(false);
   const showForm = !hasCard || editingCard;
   const [card, setCard] = useState({ name: "", number: "", expiry: "", cvc: "" });
   const [paying, setPaying] = useState(false);
 
-  const pack = packById(packId);
+  const customN = Number.parseInt(customText, 10);
+  const customValid = Number.isFinite(customN) && customN >= CUSTOM_CREDITS.min && customN <= CUSTOM_CREDITS.max;
+  const overMax = Number.isFinite(customN) && customN > CUSTOM_CREDITS.max;
+  const isCustom = choice === "custom";
+  const pack: CreditPack | null = isCustom ? null : packById(choice);
+  const buyCredits = pack ? pack.credits : customValid ? customN : 0;
+  const buyPrice = pack ? pack.priceUsd : customValid ? customPriceUsd(customN) : 0;
+  const stepCustom = (d: number) => {
+    const base = Number.isFinite(customN) ? customN : CUSTOM_DEFAULT;
+    setCustomText(String(Math.min(CUSTOM_CREDITS.max, Math.max(CUSTOM_CREDITS.min, base + d))));
+    setChoice("custom");
+  };
   const reloadPack = packById(settings?.reloadPackId ?? DEFAULT_PACK_ID);
   const reloadBelow = settings?.reloadBelow ?? 2;
   const email = settings?.billingEmail ?? meEmail ?? "your billing contact";
@@ -111,7 +135,7 @@ function TopUpDialog() {
     [card, digits],
   );
   const cardValid = !Object.values(cardErrors).some(Boolean);
-  const canPay = !paying && (!showForm || cardValid);
+  const canPay = !pending && !paying && buyCredits > 0 && (!showForm || cardValid);
 
   const close = () => useWalletStore.getState().closeTopUp();
 
@@ -121,11 +145,11 @@ function TopUpDialog() {
     const w = useWalletStore.getState();
     if (showForm) await w.setPaymentMethod({ paymentMethod: "card", cardLast4: digits.slice(-4) });
     await new Promise((r) => setTimeout(r, 600));
-    const entry = await w.purchase(packId);
+    const entry = await w.purchase(pack ? pack.id : { credits: buyCredits });
     const after = useWalletStore.getState().balance();
     w.closeTopUp();
     toast({
-      title: `${plural(pack.credits, "credit", "credits")} added`,
+      title: `${plural(buyCredits, "credit", "credits")} added`,
       description: `Balance ${after}`,
       tone: "success",
       action: entry.receiptId
@@ -134,6 +158,9 @@ function TopUpDialog() {
     });
   };
 
+  const talkToUs = () =>
+    toast({ title: "We’ll be in touch", description: "A Realwired specialist will reach out about invoicing.", tone: "success" });
+
   const setField = (k: keyof typeof card) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setCard((c) => ({ ...c, [k]: e.target.value }));
 
@@ -141,29 +168,44 @@ function TopUpDialog() {
     <Dialog
       open
       onOpenChange={(o) => !o && !paying && close()}
-      size="sm"
+      size="md"
       className="tu-dialog"
       title="Add credits"
       description={`${org.name} · 1 credit ≈ ${formatUsd(CREDIT_USD)} · 1 credit = 1 review type on 1 report`}
       footerStart={
-        <button
-          type="button"
-          className="tu-link"
-          onClick={() =>
-            toast({ title: "We’ll be in touch", description: "A Realwired specialist will reach out about invoicing.", tone: "success" })
-          }
-        >
+        <button type="button" className="tu-link" onClick={talkToUs}>
           Need invoicing? Talk to us
         </button>
       }
       footer={
-        <Button onClick={pay} disabled={!canPay} iconLeft="lock">
-          {paying ? "Processing" : `Pay ${formatUsd(pack.priceUsd)}`}
-        </Button>
+        pending ? (
+          <>
+            <Button variant="ghost" onClick={close}>
+              Close
+            </Button>
+            <Button disabled iconLeft="lock">
+              {buyPrice ? `Pay ${formatUsd(buyPrice)}` : "Pay"}
+            </Button>
+          </>
+        ) : (
+          <Button onClick={pay} disabled={!canPay} iconLeft="lock">
+            {paying ? "Processing" : buyPrice ? `Pay ${formatUsd(buyPrice)}` : "Pay"}
+          </Button>
+        )
       }
     >
       <div className="tu-body">
-        {reason === "low_balance" && needed != null && (
+        {pending && (
+          <p className="tu-context tu-context--pending" role="status">
+            <Icon name="clock" size={16} />
+            <span>
+              <b>You can buy credits once {org.name} is approved.</b>{" "}
+              Realwired is checking your sign-up and will
+              email you when it&rsquo;s done. The prices below are what you&rsquo;ll pay.
+            </span>
+          </p>
+        )}
+        {!pending && reason === "low_balance" && needed != null && (
           <p className="tu-context" role="status">
             <Icon name="warn" size={16} />
             <span>
@@ -176,15 +218,15 @@ function TopUpDialog() {
           <legend className="tu-label">Choose a pack</legend>
           <div className="tu-pack-row">
             {CREDIT_PACKS.map((p) => {
-              const n = fullReviews(p);
+              const n = fullReviews(p.credits);
               return (
-                <label key={p.id} className="tu-pack" data-on={p.id === packId || undefined}>
+                <label key={p.id} className="tu-pack" data-on={p.id === choice || undefined}>
                   <input
                     type="radio"
                     name="tu-pack"
                     value={p.id}
-                    checked={p.id === packId}
-                    onChange={() => setPackId(p.id)}
+                    checked={p.id === choice}
+                    onChange={() => setChoice(p.id)}
                   />
                   <span className="tu-pack-n">{p.credits}</span>
                   <span className="tu-pack-u">credits</span>
@@ -198,9 +240,77 @@ function TopUpDialog() {
                 </label>
               );
             })}
+            <div className="tu-pack tu-pack--custom" data-on={isCustom || undefined} onClick={() => setChoice("custom")}>
+              <input
+                type="radio"
+                name="tu-pack"
+                value="custom"
+                aria-label="Custom amount"
+                checked={isCustom}
+                onChange={() => setChoice("custom")}
+              />
+              <span className="tu-pack-u tu-custom-l">Custom</span>
+              <span className="tu-step">
+                <button
+                  type="button"
+                  aria-label="One credit fewer"
+                  onClick={() => stepCustom(-1)}
+                  disabled={customValid && customN <= CUSTOM_CREDITS.min}
+                >
+                  <Icon name="minus" size={14} />
+                </button>
+                <input
+                  className="tu-step-n"
+                  inputMode="numeric"
+                  aria-label="Credits"
+                  value={customText}
+                  onFocus={() => setChoice("custom")}
+                  onChange={(e) => {
+                    setCustomText(e.target.value.replace(/\D/g, "").slice(0, 4));
+                    setChoice("custom");
+                  }}
+                />
+                <button
+                  type="button"
+                  aria-label="One credit more"
+                  onClick={() => stepCustom(1)}
+                  disabled={customValid && customN >= CUSTOM_CREDITS.max}
+                >
+                  <Icon name="add" size={14} />
+                </button>
+              </span>
+              {customValid ? (
+                <>
+                  <CreditChip tone="money" className="tu-pack-p">
+                    {formatUsd(customPriceUsd(customN))}
+                  </CreditChip>
+                  <span className="tu-pack-f">{formatUsd(creditRateUsd(customN))} a credit</span>
+                </>
+              ) : (
+                <span className="tu-pack-f tu-custom-hint">
+                  {CUSTOM_CREDITS.min} to {CUSTOM_CREDITS.max} credits
+                </span>
+              )}
+            </div>
           </div>
+          {isCustom && overMax && (
+            <p className="tu-over">
+              Buying more than {CUSTOM_CREDITS.max} credits?{" "}
+              <button type="button" className="tu-link" onClick={talkToUs}>
+                Talk to us
+              </button>{" "}
+              about a volume price and invoicing.
+            </p>
+          )}
+          {isCustom && customValid && (
+            <p className="tu-over">
+              {plural(customN, "credit", "credits")} is enough for{" "}
+              {plural(fullReviews(customN), "full review", "full reviews")}.
+            </p>
+          )}
         </fieldset>
 
+        {!pending && (
         <div className="tu-pay">
           <div className="tu-label" id="tu-pay-l">
             {showForm ? "Add a card" : "Payment"}
@@ -276,6 +386,9 @@ function TopUpDialog() {
           )}
         </div>
 
+        )}
+
+        {!pending && (
         <div className="tu-reload">
           <label htmlFor="tu-reload-sw">
             Reload {reloadPack.credits} credits automatically when I drop below {reloadBelow}
@@ -286,6 +399,7 @@ function TopUpDialog() {
             onCheckedChange={(v) => void useWalletStore.getState().setAutoReload({ autoReload: v })}
           />
         </div>
+        )}
 
         <p className="tu-fine">
           Purchased credits last {PURCHASED_LIFE_MONTHS} months. Receipts go to {email}.

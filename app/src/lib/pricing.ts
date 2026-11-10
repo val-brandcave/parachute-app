@@ -48,6 +48,20 @@ export function packById(id: CreditPackId): CreditPack {
   return CREDIT_PACKS.find((p) => p.id === id) ?? CREDIT_PACKS[0];
 }
 
+/** Custom amounts in the Add credits dialog. Above `max`, buyers are sent to sales. */
+export const CUSTOM_CREDITS = { min: 1, max: 100 };
+
+/** Per-credit rate for any amount: the rate of the largest pack it reaches (1–9 list, 10–19 pack10, 20+ pack20),
+ *  so a custom amount never costs more per credit than the nearest pack. */
+export function creditRateUsd(credits: number): number {
+  const tier = [...CREDIT_PACKS].reverse().find((p) => credits >= p.credits);
+  return tier ? tier.priceUsd / tier.credits : CREDIT_USD;
+}
+
+export function customPriceUsd(credits: number): number {
+  return Math.round(credits * creditRateUsd(credits));
+}
+
 /** Auto-reload defaults offered when an admin switches it on. */
 export const AUTO_RELOAD_DEFAULTS: { packId: CreditPackId; below: number; monthlyCap: number } = {
   packId: "pack10",

@@ -7,6 +7,7 @@ import {
   EARN_REWARD_CREDITS,
   TRIAL_GRANT_CREDITS,
   costFor,
+  customPriceUsd,
   packById,
   usd,
 } from "@/lib/pricing";
@@ -133,7 +134,8 @@ interface WalletState {
   grantTrial: () => Promise<CreditLedgerEntry | null>;
   /** Idempotent per step and bounded by the earn cap. */
   award: (stepId: SetupStepId) => Promise<CreditLedgerEntry | null>;
-  purchase: (packId: CreditPackId) => Promise<CreditLedgerEntry>;
+  /** Buy a pack, or a custom amount priced at its tier rate (`customPriceUsd`). */
+  purchase: (choice: CreditPackId | { credits: number }) => Promise<CreditLedgerEntry>;
   /** Free-form signed adjustment (demo "+5 credits", support goodwill). */
   adjust: (credits: number, note?: string) => Promise<CreditLedgerEntry>;
   setAutoReload: (
@@ -291,14 +293,24 @@ export const useWalletStore = create<WalletState>((set, get) => {
       return addEntry({ kind: "earned", credits, setupStepId: stepId, note: "Setup reward" });
     },
 
-    purchase: async (packId) => {
-      const pack = packById(packId);
+    purchase: async (choice) => {
+      const receiptId = `RCT-${generateId().slice(0, 5).toUpperCase()}`;
+      if (typeof choice === "object") {
+        return addEntry({
+          kind: "purchase",
+          credits: choice.credits,
+          amountUsd: customPriceUsd(choice.credits),
+          receiptId,
+          note: `${choice.credits} credits`,
+        });
+      }
+      const pack = packById(choice);
       return addEntry({
         kind: "purchase",
         credits: pack.credits,
         amountUsd: pack.priceUsd,
-        packId,
-        receiptId: `RCT-${generateId().slice(0, 5).toUpperCase()}`,
+        packId: choice,
+        receiptId,
         note: `${pack.credits}-credit pack`,
       });
     },

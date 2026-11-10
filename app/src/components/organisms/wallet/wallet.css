@@ -346,3 +346,95 @@
 .rc-dialog {
   max-height: min(92vh, 820px);
 }
+
+/* ---- Add credits: four tiles (3 packs + custom), approval wait, custom hints (10 Nov 2026) ---- */
+.tu-pack-row {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.tu-context--pending {
+  align-items: flex-start;
+  background: var(--md-warn-c);
+  color: var(--md-warn-solid);
+}
+.tu-context--pending svg {
+  margin-top: 1px;
+  color: currentColor;
+}
+:root[data-theme="dark"] .tu-context--pending {
+  color: var(--md-warn);
+}
+.tu-pack--custom {
+  cursor: default;
+}
+.tu-pack--custom > input[type="radio"] {
+  pointer-events: none;
+}
+.tu-custom-l {
+  font-weight: 600;
+  color: var(--md-on-surface);
+}
+.tu-step {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  margin: 2px 0 0;
+  border: 1px solid var(--md-outline);
+  border-radius: 8px;
+  background: var(--md-surface);
+  overflow: hidden;
+}
+.tu-step button {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 30px;
+  border: 0;
+  background: transparent;
+  color: var(--md-on-surface-v);
+  cursor: pointer;
+}
+.tu-step button:hover:not(:disabled) {
+  background: var(--md-surface-1);
+  color: var(--md-on-surface);
+}
+.tu-step button:disabled {
+  color: var(--md-on-surface-dis);
+  cursor: default;
+}
+.tu-step button:focus-visible,
+.tu-step-n:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-accent);
+}
+.tu-step-n {
+  width: 40px;
+  height: 30px;
+  border: 0;
+  border-inline: 1px solid var(--md-outline-v);
+  background: transparent;
+  text-align: center;
+  font: 600 16px/1 var(--font-sans-base), system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  color: var(--md-on-surface);
+}
+.tu-pack--custom[data-on] .tu-custom-l {
+  color: var(--md-on-selected, var(--md-on-surface));
+}
+.tu-custom-hint {
+  margin-top: 8px;
+}
+.tu-over {
+  margin: 10px 0 0;
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--md-on-surface-v);
+}
+/* `.tu-pack input` hides each tile's radio; the custom amount field must stay visible. */
+.tu-pack .tu-step-n {
+  position: static;
+  inset: auto;
+  opacity: 1;
+  margin: 0;
+  cursor: text;
+}
