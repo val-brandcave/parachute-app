@@ -31,7 +31,18 @@ const SEEDED_KEY = `${STORAGE_PREFIX}:__seeded__`;
 //      review (checklist attestation) for review-001.
 // v15: expanded users (owner/admin/reviewer/viewer roles + email/status/
 //      last-active) backing the Organization → Members table.
-const SEED_VERSION = "v15";
+//      v16: self-serve onboarding - org profile/billing/approval, orgId on users &
+//      reviews, production roles (org_admin/approver/reviewer), demo orgs, the
+//      credit_ledger / wallet_settings / setup_progress collections, review-sample.
+//      v17: self-serve Phase 2 - setup steps aligned to the spec (account, sign_workbook,
+//      bank_policy), seeded in-progress notes, HCB reviews, earned ledger row.
+//      v18: self-serve Phase 3 - HCB ledger tells the billing story (trial runs, refund,
+//      earned, 10-pack with receipts), HCB card 4242 + billing@harborcb.com, receipts and
+//      paidFrom on every seeded debit/purchase, Cedar Ridge card + default reload pack.
+//      v20: self-serve Phase 4 - invites collection (Harbor has one pending), the
+//      "invite" setup step (done for Cedar Ridge and Meridian, open for Harbor).
+//      v21: self-serve v2 - Lakeside Valuation is a 11+ team (sales-flagged), pending, no trial.
+const SEED_VERSION = "v22";
 
 export const mockAdapter: DataAdapter = {
   async getAll<T>(collection: string): Promise<T[]> {

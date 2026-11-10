@@ -1,7 +1,14 @@
 import { create } from "zustand";
 import { adapter } from "@/data/adapters";
 import { Collections } from "@/data/collections";
-import { generateId, type Review } from "@/types";
+import { DEFAULT_ORG_ID } from "@/lib/identity-defaults";
+import { generateId, type Org, type Review } from "@/types";
+import { useSessionStore } from "./session.store";
+
+/** Reviews with no orgId belong to the default org. */
+const currentOrgId = () => useSessionStore.getState().orgId;
+const belongsTo = (r: Review, orgId: string | null) =>
+  orgId !== null && (r.orgId ?? DEFAULT_ORG_ID) === orgId;
 
 /** The order-derived fields; the store stamps id + timestamps. */
 type NewReview = Omit<Review, "id" | "createdAt" | "orderedAt">;
@@ -26,7 +33,21 @@ export const useReviewsStore = create<ReviewsState>((set, get) => ({
   fetchReviews: async () => {
     set({ isLoading: true, error: null });
     try {
-      const reviews = await adapter.getAll<Review>(Collections.REVIEWS);
+      const orgId = currentOrgId();
+      const all = await adapter.getAll<Review>(Collections.REVIEWS);
+      // The sample is org-agnostic: every trial / pay-as-you-go org sees it (as
+      // its own, assigned to the signed-in user); invoiced orgs do not.
+      const org = orgId ? await adapter.getById<Org>(Collections.ORGS, orgId) : null;
+      const showSample = !!org && org.billing !== "invoiced";
+      const me = useSessionStore.getState().userId;
+      const reviews = all.flatMap((r) => {
+        if (r.sample) {
+          return showSample && orgId
+            ? [{ ...r, orgId, bank: org?.name ?? r.bank, assigneeId: me ?? r.assigneeId }]
+            : [];
+        }
+        return belongsTo(r, orgId) ? [r] : [];
+      });
       set({ reviews, isLoading: false });
     } catch (err) {
       set({ isLoading: false, error: (err as Error).message });
@@ -39,6 +60,7 @@ export const useReviewsStore = create<ReviewsState>((set, get) => ({
     const now = Date.now();
     const full: Review = {
       ...review,
+      orgId: review.orgId ?? currentOrgId() ?? DEFAULT_ORG_ID,
       id: generateId(),
       orderedAt: now,
       createdAt: now,

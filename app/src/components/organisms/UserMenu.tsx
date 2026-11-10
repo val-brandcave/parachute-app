@@ -5,8 +5,11 @@ import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { Avatar, Icon, type IconName } from "@/components/atoms";
 import { cn } from "@/lib/utils";
-import { useIdentityStore, usePrefsStore, type ThemePref } from "@/store";
-import { CURRENT_USER } from "@/lib/current-user";
+import { useIdentityStore, useOrgStore, usePrefsStore, useSetupSummary, type ThemePref } from "@/store";
+import { useCurrentUser } from "@/lib/current-user";
+import { DEMO_ENABLED } from "@/lib/demo";
+import { useDemoStore } from "@/store/demo.store";
+import { demoPersonas, PERSONA_GROUP_LABEL } from "@/data/seed/demo-personas.seed";
 
 const THEME_OPTS: { value: ThemePref; icon: IconName; label: string }[] = [
   { value: "light", icon: "sun", label: "Light" },
@@ -15,17 +18,29 @@ const THEME_OPTS: { value: ThemePref; icon: IconName; label: string }[] = [
 ];
 
 export function UserMenu({
-  name = CURRENT_USER.name,
-  email = CURRENT_USER.email,
+  name: nameProp,
+  email: emailProp,
 }: {
   name?: string;
   email?: string;
 }) {
   const router = useRouter();
+  const me = useCurrentUser();
+  const name = nameProp ?? me.name;
+  const email = emailProp ?? me.email;
+  const [personasOpen, setPersonasOpen] = useState(false);
+  const personaId = useDemoStore((s) => s.personaId);
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const { theme, setTheme } = usePrefsStore();
   const userAvatar = useIdentityStore((s) => s.userAvatar);
+  const billing = useOrgStore((s) => s.org?.billing);
+  const setupDone = useSetupSummary().allDone;
+  const showSetupGuide = (billing === "trial" || billing === "payg") && !setupDone;
+  const reopenSetup = () => {
+    usePrefsStore.getState().setSetupHidden(me.id, false);
+    go("/get-started");
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -41,6 +56,19 @@ export function UserMenu({
     .map((p) => p[0])
     .slice(0, 2)
     .join("");
+
+  // Prototype-only: become a demo persona, then land on its entry route.
+  const switchPersona = async (id: string) => {
+    setOpen(false);
+    setPersonasOpen(false);
+    const persona = await useDemoStore.getState().apply(id);
+    if (persona) router.push(persona.entryRoute);
+  };
+  const resetOrg = async () => {
+    setOpen(false);
+    const { removed } = await useDemoStore.getState().resetOrg();
+    if (removed) router.push("/start");
+  };
 
   const go = (href: string) => {
     setOpen(false);
@@ -71,6 +99,11 @@ export function UserMenu({
             <button className="um-item" onClick={() => go("/profile")}>
               <Icon name="user" size={17} /> Profile
             </button>
+            {showSetupGuide && (
+              <button className="um-item" onClick={reopenSetup}>
+                <Icon name="checklist" size={17} /> Setup guide
+              </button>
+            )}
             <button className="um-item" onClick={() => setOpen(false)}>
               <Icon name="support" size={17} /> Support
             </button>
@@ -91,8 +124,38 @@ export function UserMenu({
                 ))}
               </div>
             </div>
+            {DEMO_ENABLED && (
+              <>
+                <div className="um-sep" />
+                <button
+                  className="um-item"
+                  aria-expanded={personasOpen}
+                  onClick={() => setPersonasOpen((o) => !o)}
+                >
+                  <Icon name="switch" size={17} /> Switch demo persona
+                  <Icon name="chevron-down" size={15} className="um-item-caret" />
+                </button>
+                {personasOpen && (
+                  <div className="um-personas">
+                    {demoPersonas.map((p) => (
+                      <button
+                        key={p.id}
+                        className={cn("um-persona", personaId === p.id && "on")}
+                        onClick={() => switchPersona(p.id)}
+                      >
+                        <span className="um-persona-label">{p.label}</span>
+                        <span className="um-persona-group">{PERSONA_GROUP_LABEL[p.group]}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <button className="um-item" onClick={resetOrg}>
+                  <Icon name="restore" size={17} /> Reset this org
+                </button>
+              </>
+            )}
             <div className="um-sep" />
-            <button className="um-item danger" onClick={() => go("/login")}>
+            <button className="um-item danger" onClick={() => go("/auth/sign-in")}>
               <Icon name="logout" size={17} /> Sign out
             </button>
           </motion.div>

@@ -168,6 +168,7 @@ export function useReviewQueue() {
     };
     const q = query.trim().toLowerCase();
     for (const r of reviews) {
+      if (r.sample) continue; // the sample never counts
       if (!matchesQuery(r, q)) continue;
       c.all++;
       c[lifecycleBucket(r)]++;
@@ -183,7 +184,8 @@ export function useReviewQueue() {
     searching && tab !== "all" && counts[tab] === 0 ? "all" : tab;
 
   const filtered = useMemo(() => {
-    let list = [...reviews];
+    // The sample is not part of the queue at all (it has its own card on the empty state).
+    let list = reviews.filter((r) => !r.sample);
     if (effectiveTab !== "all")
       list = list.filter((r) => lifecycleBucket(r) === effectiveTab);
 
@@ -242,13 +244,19 @@ export function useReviewQueue() {
     return list.sort((a, b) => rank(a) - rank(b) || a.slaDueAt - b.slaDueAt);
   }, [reviews, effectiveTab, filters, query, now, sort, team]);
 
+  const real = useMemo(() => reviews.filter((r) => !r.sample), [reviews]);
+  const sample = useMemo(() => reviews.find((r) => r.sample), [reviews]);
+
   return {
     isLoading: initial,
+    /** The org has no reviews of its own yet. */
+    isEmpty: real.length === 0,
+    sample,
     counts,
     team,
     firmOptions,
     reviews: filtered,
-    total: reviews.length,
+    total: real.length,
     tab: effectiveTab,
     setTab,
     searching,

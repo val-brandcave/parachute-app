@@ -1,0 +1,18 @@
+/* ============================================================================
+   Bridge between this app and @realwired/ui.
+
+   The design system owns the type SCALE and the token contract; the app owns
+   the actual font FILES. That split is deliberate — shipping woff2s from a
+   component library would force every product onto the same faces, and the
+   whole point of the brand layer is that colour and type are what vary.
+
+   Parachute loads Schibsted Grotesk and Inter through `next/font`, which
+   generates hashed family names at build time and exposes them as
+   `--font-display` and `--font-sans-base`. So the app points the library's
+   font tokens at its own variables. Any host does the same, by whatever
+   mechanism it loads fonts.
+   ========================================================================= */
+:root {
+  --rw-font-display: var(--font-display), system-ui, sans-serif;
+  --rw-font-sans: var(--font-sans-base), system-ui, sans-serif;
+}

@@ -13,7 +13,7 @@ export function IconButton({
   onNavy?: boolean;
 } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
-    <button
+    <button type="button"
       className={cn("ui-iconbtn", onNavy && "ui-iconbtn--onnavy", className)}
       {...rest}
     >

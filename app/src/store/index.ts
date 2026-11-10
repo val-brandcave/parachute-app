@@ -16,7 +16,7 @@ export {
   type AttestationRow,
   type AttestationSignature,
 } from "./admin.store";
-export { usePrefsStore, resolveTheme } from "./prefs.store";
+export { usePrefsStore, resolveTheme, useBuildNotes, setBuildNotes } from "./prefs.store";
 export type { Density, ThemePref } from "./prefs.store";
 export {
   useOrderStore,
@@ -26,9 +26,17 @@ export {
 export type { OrderDraft, OrderProperty, OrderPrefill } from "./order.store";
 export { useTemplatesStore } from "./templates.store";
 export { useOrgStore } from "./org.store";
-export type { BankPolicyDoc } from "./org.store";
+export type { BankPolicyDoc, NewOrgInput } from "./org.store";
 export { useIdentityStore } from "./identity.store";
 export { useSessionStore } from "./session.store";
-export type { AppMode } from "./session.store";
+export type { AppMode, AuthState } from "./session.store";
+export { useWalletStore } from "./wallet.store";
+export type { BalanceBySource, TopUpReason } from "./wallet.store";
+export { useOnboardingStore, useSetupSummary, useOrgStage, useSetupHidden, useApprovalPending, deriveSteps } from "./onboarding.store";
+export type { DerivedStep, SetupSummary, EarnedNotice } from "./onboarding.store";
+export { useDemoStore } from "./demo.store";
+export { loadSessionData } from "./session-data";
 export { useRunStore, DEMO_RUN_REVIEW_ID, beginRunInPlace } from "./run.store";
 export type { RunSpoke, RunDisplay, RunSource, RunReviewType } from "./run.store";
+export { useBouncerStore, useOrgInvites } from "./bouncer.store";
+export type { JoinedInfo } from "./bouncer.store";

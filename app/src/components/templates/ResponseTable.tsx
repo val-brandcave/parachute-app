@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Icon } from "@/components/atoms";
 import { ActionMenu } from "@/components/molecules";
@@ -126,17 +126,20 @@ function GroupRow({
  *  rows in one card, each expanding to its templates. */
 export function ResponseTable({
   groups,
-  emptyLabel,
+  empty,
   onEdit,
   onDuplicate,
   onDelete,
 }: {
   groups: ResponseGroup[];
-  emptyLabel: string;
+  /** Shown instead of the table (no column headers) when there is nothing to list. */
+  empty: ReactNode;
   onEdit: (t: ResponseTemplate) => void;
   onDuplicate: (t: ResponseTemplate) => void;
   onDelete: (t: ResponseTemplate) => void;
 }) {
+  if (groups.length === 0) return <>{empty}</>;
+
   return (
     <div className="cktable" role="table" aria-label="Response templates">
       <div className="ckcols" role="row" style={{ gridTemplateColumns: GRID }}>
@@ -146,22 +149,18 @@ export function ResponseTable({
         <span role="columnheader" aria-label="Actions" />
       </div>
 
-      {groups.length === 0 ? (
-        <div className="rtl-empty">{emptyLabel}</div>
-      ) : (
-        groups.map((g) => (
-          <GroupRow
-            key={g.group}
-            group={g.group}
-            items={g.items}
-            // All groups start collapsed — the reviewer expands the one they want.
-            defaultOpen={false}
-            onEdit={onEdit}
-            onDuplicate={onDuplicate}
-            onDelete={onDelete}
-          />
-        ))
-      )}
+      {groups.map((g) => (
+        <GroupRow
+          key={g.group}
+          group={g.group}
+          items={g.items}
+          // All groups start collapsed — the reviewer expands the one they want.
+          defaultOpen={false}
+          onEdit={onEdit}
+          onDuplicate={onDuplicate}
+          onDelete={onDelete}
+        />
+      ))}
     </div>
   );
 }

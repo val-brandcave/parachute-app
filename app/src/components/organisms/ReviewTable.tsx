@@ -21,6 +21,7 @@ import {
   type ReviewColDef,
   type SortCol,
 } from "./review-columns";
+import { useWalletStore } from "@/store/wallet.store";
 import type { Review, User } from "@/types";
 
 type SortState = { col: SortCol; dir: "asc" | "desc" } | null;
@@ -122,12 +123,18 @@ function DueCell({ review }: { review: Review }) {
 /** Per-row overflow — secondary/tertiary actions (Open · Download · Triage). */
 function RowMenu({ review }: { review: Review }) {
   const router = useRouter();
+  const receiptId = useWalletStore(
+    (s) => s.ledger.find((e) => e.kind === "debit" && e.reviewId === review.id && e.receiptId)?.receiptId,
+  );
   const items = [
     { label: "Review", icon: "reviews" as const, onClick: () => router.push(reviewHref(review)) },
     ...(review.status === "autorejected"
       ? [{ label: "Open triage", icon: "gavel" as const, onClick: () => router.push(reviewHref(review)) }]
       : []),
     { label: "Download documents", icon: "download" as const, onClick: () => router.push(`/reviews/${review.id}`) },
+    ...(receiptId
+      ? [{ label: "Receipt", icon: "receipt" as const, onClick: () => useWalletStore.getState().openReceipt(receiptId) }]
+      : []),
   ];
   return <ActionMenu items={items} tooltip="More options" />;
 }
@@ -170,7 +177,14 @@ function Cell({
     case "property":
       return (
         <div className="qprop">
-          <TruncText text={r.propertyAddress} className="addr" />
+          {r.sample ? (
+            <div className="qprop-top">
+              <TruncText text={r.propertyAddress} className="addr" />
+              <Chip tone="info">Sample</Chip>
+            </div>
+          ) : (
+            <TruncText text={r.propertyAddress} className="addr" />
+          )}
           <TruncText
             text={`${r.appraisalFirm} · Loan #${r.loanNo} · ${r.propertyType}`}
             className="meta"

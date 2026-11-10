@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button, ConfirmDialog, Icon } from "@/components/atoms";
-import { Tabs } from "@/components/molecules";
+import { EmptyLine, EmptyState, GhostRows, Tabs } from "@/components/molecules";
 import { ResponseTable } from "@/components/templates/ResponseTable";
 import { ResponseModal } from "@/components/templates/ResponseModal";
 import type { ResponseTemplate, TemplateScope } from "@/types";
@@ -43,11 +43,31 @@ export default function ResponseLibraryPage() {
     setModalOpen(true);
   };
 
-  const emptyLabel = hasQuery
-    ? `No templates match “${query.trim()}”.`
-    : scopedCount === 0
-      ? `No templates in the ${scope === "org" ? "Org" : "Personal"} library yet — add your first.`
-      : "No templates match.";
+  const noneAtAll = counts.org + counts.mine === 0;
+  const scopeName = scope === "org" ? "org" : "personal";
+
+  const empty = hasQuery ? (
+    <div className="card">
+      <EmptyLine
+        action={
+          <Button variant="ghost" size="sm" onClick={() => setQuery("")}>
+            Clear search
+          </Button>
+        }
+      >
+        Nothing matches “{query.trim()}”.
+      </EmptyLine>
+    </div>
+  ) : (
+    <EmptyState
+      title={noneAtAll ? "Your response library starts here" : `No ${scopeName} templates yet`}
+      preview={<GhostRows rows={3} />}
+    >
+      {scope === "org"
+        ? "Reusable replies your team can insert into a review, grouped so they’re easy to find. Use Add template to write the first one."
+        : "Replies in your own voice. Only you see them, and you can insert them into any review. Use Add template to write your first."}
+    </EmptyState>
+  );
 
   return (
     <>
@@ -55,24 +75,28 @@ export default function ResponseLibraryPage() {
           Personal libraries as tabs (sliding pill), search, and the Add CTA share
           the one line — same shape as the Reviews queue header. */}
       <div className="pagehead">
-        <Tabs<TemplateScope>
-          value={scope}
-          onChange={setScope}
-          tabs={[
-            { value: "org", label: "Org", count: counts.org },
-            { value: "mine", label: "Personal", count: counts.mine },
-          ]}
-        />
-        <div style={{ flex: 1 }} />
-        <div className="qsearch">
-          <Icon name="search" size={15} />
-          <input
-            placeholder="Search templates…"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            aria-label="Search response templates"
+        {!noneAtAll && (
+          <Tabs<TemplateScope>
+            value={scope}
+            onChange={setScope}
+            tabs={[
+              { value: "org", label: "Org", count: counts.org },
+              { value: "mine", label: "Personal", count: counts.mine },
+            ]}
           />
-        </div>
+        )}
+        <div style={{ flex: 1 }} />
+        {scopedCount > 0 && (
+          <div className="qsearch">
+            <Icon name="search" size={15} />
+            <input
+              placeholder="Search templates…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              aria-label="Search response templates"
+            />
+          </div>
+        )}
         <Button iconLeft="add" onClick={openNew}>
           Add template
         </Button>
@@ -81,7 +105,7 @@ export default function ResponseLibraryPage() {
       <div className="pagebody">
         <ResponseTable
           groups={groups}
-          emptyLabel={emptyLabel}
+          empty={empty}
           onEdit={openEdit}
           onDuplicate={duplicate}
           onDelete={(t) => setPendingDelete(t)}

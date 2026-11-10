@@ -3,9 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { IconCloudFilled } from "@tabler/icons-react";
-import { Icon, Chip, ChuteEmblem } from "@/components/atoms";
-import { SegmentedControl } from "@/components/molecules";
+import { Button, Icon, Chip, ChuteEmblem } from "@/components/atoms";
+import { EmptyLine, SegmentedControl } from "@/components/molecules";
 import { cn, formatShortDate } from "@/lib/utils";
+import { useStartGate } from "@/components/organisms/home/useStartGate";
 import { useRunStore, useOrderStore, DEMO_RUN_REVIEW_ID, type RunDisplay } from "@/store";
 import type { YcDelivery } from "@/types";
 
@@ -45,6 +46,7 @@ const CLOUDS = [
 ] as const;
 export function IntakeWidget() {
   const openRun = useRunStore((s) => s.openRun);
+  const { locked, reason } = useStartGate();
   const { deliveries, loadDeliveries } = useOrderStore();
   const [mode, setMode] = useState<IntakeMode>("drop");
   const [query, setQuery] = useState("");
@@ -68,7 +70,7 @@ export function IntakeWidget() {
     display: RunDisplay | null = null,
     source: "drop" | "yc" = "drop",
   ) => {
-    if (parsing) return;
+    if (parsing || locked) return;
     setParsing(true);
     // Cosmetic "reading the PDF" beat, then hand off to the run flow's confirm
     // gate. The chosen property's identity (display) carries through; findings
@@ -82,6 +84,7 @@ export function IntakeWidget() {
   const onDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setDragging(false);
+    if (locked) return;
     const name = e.dataTransfer.files?.[0]?.name ?? "Appraisal.pdf";
     start(name, null, "drop");
   };
@@ -166,7 +169,9 @@ export function IntakeWidget() {
             <p className="ih-sub">
               {drop
                 ? "Parachute reads it, runs the review, and compiles your workbook."
-                : `Search and pick one of the ${totalNew} new deliveries to start.`}
+                : totalNew === 0
+                  ? "Parachute pulls new deliveries straight from YouConnect."
+                  : `Search and pick one of the ${totalNew} new deliveries to start.`}
             </p>
           </motion.div>
         </AnimatePresence>
@@ -184,18 +189,19 @@ export function IntakeWidget() {
           >
             {drop ? (
               <div
-                className={cn("intake-drop ih-drop", dragging && "drag", parsing && "busy")}
+                className={cn("intake-drop ih-drop", dragging && "drag", parsing && "busy", locked && "is-locked")}
                 onDragOver={(e) => {
                   e.preventDefault();
-                  if (!parsing) setDragging(true);
+                  if (!parsing && !locked) setDragging(true);
                 }}
                 onDragLeave={() => setDragging(false)}
                 onDrop={onDrop}
                 role="button"
                 tabIndex={0}
-                onClick={() => !parsing && fileRef.current?.click()}
+                aria-disabled={locked || undefined}
+                onClick={() => !parsing && !locked && fileRef.current?.click()}
                 onKeyDown={(e) => {
-                  if ((e.key === "Enter" || e.key === " ") && !parsing) fileRef.current?.click();
+                  if ((e.key === "Enter" || e.key === " ") && !parsing && !locked) fileRef.current?.click();
                 }}
                 aria-label="Drop an appraisal PDF or browse to upload"
               >
@@ -225,15 +231,20 @@ export function IntakeWidget() {
                     >
                       <Icon name="upload" size={24} />
                     </motion.span>
-                    <div className="intake-drop-title">Drop your file here</div>
-                    <p>
-                      PDF · or <span className="intake-link">click to browse</span>
-                    </p>
+                    <div className="intake-drop-title">{locked ? "Not open yet" : "Drop your file here"}</div>
+                    {locked ? (
+                      <p>{reason}. The sample review is open meanwhile.</p>
+                    ) : (
+                      <p>
+                        PDF · or <span className="intake-link">click to browse</span>
+                      </p>
+                    )}
                   </>
                 )}
               </div>
             ) : (
               <div className="ih-yc">
+                {totalNew > 0 && (
                 <label className="intake-search">
                   <Icon name="search" size={15} />
                   <input
@@ -253,13 +264,22 @@ export function IntakeWidget() {
                     </button>
                   )}
                 </label>
+                )}
                 <div className="intake-yc-list scroll">
                   {newDeliveries.length === 0 ? (
-                    <div className="intake-yc-empty">
+                    <EmptyLine
+                      action={
+                        totalNew > 0 ? (
+                          <Button variant="ghost" size="sm" onClick={() => setQuery("")}>
+                            Clear search
+                          </Button>
+                        ) : undefined
+                      }
+                    >
                       {totalNew === 0
-                        ? "No new deliveries right now."
-                        : `No deliveries match “${query.trim()}”.`}
-                    </div>
+                        ? "New YouConnect deliveries appear here as they arrive."
+                        : `Nothing matches “${query.trim()}”.`}
+                    </EmptyLine>
                   ) : (
                     newDeliveries.map((d) => (
                       <button
@@ -278,7 +298,8 @@ export function IntakeWidget() {
                             "yc",
                           )
                         }
-                        disabled={parsing}
+                        disabled={parsing || locked}
+                        title={locked ? reason : undefined}
                       >
                         <span className="intake-yc-item-main">
                           <span className="intake-yc-item-title">{d.propertyAddress}</span>

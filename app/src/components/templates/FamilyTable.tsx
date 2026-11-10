@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Icon } from "@/components/atoms";
 import { ActionMenu, type ActionItem } from "@/components/molecules";
@@ -131,11 +131,16 @@ export function FamilyTable({
   columns,
   rows,
   ariaLabel,
+  empty,
 }: {
   columns: FamilyColumn[];
   rows: FamilyRow[];
   ariaLabel: string;
+  /** Shown instead of the table (no column headers) when there are no rows. */
+  empty?: ReactNode;
 }) {
+  if (rows.length === 0 && empty) return <>{empty}</>;
+
   // chevron · name · …columns · actions
   const template = `40px minmax(220px, 1fr) ${columns
     .map((c) => c.width)

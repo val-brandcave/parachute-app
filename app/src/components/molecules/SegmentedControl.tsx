@@ -10,18 +10,25 @@ export function SegmentedControl<T extends string>({
   options,
   value,
   onChange,
+  block,
+  label,
 }: {
   options: { value: T; label: string }[];
   value: T;
   onChange: (v: T) => void;
+  /** Fill the available width, splitting evenly. */
+  block?: boolean;
+  /** Accessible name for the group. */
+  label?: string;
 }) {
   const thumbId = useId();
   return (
-    <div className="ui-seg" role="tablist">
+    <div className={cn("ui-seg", block && "ui-seg--block")} role="tablist" aria-label={label}>
       {options.map((o) => {
         const on = value === o.value;
         return (
           <button
+            type="button"
             key={o.value}
             role="tab"
             aria-selected={on}

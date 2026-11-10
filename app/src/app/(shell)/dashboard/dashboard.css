@@ -1,0 +1,62 @@
+/* Dashboard empty states (Agent D, v4). Tokens only; prefix db-. */
+
+/* Quiet zero tiles: the number stays, it just stops competing for attention. */
+.statseg.db-zero .v {
+  color: var(--md-on-surface-t);
+}
+.statseg.db-zero .statseg-badge {
+  opacity: 0.7;
+}
+
+/* ---- First run: the three steps inside <EmptyState layout="split"> ---- */
+.db-steps {
+  list-style: none;
+  margin: 0;
+  padding: 16px 0 0;
+  border-top: 1px solid var(--md-outline-v);
+  display: grid;
+  gap: 12px;
+}
+.db-step {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  text-align: left;
+}
+.db-step-n {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  background: var(--md-selected);
+  color: var(--md-on-selected);
+}
+.db-step b {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--md-on-surface);
+}
+.db-step span span {
+  display: block;
+  margin-top: 1px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--md-on-surface-v);
+}
+
+/* Chart with real data but nothing completed in this period */
+.db-chart-quiet {
+  position: absolute;
+  inset: 0 0 26px;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  font-size: 13px;
+  color: var(--md-on-surface-t);
+}

@@ -1,11 +1,10 @@
 import type { BaseEntity, Timestamp, UUID } from "./common.types";
 
 /* ============ Users & Orgs ============ */
-// Org membership roles. Owner = the account holder (exactly one, immutable);
-// Admin manages the org, members, templates and defaults; Reviewer performs and
-// signs reviews (the core persona); Viewer has read-only access (auditors, bank
-// stakeholders). Ordered most→least privileged.
-export type UserRole = "owner" | "admin" | "reviewer" | "viewer";
+// Org membership roles (production CIM roles). org_admin manages the workspace,
+// billing and members; approver reviews and signs off; reviewer performs
+// reviews. Ordered most→least privileged.
+export type UserRole = "org_admin" | "approver" | "reviewer";
 
 // Membership state, distinct from the review lifecycle. undefined ⇒ "active".
 export type MemberStatus = "active" | "invited" | "deactivated";
@@ -16,9 +15,35 @@ export interface User extends BaseEntity {
   designation: string; // e.g. "Chief Appraiser, MAI"
   signatureName: string;
   role: UserRole;
+  orgId: UUID;
   email?: string;
   status?: MemberStatus;
   lastActiveAt?: number; // epoch ms of last sign-in; undefined for invited
+}
+
+/* ---- Self-serve onboarding: org profile, billing, wallet, setup ---- */
+export type OrgKind = "bank" | "appraisal_firm";
+export type TeamBand = "1" | "2-10" | "11+";
+export type VolumeBand = "lt50" | "50-200" | "200+";
+/** invoiced = YouConnect / enterprise — billed monthly, no wallet. */
+export type BillingModel = "trial" | "payg" | "invoiced";
+/** "none" when the approval gate is off. */
+export type ApprovalState = "none" | "pending" | "approved";
+
+export interface OrgProfile {
+  kind: OrgKind;
+  teamBand: TeamBand;
+  volumeBand: VolumeBand;
+  salesRequested?: boolean;
+  salesNote?: string;
+}
+
+export interface OrgFlags {
+  plansTab?: boolean;
+  membersInBouncer?: boolean;
+  approvalGate?: boolean;
+  /** Created by /welcome in this session: show the one-time "ready" banner. Seeded orgs never set it. */
+  welcomeBanner?: boolean;
 }
 
 export interface Org extends BaseEntity {
@@ -26,6 +51,120 @@ export interface Org extends BaseEntity {
   brandPrimary: string;
   brandAccent: string;
   brandFont: string;
+  profile?: OrgProfile;
+  billing?: BillingModel;
+  approval?: ApprovalState;
+  flags?: OrgFlags;
+  billingContactId?: UUID;
+  securityPackSentAt?: Timestamp;
+  onboardedAt?: Timestamp;
+}
+
+export type SetupStepId =
+  | "account"
+  | "sign_workbook"
+  | "bank_policy"
+  | "branding"
+  | "layout"
+  | "checklist"
+  | "invite"
+  | "security_pack"
+  | "sample_review"
+  | "first_review"
+  | "tutorial";
+
+export type CreditPackId = "pack5" | "pack10" | "pack20";
+
+export type CreditSource = "trial" | "earned" | "purchased";
+
+export type LedgerKind =
+  | "trial_grant"
+  | "earned"
+  | "purchase"
+  | "debit"
+  | "rescan"
+  | "refund"
+  | "adjustment";
+
+/** One signed movement on an org's credit wallet. Balance is DERIVED (sum of
+ *  `credits`) — never stored. */
+export interface CreditLedgerEntry extends BaseEntity {
+  orgId: UUID;
+  kind: LedgerKind;
+  credits: number; // signed
+  amountUsd?: number;
+  reviewId?: UUID;
+  loanNo?: string;
+  reviewTypes?: ReviewType[];
+  setupStepId?: SetupStepId;
+  packId?: CreditPackId;
+  receiptId?: string;
+  /** Debits: which bucket(s) the credits came from (spend order trial > earned > purchased). */
+  paidFrom?: CreditSource[];
+  /** Purchases: true when auto-reload bought it. */
+  auto?: boolean;
+  actorId: UUID;
+  note?: string;
+}
+
+/** One row per org; `id` === `orgId` so the adapter can address it. */
+export interface WalletSettings {
+  id: UUID;
+  orgId: UUID;
+  createdAt: Timestamp;
+  autoReload: boolean;
+  reloadPackId: CreditPackId;
+  reloadBelow: number;
+  monthlyCap?: number;
+  paymentMethod: "card" | "invoice" | "ach" | null;
+  cardLast4?: string;
+  billingEmail?: string;
+  /** Finance details printed on receipts and statements. */
+  poNumber?: string;
+  taxId?: string;
+  /** Multi-line, one line per row. */
+  billingAddress?: string;
+  /** Alerts (all optional; defaults live in billing-settings). */
+  alertLow?: boolean;
+  alertLowBelow?: number;
+  alertExpiry?: boolean;
+  alertSpend?: boolean;
+  alertSpendUsd?: number;
+  /** Comma-separated; empty means the billing email. */
+  alertEmails?: string;
+}
+
+/** One row per org; `id` === `orgId`. */
+export interface SetupProgress {
+  id: UUID;
+  orgId: UUID;
+  createdAt: Timestamp;
+  completed: Partial<Record<SetupStepId, Timestamp>>;
+  /** Who completed each step (user id), for the "by Dana Reyes, Marcus Ortiz" line. */
+  completedBy?: Partial<Record<SetupStepId, UUID>>;
+  /** Seeded "doing" notes: a step someone has started but not finished. */
+  inProgress?: Partial<Record<SetupStepId, SetupInProgress>>;
+  /** Security-pack sends for this org (newest last). */
+  securitySends?: SecuritySend[];
+  dockDismissedAt?: Timestamp;
+  homeDismissedAt?: Timestamp;
+}
+
+export interface SetupInProgress {
+  /** Meta line, e.g. "Priya has it · 220 Commerce Way". */
+  note: string;
+  /** Where "View" / "Continue" goes. Falls back to the step's own href. */
+  href?: string;
+}
+
+/** One send of the security pack to an IT contact. */
+export interface SecuritySend {
+  id: UUID;
+  to: string;
+  note?: string;
+  sentAt: Timestamp;
+  expiresAt: Timestamp;
+  byId: UUID;
 }
 
 /* ============ Reviews ============ */
@@ -65,6 +204,10 @@ export interface Review extends BaseEntity {
   pipelineStage: number; // 0-5 (0 = not started, 5 = done)
   slaDueAt: number; // epoch ms
   orderedAt: number;
+  /** Owning org (undefined ⇒ treated as the default org). */
+  orgId?: UUID;
+  /** A fictional walkthrough review — never debits a credit, excluded from counts. */
+  sample?: boolean;
 }
 
 /* ============ YouConnect deliveries (Order stepper inbox) ============ */

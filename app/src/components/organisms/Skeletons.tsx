@@ -148,3 +148,41 @@ export function ReviewTableSkeleton({ rows = 7 }: { rows?: number }) {
     </div>
   );
 }
+
+/** Mirrors Get started: the setup card (title, progress, step rows) + the side cards. */
+export function GetStartedSkeleton() {
+  return (
+    <div className="home-grid" role="status" aria-label="Loading Get started">
+      <div className="home-main">
+        <div className="card" aria-hidden="true" style={{ padding: 22, display: "flex", flexDirection: "column", gap: 14 }}>
+          <Skeleton width={190} height={22} radius={6} />
+          <Skeleton width="62%" height={13} />
+          <Skeleton width="100%" height={8} radius={99} style={{ marginTop: 4 }} />
+          <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <Skeleton width={110} height={12} />
+            <Skeleton width={120} height={12} />
+          </div>
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} style={{ display: "flex", gap: 14, alignItems: "center", paddingTop: 14, borderTop: "1px solid var(--md-outline-v)" }}>
+              <Skeleton width={22} height={22} radius={99} />
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
+                <Skeleton width={`${46 + ((i * 13) % 24)}%`} height={14} />
+                <Skeleton width={`${60 + ((i * 7) % 20)}%`} height={11} />
+              </div>
+              <Skeleton width={78} height={32} radius={9} />
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="home-side" aria-hidden="true">
+        {[150, 130, 170].map((h, i) => (
+          <div key={i} className="card" style={{ padding: 18, display: "flex", flexDirection: "column", gap: 12 }}>
+            <Skeleton width={150} height={15} />
+            <Skeleton width="100%" height={h} radius={10} />
+            <Skeleton width={110} height={30} radius={9} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}

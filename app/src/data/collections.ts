@@ -13,6 +13,10 @@ export const Collections = {
   CHECKLIST_TEMPLATES: "checklistTemplates",
   WORKBOOK_LAYOUTS: "workbookLayouts",
   WORKBOOK_EXHIBITS: "workbookExhibits",
+  CREDIT_LEDGER: "credit_ledger",
+  WALLET_SETTINGS: "wallet_settings",
+  SETUP_PROGRESS: "setup_progress",
+  INVITES: "invites",
 } as const;
 
 export type CollectionName = (typeof Collections)[keyof typeof Collections];

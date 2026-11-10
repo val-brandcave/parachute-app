@@ -6,10 +6,13 @@ import {
   useRunStore,
   useSessionStore,
   useReviewsStore,
+  useOnboardingStore,
+  useWalletStore,
   beginRunInPlace,
 } from "@/store";
 import { CURRENT_USER } from "@/lib/current-user";
 import type { ReviewType } from "@/types";
+import { costFor } from "@/lib/pricing";
 import { RunExperience, type RunStartHandler } from "./RunExperience";
 
 // Re-exported for the run subviews that still import the shared context shape.
@@ -54,6 +57,14 @@ export function RunModal() {
       beginRunInPlace(display, types);
       return;
     }
+    // Balance is checked at Start only. The confirm gate already disables Start when
+    // short; this is the backstop (balance changed underneath). Nothing is created.
+    const wallet = useWalletStore.getState();
+    const need = costFor(types as ReviewType[]);
+    if (!wallet.canAfford(need)) {
+      wallet.openTopUp({ reason: "low_balance", needed: need });
+      return;
+    }
     // Standalone: the drop / dashboard-YC pick becomes a real running review the
     // moment Start is clicked. Create it, then route into it — the wizard resumes
     // on the routed page at the pipeline-progress spoke.
@@ -76,6 +87,12 @@ export function RunModal() {
         worstSeverity: null,
         pipelineStage: 1,
         slaDueAt: Date.now() + DEFAULT_SLA_DAYS * 86_400_000,
+      });
+      void useOnboardingStore.getState().complete("first_review");
+      void wallet.debitForReview({
+        reviewId: created.id,
+        types: types as ReviewType[],
+        loanNo: display.loanNo || undefined,
       });
       close();
       router.push(`/reviews/${created.id}`);

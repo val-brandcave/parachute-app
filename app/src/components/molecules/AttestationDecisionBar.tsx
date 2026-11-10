@@ -91,7 +91,7 @@ export function AttestationDecisionBar({
             const committed = answer === a && (state.confirmed || changed);
             const suggested = !state.confirmed && !changed && a === row.aiAnswer;
             return (
-              <button
+              <button type="button"
                 key={a}
                 className={`att-ans-opt${committed ? ` on--${ANS_TONE[a]}` : ""}${
                   suggested ? " is-suggested" : ""
@@ -109,7 +109,7 @@ export function AttestationDecisionBar({
           <span className="fm-disp fm-disp--pass">
             <Icon name="check-circle" size={15} />
             Attested{changed ? " (changed)" : ""}
-            <button className="att-reopen" onClick={onUnconfirm}>
+            <button type="button" className="att-reopen" onClick={onUnconfirm}>
               Re-open
             </button>
           </span>
@@ -134,10 +134,10 @@ export function AttestationDecisionBar({
             autoFocus
           />
           <div className="att-reason-foot">
-            <button className="ui-btn ui-btn--ghost ui-btn--sm" onClick={cancelChange}>
+            <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm" onClick={cancelChange}>
               Cancel
             </button>
-            <button
+            <button type="button"
               className="att-confirm"
               onClick={onConfirm}
               disabled={!state.reason?.trim()}
