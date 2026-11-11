@@ -17,7 +17,10 @@ export {
   type AttestationSignature,
 } from "./admin.store";
 export { usePrefsStore, resolveTheme, useBuildNotes, setBuildNotes } from "./prefs.store";
-export type { Density, ThemePref } from "./prefs.store";
+export type { Density, ThemePref, CelebrationKind } from "./prefs.store";
+export { useLockStore } from "./lock.store";
+export type { LockReason } from "./lock.store";
+export { useWalletView } from "./useWalletView";
 export {
   useOrderStore,
   ORDER_STEP,

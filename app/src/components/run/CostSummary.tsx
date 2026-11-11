@@ -4,8 +4,8 @@ import "./cost-summary.css";
 import { useMemo } from "react";
 import { useToast } from "@realwired/ui";
 import { Button, CreditChip, Icon } from "@/components/atoms";
-import { useOrgStore, useUsersStore, useWalletStore } from "@/store";
-import { remainingFromLedger, sourcesFor } from "@/store/wallet.store";
+import { useOrgStore, useUsersStore, useWalletStore, useWalletView } from "@/store";
+import { sourcesFor } from "@/store/wallet.store";
 import { useCurrentUser } from "@/lib/current-user";
 import {
   CREDIT_PACKS,
@@ -40,14 +40,13 @@ export interface RunCost {
 }
 
 export function useRunCost(types: readonly ReviewType[], sample: boolean): RunCost {
-  const ledger = useWalletStore((s) => s.ledger);
+  const wallet = useWalletView();
   const invoiced = useOrgStore((s) => s.org?.billing === "invoiced");
   return useMemo(() => {
     const credits = costFor(types);
-    const balance = ledger.reduce((sum, e) => sum + e.credits, 0);
+    const { balance, bySource: remaining } = wallet;
     if (sample) return { mode: "sample", credits: 0, balance, afterBalance: balance, trialOnly: false, trialLeft: 0, affordable: true };
     if (invoiced) return { mode: "invoiced", credits, balance, afterBalance: balance, trialOnly: false, trialLeft: 0, affordable: true };
-    const remaining = remainingFromLedger(ledger);
     const paidFrom = sourcesFor(remaining, credits);
     return {
       mode: "wallet",
@@ -58,7 +57,7 @@ export function useRunCost(types: readonly ReviewType[], sample: boolean): RunCo
       trialLeft: remaining.trial - credits,
       affordable: balance >= credits,
     };
-  }, [ledger, invoiced, sample, types]);
+  }, [wallet, invoiced, sample, types]);
 }
 
 /** Left slot of the confirm footbar: what Start will spend. */
@@ -66,7 +65,7 @@ export function CostSummary({ cost }: { cost: RunCost }) {
   if (cost.mode === "sample") {
     return (
       <div className="cs-summary">
-        <Icon name="coins" size={16} />
+        <Icon name="wallet" size={16} />
         <span>Sample · free</span>
       </div>
     );
@@ -85,7 +84,7 @@ export function CostSummary({ cost }: { cost: RunCost }) {
   if (!cost.affordable) {
     return (
       <div className="cs-summary">
-        <Icon name="coins" size={16} />
+        <Icon name="wallet" size={16} />
         <span>This review uses</span>
         <CreditChip tone="credit">{plural(cost.credits, "credit")}</CreditChip>
         <CreditChip tone="money">{value}</CreditChip>
@@ -99,7 +98,7 @@ export function CostSummary({ cost }: { cost: RunCost }) {
   }
   return (
     <div className="cs-summary">
-      <Icon name="coins" size={16} />
+      <Icon name="wallet" size={16} />
       <span>This review uses</span>
       {cost.trialOnly ? (
         <>

@@ -1,6 +1,6 @@
 import { CREDIT_USD, REVIEW_TYPE_COST, formatUsd, usd } from "@/lib/pricing";
 import { nextExpiring, type BalanceGrant } from "@/lib/wallet-breakdown";
-import { remainingFromLedger } from "@/store/wallet.store";
+import { spendOrderSentence as spendOrder } from "@/lib/wallet-view";
 import type { CreditLedgerEntry, CreditSource, Review, ReviewType } from "@/types";
 
 /** The demo's "today" (6 Nov 2026). Prototype-only: keeps the statements and invoice copy on one month. */
@@ -249,21 +249,12 @@ export function expiryLabel(g: BalanceGrant): string {
   return g.expiresAt === null ? "No expiry" : fmtLong(g.expiresAt);
 }
 
-/** One sentence: what is used first, and the next expiry (or that nothing expires soon). */
+/** The PC-16 spend order (lib/wallet-view), then the next expiry (or that nothing expires soon). */
 export function spendOrderSentence(grants: readonly BalanceGrant[]): string {
   const next = nextExpiring(grants);
-  const firsts = ["trial", "earned"].filter((s) => grants.some((g) => g.source === s && g.remaining > 0));
-  const lead =
-    firsts.length === 2 ? "Trial and earned credits are used first." : firsts.length === 1 ? `${firsts[0] === "trial" ? "Trial" : "Earned"} credits are used first.` : "Oldest credits are used first.";
-  if (!next) return `${lead} Nothing expires soon.`;
+  if (!next) return `${spendOrder()} Nothing expires soon.`;
   const n = next.remaining;
-  const what = next.source === "earned" ? `earned credit${n === 1 ? "" : "s"}` : `purchased credit${n === 1 ? "" : "s"}`;
-  return `${lead} Next expiry: ${n} ${what} on ${fmtLong(next.expiresAt!)}.`;
-}
-
-export function remainingOf(ledger: readonly CreditLedgerEntry[]) {
-  const r = remainingFromLedger(ledger);
-  return { ...r, total: r.trial + r.earned + r.purchased };
+  return `${spendOrder()} Next expiry: ${n} purchased credit${n === 1 ? "" : "s"} on ${fmtLong(next.expiresAt!)}.`;
 }
 
 /* ---------------- Statement ---------------- */

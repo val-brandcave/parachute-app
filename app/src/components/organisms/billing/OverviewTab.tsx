@@ -6,9 +6,8 @@ import { Callout } from "@realwired/ui";
 import { Button, CreditChip } from "@/components/atoms";
 import { EmptyLine, EmptyState, GhostBars, GhostStats } from "@/components/molecules";
 import { useApprovalPending } from "@/store";
-import { FULL_REVIEW_TYPES } from "@/lib/setup-steps";
-import { CREDIT_USD, approxValue, costFor, formatUsd, packById } from "@/lib/pricing";
-import { balanceGrants, nextExpiring } from "@/lib/wallet-breakdown";
+import { AUTO_RELOAD_DEFAULTS, CREDIT_USD, approxValue, formatUsd, packById } from "@/lib/pricing";
+import { nextExpiring } from "@/lib/wallet-breakdown";
 import { ActivityTable } from "./ActivityTable";
 import { BalanceCard } from "./BalanceCard";
 import {
@@ -19,7 +18,6 @@ import {
   runwayFill,
   runwayFor,
   runwayText,
-  runwayWarn,
   useUsage,
   type Delta,
   type UsagePeriod,
@@ -60,12 +58,13 @@ function BalanceHero({
   aside?: React.ReactNode;
 }) {
   const { all, anchor } = useUsage(b, false);
-  const total = b.remaining.total;
-  const full = Math.floor(total / costFor(FULL_REVIEW_TYPES));
+  const total = b.wallet.balance;
+  const full = b.wallet.fullReviews;
   const run = useMemo(() => runwayFor(total, all, anchor), [total, all, anchor]);
   const s = b.settings;
-  const pack = packById(s?.reloadPackId ?? "pack10");
-  const low = run.days !== null && runwayWarn(run.days);
+  const pack = packById(s?.reloadPackId ?? AUTO_RELOAD_DEFAULTS.packId);
+  // PC-18: the low tone is the balance (LOW_BALANCE_AT), not how many days the runway lasts.
+  const low = b.wallet.lowTone !== "ok";
   const fill = run.days === null ? 0 : runwayFill(run.days);
 
   return (
@@ -172,7 +171,7 @@ function Facts({ b, mine }: { b: Billing; mine: boolean }) {
 
 /** Only when credits that expire within 30 days are still in the balance. */
 function ExpiryAlert({ b, onBuy }: { b: Billing; onBuy?: () => void }) {
-  const next = useMemo(() => nextExpiring(balanceGrants(b.ledger)), [b.ledger]);
+  const next = useMemo(() => nextExpiring(b.wallet.grants), [b.wallet.grants]);
   if (!next || next.expiresAt === null || next.expiresAt - DEMO_TODAY > EXPIRY_ALERT_DAYS * DAY) return null;
   const days = daysUntil(next.expiresAt);
   const n = next.remaining;
@@ -191,7 +190,7 @@ function ExpiryAlert({ b, onBuy }: { b: Billing; onBuy?: () => void }) {
         {n} {next.source === "earned" ? "earned " : ""}credit
         {n === 1 ? "" : "s"} expire{n === 1 ? "s" : ""} on {longDate(next.expiresAt)}
       </strong>{" "}
-      ({days} day{days === 1 ? "" : "s"} left). Credits that expire first are used first.
+      ({days} day{days === 1 ? "" : "s"} left). Credits that expire soonest are used first.
     </Callout>
   );
 }

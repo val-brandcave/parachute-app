@@ -29,6 +29,34 @@ function initialWelcome(): Record<string, boolean> {
   }
 }
 
+/* ---- Pattern change (T0.2): per-user help & celebration memory -------------- */
+const CKEY = "parachute:celebrated";
+const TOURKEY = "parachute:tours-seen";
+const HINTKEY = "parachute:hints-seen";
+const VKEY = "parachute:video-progress";
+const PKEY = "parachute:proto:hidden";
+
+export type CelebrationKind = "onboarding" | "approval";
+type PerUser<T> = Record<string, T>;
+
+function readJson<T>(key: string, fallback: T): T {
+  if (typeof window === "undefined") return fallback;
+  try {
+    const raw = window.localStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as T) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+function writeJson(key: string, value: unknown): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    /* storage blocked: keep the in-memory value for this page view */
+  }
+}
+
 function initialDensity(): Density {
   if (typeof window === "undefined") return "comfortable";
   return (window.localStorage.getItem(DKEY) as Density) || "comfortable";
@@ -57,6 +85,23 @@ interface PrefsState {
   /** Users who dismissed the one-time "your organization is ready" banner. */
   welcomeDismissedBy: Record<string, boolean>;
   dismissWelcome: (userId: string) => void;
+  /** Celebrations already played, per user (confetti plays once). */
+  celebratedBy: PerUser<Partial<Record<CelebrationKind, true>>>;
+  markCelebrated: (userId: string, kind: CelebrationKind) => void;
+  /** Tours seen (finished or skipped), per user. */
+  toursSeen: PerUser<Record<string, boolean>>;
+  setTourSeen: (userId: string, tourId: string, seen: boolean) => void;
+  /** One-time hints dismissed, per user. */
+  hintsSeen: PerUser<Record<string, true>>;
+  markHintSeen: (userId: string, id: string) => void;
+  /** Video progress 0..1, per user per video. */
+  videoProgress: PerUser<Record<string, number>>;
+  setVideoProgress: (userId: string, videoId: string, progress: number) => void;
+  /** Prototype controls hidden (per browser, not per user). */
+  protoHidden: boolean;
+  setProtoHidden: (hidden: boolean) => void;
+  /** Reset tours + celebrations for one user (prototype "Reset tours and celebrations"). */
+  clearCelebrationsAndTours: (userId: string) => void;
   setDensity: (d: Density) => void;
   setTheme: (t: ThemePref) => void;
   toggleNav: () => void;
@@ -77,6 +122,49 @@ export const usePrefsStore = create<PrefsState>((set, get) => ({
     const next = { ...get().welcomeDismissedBy, [userId]: true };
     if (typeof window !== "undefined") window.localStorage.setItem(WKEY, JSON.stringify(next));
     set({ welcomeDismissedBy: next });
+  },
+  celebratedBy: readJson(CKEY, {}),
+  markCelebrated: (userId, kind) => {
+    const cur = get().celebratedBy;
+    const next = { ...cur, [userId]: { ...cur[userId], [kind]: true as const } };
+    writeJson(CKEY, next);
+    set({ celebratedBy: next });
+  },
+  toursSeen: readJson(TOURKEY, {}),
+  setTourSeen: (userId, tourId, seen) => {
+    const cur = get().toursSeen;
+    const next = { ...cur, [userId]: { ...cur[userId], [tourId]: seen } };
+    writeJson(TOURKEY, next);
+    set({ toursSeen: next });
+  },
+  hintsSeen: readJson(HINTKEY, {}),
+  markHintSeen: (userId, id) => {
+    const cur = get().hintsSeen;
+    const next = { ...cur, [userId]: { ...cur[userId], [id]: true as const } };
+    writeJson(HINTKEY, next);
+    set({ hintsSeen: next });
+  },
+  videoProgress: readJson(VKEY, {}),
+  setVideoProgress: (userId, videoId, progress) => {
+    const cur = get().videoProgress;
+    const p = Math.min(1, Math.max(0, progress));
+    const next = { ...cur, [userId]: { ...cur[userId], [videoId]: p } };
+    writeJson(VKEY, next);
+    set({ videoProgress: next });
+  },
+  protoHidden: readJson(PKEY, false),
+  setProtoHidden: (hidden) => {
+    writeJson(PKEY, hidden);
+    set({ protoHidden: hidden });
+  },
+  clearCelebrationsAndTours: (userId) => {
+    const celebratedBy = { ...get().celebratedBy };
+    const toursSeen = { ...get().toursSeen };
+    delete celebratedBy[userId];
+    delete toursSeen[userId];
+    writeJson(CKEY, celebratedBy);
+    writeJson(TOURKEY, toursSeen);
+    set({ celebratedBy, toursSeen });
   },
   setDensity: (density) => {
     if (typeof window !== "undefined") {

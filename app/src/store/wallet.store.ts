@@ -12,6 +12,8 @@ import {
   usd,
 } from "@/lib/pricing";
 import { rewardFor } from "@/lib/setup-steps";
+import { SPEND_ORDER } from "@/lib/wallet-breakdown";
+import { autoReloadDue, walletView } from "@/lib/wallet-view";
 import { DEFAULT_ORG_ID } from "@/lib/identity-defaults";
 import { getCurrentUser } from "@/lib/current-user";
 import {
@@ -27,38 +29,25 @@ import {
 import { useOrgStore } from "./org.store";
 import { useSessionStore } from "./session.store";
 
-/** Credits still spendable, by origin, after applying spend order trial > earned > purchased.
- *  Refunds and adjustments sit in the purchased bucket. */
+/** Credits still spendable, by origin, after the PC-16 spend order (purchased, oldest pack first →
+ *  earned → trial). Refunds and adjustments sit in the purchased bucket. */
 export interface RemainingBySource {
   trial: number;
   earned: number;
   purchased: number;
 }
 
+/** Same numbers as `walletView().bySource` (lib/wallet-view.ts), which is the one derivation. */
 export function remainingFromLedger(ledger: readonly CreditLedgerEntry[]): RemainingBySource {
-  let trial = 0;
-  let earned = 0;
-  let purchased = 0;
-  let used = 0;
-  for (const e of ledger) {
-    if (e.kind === "trial_grant") trial += e.credits;
-    else if (e.kind === "earned") earned += e.credits;
-    else if (e.kind === "debit" || e.kind === "rescan") used += -e.credits;
-    else purchased += e.credits;
-  }
-  const spend = (bucket: number) => {
-    const take = Math.min(Math.max(bucket, 0), used);
-    used -= take;
-    return bucket - take;
-  };
-  return { trial: spend(trial), earned: spend(earned), purchased: spend(purchased) };
+  // `now` only feeds runway and month figures, which this does not read.
+  return { ...walletView(ledger, { now: 0 }).bySource };
 }
 
-/** Which buckets a charge of `credits` would draw from, in spend order. */
+/** Which buckets a charge of `credits` would draw from, in spend order (PC-16). */
 export function sourcesFor(remaining: RemainingBySource, credits: number): CreditSource[] {
   const out: CreditSource[] = [];
   let left = credits;
-  for (const k of ["trial", "earned", "purchased"] as const) {
+  for (const k of SPEND_ORDER) {
     if (left <= 0) break;
     if (remaining[k] > 0) {
       out.push(k);
@@ -96,6 +85,7 @@ function defaultSettings(orgId: string): WalletSettings {
     autoReload: false,
     reloadPackId: AUTO_RELOAD_DEFAULTS.packId,
     reloadBelow: AUTO_RELOAD_DEFAULTS.below,
+    monthlyCap: AUTO_RELOAD_DEFAULTS.monthlyCap,
     paymentMethod: null,
   };
 }
@@ -211,7 +201,7 @@ export const useWalletStore = create<WalletState>((set, get) => {
       set({ orgId: id, ledger, settings: row, loading: false });
     },
 
-    balance: () => get().ledger.reduce((sum, e) => sum + e.credits, 0),
+    balance: () => walletView(get().ledger, { now: Date.now() }).balance,
     balanceBySource: () => {
       const out: BalanceBySource = { trial: 0, earned: 0, purchased: 0, other: 0, used: 0 };
       for (const e of get().ledger) {
@@ -248,27 +238,19 @@ export const useWalletStore = create<WalletState>((set, get) => {
         paidFrom,
         receiptId: `RCT-${generateId().slice(0, 5).toUpperCase()}`,
       });
-      // Auto-reload: top up once when the balance drops below the threshold.
+      // Auto-reload: top up once when the balance drops below the threshold, within the monthly cap.
       const st = get().settings;
-      if (st?.autoReload && get().balance() < st.reloadBelow) {
+      if (st && autoReloadDue(get().ledger, st, Date.now())) {
         const pack = packById(st.reloadPackId);
-        const monthStart = new Date();
-        monthStart.setDate(1);
-        monthStart.setHours(0, 0, 0, 0);
-        const spentThisMonth = get()
-          .ledger.filter((e) => e.kind === "purchase" && e.auto && e.createdAt >= monthStart.getTime())
-          .reduce((s2, e) => s2 + (e.amountUsd ?? 0), 0);
-        if (spentThisMonth + pack.priceUsd <= (st.monthlyCap ?? AUTO_RELOAD_DEFAULTS.monthlyCap)) {
-          await addEntry({
-            kind: "purchase",
-            credits: pack.credits,
-            amountUsd: pack.priceUsd,
-            packId: pack.id,
-            auto: true,
-            receiptId: `RCT-${generateId().slice(0, 5).toUpperCase()}`,
-            note: `Auto-reload · ${pack.credits}-credit pack`,
-          });
-        }
+        await addEntry({
+          kind: "purchase",
+          credits: pack.credits,
+          amountUsd: pack.priceUsd,
+          packId: pack.id,
+          auto: true,
+          receiptId: `RCT-${generateId().slice(0, 5).toUpperCase()}`,
+          note: `Auto-reload · ${pack.credits}-credit pack`,
+        });
       }
       return entry;
     },

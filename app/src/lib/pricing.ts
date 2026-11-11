@@ -1,4 +1,4 @@
-import type { CreditPackId, ReviewType, SetupStepId } from "@/types";
+import type { CreditPackId, ReviewType, SetupSectionId, SetupStepId, VolumeBand } from "@/types";
 
 /**
  * Every commercial number in the self-serve flow lives HERE and nowhere else.
@@ -17,8 +17,6 @@ export const REVIEW_TYPE_COST: Record<ReviewType, number> = {
 
 /** Credits granted to a new workspace. */
 export const TRIAL_GRANT_CREDITS = 6;
-/** Days until unused trial credits lapse. */
-export const TRIAL_EXPIRY_DAYS = 30;
 
 /** Credits earned per completed reward-bearing setup step … */
 export const EARN_REWARD_CREDITS = 1;
@@ -28,6 +26,18 @@ export const EARN_CAP_CREDITS = 3;
 /** Setup steps that pay out a reward when first completed. Total is bounded by
  *  EARN_CAP_CREDITS regardless. */
 export const SETUP_REWARD_STEPS: SetupStepId[] = ["bank_policy", "checklist", "layout"];
+
+/** Get started v4: sections that pay EARN_REWARD_CREDITS once all their steps are done
+ *  inside the earn window (replaces SETUP_REWARD_STEPS in T2.0). */
+export const SETUP_REWARD_SECTIONS: SetupSectionId[] = ["first_review", "own_rules"];
+/** Days after the trial grant (enterprise: after approval) during which setup earns credits. */
+export const EARN_WINDOW_DAYS = 14;
+/** At or under this many days left, the window reads "ending". */
+export const EARN_ENDING_DAYS = 2;
+/** At or under this balance the wallet reads "low" (PC-18). */
+export const LOW_BALANCE_AT = 3;
+/** Invoiced orgs: indicative billed value of one credit (placeholder for Ed). */
+export const INVOICED_CREDIT_USD = 140;
 
 export interface CreditPack {
   id: CreditPackId;
@@ -69,8 +79,6 @@ export const AUTO_RELOAD_DEFAULTS: { packId: CreditPackId; below: number; monthl
   monthlyCap: 3000,
 };
 
-/** Days an earned setup credit lasts. */
-export const EARNED_LIFE_DAYS = 90;
 /** Months a purchased credit lasts. */
 export const PURCHASED_LIFE_MONTHS = 12;
 /** Pack pre-selected in the Add credits dialog. */
@@ -82,6 +90,14 @@ export const SALES_THRESHOLDS = {
   reviewers: 11,
   /** reports a month at or above this count */
   reportsPerMonth: 200,
+};
+
+/** On-screen labels for the volume answers, built from SALES_THRESHOLDS so 200 sits in one band only. */
+export const VOLUME_BAND_LABEL: Record<VolumeBand, string> = {
+  lt50: "Under 50",
+  "50-200": `50–${SALES_THRESHOLDS.reportsPerMonth - 1}`,
+  "200+": `${SALES_THRESHOLDS.reportsPerMonth}+`,
+  unsure: "I'm not sure yet",
 };
 
 /** Days a security-pack link stays valid after it is sent. */
@@ -114,6 +130,30 @@ export function needsSalesFirst(profile: { teamBand: string; volumeBand: string 
  */
 export function needsStaffApproval(profile: { teamBand: string; volumeBand: string }): boolean {
   return needsSalesFirst(profile);
+}
+
+/** Where org setup sends a new org: enterprise (book a call) or straight into self-serve.
+ *  "unsure" volume routes self-serve. */
+export function routeForProfile(profile: { teamBand: string; volumeBand: string }): "enterprise" | "self_serve" {
+  return needsSalesFirst(profile) ? "enterprise" : "self_serve";
+}
+
+const DAY_MS = 86_400_000;
+
+/** The setup-earning window that opens at the trial grant. Pure: `now` is passed in. */
+export function earnWindow(
+  grantAt: number,
+  now: number,
+): { endsAt: number; daysLeft: number; state: "open" | "ending" | "closed" } {
+  const endsAt = grantAt + EARN_WINDOW_DAYS * DAY_MS;
+  const daysLeft = Math.max(0, Math.ceil((endsAt - now) / DAY_MS));
+  const state = daysLeft <= 0 ? "closed" : daysLeft <= EARN_ENDING_DAYS ? "ending" : "open";
+  return { endsAt, daysLeft, state };
+}
+
+/** How many times auto-reload can fire a month within its default cap ("up to N times a month"). */
+export function autoReloadTimesPerMonth(): number {
+  return Math.floor(AUTO_RELOAD_DEFAULTS.monthlyCap / packById(AUTO_RELOAD_DEFAULTS.packId).priceUsd);
 }
 
 /** Indicative value of a credit balance, "~$900" style. */

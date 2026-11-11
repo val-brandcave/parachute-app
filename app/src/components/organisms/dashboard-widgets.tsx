@@ -5,9 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Icon, Chip, Button, Tooltip } from "@/components/atoms";
 import { useStartGate, START_LOCKED_REASON } from "./home/useStartGate";
-import { useOrgStore, useWalletStore } from "@/store";
-import { costFor } from "@/lib/pricing";
-import { FULL_REVIEW_TYPES } from "@/lib/setup-steps";
+import { useOrgStore, useWalletView } from "@/store";
 import {
   ActionMenu,
   type ActionItem,
@@ -146,8 +144,7 @@ export function DashboardFirstRun() {
   const { locked } = useStartGate();
   const orgName = useOrgStore((s) => s.org?.name);
   const metered = useOrgStore((s) => s.org?.billing === "trial" || s.org?.billing === "payg");
-  const credits = useWalletStore((s) => s.ledger.reduce((sum, e) => sum + e.credits, 0));
-  const full = Math.floor(credits / costFor(FULL_REVIEW_TYPES));
+  const { balance: credits, fullReviews: full } = useWalletView();
   const start = (
     <Button iconLeft="rocket" disabled={locked} onClick={() => router.push("/launchpad")}>
       Start a review

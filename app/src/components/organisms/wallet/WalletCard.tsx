@@ -7,9 +7,8 @@ import { HcCard } from "@/components/organisms/home/HcFrame";
 import { useCurrentUser } from "@/lib/current-user";
 import { TRIAL_GRANT_CREDITS, costFor } from "@/lib/pricing";
 import { FULL_REVIEW_TYPES } from "@/lib/setup-steps";
-import { balanceGrants } from "@/lib/wallet-breakdown";
-import { useApprovalPending, useReviewsStore, useSetupSummary, useWalletStore } from "@/store";
-import { buildUsageLines, runwayFill, runwayFor, runwayText, runwayWarn, usageAnchor } from "@/components/organisms/billing/usage/usage-data";
+import { useApprovalPending, useReviewsStore, useSetupSummary, useWalletStore, useWalletView } from "@/store";
+import { buildUsageLines, runwayFill, runwayFor, runwayText, usageAnchor } from "@/components/organisms/billing/usage/usage-data";
 
 const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
 const MAX_TOKENS = 10;
@@ -45,16 +44,17 @@ export function WalletCard() {
   const isAdmin = useCurrentUser().role === "org_admin";
   const { adminFirst } = useSetupSummary();
 
-  const grants = balanceGrants(ledger);
-  const live = grants.filter((g) => g.remaining > 0);
-  const balance = live.reduce((n, g) => n + g.remaining, 0);
+  const wallet = useWalletView();
+  const { balance, fullReviews: full } = wallet;
   const fullCost = costFor(FULL_REVIEW_TYPES);
-  const full = Math.floor(balance / fullCost);
   const spare = balance - full * fullCost > 0;
-  const allTrial = live.length > 0 && live.every((g) => g.source === "trial");
-  const low = !pending && balance < fullCost;
+  const allTrial = balance > 0 && wallet.bySource.trial === balance;
+  // PC-18: low at or under LOW_BALANCE_AT (wallet-view lowTone).
+  const low = !pending && wallet.lowTone !== "ok";
   const enough = `Enough for ${full} full ${plural(full, "review", "reviews")}`;
-  const openTopUp = () => useWalletStore.getState().openTopUp({ reason: "low_balance", needed: fullCost - balance });
+  const shortfall = fullCost - balance;
+  const openTopUp = () =>
+    useWalletStore.getState().openTopUp({ reason: "low_balance", needed: shortfall > 0 ? shortfall : undefined });
   const viewBalance = () => router.push("/configure/billing");
   const run = useMemo(() => {
     const lines = buildUsageLines(ledger, reviews, false);
@@ -119,8 +119,8 @@ export function WalletCard() {
           <span className="hc-n">{balance}</span>
           <span className="hc-u">{plural(balance, "credit", "credits")}</span>
         </div>
-        <Tokens full={1} mode="low" />
-        <p className="hc-line">Not enough for a full review</p>
+        {full === 0 ? <Tokens full={1} mode="low" /> : <Tokens full={full} half={spare} />}
+        <p className="hc-line">{full === 0 ? "Not enough for a full review" : enough}</p>
       </HcCard>
     );
   }
@@ -164,7 +164,6 @@ export function WalletCard() {
 
   // Paid, with usage to go on: how long the balance lasts. Works the same at 13 credits or 400.
   if (run.days !== null) {
-    const warn = runwayWarn(run.days);
     return (
       <HcCard
         title="Wallet"
@@ -176,7 +175,7 @@ export function WalletCard() {
           <span className="hc-u">{plural(balance, "credit", "credits")}</span>
         </div>
         <div
-          className={`hc-bar${warn ? " is-warn" : ""}`}
+          className="hc-bar"
           role="img"
           aria-label={`Balance lasts ${runwayText(run.days)} at your current pace`}
         >

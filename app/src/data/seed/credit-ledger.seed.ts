@@ -15,9 +15,9 @@ const PACK10 = packById("pack10");
  *
  *  org-hcb    trial grant +6, four real reports (220 Commerce Way 2, 18 Lighthouse Rd 1,
  *             905 Bayview Ave 1, 41 Mill Pond Ln 1 then refunded), +1 earned (bank policy),
- *             a 10-credit pack → 13 credits: trial 1 / earned 1 / purchased 11.
- *             (The canvas shows 9 as 1 / 2 / 6; that split cannot happen under the
- *             trial > earned > purchased spend order, so the seed derives its own numbers.)
+ *             a 10-credit pack → 13 credits. The split by source is derived by
+ *             lib/wallet-view.ts under the PC-16 spend order (purchased oldest first,
+ *             then earned, then trial); the seed never states it.
  *  org-cedar  pay-as-you-go: about 12 months of history (generated at the bottom of this file),
  *             2 to 4 reviews every weekday by four people, packs bought as needed, 1 credit left
  *  org-001    invoiced via YouConnect → no wallet rows

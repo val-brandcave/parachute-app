@@ -22,6 +22,13 @@ import { CommandPalette } from "@/components/organisms/CommandPalette";
 import { RunModal } from "@/components/run/RunModal";
 import { DemoDock } from "@/components/organisms/DemoDock";
 import { TopUpModal, ReceiptDialog } from "@/components/organisms/wallet";
+import { CreditsPill } from "@/components/organisms/CreditsPill";
+import { SidebarResourceLinks } from "@/components/organisms/SidebarResourceLinks";
+import { LockDialog } from "@/components/organisms/LockDialog";
+import { CheckoutLauncher } from "@/components/organisms/CheckoutLauncher";
+import { HeaderChipSlot } from "@/components/organisms/HeaderChipSlot";
+import { TourHost } from "@/components/organisms/tour/TourHost";
+import { ProtoPill } from "@/components/organisms/prototype/ProtoPill";
 import { useStartGate } from "@/components/organisms/home/useStartGate";
 import { useSetupGuideVisible } from "@/lib/landing";
 import { usePrefsStore, useSessionStore, useSetupSummary } from "@/store";
@@ -187,15 +194,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         }
         sidebarFooter={(collapsed) => (
           <div className="sb-foot">
+            <SidebarResourceLinks collapsed={collapsed} />
             <BalancePill collapsed={collapsed} />
             <OrgCard collapsed={collapsed} />
           </div>
         )}
         header={{
-          start: <Breadcrumbs />,
+          start: (
+            <>
+              <Breadcrumbs />
+              <HeaderChipSlot />
+            </>
+          ),
           end: (
             <>
               <SearchTrigger onOpen={() => setSearchOpen(true)} />
+              <CreditsPill />
               <IconButton icon="bell" label="Notifications" />
               <UserMenu />
             </>
@@ -211,6 +225,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <TopUpModal />
       <ReceiptDialog />
       <DemoDock />
+      <LockDialog />
+      <CheckoutLauncher />
+      <TourHost scope="shell" />
+      <ProtoPill />
     </>
   );
 }

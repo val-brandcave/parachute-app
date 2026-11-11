@@ -8,6 +8,7 @@ import { useCurrentOrg, useCurrentUser } from "@/lib/current-user";
 import { useDemoStore } from "@/store/demo.store";
 import { setBuildNotes, useBuildNotes } from "@/store/prefs.store";
 import { useWalletStore } from "@/store/wallet.store";
+import { useWalletView } from "@/store/useWalletView";
 import { useOnboardingStore } from "@/store/onboarding.store";
 import { SETUP_STEPS } from "@/lib/setup-steps";
 
@@ -24,7 +25,7 @@ export function DemoDock() {
   const me = useCurrentUser();
   const org = useCurrentOrg();
   const buildNotes = useBuildNotes();
-  const balance = useWalletStore((s) => s.ledger.reduce((sum, e) => sum + e.credits, 0));
+  const { balance } = useWalletView();
 
   // Children only render after SeedProvider is ready (client side), so `document` exists.
   if (!DEMO_ENABLED) return null;
@@ -72,7 +73,7 @@ export function DemoDock() {
               <Icon name="check-circle" size={15} /> Complete next step
             </button>
             <button className="demo-dock-btn" onClick={() => useDemoStore.getState().addCredits(5)}>
-              <Icon name="coins" size={15} /> +5 credits
+              <Icon name="wallet" size={15} /> +5 credits
             </button>
             <button
               className="demo-dock-btn"

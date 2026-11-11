@@ -17314,3 +17314,96 @@ body:has(.run) .demo-dock { bottom: 84px; }
   background: var(--md-warn-c);
   color: var(--md-warn-solid);
 }
+
+/* ==========================================================================
+   Pattern change (Nov 2026) — shared foundation tokens (T0.2, coordinator-owned)
+   ========================================================================== */
+
+/* Z-tiers over the review takeover (PC-31). `.run` is 120; anything that opens
+   over a review uses these. --rw-z-overlay/modal are lifted in wallet.css. */
+:root {
+  --z-run: 120;
+  --z-tour-overlay: 126;
+  --z-tour: 128;
+  --z-celebrate: 201;
+  --z-proto: 210;
+
+  /* Chart series: review types (Billing → Usage donut, PC-28). */
+  --viz-tech: #1d5592;
+  --viz-admin: #0a9fae;
+
+  /* Illustration knobs (illustration-guide §3). Ink is currentColor. */
+  --ill-ink: #10344c;
+  --ill-paper: #ffffff;
+  --ill-accent: #2a6f7f;
+  --ill-tint: #deebee;
+  --ill-shadow: #c9d7e3;
+  --ill-shadow-strong: #afc3d4;
+  --ill-muted: #8fa3b3;
+  --ill-stroke: 2.25;
+  --ill-stroke-scene: 2.5;
+}
+:root[data-theme="dark"] {
+  --viz-tech: #3a74c0;
+  --viz-admin: #14a7b6;
+
+  --ill-ink: #dce4ea;
+  --ill-paper: #1e2328;
+  --ill-accent: #4a93a4;
+  --ill-tint: #173039;
+  --ill-shadow: #24425a;
+  --ill-shadow-strong: #2d5473;
+  --ill-muted: #62717d;
+}
+
+/* Balanced wrapping for short copy (no orphans). */
+.tw-pretty,
+h1, h2, h3, h4, p, li, .ui-chip, .ui-callout {
+  text-wrap: pretty;
+}
+
+/* Illustration atom (components/atoms/Illustration.tsx). Root classes carry the
+   shared fills; generated from docs/plans/pattern-change/illustrations. */
+.ill {
+  display: block;
+  flex: none;
+  color: var(--ill-ink);
+  height: auto;
+}
+.ill--panel {
+  --ill-panel: var(--ill-tint);
+}
+.ill-pi{stroke-width:var(--ill-stroke,2.25)}
+.ill-pi .p{fill:var(--ill-paper,#FFFFFF)}
+.ill-pi .a{fill:var(--ill-accent,#2A6F7F)}
+.ill-pi .t{fill:var(--ill-tint,#DEEBEE)}
+.ill-pi .s{fill:var(--ill-shadow,#C9D7E3);stroke:none}
+.ill-pi .m{stroke:var(--ill-muted,#8FA3B3);stroke-width:1.75}
+.ill-pi .ap{stroke:var(--ill-paper,#FFFFFF)}
+.ill-pi .af{fill:var(--ill-paper,#FFFFFF);stroke:none}
+.ill-pi .as{stroke:var(--ill-accent,#2A6F7F)}
+.ill-pi .ink{fill:currentColor;stroke:none}
+.ill-pi .ns{stroke:none}
+.ill-pb{stroke-width:var(--ill-stroke,2.25)}
+.ill-pb .p{fill:var(--ill-paper,#FFFFFF)}
+.ill-pb .a{fill:var(--ill-accent,#2A6F7F)}
+.ill-pb .t{fill:var(--ill-tint,#DEEBEE)}
+.ill-pb .s{fill:var(--ill-shadow-strong,#AFC3D4);stroke:none}
+.ill-pb .bg{fill:var(--ill-panel,none);stroke:none}
+.ill-pb .m{stroke:var(--ill-muted,#8FA3B3);stroke-width:1.75}
+.ill-pb .ap{stroke:var(--ill-paper,#FFFFFF)}
+.ill-pb .af{fill:var(--ill-paper,#FFFFFF);stroke:none}
+.ill-pb .as{stroke:var(--ill-accent,#2A6F7F)}
+.ill-pb .ink{fill:currentColor;stroke:none}
+.ill-pb .ns{stroke:none}
+.ill-ps{stroke-width:var(--ill-stroke-scene,2.5)}
+.ill-ps .p{fill:var(--ill-paper,#FFFFFF)}
+.ill-ps .a{fill:var(--ill-accent,#2A6F7F)}
+.ill-ps .t{fill:var(--ill-tint,#DEEBEE)}
+.ill-ps .bg{fill:var(--ill-panel,var(--ill-tint,#DEEBEE));stroke:none}
+.ill-ps .s{fill:var(--ill-shadow-strong,#AFC3D4);stroke:none}
+.ill-ps .m{stroke:var(--ill-muted,#8FA3B3);stroke-width:2}
+.ill-ps .ap{stroke:var(--ill-paper,#FFFFFF)}
+.ill-ps .af{fill:var(--ill-paper,#FFFFFF);stroke:none}
+.ill-ps .ink{fill:currentColor;stroke:none}
+.ill-ps .ns{stroke:none}

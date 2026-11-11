@@ -3,8 +3,8 @@
 import { useMemo } from "react";
 import { useToast } from "@realwired/ui";
 import { useCurrentOrg, useCurrentUser } from "@/lib/current-user";
-import { useOrgStore, useReviewsStore, useUsersStore, useWalletStore } from "@/store";
-import { buildActivity, remainingOf, shortName } from "./billing-data";
+import { useOrgStore, useReviewsStore, useUsersStore, useWalletStore, useWalletView } from "@/store";
+import { buildActivity, shortName } from "./billing-data";
 
 /** Everything the billing screens read: org, role, wallet, derived activity. */
 export function useBilling() {
@@ -24,7 +24,8 @@ export function useBilling() {
   const admin = users.find((u) => u.id === org?.billingContactId) ?? users.find((u) => u.role === "org_admin");
   const adminName = admin?.name ?? "your admin";
 
-  const remaining = useMemo(() => remainingOf(ledger), [ledger]);
+  const wallet = useWalletView();
+  const remaining = useMemo(() => ({ ...wallet.bySource, total: wallet.balance }), [wallet]);
   const rows = useMemo(
     () => buildActivity(ledger, reviews, (id) => allUsers.find((u) => u.id === id)?.name, settings?.paymentMethod === "card" ? settings.cardLast4 : undefined),
     [ledger, reviews, allUsers, settings],
@@ -46,6 +47,7 @@ export function useBilling() {
     admin,
     adminName,
     adminFirst: adminName.split(" ")[0],
+    wallet,
     remaining,
     rows,
     askAdmin,

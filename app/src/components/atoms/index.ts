@@ -1,4 +1,5 @@
 export { Icon, ICONS, type IconName } from "./Icon";
+export { Illustration, type IllustrationName } from "./Illustration";
 export { MicrosoftGlyph, YouConnectGlyph, ParachuteGlyph, ChuteEmblem } from "./BrandGlyph";
 export { Button } from "./Button";
 export { IconButton } from "./IconButton";

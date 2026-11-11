@@ -5,6 +5,7 @@ import { Dialog, Input, Switch, useToast } from "@realwired/ui";
 import { Button, CreditChip, Icon } from "@/components/atoms";
 import { useCurrentOrg } from "@/lib/current-user";
 import {
+  AUTO_RELOAD_DEFAULTS,
   CREDIT_PACKS,
   CREDIT_USD,
   CUSTOM_CREDITS,
@@ -18,7 +19,7 @@ import {
   type CreditPack,
 } from "@/lib/pricing";
 import { FULL_REVIEW_TYPES } from "@/lib/setup-steps";
-import { useApprovalPending, useSessionStore, useUsersStore, useWalletStore } from "@/store";
+import { useApprovalPending, useSessionStore, useUsersStore, useWalletStore, useWalletView } from "@/store";
 import type { CreditPackId } from "@/types";
 import "./wallet.css";
 import "./topup-chips.css";
@@ -93,7 +94,7 @@ function TopUpDialog() {
   const reason = useWalletStore((s) => s.topUpReason);
   const needed = useWalletStore((s) => s.topUpNeeded);
   const settings = useWalletStore((s) => s.settings);
-  const balance = useWalletStore((s) => s.ledger.reduce((sum, e) => sum + e.credits, 0));
+  const { balance } = useWalletView();
   const me = useSessionStore((s) => s.userId);
   const meEmail = useUsersStore((s) => s.users.find((u) => u.id === me)?.email);
 
@@ -120,8 +121,10 @@ function TopUpDialog() {
     setCustomText(String(Math.min(CUSTOM_CREDITS.max, Math.max(CUSTOM_CREDITS.min, base + d))));
     setChoice("custom");
   };
-  const reloadPack = packById(settings?.reloadPackId ?? DEFAULT_PACK_ID);
-  const reloadBelow = settings?.reloadBelow ?? 2;
+  // One auto-reload rule (store `autoReloadDue`): unset settings read AUTO_RELOAD_DEFAULTS, like Billing settings.
+  const reloadPack = packById(settings?.reloadPackId ?? AUTO_RELOAD_DEFAULTS.packId);
+  const reloadBelow = settings?.reloadBelow ?? AUTO_RELOAD_DEFAULTS.below;
+  const reloadCap = settings?.monthlyCap ?? AUTO_RELOAD_DEFAULTS.monthlyCap;
   const email = settings?.billingEmail ?? meEmail ?? "your billing contact";
 
   const digits = card.number.replace(/\D/g, "");
@@ -396,7 +399,11 @@ function TopUpDialog() {
           <Switch
             id="tu-reload-sw"
             checked={!!settings?.autoReload}
-            onCheckedChange={(v) => void useWalletStore.getState().setAutoReload({ autoReload: v })}
+            onCheckedChange={(v) =>
+              void useWalletStore
+                .getState()
+                .setAutoReload({ autoReload: v, reloadPackId: reloadPack.id, reloadBelow, monthlyCap: reloadCap })
+            }
           />
         </div>
         )}

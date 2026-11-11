@@ -1,7 +1,6 @@
 import {
   CREDIT_PACKS,
   CREDIT_USD,
-  EARNED_LIFE_DAYS,
   EARN_CAP_CREDITS,
   EARN_REWARD_CREDITS,
   TRIAL_GRANT_CREDITS,
@@ -148,7 +147,7 @@ export const emails: EmailSpec[] = [
       { kind: "cta", label: "View billing" },
       {
         kind: "small",
-        text: `Earned credits last ${EARNED_LIFE_DAYS} days. ${remainingRewards === 1 ? "One more setup step" : `${remainingRewards} more setup steps`} can each earn ${EARN_REWARD_CREDITS} credit: a published compliance checklist and a custom workbook layout.`,
+        text: `Earned credits don't expire. ${remainingRewards === 1 ? "One more setup step" : `${remainingRewards} more setup steps`} can each earn ${EARN_REWARD_CREDITS} credit: a published compliance checklist and a custom workbook layout.`,
       },
     ],
   },
