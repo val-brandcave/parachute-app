@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button, Icon, YouConnectGlyph } from "@/components/atoms";
 import { useTemplatesStore } from "@/store";
@@ -83,6 +83,37 @@ const REVIEW_TYPES: ReviewTypeSpec[] = [
   },
 ];
 
+/**
+ * Add credits from Review setup (spec §5.6 "Draft before checkout"). Provided by the
+ * run host around `RunExperience`: the overlay creates an `intake` draft and the
+ * routed review reuses its id, then both leave for checkout with
+ * `return=/reviews/<id>&types=…`. `needed` is the shortfall (RF2).
+ */
+export type RunAddCreditsHandler = (draft: {
+  display: RunDisplay;
+  types: RunReviewType[];
+  needed: number;
+}) => void;
+export const RunAddCreditsContext = createContext<RunAddCreditsHandler | null>(null);
+
+const LIVE_TYPES = REVIEW_TYPES.filter((s) => s.status === "live").map((s) => s.id);
+
+/** Initial selection: `?types=` (back from checkout) → an intake draft's own
+ *  `reviewTypes` → the defaults (both, per Ed). Client-only (the run never SSRs). */
+function initialTypes(review: Review): RunReviewType[] {
+  const raw = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("types") : null;
+  const fromQuery = (raw ?? "")
+    .split(",")
+    .map((t) => t.trim())
+    .filter((t): t is RunReviewType => LIVE_TYPES.includes(t as RunReviewType));
+  if (fromQuery.length) return [...new Set(fromQuery)];
+  if (review.status === "intake" && review.reviewTypes?.length) {
+    const own = review.reviewTypes.filter((t) => LIVE_TYPES.includes(t as RunReviewType)) as RunReviewType[];
+    if (own.length) return own;
+  }
+  return REVIEW_TYPES.filter((s) => s.status === "live" && s.defaultOn).map((s) => s.id);
+}
+
 const WRAP_V = {
   hidden: {},
   show: { transition: { staggerChildren: 0.06, delayChildren: 0.04 } },
@@ -136,9 +167,8 @@ export function RunConfirm({
 
   // Selected *live* types — both pre-checked (the 80% case); every type can be
   // unticked, and Start gates on at least one remaining.
-  const [selected, setSelected] = useState<RunReviewType[]>(
-    REVIEW_TYPES.filter((s) => s.status === "live" && s.defaultOn).map((s) => s.id),
-  );
+  const [selected, setSelected] = useState<RunReviewType[]>(() => initialTypes(review));
+  const addCreditsHost = useContext(RunAddCreditsContext);
 
   // Per-review template overrides. Both default to the org-inherited template
   // (null) and can be overridden *for this review only* via the shared
@@ -197,17 +227,19 @@ export function RunConfirm({
     return () => clearTimeout(t);
   }, [short]);
 
+  const currentDisplay = (): RunDisplay => ({
+    address: address.trim(),
+    propertyType,
+    bank: bank.trim(),
+    loanNo: loanNo.trim(),
+    firm: firm.trim(),
+  });
+
   const start = () => {
     if (short) return showCallout(true);
     if (!canStart) return;
     onStart(
-      {
-        address: address.trim(),
-        propertyType,
-        bank: bank.trim(),
-        loanNo: loanNo.trim(),
-        firm: firm.trim(),
-      },
+      currentDisplay(),
       selected,
       {
         checklistId: showAdmin ? effectiveChecklistId : null,
@@ -407,6 +439,11 @@ export function RunConfirm({
                 selected={selected as ReviewType[]}
                 cost={cost}
                 onRunOnly={(t) => setSelected([t])}
+                onAddCredits={
+                  addCreditsHost
+                    ? (needed) => addCreditsHost({ display: currentDisplay(), types: selected, needed })
+                    : undefined
+                }
               />
             </div>
           )}

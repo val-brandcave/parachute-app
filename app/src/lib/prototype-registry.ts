@@ -198,6 +198,43 @@ export const SCREENS: ScreenDef[] = [
       { id: "request", label: "Request waiting", description: "A reviewer asked for credits.", set: { request: "open" }, status: built },
     ],
   },
+  {
+    id: "checkout",
+    title: "Checkout",
+    route: "/checkout/credits",
+    group: "billing",
+    status: "planned",
+    pillLabel: "Checkout",
+    roles: ["org_admin"],
+    tags: ["credits", "buy", "pay"],
+    states: [
+      { id: "amount", label: "Amount", view: { step: "amount" }, status: "planned" },
+      { id: "payment", label: "Payment", view: { step: "payment" }, status: "planned" },
+      { id: "review", label: "Review", view: { step: "review" }, status: "planned" },
+      { id: "paid", label: "Paid", view: { step: "done" }, status: "planned" },
+      { id: "declined", label: "Card declined", view: { step: "payment", error: "card" }, status: "planned" },
+    ],
+  },
+  {
+    id: "trust",
+    title: "Trust Center",
+    route: "/trust",
+    group: "trust-learning",
+    status: "planned",
+    pillLabel: "Trust Center",
+    tags: ["security", "vendor"],
+    states: [{ id: "default", label: "Default", status: "planned" }],
+  },
+  {
+    id: "learn",
+    title: "Learning Center",
+    route: "/learn",
+    group: "trust-learning",
+    status: "planned",
+    pillLabel: "Learning Center",
+    tags: ["guides", "videos"],
+    states: [{ id: "default", label: "Default", status: "planned" }],
+  },
 ];
 
 export const FLOWS: FlowDef[] = [

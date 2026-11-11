@@ -236,9 +236,8 @@ export function CreditsPopover({
               variant="primary"
               size="sm"
               onClick={() => {
+                onClose();
                 useWalletStore.getState().openTopUp({ reason: "manual" });
-                // T3.3: drop the push once CheckoutLauncher owns openTopUp
-                go("/configure/billing");
               }}
             >
               Add credits

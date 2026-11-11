@@ -40,8 +40,12 @@ function Block({ b }: { b: EmailBlock }) {
         </dl>
       );
     case "cta":
-      // A preview: the button looks live but goes nowhere.
-      return (
+      // A preview: CTAs with an in-app destination link there; the rest look live but go nowhere.
+      return b.href ? (
+        <a className="em-btn" href={b.href}>
+          {b.label}
+        </a>
+      ) : (
         <span className="em-btn" role="img" aria-label={`Button: ${b.label}`}>
           {b.label}
         </span>

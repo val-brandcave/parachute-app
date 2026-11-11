@@ -34,7 +34,7 @@ export { useIdentityStore } from "./identity.store";
 export { useSessionStore } from "./session.store";
 export type { AppMode, AuthState } from "./session.store";
 export { useWalletStore } from "./wallet.store";
-export type { TopUpReason } from "./wallet.store";
+export type { TopUpReason, TopUpIntent } from "./wallet.store";
 export {
   useOnboardingStore,
   useSetupSummary,

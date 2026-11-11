@@ -16,6 +16,8 @@ import { costFor } from "@/lib/pricing";
 import { runEntry } from "@/lib/review-lifecycle";
 import type { ReviewType } from "@/types";
 import { RunExperience, type RunStartHandler } from "@/components/run/RunExperience";
+import { RunAddCreditsContext, type RunAddCreditsHandler } from "@/components/run/RunConfirm";
+import { checkoutBlock, useLaunchCheckout } from "@/components/organisms/CheckoutLauncher";
 
 /**
  * The review details page IS the run wizard. It seeds the run store for this
@@ -32,6 +34,7 @@ export default function ReviewDetailPage() {
   const enterReview = useRunStore((s) => s.enterReview);
   const storeReviewId = useRunStore((s) => s.reviewId);
   const updateReview = useReviewsStore((s) => s.updateReview);
+  const launchCheckout = useLaunchCheckout();
 
   // Seed the run store once per review id (not on every review-object change, so
   // an in-run status flip can't reset the spoke mid-flight).
@@ -65,7 +68,7 @@ export default function ReviewDetailPage() {
     const wallet = useWalletStore.getState();
     const need = review?.sample ? 0 : costFor(types as ReviewType[]);
     if (!wallet.canAfford(need)) {
-      wallet.openTopUp({ reason: "low_balance", needed: need });
+      onAddCredits({ display, types, needed: need - wallet.balance() });
       return;
     }
     if (review)
@@ -86,6 +89,28 @@ export default function ReviewDetailPage() {
       });
     }
     beginRunInPlace(display, types, opts);
+  };
+
+  // Draft before checkout (spec §5.6): the review already exists, so keep its id —
+  // commit the chosen types (an intake review is the draft), then leave for checkout
+  // with `return=/reviews/<id>&types=…`. On return, intake → Review setup reads them.
+  const onAddCredits: RunAddCreditsHandler = ({ display, types, needed }) => {
+    if (!review) return;
+    if (checkoutBlock()) {
+      launchCheckout({ needed });
+      return;
+    }
+    // Save the selection on any review that reopens at setup (confirm or triage spoke),
+    // and only leave once it is stored, so a reload on checkout still has it.
+    const { spoke } = runEntry(review);
+    void (async () => {
+      if (spoke === "confirm" || spoke === "triage")
+        await updateReview(review.id, {
+          loanNo: display.loanNo || review.loanNo,
+          reviewTypes: types as ReviewType[],
+        });
+      launchCheckout({ needed, returnTo: `/reviews/${review.id}`, types: types as ReviewType[] });
+    })();
   };
 
   // Opening the sample review completes "Open the sample review".
@@ -114,12 +139,14 @@ export default function ReviewDetailPage() {
       aria-label="Review"
     >
       {ready ? (
-        <RunExperience
-          reviewId={review!.id}
-          onExit={backToQueue}
-          onStart={onStart}
-          onTriageReject={backToQueue}
-        />
+        <RunAddCreditsContext.Provider value={onAddCredits}>
+          <RunExperience
+            reviewId={review!.id}
+            onExit={backToQueue}
+            onStart={onStart}
+            onTriageReject={backToQueue}
+          />
+        </RunAddCreditsContext.Provider>
       ) : (
         <div className="run-loading text-secondary">
           <span className="ui-spinner" aria-hidden="true" /> Loading review…

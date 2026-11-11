@@ -348,10 +348,10 @@ Return: PASS, or a numbered list of issues each with file:line, the rule or spec
 
 **Consumes:** `topUpIntent`, `clearTopUpIntent`, `checkoutHref`, `safeReturn`, `addReview`, `walletView`. **Produces:** `CheckoutLauncher()` (reads intent → `router.push(checkoutHref({ … returnTo: pathname+search }))`; never in embedded mode or for invoiced orgs; non-admins get the role path until T4.1 lands, a toast meanwhile); `RunConfirm` initial selection from `?types=` when present.
 
-- [ ] Flow `t3_3_reroute.py::short_by_one_prefills_one` (RF2): persona short (DemoDock low → 1 credit), drop a file on `/launchpad` → Review setup with both types → callout "Add credits" → URL is `/checkout/credits?credits=1&return=%2Freviews%2F<id>&types=technical%2Cadministrative`.
-- [ ] Flow `::round_trip_with_reload` (RF4): continue from there, hard-reload on the Payment step, pay → "Back to your review" → `/reviews/<id>` at Review setup with both types checked; Start now succeeds; the review exists as `intake` before payment (visible in `/reviews` Intake tab).
-- [ ] Flow: header popover / billing band / Invoices empty / command palette "Add credits" each land on checkout with the right amount and `return`; email preview "Add credits" CTA has `href="/checkout/credits?pack=pack10"`; YouConnect embedded run never navigates to checkout.
-- [ ] Implement per spec §5.6 return path. Flow passes.
+- [x] Flow `t3_3_reroute.py::short_by_one_prefills_one` (RF2): persona short (DemoDock low → 1 credit), drop a file on `/launchpad` → Review setup with both types → callout "Add credits" → URL is `/checkout/credits?credits=1&return=%2Freviews%2F<id>&types=technical%2Cadministrative`.
+- [x] Flow `::round_trip_with_reload` (RF4): continue from there, hard-reload on the Payment step, pay → "Back to your review" → `/reviews/<id>` at Review setup with both types checked; Start now succeeds; the review exists as `intake` before payment (visible in `/reviews` Intake tab).
+- [x] Flow: header popover / billing band / Invoices empty / command palette "Add credits" each land on checkout with the right amount and `return`; email preview "Add credits" CTA has `href="/checkout/credits?pack=pack10"`; YouConnect embedded run never navigates to checkout.
+- [x] Implement per spec §5.6 return path. Flow passes.
 - [ ] Phase 3 gate; commit `feat(pattern-change): phase 3 — focused checkout, billing states, usage donut, how credits work`.
 
 ---

@@ -127,6 +127,8 @@ export interface WalletSettings {
   monthlyCap?: number;
   paymentMethod: "card" | "invoice" | "ach" | null;
   cardLast4?: string;
+  /** Saved card expiry, "MM/YY" (checkout "Expires 08/28"). */
+  cardExpiry?: string;
   billingEmail?: string;
   /** Finance details printed on receipts and statements. */
   poNumber?: string;

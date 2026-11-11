@@ -163,14 +163,14 @@ export function buildActivity(
 }
 
 /** Invoiced orgs have no ledger: one row per review run, billed at list value. */
-export function invoicedActivity(reviews: readonly Review[], userName: UserName): ActivityRow[] {
+export function invoicedActivity(reviews: readonly Review[], userName: UserName, anchor: number = DEMO_TODAY): ActivityRow[] {
   const list = invoicedReviews(reviews);
   return list
     .map((r): ActivityRow => {
       const credits = r.reviewTypes.reduce((n, t) => n + (REVIEW_TYPE_COST[t] ?? 0), 0);
       return {
         id: r.id,
-        at: rebasedDate(r, list),
+        at: rebasedDate(r, list, anchor),
         title: r.propertyAddress,
         sub: r.propertyType,
         loan: r.loanNo,
@@ -239,9 +239,9 @@ export function downloadText(filename: string, text: string, mime = "text/csv") 
 
 const fmtLong = (ts: number) => new Date(ts).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 
-/** Whole days from the demo's today to `ts` (never negative). */
-export function daysUntil(ts: number): number {
-  return Math.max(0, Math.ceil((ts - DEMO_TODAY) / 86_400_000));
+/** Whole days from `now` (default: the demo's today) to `ts` (never negative). */
+export function daysUntil(ts: number, now: number = DEMO_TODAY): number {
+  return Math.max(0, Math.ceil((ts - now) / 86_400_000));
 }
 
 /** "No expiry", or a long date. */
@@ -250,7 +250,7 @@ export function expiryLabel(g: BalanceGrant): string {
 }
 
 /** The PC-16 spend order (lib/wallet-view), then the next expiry (or that nothing expires soon). */
-export function spendOrderSentence(grants: readonly BalanceGrant[]): string {
+export function spendOrderNote(grants: readonly BalanceGrant[]): string {
   const next = nextExpiring(grants);
   if (!next) return `${spendOrder()} Nothing expires soon.`;
   const n = next.remaining;
@@ -352,7 +352,7 @@ export function walletStatement(
 }
 
 /** Statement for an invoiced org: derived from its reviews, billed at list value. */
-export function invoicedStatement(reviews: readonly Review[], userName: UserName, key: string): Statement {
+export function invoicedStatement(reviews: readonly Review[], userName: UserName, key: string, anchor: number = DEMO_TODAY): Statement {
   const { start, end } = monthBounds(key);
   const groups: StatementGroup[] = [];
   let creditsUsed = 0;
@@ -361,7 +361,7 @@ export function invoicedStatement(reviews: readonly Review[], userName: UserName
   const all = invoicedReviews(reviews);
   for (const r of all) {
     // Only reviews run in this statement's month (seed dates are re-based onto the demo "today").
-    const at = rebasedDate(r, all);
+    const at = rebasedDate(r, all, anchor);
     if (at < start || at >= end) continue;
     const g: StatementGroup = { key: r.id, loan: r.loanNo, address: r.propertyAddress, kind: r.propertyType, lines: [] };
     for (const t of r.reviewTypes) {
@@ -387,10 +387,10 @@ export function invoicedReviews(reviews: readonly Review[]): Review[] {
   return reviews.filter((r) => !r.sample).sort((a, b) => b.orderedAt - a.orderedAt);
 }
 
-/** Seeded reviews sit in June; re-base them so the newest lands on the demo "today". */
-export function rebasedDate(r: Review, all: readonly Review[]): number {
+/** Seeded reviews sit months back; re-base them so the newest lands on `anchor` (same rule as `invoicedSpendEntries`). */
+export function rebasedDate(r: Review, all: readonly Review[], anchor: number = DEMO_TODAY): number {
   const newest = Math.max(...all.map((x) => x.orderedAt));
-  return DEMO_TODAY - (newest - r.orderedAt);
+  return anchor - (newest - r.orderedAt);
 }
 
 export function statementCsv(s: Statement): string {

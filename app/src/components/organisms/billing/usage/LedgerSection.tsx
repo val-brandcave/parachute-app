@@ -31,6 +31,7 @@ export function LedgerSection({
   onReceipt,
   title = "Every credit movement",
   filename = "parachute-credit-activity.csv",
+  showExport = true,
 }: {
   rows: ActivityRow[];
   showAmounts: boolean;
@@ -42,6 +43,8 @@ export function LedgerSection({
   onReceipt?: (id: string) => void;
   title?: string;
   filename?: string;
+  /** Off where the page already exports on its own filter row (Usage, PC-33). */
+  showExport?: boolean;
 }) {
   const [filter, setFilter] = useState<Filter>("all");
   const [who, setWho] = useState("");
@@ -93,7 +96,7 @@ export function LedgerSection({
     <div className="bl-stack">
       <div className="bl-row bl-sechead us-sechead">
         <h2 className="bl-section">{title}</h2>
-        {filtered.length > 0 && (
+        {showExport && filtered.length > 0 && (
           <Button variant="outline" iconLeft="download" onClick={() => downloadText(filename, activityCsv(filtered))}>
             Export CSV
           </Button>

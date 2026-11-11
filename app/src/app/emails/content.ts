@@ -4,10 +4,12 @@ import {
   EARN_CAP_CREDITS,
   EARN_REWARD_CREDITS,
   TRIAL_GRANT_CREDITS,
+  DEFAULT_PACK_ID,
   approxValue,
   costFor,
   formatUsd,
 } from "@/lib/pricing";
+import { checkoutHref } from "@/lib/checkout";
 import { slotLabel } from "@/lib/call-slots";
 import { seedCreditLedger } from "@/data/seed/credit-ledger.seed";
 
@@ -23,7 +25,8 @@ export type EmailBlock =
   | { kind: "p"; text: string }
   | { kind: "code"; value: string }
   | { kind: "rows"; rows: [label: string, value: string][] }
-  | { kind: "cta"; label: string }
+  /** `href`: where the live e-mail's button goes (the preview renders it as a link). */
+  | { kind: "cta"; label: string; href?: string }
   | { kind: "small"; text: string };
 
 export interface EmailSpec {
@@ -75,6 +78,10 @@ const receiptBalance = balanceThrough(receiptRow.id);
 const receiptCredits = Math.abs(receiptRow.credits);
 
 const LOW_BALANCE = 1;
+
+// Every "Add credits" e-mail button opens checkout on the default pack (no `return`:
+// Exit checkout falls back to Billing).
+const ADD_CREDITS_HREF = checkoutHref({ pack: DEFAULT_PACK_ID });
 
 // Setup call: the demo slot is Fri 13 Nov, 10:00 AM Eastern.
 const CALL_AT = Date.UTC(2026, 10, 13, 15, 0);
@@ -178,10 +185,38 @@ export const emails: EmailSpec[] = [
           ["Auto-reload", "Off"],
         ],
       },
-      { kind: "cta", label: "Add credits" },
+      { kind: "cta", label: "Add credits", href: ADD_CREDITS_HREF },
       {
         kind: "small",
         text: `Packs of ${packList} credits (${packPrices}). Only an organization admin can buy. Uploads stay saved as drafts until the balance covers them.`,
+      },
+    ],
+  },
+  {
+    id: "zero-balance",
+    chip: "Zero balance",
+    product: "Parachute",
+    ...FROM_PARACHUTE,
+    to: TO,
+    subject: `${ORG} is out of credits`,
+    blocks: [
+      { kind: "p", text: `Hi ${FIRST},` },
+      {
+        kind: "p",
+        text: `${ORG} has **0 credits left**. A full review uses ${fullReview} credits, so new reviews wait at Start until credits are added. Uploads stay saved as drafts and nothing is charged.`,
+      },
+      {
+        kind: "rows",
+        rows: [
+          ["Balance", "0 credits"],
+          ["Full review", `${fullReview} credits ${sep} ${approxValue(fullReview)}`],
+          ["Auto-reload", "Off"],
+        ],
+      },
+      { kind: "cta", label: "Add credits", href: ADD_CREDITS_HREF },
+      {
+        kind: "small",
+        text: `Packs of ${packList} credits (${packPrices}). Only an organization admin can buy.`,
       },
     ],
   },

@@ -4,7 +4,7 @@ import { LOW_BALANCE_AT } from "@/lib/pricing";
 import { balanceGrants } from "@/lib/wallet-breakdown";
 import { remainingFromLedger, sourcesFor } from "@/store/wallet.store";
 import type { CreditLedgerEntry, LedgerKind, WalletSettings } from "@/types";
-import { autoReloadDue, spendOrderSentence, usageByPerson, usageByType, walletView } from "./wallet-view";
+import { autoReloadDue, invoicedSpendEntries, spendOrderSentence, usageByPerson, usageByType, walletView } from "./wallet-view";
 
 const DAY = 86_400_000;
 const NOW = new Date(2026, 10, 12, 12, 0).getTime();
@@ -215,5 +215,22 @@ describe("spendOrderSentence", () => {
     expect(spendOrderSentence()).toBe(
       "Credits that expire soonest are used first: purchased packs (oldest first), then earned, then trial.",
     );
+  });
+});
+
+describe("invoicedSpendEntries", () => {
+  const rev = (id: string, orderedAt: number, types: ("technical" | "administrative")[], sample = false) =>
+    ({ id, orgId: "org-001", orderedAt, reviewTypes: types, assigneeId: "u1", loanNo: id, propertyAddress: id, sample }) as unknown as import("@/types").Review;
+  it("one debit per non-sample review, re-based so the newest lands on the anchor", () => {
+    const anchor = 1_800_000_000_000;
+    const rows = invoicedSpendEntries(
+      [rev("a", 1000, ["technical", "administrative"]), rev("b", 400, ["technical"]), rev("s", 2000, ["technical"], true)],
+      anchor,
+    );
+    expect(rows.map((r) => [r.reviewId, r.credits, r.createdAt])).toEqual([
+      ["a", -2, anchor],
+      ["b", -1, anchor - 600],
+    ]);
+    expect(walletView(rows, { now: anchor, billing: "invoiced" }).usedThisMonth).toBe(3);
   });
 });

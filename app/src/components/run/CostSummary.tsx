@@ -8,14 +8,14 @@ import { useOrgStore, useUsersStore, useWalletStore, useWalletView } from "@/sto
 import { sourcesFor } from "@/store/wallet.store";
 import { useCurrentUser } from "@/lib/current-user";
 import {
-  CREDIT_PACKS,
-  DEFAULT_PACK_ID,
   REVIEW_TYPE_COST,
   approxValue,
   costFor,
+  customPriceUsd,
   formatUsd,
   packById,
 } from "@/lib/pricing";
+import { initialChoice } from "@/lib/checkout";
 import type { ReviewType } from "@/types";
 
 const TYPE_LABEL: Record<ReviewType, string> = {
@@ -134,17 +134,21 @@ export function TypeCostChip({ type }: { type: ReviewType }) {
 
 /**
  * D3 / D3b — shown above the footbar when the balance can't cover the selected types.
- * org_admin: Add credits (opens C's modal) · Run X only.
+ * org_admin: Add credits (checkout, prefilled with the shortfall) · Run X only.
  * Everyone else: Run X only · Ask your admin (no purchase path).
+ * `onAddCredits` (from the run host) keeps the upload as an intake draft first and
+ * returns to it after paying; without one, Add credits records a plain intent.
  */
 export function LowBalanceCallout({
   selected,
   cost,
   onRunOnly,
+  onAddCredits,
 }: {
   selected: readonly ReviewType[];
   cost: RunCost;
   onRunOnly: (t: ReviewType) => void;
+  onAddCredits?: (needed: number) => void;
 }) {
   const toast = useToast();
   const me = useCurrentUser();
@@ -157,11 +161,19 @@ export function LowBalanceCallout({
   const fitting = selected.filter((t) => REVIEW_TYPE_COST[t] <= cost.balance);
   const runOnly = selected.length > 1 && fitting.length >= 1 ? fitting[0] : null;
 
-  // Default pack, or the smallest one that covers the shortfall.
-  const shortfall = cost.credits - cost.balance;
-  const def = packById(DEFAULT_PACK_ID);
-  const pack =
-    def.credits >= shortfall ? def : (CREDIT_PACKS.find((p) => p.credits >= shortfall) ?? def);
+  // The SHORTFALL (cost − balance), never the full cost (RF2). The label matches what
+  // checkout opens on: exactly the shortfall below the smallest pack, else the
+  // smallest pack that covers it.
+  const shortfall = Math.max(cost.credits - cost.balance, 1);
+  const choice = initialChoice(shortfall);
+  const buy =
+    "credits" in choice
+      ? { credits: choice.credits, priceUsd: customPriceUsd(choice.credits) }
+      : packById(choice.pack);
+  const addCredits = () =>
+    onAddCredits
+      ? onAddCredits(shortfall)
+      : useWalletStore.getState().openTopUp({ reason: "low_balance", needed: shortfall });
 
   const askAdmin = () =>
     toast({
@@ -186,11 +198,9 @@ export function LowBalanceCallout({
               variant="primary"
               size="sm"
               iconLeft="add"
-              onClick={() =>
-                useWalletStore.getState().openTopUp({ reason: "low_balance", needed: cost.credits })
-              }
+              onClick={addCredits}
             >
-              Add {pack.credits} credits · {formatUsd(pack.priceUsd)}
+              Add {plural(buy.credits, "credit")} · {formatUsd(buy.priceUsd)}
             </Button>
           )}
           {runOnly && (

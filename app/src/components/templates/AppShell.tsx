@@ -21,7 +21,7 @@ import { SearchTrigger } from "@/components/organisms/SearchTrigger";
 import { CommandPalette } from "@/components/organisms/CommandPalette";
 import { RunModal } from "@/components/run/RunModal";
 import { DemoDock } from "@/components/organisms/DemoDock";
-import { TopUpModal, ReceiptDialog } from "@/components/organisms/wallet";
+import { ReceiptDialog } from "@/components/organisms/wallet";
 import { CreditsPill } from "@/components/organisms/CreditsPill";
 import { SidebarResourceLinks } from "@/components/organisms/SidebarResourceLinks";
 import { LockDialog } from "@/components/organisms/LockDialog";
@@ -222,7 +222,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <CommandPalette open={searchOpen} onClose={() => setSearchOpen(false)} />
       <RunModal />
       <EarnedToastHost />
-      <TopUpModal />
       <ReceiptDialog />
       <DemoDock />
       <LockDialog />

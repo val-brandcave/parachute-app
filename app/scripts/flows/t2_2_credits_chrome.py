@@ -130,7 +130,9 @@ def run(page, ctx):
         open_pill(page)
         page.locator(".credits-pop").get_by_role("button", name="Add credits").click()
         page.wait_for_timeout(1200)
-        ctx.check("/configure/billing" in page.url, f"Add credits goes to billing ({page.url})")
+        # Phase 3: Add credits lands on the focused checkout with the default pack and a return path.
+        ctx.check("/checkout/credits" in page.url and "pack=pack10" in page.url and "return=" in page.url,
+                  f"Add credits goes to checkout ({page.url})")
         ctx.visit("/dashboard")
 
     # sidebar rows

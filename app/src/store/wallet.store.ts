@@ -59,6 +59,15 @@ export function sourcesFor(remaining: RemainingBySource, credits: number): Credi
 
 export type TopUpReason = "manual" | "low_balance";
 
+/** A pending "Add credits" request, consumed by CheckoutLauncher. */
+export interface TopUpIntent {
+  reason: TopUpReason;
+  /** Shortfall in credits (cost − balance), never the full cost (RF2). */
+  needed?: number;
+  /** Credit request being fulfilled (phase 4). */
+  request?: string;
+}
+
 type NewEntry = Partial<
   Omit<CreditLedgerEntry, "id" | "orgId" | "createdAt" | "actorId" | "kind" | "credits">
 > & {
@@ -85,11 +94,9 @@ interface WalletState {
   settings: WalletSettings | null;
   loading: boolean;
 
-  /** Global top-up dialog + receipt dialog open state (mounted once in the shell). */
-  topUpOpen: boolean;
-  topUpReason: TopUpReason;
-  /** Credits the blocked action needed, when opened from a low-balance state. */
-  topUpNeeded: number | null;
+  /** "Add credits" was asked for (spec §5.6). CheckoutLauncher (mounted once in AppShell)
+   *  turns it into a /checkout/credits navigation and clears it. `needed` is the SHORTFALL. */
+  topUpIntent: TopUpIntent | null;
   receiptId: string | null;
 
   fetchWallet: (orgId?: string | null) => Promise<void>;
@@ -127,8 +134,9 @@ interface WalletState {
   /** Finance details and alert preferences (Billing > Settings). */
   setBillingSettings: (patch: Partial<Omit<WalletSettings, "id" | "orgId" | "createdAt">>) => Promise<void>;
 
-  openTopUp: (opts?: { reason?: TopUpReason; needed?: number }) => void;
-  closeTopUp: () => void;
+  /** Records the intent only; CheckoutLauncher routes to checkout. Callers unchanged. */
+  openTopUp: (opts?: { reason?: TopUpReason; needed?: number; request?: string }) => void;
+  clearTopUpIntent: () => void;
   openReceipt: (receiptId: string) => void;
   closeReceipt: () => void;
 }
@@ -165,9 +173,7 @@ export const useWalletStore = create<WalletState>((set, get) => {
     ledger: [],
     settings: null,
     loading: false,
-    topUpOpen: false,
-    topUpReason: "manual",
-    topUpNeeded: null,
+    topUpIntent: null,
     receiptId: null,
 
     fetchWallet: async (orgId) => {
@@ -285,11 +291,13 @@ export const useWalletStore = create<WalletState>((set, get) => {
 
     openTopUp: (opts) =>
       set({
-        topUpOpen: true,
-        topUpReason: opts?.reason ?? "manual",
-        topUpNeeded: opts?.needed ?? null,
+        topUpIntent: {
+          reason: opts?.reason ?? "manual",
+          ...(opts?.needed !== undefined ? { needed: opts.needed } : {}),
+          ...(opts?.request ? { request: opts.request } : {}),
+        },
       }),
-    closeTopUp: () => set({ topUpOpen: false, topUpNeeded: null }),
+    clearTopUpIntent: () => set({ topUpIntent: null }),
     openReceipt: (receiptId) => set({ receiptId }),
     closeReceipt: () => set({ receiptId: null }),
   };

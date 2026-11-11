@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -14,6 +15,8 @@ import { CURRENT_USER } from "@/lib/current-user";
 import type { ReviewType } from "@/types";
 import { costFor } from "@/lib/pricing";
 import { RunExperience, type RunStartHandler } from "./RunExperience";
+import { RunAddCreditsContext, type RunAddCreditsHandler } from "./RunConfirm";
+import { checkoutBlock, useLaunchCheckout } from "@/components/organisms/CheckoutLauncher";
 
 // Re-exported for the run subviews that still import the shared context shape.
 export type { RunContext } from "./RunExperience";
@@ -41,7 +44,9 @@ export function RunModal() {
   const mode = useSessionStore((s) => s.mode);
   const resetSession = useSessionStore((s) => s.reset);
   const addReview = useReviewsStore((s) => s.addReview);
+  const updateReview = useReviewsStore((s) => s.updateReview);
   const embedded = mode === "embedded";
+  const launchCheckout = useLaunchCheckout();
 
   const onExit = () => {
     close();
@@ -62,7 +67,7 @@ export function RunModal() {
     const wallet = useWalletStore.getState();
     const need = costFor(types as ReviewType[]);
     if (!wallet.canAfford(need)) {
-      wallet.openTopUp({ reason: "low_balance", needed: need });
+      onAddCredits({ display, types, needed: need - wallet.balance() });
       return;
     }
     // Standalone: the drop / dashboard-YC pick becomes a real running review the
@@ -99,6 +104,54 @@ export function RunModal() {
     })();
   };
 
+  // Draft before checkout (spec §5.6): the drop / YC pick has no review yet, and
+  // run.store doesn't survive a reload, so keep the upload as an `intake` review with
+  // the chosen types and come back to it (`/reviews/<id>` → intake → Review setup).
+  // Embedded YouConnect runs never reach checkout.
+  // One draft per overlay run: a double click, or the callout then the Start backstop,
+  // reuses the draft (in flight or created) instead of adding a second intake review.
+  const draftRef = useRef<{ runId: string | null; id: Promise<string> } | null>(null);
+  const onAddCredits: RunAddCreditsHandler = ({ display, types, needed }) => {
+    if (embedded || checkoutBlock()) {
+      launchCheckout({ needed }); // explains (embedded / role) or no-ops (invoiced); creates nothing
+      return;
+    }
+    const reviewTypes = types as ReviewType[];
+    const existing = draftRef.current?.runId === reviewId ? draftRef.current : null;
+    if (existing) {
+      void (async () => {
+        const id = await existing.id;
+        await updateReview(id, { reviewTypes });
+        close();
+        launchCheckout({ needed, returnTo: `/reviews/${id}`, types: reviewTypes });
+      })();
+      return;
+    }
+    const id = addReview({
+      propertyAddress: display.address,
+      propertyType: display.propertyType,
+      bank: display.bank,
+      appraisalFirm: display.firm,
+      loanNo: display.loanNo,
+      status: "intake",
+      reviewTypes,
+      assigneeId: CURRENT_USER.id,
+      source: source === "yc" ? "yc" : "manual",
+      riskRating: null,
+      openFindings: 0,
+      flaggedCount: 0,
+      worstSeverity: null,
+      pipelineStage: 0,
+      slaDueAt: Date.now() + DEFAULT_SLA_DAYS * 86_400_000,
+    }).then((d) => d.id);
+    draftRef.current = { runId: reviewId, id };
+    void (async () => {
+      const draftId = await id;
+      close();
+      launchCheckout({ needed, returnTo: `/reviews/${draftId}`, types: reviewTypes });
+    })();
+  };
+
   return (
     <AnimatePresence>
       {open && reviewId && (
@@ -112,7 +165,9 @@ export function RunModal() {
           aria-modal="true"
           aria-label="Review run"
         >
-          <RunExperience reviewId={reviewId} onExit={onExit} onStart={onStart} />
+          <RunAddCreditsContext.Provider value={onAddCredits}>
+            <RunExperience reviewId={reviewId} onExit={onExit} onStart={onStart} />
+          </RunAddCreditsContext.Provider>
         </motion.div>
       )}
     </AnimatePresence>

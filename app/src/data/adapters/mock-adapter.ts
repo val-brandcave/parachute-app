@@ -46,7 +46,10 @@ const SEEDED_KEY = `${STORAGE_PREFIX}:__seeded__`;
 //      Way → 4 credits, grant dated two days before load), setup 2 of 8 (first review + invite),
 //      sample_review out of the step list. Release note: "This update resets demo data in your
 //      browser. Use the state pill or the Prototype Index to get back to any state in one click."
-const SEED_VERSION = "v23";
+//      v24: pattern change phase 3 - saved cards carry an expiry (cardExpiry "08/28").
+//      Release note: "This update resets demo data in your browser. Use the state pill or the
+//      Prototype Index to get back to any state in one click."
+const SEED_VERSION = "v24";
 
 export const mockAdapter: DataAdapter = {
   async getAll<T>(collection: string): Promise<T[]> {

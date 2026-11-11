@@ -6,7 +6,7 @@ import { useApprovalPending } from "@/store";
 import { Button } from "@/components/atoms";
 import { EmptyLine, EmptyState, GhostRows } from "@/components/molecules";
 import { formatUsd } from "@/lib/pricing";
-import { DEMO_TODAY, invoicedStatement, monthKey, monthTitle, walletStatement } from "../billing-data";
+import { invoicedStatement, monthKey, monthTitle, walletStatement } from "../billing-data";
 import type { useBilling } from "../useBilling";
 import "../billing-settings.css";
 
@@ -147,7 +147,7 @@ function Invoices({ b }: { b: B }) {
   const router = useRouter();
   const email = b.settings?.billingEmail ?? "your billing contact";
   const rows = useMemo(() => {
-    const now = invoicedStatement(b.reviews, b.userName, monthKey(DEMO_TODAY));
+    const now = invoicedStatement(b.reviews, b.userName, monthKey(b.now), b.now);
     const make = (key: string, f: number, status: "open" | "due" | "paid") => ({
       key,
       id: `INV-${key}`,
@@ -158,7 +158,7 @@ function Invoices({ b }: { b: B }) {
     });
     // November is still running; earlier months are illustrative history scaled from it (net 30 after month end).
     return [make("2026-11", 1, "open"), make("2026-10", 0.9, "due"), make("2026-09", 0.82, "paid")];
-  }, [b.reviews, b.userName]);
+  }, [b.reviews, b.userName, b.now]);
   return (
     <section className="bs-block">
       <div className="bs-blockhead">

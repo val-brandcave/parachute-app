@@ -7,7 +7,8 @@ import { Icon, type IconName } from "@/components/atoms";
 import { cn } from "@/lib/utils";
 import { useStartGate } from "@/components/organisms/home/useStartGate";
 import { useSetupGuideVisible } from "@/lib/landing";
-import { useReviewsStore } from "@/store";
+import { useOrgStore, useReviewsStore, useWalletStore } from "@/store";
+import { useCurrentUser } from "@/lib/current-user";
 import { reviewHref } from "./ReviewTable";
 
 type Cmd = {
@@ -67,6 +68,10 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
   const { reviews, fetchReviews } = useReviewsStore();
   const gate = useStartGate();
   const setupVisible = useSetupGuideVisible();
+  const me = useCurrentUser();
+  const invoiced = useOrgStore((s) => s.org?.billing === "invoiced");
+  // Only org admins buy, and only wallet (trial / pay-as-you-go) orgs have credits to buy.
+  const canBuy = me.role === "org_admin" && !invoiced;
   const [q, setQ] = useState("");
   const [active, setActive] = useState(0);
   const listRef = useRef<HTMLDivElement>(null);
@@ -123,11 +128,30 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
         disabledReason: gate.locked ? gate.reason : undefined,
         run: () => go(() => router.push("/launchpad")),
       },
+      ...(canBuy
+        ? [
+            {
+              id: "a-add-credits",
+              group: "Actions",
+              label: "Add credits",
+              icon: "coins" as IconName,
+              // CheckoutLauncher turns the intent into /checkout/credits?pack=…&return=<here>.
+              run: () => go(() => useWalletStore.getState().openTopUp({ reason: "manual" })),
+            },
+          ]
+        : []),
+      {
+        id: "a-how-credits",
+        group: "Actions",
+        label: "How credits work",
+        icon: "help" as IconName,
+        run: () => go(() => router.push("/configure/billing?tab=credits")),
+      },
     ].filter((a) => !ql || a.label.toLowerCase().includes(ql));
 
     return [...reviewItems, ...navItems, ...actionItems];
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q, reviews, gate.locked, gate.reason, setupVisible]);
+  }, [q, reviews, gate.locked, gate.reason, setupVisible, canBuy]);
 
   // Keep the active row scrolled into view (DOM sync, no setState).
   useEffect(() => {

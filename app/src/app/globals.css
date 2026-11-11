@@ -17480,3 +17480,11 @@ h1, h2, h3, h4, p, li, .ui-chip, .ui-callout {
   background: var(--md-selected);
   color: var(--md-on-selected);
 }
+
+/* LockedAction (T4.0, DS-candidate): trailing lock / hourglass glyph on a locked trigger. */
+.locked-glyph {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 6px;
+  opacity: 0.8;
+}

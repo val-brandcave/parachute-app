@@ -9,7 +9,7 @@ ROUTES = ["/dashboard", "/reviews", "/configure/billing"]
 EXPECT = {
     "/dashboard": r"Your dashboard fills in after your first review",
     "/reviews": r"No reviews yet",
-    "/configure/billing": r"Your balance and usage show up here|Usage starts with your first review|Plan|Billing|Credits|Balance",
+    "/configure/billing": r"Your balance and usage show up here|Usage starts with your first review|waiting for approval|Plan|Billing|Credits|Balance",
 }
 REASON = "Opens when your organization is approved"
 

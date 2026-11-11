@@ -7,7 +7,7 @@
 import { AUTO_RELOAD_DEFAULTS, LOW_BALANCE_AT, REVIEW_TYPE_COST, costFor, packById } from "@/lib/pricing";
 import { FULL_REVIEW_TYPES } from "@/lib/setup-steps";
 import { balanceGrants, type BalanceGrant } from "@/lib/wallet-breakdown";
-import type { ApprovalState, BillingModel, CreditLedgerEntry, ReviewType, WalletSettings } from "@/types";
+import type { ApprovalState, BillingModel, CreditLedgerEntry, Review, ReviewType, WalletSettings } from "@/types";
 
 const DAY = 86_400_000;
 const FULL_REVIEW_COST = costFor(FULL_REVIEW_TYPES);
@@ -23,6 +23,10 @@ export interface WalletView {
   usedThisMonth: number;
   runwayDays: number | null;
   runsOutOn: number | null;
+  /** Credits a week at the last-30-day pace (0 when nothing was used). */
+  pacePerWeek: number;
+  /** When the last debit (a review start) happened, or null. */
+  lastDebitAt: number | null;
   /** ok above LOW_BALANCE_AT, low at or under it, zero at 0. */
   lowTone: "ok" | "low" | "zero";
   /** Enterprise org waiting for approval: credits are held. */
@@ -110,6 +114,11 @@ export function walletView(
     usedThisMonth: usageByType(ledger, monthOf(now)).total,
     runwayDays,
     runsOutOn,
+    pacePerWeek: pace * 7,
+    lastDebitAt: ledger.reduce<number | null>(
+      (m, e) => (e.kind === "debit" || e.kind === "rescan" ? Math.max(m ?? 0, e.createdAt) : m),
+      null,
+    ),
     lowTone,
     held: opts.approval === "pending",
     grants,
@@ -165,4 +174,29 @@ export function autoReloadDue(
 /** The one sentence that states the spend order (PC-16). */
 export function spendOrderSentence(): string {
   return "Credits that expire soonest are used first: purchased packs (oldest first), then earned, then trial.";
+}
+
+/**
+ * Invoiced orgs have no wallet ledger: their usage is their reviews. This turns every
+ * non-sample review into a synthetic debit (one per review, its types' cost), re-based so
+ * the newest review lands on `anchor` (seeded reviews sit months back). Feed the result to
+ * `walletView` / `usageByType` / `usageByPerson` so the header pill, popover and Billing
+ * read ONE derivation for invoiced orgs too (RF3). Pure.
+ */
+export function invoicedSpendEntries(reviews: readonly Review[], anchor: number): CreditLedgerEntry[] {
+  const list = reviews.filter((r) => !r.sample);
+  if (list.length === 0) return [];
+  const newest = Math.max(...list.map((r) => r.orderedAt));
+  return list.map((r) => ({
+    id: `inv-${r.id}`,
+    orgId: r.orgId ?? "",
+    kind: "debit" as const,
+    credits: -costFor(r.reviewTypes),
+    reviewId: r.id,
+    loanNo: r.loanNo,
+    reviewTypes: [...r.reviewTypes],
+    actorId: r.assigneeId,
+    note: r.propertyAddress,
+    createdAt: anchor - (newest - r.orderedAt),
+  }));
 }

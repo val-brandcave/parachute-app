@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useToast } from "@realwired/ui";
 import { useCurrentOrg, useCurrentUser } from "@/lib/current-user";
 import { useOrgStore, useReviewsStore, useUsersStore, useWalletStore, useWalletView } from "@/store";
@@ -24,6 +24,8 @@ export function useBilling() {
   const admin = users.find((u) => u.id === org?.billingContactId) ?? users.find((u) => u.role === "org_admin");
   const adminName = admin?.name ?? "your admin";
 
+  // Fixed for the life of the screen so render stays pure (React 19); the wallet view reads its own.
+  const [now] = useState(() => Date.now());
   const wallet = useWalletView();
   const remaining = useMemo(() => ({ ...wallet.bySource, total: wallet.balance }), [wallet]);
   const rows = useMemo(
@@ -47,6 +49,7 @@ export function useBilling() {
     admin,
     adminName,
     adminFirst: adminName.split(" ")[0],
+    now,
     wallet,
     remaining,
     rows,

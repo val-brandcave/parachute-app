@@ -4,6 +4,8 @@ export { ConfidenceMeter } from "./ConfidenceMeter";
 export { StatCard } from "./StatCard";
 export { SegmentedControl } from "./SegmentedControl";
 export { SelectTile } from "./SelectTile";
+export { HStepper, type HStep } from "./HStepper";
+export { LockedAction, lockReasonText } from "./LockedAction";
 export { RoleSelect } from "./RoleSelect";
 export { Breadcrumbs } from "./Breadcrumbs";
 export { ActionMenu, type ActionItem } from "./ActionMenu";
