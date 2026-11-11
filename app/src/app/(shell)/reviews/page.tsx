@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { EMPTY_FILTERS, activeFilterCount, useReviewQueue } from "./hooks/useReviewQueue";
 import "./reviews.css";
@@ -13,7 +12,7 @@ import {
   EmptyLine,
   GhostRows,
 } from "@/components/molecules";
-import { Button, Chip } from "@/components/atoms";
+import { Button } from "@/components/atoms";
 import { useStartGate } from "@/components/organisms/home/useStartGate";
 import { useOrgStore } from "@/store";
 import { PageBody, PageHeader, SearchInput, Tabs } from "@realwired/ui";
@@ -22,7 +21,6 @@ export default function MyReviewsPage() {
   const {
     isLoading,
     isEmpty,
-    sample,
     counts,
     team,
     firmOptions,
@@ -39,7 +37,6 @@ export default function MyReviewsPage() {
     cycleSort,
   } = useReviewQueue();
 
-  const router = useRouter();
   const { locked } = useStartGate();
   const orgName = useOrgStore((s) => s.org?.name);
 
@@ -139,31 +136,6 @@ export default function MyReviewsPage() {
                   opens once that is done.
                 </>
               ) : undefined
-            }
-            aside={
-              sample ? (
-                <div className="rq-sample">
-                  <span className="rq-sample-main">
-                    <span className="rq-sample-addr">
-                      {sample.propertyAddress}
-                      <Chip tone="info">Sample</Chip>
-                    </span>
-                    <span className="rq-sample-meta">
-                      A finished example &middot; {sample.propertyType}
-                      {sample.flaggedCount > 0 && (
-                        <Chip tone="flag">{sample.flaggedCount} flagged</Chip>
-                      )}
-                    </span>
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => router.push("/reviews/review-sample")}
-                  >
-                    Open the sample
-                  </Button>
-                </div>
-              ) : null
             }
           >
             Every appraisal your team runs lands here, with its findings and due date.

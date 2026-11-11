@@ -2,37 +2,29 @@
 
 import { CreditChip, Icon, Tooltip, type CreditChipTone } from "@/components/atoms";
 import { cn } from "@/lib/utils";
-import { useApprovalPending, useOrgStore, useWalletView } from "@/store";
+import { useOrgStore, useWalletView } from "@/store";
 import { useSetupActions } from "./home";
+import "./credits-chrome.css";
 
-/** Sidebar footer pill above the OrgCard: "6 trial" while every credit is trial, "13 credits" once
- *  mixed or bought, amber at or under LOW_BALANCE_AT (wallet-view lowTone) and amber "Pending" while
- *  approval is open. */
+/** Sidebar footer pill above the OrgCard (spec §5.3). Always "N credits" (PC-6: no trial label or tone):
+ *  navy tint when healthy, amber at or under LOW_BALANCE_AT, red at zero, neutral "On hold" while approval
+ *  is open. Hidden for invoiced and YouConnect orgs; the header pill carries their "used" state. */
 export function BalancePill({ collapsed }: { collapsed: boolean }) {
   const billing = useOrgStore((s) => s.org?.billing);
   const wallet = useWalletView();
-  const pending = useApprovalPending();
   const { billing: openBilling } = useSetupActions();
   if (billing !== "trial" && billing !== "payg") return null;
 
-  const { balance, bySource } = wallet;
-  const allTrial = balance > 0 && bySource.trial === balance;
-  const low = wallet.lowTone !== "ok";
+  const { balance } = wallet;
   const noun = `credit${balance === 1 ? "" : "s"}`;
 
   let tone: CreditChipTone;
   let label: string;
-  if (pending) {
-    tone = "low";
-    label = "Pending";
-  } else if (low) {
-    tone = "low";
-    label = `${balance} ${noun}`;
-  } else if (allTrial) {
-    tone = "trial";
-    label = `${balance} trial`;
+  if (wallet.held) {
+    tone = "held";
+    label = "On hold";
   } else {
-    tone = "credit";
+    tone = wallet.lowTone === "zero" ? "zero" : wallet.lowTone === "low" ? "low" : "credit";
     label = `${balance} ${noun}`;
   }
 

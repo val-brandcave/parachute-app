@@ -15280,21 +15280,6 @@ select.qfilter {
 }
 
 /* ===== Self-serve v2 (B): arrival banners and Start gating ===== */
-.hm-banner {
-  margin-bottom: 16px;
-}
-.hm-banner-body {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.hm-banner-body strong {
-  color: var(--md-on-surface);
-}
-.hm-banner-ghost {
-  display: inline-flex;
-  margin-top: 6px;
-}
 .intake-drop.is-locked,
 .intake-drop.is-locked:hover,
 .intake-drop.is-locked:focus-visible {
@@ -16781,26 +16766,6 @@ select.qfilter {
 
 
 
-/* ---- Home grid ---- */
-.home-grid {
-  display: grid;
-  grid-template-columns: 1.75fr 1fr;
-  gap: var(--d-gap);
-  align-items: start;
-}
-.home-main,
-.home-side {
-  display: flex;
-  flex-direction: column;
-  gap: var(--d-gap);
-  min-width: 0;
-}
-@media (max-width: 1100px) {
-  .home-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
 /* ---- SetupChecklist ---- */
 
 
@@ -17247,26 +17212,6 @@ a[href="/get-started"][aria-current="page"].justify-center::before {
 a[href="/get-started"][aria-current="page"].justify-center::after {
   background: currentColor;
 }
-.gs-done {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-.gs-done-ic {
-  display: grid;
-  place-items: center;
-  flex: none;
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  background: var(--md-success-c);
-  color: var(--md-success);
-}
-.gs-done-body {
-  flex: 1;
-  min-width: 0;
-}
-
 /* Phase 3: keep the demo dock clear of the run takeover's cost footbar */
 body:has(.run) .demo-dock { bottom: 84px; }
 
@@ -17313,6 +17258,21 @@ body:has(.run) .demo-dock { bottom: 84px; }
 .cchip--low {
   background: var(--md-warn-c);
   color: var(--md-warn-solid);
+}
+/* T2.2 tones (DS-candidate): moved here so a CreditChip renders styled outside (shell) too. */
+.cchip--zero {
+  background: var(--md-error-c);
+  color: var(--md-error);
+}
+.cchip--held {
+  background: var(--md-surface-2);
+  border-color: var(--md-outline-v);
+  color: var(--md-on-surface-v);
+}
+.cchip--invoiced {
+  background: var(--md-surface-2);
+  border-color: var(--md-outline-v);
+  color: var(--md-on-surface);
 }
 
 /* ==========================================================================

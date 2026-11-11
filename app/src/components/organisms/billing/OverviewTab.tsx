@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Callout } from "@realwired/ui";
 import { Button, CreditChip } from "@/components/atoms";
 import { EmptyLine, EmptyState, GhostBars, GhostStats } from "@/components/molecules";
@@ -209,7 +208,6 @@ export function OverviewTab({
 }) {
   const { lines, anchor } = useUsage(b, false);
   const [period, setPeriod] = useState<UsagePeriod>("30d");
-  const router = useRouter();
   const pending = useApprovalPending();
   // Level 1: no credit has ever moved. One block instead of a zero balance, zero facts and an empty chart.
   if (b.ledger.length === 0) {
@@ -229,11 +227,6 @@ export function OverviewTab({
                 <b>{b.org?.name ?? "Your organization"} is waiting for approval.</b> Credits and reviews open once it is approved.
               </>
             ) : undefined
-          }
-          actions={
-            <Button variant="outline" iconRight="forward" onClick={() => router.push("/reviews/review-sample")}>
-              Open the sample review
-            </Button>
           }
         >
           Once credits are added you will see the balance, how long it lasts, and what each review used.

@@ -1,0 +1,194 @@
+/* Credits chrome (T2.2): header pill, popover, sidebar resource rows, new CreditChip tones. */
+
+/* ---- header pill ---- */
+.credits-pill {
+  display: inline-flex;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+}
+.credits-pill .cchip {
+  height: 32px;
+  padding: 0 12px;
+  font-size: 13px;
+}
+.credits-pill:hover .cchip {
+  filter: brightness(0.97);
+}
+.credits-pill:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-accent);
+}
+
+/* ---- popover (panel lifted to the 200 popover tier; doubled class beats the DS z utility) ---- */
+.credits-pop.credits-pop {
+  z-index: 200;
+  padding: 0;
+}
+.cp {
+  display: flex;
+  flex-direction: column;
+  font-size: 13px;
+  color: var(--md-on-surface);
+}
+.cp-hd {
+  padding: 16px 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.cp-org {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--md-on-surface-v);
+}
+.cp-big {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.cp-big b {
+  font-size: 22px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.cp-zero {
+  color: var(--md-error);
+}
+.cp-muted {
+  margin: 0;
+  color: var(--md-on-surface-v);
+  text-wrap: pretty;
+}
+.cp-faint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--md-on-surface-t);
+}
+.cp-bar {
+  height: 6px;
+  margin-top: 8px;
+  border-radius: 3px;
+  background: var(--md-surface-2);
+  overflow: hidden;
+}
+.cp-bar i {
+  display: block;
+  height: 100%;
+  background: var(--md-on-selected);
+}
+.cp-spot {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-top: 6px;
+}
+.cp-spot > svg {
+  flex: none;
+}
+.cp-held-t {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+.cp-rows {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--md-outline-v);
+  padding: 8px 16px;
+}
+.cp-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  color: var(--md-on-surface-v);
+}
+.cp-row > span:nth-child(2) {
+  flex: 1;
+}
+.cp-v {
+  font-weight: 600;
+  color: var(--md-on-surface);
+  font-variant-numeric: tabular-nums;
+}
+.cp-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 16px 12px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--md-selected);
+  color: var(--md-on-selected);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.cp-note:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-accent);
+}
+.cp-ft {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--md-outline-v);
+}
+
+/* ---- sidebar resource rows: DS nav-row geometry, quiet (no filled look) ---- */
+.sb-res {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  /* the DS nav list is inset 2px; match it so icons share one column */
+  padding: 0 2px;
+}
+.sb-res .sb-res-row {
+  background: transparent;
+  color: var(--md-on-surface-v);
+  font-weight: 500;
+  box-shadow: none;
+  transform: none;
+}
+.sb-res .sb-res-row:hover {
+  background: var(--md-surface-1);
+  transform: none;
+}
+.sb-res .sb-res-row.is-active {
+  background: var(--md-selected);
+  color: var(--md-on-selected);
+}
+
+/* ---- stub pages ---- */
+.cc-stub {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.cc-stub ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.cc-stub li {
+  padding: 10px 14px;
+  border: 1px solid var(--md-outline-v);
+  border-radius: 10px;
+  background: var(--md-surface);
+}
+.cc-stub li small {
+  display: block;
+  color: var(--md-on-surface-v);
+}

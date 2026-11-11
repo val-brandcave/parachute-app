@@ -1,8 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import { Button } from "@/components/atoms";
 import { EmptyState, GhostBars } from "@/components/molecules";
 import { CREDIT_USD, costFor, formatUsd } from "@/lib/pricing";
 import { FULL_REVIEW_TYPES } from "@/lib/setup-steps";
@@ -59,7 +57,6 @@ export function UsageTab({ b, invoiced }: { b: Billing; invoiced: boolean }) {
     return ids.map((id) => ({ id, name: b.userName(id) ?? "Unknown" })).sort((a, c) => a.name.localeCompare(c.name));
   }, [rows, b]);
 
-  const router = useRouter();
   const pending = useApprovalPending();
   const w = useMemo(() => windowFor(period, anchor), [period, anchor]);
   const hasUse = useMemo(() => within(lines, w.from, w.to).length > 0, [lines, w.from, w.to]);
@@ -78,11 +75,6 @@ export function UsageTab({ b, invoiced }: { b: Billing; invoiced: boolean }) {
                 <b>{b.org?.name ?? "Your organization"} is waiting for approval.</b> Reviews open once it is approved.
               </>
             ) : undefined
-          }
-          actions={
-            <Button variant="outline" iconRight="forward" onClick={() => router.push("/reviews/review-sample")}>
-              Open the sample review
-            </Button>
           }
         >
           {mine

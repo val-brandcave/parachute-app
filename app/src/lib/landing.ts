@@ -1,17 +1,25 @@
 import { SETUP_STEPS } from "@/lib/setup-steps";
-import { useOnboardingStore, useOrgStore, usePrefsStore, useSessionStore, useSetupHidden, useOrgStage } from "@/store";
+import {
+  setupEligible,
+  useOnboardingStore,
+  useOrgStore,
+  usePrefsStore,
+  useSessionStore,
+  useSetupHidden,
+  useOrgStage,
+} from "@/store";
 
 export const GET_STARTED_HREF = "/get-started";
 export const DASHBOARD_HREF = "/dashboard";
 
 /** Is the setup guide live for this user right now (read outside React)?
- *  Self-serve orgs only, setup unfinished, not dismissed org-wide, and not hidden by this user. */
+ *  Setup-eligible orgs (self-serve, plus enterprise orgs that came through sales), setup unfinished, not dismissed org-wide, and not hidden by this user. */
 export function setupGuideVisible(): boolean {
   const { progress } = useOnboardingStore.getState();
   const { org } = useOrgStore.getState();
   const { userId } = useSessionStore.getState();
   if (!progress || !org) return false;
-  if (org.billing !== "trial" && org.billing !== "payg") return false;
+  if (!setupEligible(org)) return false;
   if (progress.homeDismissedAt) return false;
   if (SETUP_STEPS.every((s) => progress.completed[s.id] !== undefined)) return false;
   if (userId && usePrefsStore.getState().setupHiddenBy[userId]) return false;

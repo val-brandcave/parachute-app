@@ -11,7 +11,7 @@ import {
   packById,
   usd,
 } from "@/lib/pricing";
-import { rewardFor } from "@/lib/setup-steps";
+import { sectionDef, sectionReward } from "@/lib/setup-steps";
 import { SPEND_ORDER } from "@/lib/wallet-breakdown";
 import { autoReloadDue, walletView } from "@/lib/wallet-view";
 import { DEFAULT_ORG_ID } from "@/lib/identity-defaults";
@@ -23,7 +23,7 @@ import {
   type CreditSource,
   type LedgerKind,
   type ReviewType,
-  type SetupStepId,
+  type SetupSectionId,
   type WalletSettings,
 } from "@/types";
 import { useOrgStore } from "./org.store";
@@ -58,17 +58,6 @@ export function sourcesFor(remaining: RemainingBySource, credits: number): Credi
 }
 
 export type TopUpReason = "manual" | "low_balance";
-
-/** Gross credits by origin, plus what has been spent. */
-export interface BalanceBySource {
-  trial: number;
-  earned: number;
-  purchased: number;
-  /** refunds + adjustments */
-  other: number;
-  /** credits consumed (positive number) */
-  used: number;
-}
 
 type NewEntry = Partial<
   Omit<CreditLedgerEntry, "id" | "orgId" | "createdAt" | "actorId" | "kind" | "credits">
@@ -107,7 +96,6 @@ interface WalletState {
 
   // --- Derived (never stored) ---
   balance: () => number;
-  balanceBySource: () => BalanceBySource;
   /** Spendable credits by origin after spend order (use this for meters). */
   remainingBySource: () => RemainingBySource;
   cost: (types: readonly ReviewType[]) => number;
@@ -122,8 +110,9 @@ interface WalletState {
     sample?: boolean;
   }) => Promise<CreditLedgerEntry | null>;
   grantTrial: () => Promise<CreditLedgerEntry | null>;
-  /** Idempotent per step and bounded by the earn cap. */
-  award: (stepId: SetupStepId) => Promise<CreditLedgerEntry | null>;
+  /** Pay a finished section's reward (Get started v4). Idempotent per section and bounded by
+   *  the earn cap. The earn-window check is the caller's (`sectionRewardDue`). */
+  awardSection: (id: SetupSectionId) => Promise<CreditLedgerEntry | null>;
   /** Buy a pack, or a custom amount priced at its tier rate (`customPriceUsd`). */
   purchase: (choice: CreditPackId | { credits: number }) => Promise<CreditLedgerEntry>;
   /** Free-form signed adjustment (demo "+5 credits", support goodwill). */
@@ -201,18 +190,8 @@ export const useWalletStore = create<WalletState>((set, get) => {
       set({ orgId: id, ledger, settings: row, loading: false });
     },
 
-    balance: () => walletView(get().ledger, { now: Date.now() }).balance,
-    balanceBySource: () => {
-      const out: BalanceBySource = { trial: 0, earned: 0, purchased: 0, other: 0, used: 0 };
-      for (const e of get().ledger) {
-        if (e.kind === "trial_grant") out.trial += e.credits;
-        else if (e.kind === "earned") out.earned += e.credits;
-        else if (e.kind === "purchase") out.purchased += e.credits;
-        else if (e.kind === "debit" || e.kind === "rescan") out.used += -e.credits;
-        else out.other += e.credits;
-      }
-      return out;
-    },
+    // `now` only feeds runway and month figures, which balance does not read.
+    balance: () => walletView(get().ledger, { now: 0 }).balance,
     remainingBySource: () => remainingFromLedger(get().ledger),
     cost: (types) => costFor(types),
     canAfford: (credits) => {
@@ -264,15 +243,15 @@ export const useWalletStore = create<WalletState>((set, get) => {
       });
     },
 
-    award: async (stepId) => {
-      const reward = rewardFor(stepId);
+    awardSection: async (id) => {
+      const reward = sectionReward(id);
       if (reward <= 0) return null;
       const earned = get().ledger.filter((e) => e.kind === "earned");
-      if (earned.some((e) => e.setupStepId === stepId)) return null;
+      if (earned.some((e) => e.setupSectionId === id)) return null;
       const room = EARN_CAP_CREDITS - earned.reduce((s, e) => s + e.credits, 0);
       const credits = Math.min(EARN_REWARD_CREDITS, reward, room);
       if (credits <= 0) return null;
-      return addEntry({ kind: "earned", credits, setupStepId: stepId, note: "Setup reward" });
+      return addEntry({ kind: "earned", credits, setupSectionId: id, note: `Setup reward · ${sectionDef(id).title(useOrgStore.getState().org?.profile?.kind ?? "bank")}` });
     },
 
     purchase: async (choice) => {

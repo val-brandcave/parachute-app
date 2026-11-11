@@ -1,4 +1,4 @@
-import type { CreditPackId, ReviewType, SetupSectionId, SetupStepId, VolumeBand } from "@/types";
+import type { CreditPackId, ReviewType, SetupSectionId, VolumeBand } from "@/types";
 
 /**
  * Every commercial number in the self-serve flow lives HERE and nowhere else.
@@ -18,17 +18,13 @@ export const REVIEW_TYPE_COST: Record<ReviewType, number> = {
 /** Credits granted to a new workspace. */
 export const TRIAL_GRANT_CREDITS = 6;
 
-/** Credits earned per completed reward-bearing setup step … */
-export const EARN_REWARD_CREDITS = 1;
-/** … up to this many earned credits in total. */
-export const EARN_CAP_CREDITS = 3;
-
-/** Setup steps that pay out a reward when first completed. Total is bounded by
- *  EARN_CAP_CREDITS regardless. */
-export const SETUP_REWARD_STEPS: SetupStepId[] = ["bank_policy", "checklist", "layout"];
+/** Credits earned per finished reward section (one full review) … */
+export const EARN_REWARD_CREDITS = 2;
+/** … up to this many earned credits in total (2 sections). */
+export const EARN_CAP_CREDITS = 4;
 
 /** Get started v4: sections that pay EARN_REWARD_CREDITS once all their steps are done
- *  inside the earn window (replaces SETUP_REWARD_STEPS in T2.0). */
+ *  inside the earn window. */
 export const SETUP_REWARD_SECTIONS: SetupSectionId[] = ["first_review", "own_rules"];
 /** Days after the trial grant (enterprise: after approval) during which setup earns credits. */
 export const EARN_WINDOW_DAYS = 14;

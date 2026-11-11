@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Icon, Tooltip } from "@/components/atoms";
 import type { VideoGuide } from "@/lib/guides";
+import "./guide-video.css";
 
 const clock = (s: number) => {
   if (!Number.isFinite(s) || s < 0) return "0:00";

@@ -62,10 +62,12 @@ const sampleCount = Math.floor(TRIAL_GRANT_CREDITS / fullReview);
 const packList = CREDIT_PACKS.map((p) => `${p.credits}`).join(", ").replace(/, (\d+)$/, " or $1");
 const packPrices = CREDIT_PACKS.map((p) => formatUsd(p.priceUsd)).join(", ");
 
-// "You earned a credit": the bank-policy reward row.
-const earnedRow = ledger.find((e) => e.kind === "earned" && e.setupStepId === "bank_policy")!;
-const earnedBalance = balanceThrough(earnedRow.id);
-const remainingRewards = Math.max(EARN_CAP_CREDITS - EARN_REWARD_CREDITS, 0);
+// "You earned a free review": Harbor finishes "Run your first review" (section reward, Get started v4).
+// The seed ledger has no earned row (Harbor is mid-setup), so the e-mail shows the reward on top of today's balance.
+const earnedAt = ledger[ledger.length - 1].createdAt;
+const earnedBalance = ledger.reduce((s, e) => s + e.credits, 0) + EARN_REWARD_CREDITS;
+const rewardReviews = Math.floor(EARN_REWARD_CREDITS / costFor(["technical", "administrative"]));
+const remainingReviews = Math.floor(Math.max(EARN_CAP_CREDITS - EARN_REWARD_CREDITS, 0) / EARN_REWARD_CREDITS);
 
 // Receipt: the 220 Commerce Way debit.
 const receiptRow = ledger.find((e) => e.receiptId === "RCT-40918")!;
@@ -113,46 +115,45 @@ export const emails: EmailSpec[] = [
         rows: [
           ["Trial credits", `${TRIAL_GRANT_CREDITS} ${sep} ${approxValue(TRIAL_GRANT_CREDITS)} value`],
           ["Full reviews", `About ${sampleCount}`],
-          ["Sample review", `Free ${sep} included`],
         ],
       },
       {
         kind: "p",
-        text: "Start with the sample review: a finished review on 4410 Bayside Office Park, a fictional office building. Then add your bank policy, publish a compliance checklist and set a workbook layout.",
+        text: "Start with your first review: upload a commercial appraisal and see every figure checked. Then upload your credit policy, publish a compliance checklist and brand your workbook.",
       },
       { kind: "cta", label: "Go to Parachute" },
       {
         kind: "small",
-        text: `Trial credits are spent before any you earn or buy. 1 credit = 1 review type on 1 report, about ${formatUsd(CREDIT_USD)}.`,
+        text: `Credits that expire soonest are used first; trial credits go last. 1 credit = 1 review type on 1 report, about ${formatUsd(CREDIT_USD)}.`,
       },
     ],
   },
   {
     id: "earned",
-    chip: "Credit earned",
+    chip: "Review earned",
     product: "Parachute",
     ...FROM_PARACHUTE,
     to: TO,
-    subject: "You earned a credit",
+    subject: `You earned ${plural(rewardReviews, "free review", "free reviews")}`,
     blocks: [
       { kind: "p", text: `Hi ${FIRST},` },
       {
         kind: "p",
-        text: `Your bank policy is active on ${ORG}. Every review now checks reports against it, and we added ${plural(EARN_REWARD_CREDITS, "credit", "credits")} to your balance.`,
+        text: `You finished "Run your first review" on ${ORG}, so we added ${plural(EARN_REWARD_CREDITS, "credit", "credits")} to your balance: ${plural(rewardReviews, "full review", "full reviews")}, free.`,
       },
       {
         kind: "rows",
         rows: [
-          [`${day(earnedRow.createdAt)} ${sep} ${time(earnedRow.createdAt)}`, "Setup credit"],
-          ["Bank policy uploaded", `+${earnedRow.credits} ${sep} $0`],
+          [`${day(earnedAt)} ${sep} ${time(earnedAt)}`, "Setup reward"],
+          ["Run your first review", `+${EARN_REWARD_CREDITS} ${sep} $0`],
           ["Paid from", "Earned"],
           ["Balance", `${plural(earnedBalance, "credit", "credits")} ${sep} ${approxValue(earnedBalance)}`],
         ],
       },
-      { kind: "cta", label: "View billing" },
+      { kind: "cta", label: "Back to Get started" },
       {
         kind: "small",
-        text: `Earned credits don't expire. ${remainingRewards === 1 ? "One more setup step" : `${remainingRewards} more setup steps`} can each earn ${EARN_REWARD_CREDITS} credit: a published compliance checklist and a custom workbook layout.`,
+        text: `Earned credits don't expire. Finish "Make it your bank's review" to earn ${plural(remainingReviews, "more free review", "more free reviews")}.`,
       },
     ],
   },
@@ -275,7 +276,7 @@ export const emails: EmailSpec[] = [
       { kind: "cta", label: "Go to Parachute" },
       {
         kind: "small",
-        text: `Trial credits are spent before any you earn or buy. 1 credit = 1 review type on 1 report, about ${formatUsd(CREDIT_USD)}.`,
+        text: `Credits that expire soonest are used first; trial credits go last. 1 credit = 1 review type on 1 report, about ${formatUsd(CREDIT_USD)}.`,
       },
     ],
   },

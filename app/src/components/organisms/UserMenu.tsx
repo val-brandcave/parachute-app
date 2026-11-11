@@ -7,6 +7,7 @@ import { Avatar, Icon, type IconName } from "@/components/atoms";
 import { cn } from "@/lib/utils";
 import { useIdentityStore, useOrgStore, usePrefsStore, useSetupSummary, type ThemePref } from "@/store";
 import { useCurrentUser } from "@/lib/current-user";
+import { INVITE_HREF } from "@/lib/setup-steps";
 import { DEMO_ENABLED } from "@/lib/demo";
 import { useDemoStore } from "@/store/demo.store";
 import { demoPersonas, PERSONA_GROUP_LABEL } from "@/data/seed/demo-personas.seed";
@@ -102,6 +103,11 @@ export function UserMenu({
             {showSetupGuide && (
               <button className="um-item" onClick={reopenSetup}>
                 <Icon name="checklist" size={17} /> Setup guide
+              </button>
+            )}
+            {me.role === "org_admin" && (
+              <button className="um-item" onClick={() => go(INVITE_HREF)}>
+                <Icon name="user-plus" size={17} /> Invite your team
               </button>
             )}
             <button className="um-item" onClick={() => setOpen(false)}>

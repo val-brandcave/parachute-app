@@ -42,7 +42,11 @@ const SEEDED_KEY = `${STORAGE_PREFIX}:__seeded__`;
 //      v20: self-serve Phase 4 - invites collection (Harbor has one pending), the
 //      "invite" setup step (done for Cedar Ridge and Meridian, open for Harbor).
 //      v21: self-serve v2 - Lakeside Valuation is a 11+ team (sales-flagged), pending, no trial.
-const SEED_VERSION = "v22";
+//      v23: pattern change phase 2 - Harbor is a pure trial (grant 6, one full review on 220 Commerce
+//      Way → 4 credits, grant dated two days before load), setup 2 of 8 (first review + invite),
+//      sample_review out of the step list. Release note: "This update resets demo data in your
+//      browser. Use the state pill or the Prototype Index to get back to any state in one click."
+const SEED_VERSION = "v23";
 
 export const mockAdapter: DataAdapter = {
   async getAll<T>(collection: string): Promise<T[]> {

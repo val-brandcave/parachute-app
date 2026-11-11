@@ -8,8 +8,6 @@ import { useWalletStore } from "./wallet.store";
 /**
  * The current org's wallet, derived once (lib/wallet-view.ts). `now` comes from a
  * lazy useState so render stays pure (React 19).
- *
- * STUB (T0.2): wiring is final; T0.3 fills walletView().
  */
 export function useWalletView(): WalletView {
   const ledger = useWalletStore((s) => s.ledger);
