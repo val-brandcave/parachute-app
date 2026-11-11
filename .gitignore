@@ -47,3 +47,6 @@ desktop.ini
 
 # Smoke-run screenshots (pattern-change harness)
 /app/.smoke/
+
+# Python bytecode (smoke flows)
+__pycache__/

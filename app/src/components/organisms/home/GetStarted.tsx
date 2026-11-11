@@ -24,6 +24,7 @@ import "@/app/bouncer/bouncer.css";
 import { AnimatePresence, motion } from "framer-motion";
 import { GetStartedSkeleton } from "@/components/organisms/Skeletons";
 import { SetupChecklist } from "./SetupChecklist";
+import { useArrivalCelebration } from "./useArrivalCelebration";
 import { GuidesCard, SampleCard, SecurityPackCard } from "./HomeCards";
 
 /** G2: "<Name> accepted your invite as <role>", driven by `?joined=<inviteId>` from
@@ -170,6 +171,7 @@ function DoneCard() {
  *  wallet, IT pack and guides alongside. Self-serve orgs only; everyone else, and
  *  anyone who hid the guide, goes to the Dashboard. */
 export function GetStarted() {
+  useArrivalCelebration();
   const router = useRouter();
   const billing = useOrgStore((s) => s.org?.billing);
   const hidden = useSetupHidden();

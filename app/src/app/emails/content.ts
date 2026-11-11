@@ -8,6 +8,7 @@ import {
   costFor,
   formatUsd,
 } from "@/lib/pricing";
+import { slotLabel } from "@/lib/call-slots";
 import { seedCreditLedger } from "@/data/seed/credit-ledger.seed";
 
 /**
@@ -72,6 +73,10 @@ const receiptBalance = balanceThrough(receiptRow.id);
 const receiptCredits = Math.abs(receiptRow.credits);
 
 const LOW_BALANCE = 1;
+
+// Setup call: the demo slot is Fri 13 Nov, 10:00 AM Eastern.
+const CALL_AT = Date.UTC(2026, 10, 13, 15, 0);
+const CALL_WHEN = slotLabel(CALL_AT);
 
 export const emails: EmailSpec[] = [
   {
@@ -215,6 +220,62 @@ export const emails: EmailSpec[] = [
       {
         kind: "small",
         text: `Re-scans after send-back are included. Receipts also go to ${BILLING_EMAIL}.`,
+      },
+    ],
+  },
+  {
+    id: "call-booked",
+    chip: "Call booked",
+    product: "Parachute",
+    ...FROM_PARACHUTE,
+    to: TO,
+    subject: `Your setup call is booked: ${CALL_WHEN}`,
+    blocks: [
+      { kind: "p", text: `Hi ${FIRST},` },
+      {
+        kind: "p",
+        text: `Your twenty-minute setup call for ${ORG} is booked. Realwired's onboarding team will confirm the account on the call and run your first review with you.`,
+      },
+      {
+        kind: "rows",
+        rows: [
+          ["When", `${CALL_WHEN} ${sep} Eastern Time`],
+          ["Length", "20 minutes"],
+          ["Trial credits", `${plural(TRIAL_GRANT_CREDITS, "credit", "credits")} ${sep} open once the account is confirmed`],
+        ],
+      },
+      { kind: "cta", label: "Open Parachute" },
+      {
+        kind: "small",
+        text: "Until then you can upload your policy and invite your team. To change the time, reply to this e-mail.",
+      },
+    ],
+  },
+  {
+    id: "enterprise-confirmed",
+    chip: "Account confirmed",
+    product: "Parachute",
+    ...FROM_PARACHUTE,
+    to: TO,
+    subject: `${ORG} is confirmed`,
+    blocks: [
+      { kind: "p", text: `Hi ${FIRST},` },
+      {
+        kind: "p",
+        text: `Thanks for the call. ${ORG} is confirmed on Parachute and your trial credits are open.`,
+      },
+      {
+        kind: "rows",
+        rows: [
+          ["Trial credits", `${TRIAL_GRANT_CREDITS} ${sep} ${approxValue(TRIAL_GRANT_CREDITS)} value`],
+          ["Full reviews", `About ${sampleCount}`],
+          ["Billing", "Set up on the call"],
+        ],
+      },
+      { kind: "cta", label: "Go to Parachute" },
+      {
+        kind: "small",
+        text: `Trial credits are spent before any you earn or buy. 1 credit = 1 review type on 1 report, about ${formatUsd(CREDIT_USD)}.`,
       },
     ],
   },
