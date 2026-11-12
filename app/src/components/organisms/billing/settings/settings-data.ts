@@ -1,10 +1,10 @@
-import { AUTO_RELOAD_DEFAULTS } from "@/lib/pricing";
+import { AUTO_RELOAD_DEFAULTS, LOW_BALANCE_AT } from "@/lib/pricing";
 import type { WalletSettings } from "@/types";
 
 /** Alert defaults used until an admin changes them. Expiry window is fixed at 14 days. */
 export const ALERT_DEFAULTS = {
   low: true,
-  lowBelow: 3,
+  lowBelow: LOW_BALANCE_AT,
   expiry: true,
   spend: false,
   spendUsd: AUTO_RELOAD_DEFAULTS.monthlyCap,

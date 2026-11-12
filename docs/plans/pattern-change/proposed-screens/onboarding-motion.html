@@ -1,0 +1,1383 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Onboarding motion</title>
+<link rel="stylesheet" href="app-chrome.css">
+<style>
+:root { color-scheme: light; --k: 1; --std: cubic-bezier(0.2, 0, 0, 1); }
+html, body { overflow-x: hidden; }
+body { margin: 0; background: #eceef1; color: #1a1d21; font-family: "Inter", system-ui, sans-serif; font-size: 15px; line-height: 1.55; -webkit-font-smoothing: antialiased; }
+.wrap { padding: 18px 32px 96px; }
+.pg-hd { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+.pg-hd h1 { font-family: "Schibsted Grotesk", sans-serif; font-size: 22px; line-height: 1.2; letter-spacing: -0.01em; margin: 0; color: #10344c; }
+.pg-hd p { margin: 0; color: #565c64; font-size: 13.5px; text-wrap: pretty; }
+
+/* ---------- control bar ---------- */
+.ctrl { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; margin-top: 12px; }
+.ctrl .lbl { font-size: 12px; font-weight: 600; color: #565c64; text-transform: uppercase; letter-spacing: .04em; }
+.ctrl .grp { display: inline-flex; align-items: center; gap: 6px; }
+.ctrl button { font: inherit; font-size: 13px; font-weight: 600; height: 32px; padding: 0 13px; border-radius: 16px; border: 1px solid #c9d0d8; background: #fff; color: #10344c; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.ctrl button:hover { border-color: #10344c; }
+.ctrl button[aria-pressed="true"] { background: #10344c; color: #fff; border-color: #10344c; }
+.ctrl button .i { width: 15px; height: 15px; }
+.tl { margin-left: auto; display: inline-flex; align-items: center; gap: 8px; min-height: 32px; padding: 0 14px; border-radius: 16px; background: #fff; border: 1px solid #e2e4e8; font-size: 13px; font-weight: 600; color: #10344c; font-variant-numeric: tabular-nums; max-width: 100%; }
+.tl .dot { width: 8px; height: 8px; border-radius: 50%; background: #c9d0d8; flex: none; transition: background-color .15s; }
+.tl.on .dot { background: #2a6f7f; box-shadow: 0 0 0 3px #deebee; }
+.hint { margin: 10px 0 10px; font-size: 13px; color: #3d434a; min-height: 20px; text-wrap: pretty; }
+.hint b { color: #10344c; }
+
+/* ---------- stage ---------- */
+#stageBox { position: relative; margin: 0 auto; }
+#stage { position: absolute; left: 0; top: 0; width: 1280px; height: 856px; transform-origin: 0 0; border-radius: 12px; overflow: hidden; box-shadow: 0 0 0 1px rgba(16,24,33,.10), 0 18px 48px rgba(16,24,33,.14); background: #f6f7f8; }
+.bchrome { height: 36px; display: flex; align-items: center; gap: 8px; padding: 0 14px; background: #e4e7eb; border-bottom: 1px solid #d3d7dc; }
+.bchrome .dots { display: flex; gap: 7px; width: 80px; }
+.bchrome .dots i { width: 11px; height: 11px; border-radius: 50%; background: #c7ccd2; }
+.bchrome .url { margin: 0 auto; transform: translateX(-40px); height: 24px; min-width: 440px; padding: 0 14px; background: #fff; border-radius: 12px; font-size: 12.5px; color: #565c64; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.bchrome .url .i { width: 13px; height: 13px; color: #868d96; }
+#vp { position: relative; width: 1280px; height: 820px; overflow: hidden; background: var(--md-bg); }
+.layer { position: absolute; inset: 0; }
+.layer.off { display: none; }
+#vp button { font-family: var(--font-ui); cursor: pointer; }
+#vp .btn { line-height: 1; transition: background-color calc(150ms * var(--k)) var(--std); }
+#vp .btn-filled:hover { background: #1b4f73; }
+#vp .btn-text:hover { background: var(--md-surface-1); }
+#vp button.link { background: none; border: 0; padding: 0; font-size: 13px; }
+#vp .center { text-align: center; }
+#vp p, #vp li, #vp label { text-wrap: pretty; }
+#confetti { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 50; }
+
+/* ---------- onboarding card ---------- */
+.wel-main { min-height: 0; }
+.ocard { position: relative; overflow: hidden; flex: none; }
+.ocard.auth-card .steps-mini { display: none; }
+.steps-mini i { position: relative; overflow: hidden; }
+.steps-mini i b { position: absolute; inset: 0; background: var(--md-primary); transform-origin: left center; transform: scaleX(0); }
+.steps-mini i.on b { transform: none; }
+.oc { will-change: transform, opacity; }
+.back { display: inline-flex; align-items: center; gap: 4px; margin: -6px 0 10px; color: var(--md-accent) !important; font-weight: 600; }
+.back .i { width: 15px; height: 15px; }
+.pbtn { position: relative; }
+.pbtn .lbl { display: inline-flex; align-items: center; gap: 8px; }
+.pbtn .spin { position: absolute; left: 50%; top: 50%; margin: -8px 0 0 -8px; display: none; }
+.pbtn.is-busy .lbl { visibility: hidden; }
+.pbtn.is-busy .spin { display: block; }
+.spin { width: 16px; height: 16px; border-radius: 50%; border: 2px solid rgba(255,255,255,.35); border-top-color: #fff; animation: spin calc(700ms * var(--k)) linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.swap, .pbtn .lbl.swap { display: inline-grid; justify-items: center; }
+.swap > * { grid-area: 1 / 1; display: inline-flex; align-items: center; gap: 8px; }
+.swap .l2 { opacity: 0; }
+.swap.ent .l1 { opacity: 0; }
+.swap.ent .l2 { opacity: 1; }
+
+/* segmented options as buttons (no width jump on select) */
+#vp .seg button { position: relative; height: 38px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--md-outline); background: #fff; color: #1a1d21; display: inline-grid; align-items: center; font-weight: 500; font-size: 13.5px; transition: background-color calc(150ms * var(--k)) var(--std), border-color calc(150ms * var(--k)) var(--std), box-shadow calc(150ms * var(--k)) var(--std), color calc(150ms * var(--k)) var(--std); }
+#vp .seg button > span { grid-area: 1 / 1; height: auto; padding: 0; border: 0; border-radius: 0; background: none; color: inherit; display: block; font-size: inherit; }
+#vp .seg button .gh { font-weight: 600; visibility: hidden; }
+#vp .seg button:hover { border-color: #aeb4bc; }
+#vp .seg button.on { border-color: var(--md-primary); box-shadow: inset 0 0 0 1px var(--md-primary); background: var(--md-selected); color: var(--md-on-selected); }
+#vp .seg button.on > span:first-child { font-weight: 600; }
+.seg .mk { position: absolute; top: -5px; right: -5px; width: 12px; height: 12px; border-radius: 50%; background: var(--md-accent); border: 2px solid #fff; opacity: 0; transition: opacity calc(280ms * var(--k)) var(--std); }
+.seg button.trig .mk { opacity: 1; }
+.live-wrap { overflow: hidden; height: 0; }
+.live-wrap.open { height: auto; }
+.live-wrap .live { margin-top: 18px; }
+.live .i { color: var(--md-accent); flex: none; margin-top: 1px; }
+
+/* verify */
+.vicon { position: relative; }
+.vicon .mail { transition: opacity calc(150ms * var(--k)); }
+.vicon .chk { position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; margin: -11px 0 0 -11px; fill: none; stroke: var(--md-success); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; opacity: 0; }
+.vicon .chk path { stroke-dasharray: 1; stroke-dashoffset: 1; }
+.vicon.ok { background: var(--md-success-c); transition: background-color calc(150ms * var(--k)); }
+.vicon.ok .mail { opacity: 0; }
+.vicon.ok .chk { opacity: 1; }
+.vicon.ok .chk path { stroke-dashoffset: 0; }
+.code { cursor: text; }
+.code span { transition: border-color calc(150ms * var(--k)) var(--std); }
+.code span em { font-style: normal; display: inline-block; }
+.code span.ok { border: 2px solid var(--md-success); }
+.code.bad span { border: 2px solid var(--md-error); }
+.sr-in { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; left: 0; top: 0; }
+.code-acts { display: flex; justify-content: space-between; margin-top: 12px; }
+.code-acts .demo { color: var(--md-on-surface-t) !important; font-weight: 500 !important; }
+.errwrap { overflow: hidden; height: 0; opacity: 0; }
+.errwrap.open { height: auto; opacity: 1; }
+.err { display: flex; align-items: flex-start; gap: 6px; padding-top: 8px; color: var(--md-error); font-size: 13px; font-weight: 500; margin: 0; }
+.err .i { margin-top: 2px; }
+
+/* invite: one row per person (email + role + remove) */
+.inv-hd, .irow-g { display: grid; grid-template-columns: minmax(0, 1fr) 136px 36px; gap: 8px; align-items: center; }
+.inv-hd { min-height: 28px; margin-bottom: 6px; font-size: 13px; font-weight: 600; color: var(--md-on-surface); }
+.inv-hd > * { grid-row: 1; }
+.inv-hd .h-em { grid-column: 1; }
+.inv-hd .h-role { grid-column: 2; }
+.inv-hd .setall { grid-column: 1 / 3; justify-self: end; display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 500; color: var(--md-on-surface-v); }
+.inv-hd .setall, .inv-hd .h-role { transition: opacity calc(150ms * var(--k)) var(--std), visibility 0s linear calc(150ms * var(--k)); }
+.inv-hd .setall, .inv-hd.many .h-role { opacity: 0; visibility: hidden; }
+.inv-hd.many .setall, .inv-hd:not(.many) .h-role { opacity: 1; visibility: visible; transition-delay: 0s, 0s; }
+.inv-list { max-height: calc(44px * 5.5); overflow-y: auto; overflow-x: hidden; margin: 0 -6px; padding: 0 6px; overscroll-behavior: contain; position: relative; scrollbar-width: thin; }
+.irow { overflow: hidden; }
+.irow-in { padding-bottom: 6px; }
+.irow .err { padding-top: 6px; }
+.iem { width: 100%; min-width: 0; height: 38px; padding: 0 12px; border: 1px solid var(--md-outline); border-radius: 8px; background: #fff; color: #1a1d21; font: inherit; font-size: 14px; outline: 0; box-sizing: border-box; transition: border-color calc(150ms * var(--k)) var(--std), box-shadow calc(150ms * var(--k)) var(--std); }
+.iem::placeholder { color: #868d96; }
+.iem:hover { border-color: #aeb4bc; }
+.iem:focus { border-color: var(--md-primary); box-shadow: inset 0 0 0 1px var(--md-primary); }
+.iem.bad { border-color: var(--md-error); box-shadow: inset 0 0 0 1px var(--md-error); }
+.iem[readonly] { color: var(--md-on-surface-v); }
+.iem[readonly]:hover, .iem[readonly]:focus { border-color: var(--md-outline); box-shadow: none; }
+#vp .rdd { display: flex; align-items: center; justify-content: space-between; gap: 6px; width: 100%; height: 38px; padding: 0 10px 0 12px; border: 1px solid var(--md-outline); border-radius: 8px; background: #fff; color: #1a1d21; font-size: 13.5px; font-weight: 500; text-align: left; transition: border-color calc(150ms * var(--k)) var(--std), box-shadow calc(150ms * var(--k)) var(--std); }
+#vp .rdd .v { white-space: nowrap; }
+#vp .rdd .i { color: var(--md-on-surface-v); flex: none; }
+#vp .rdd:hover { border-color: #aeb4bc; }
+#vp .rdd[aria-expanded="true"], #vp .rdd:focus-visible { border-color: var(--md-primary); box-shadow: inset 0 0 0 1px var(--md-primary); outline: 0; }
+#vp .rdd.sm { width: 136px; height: 28px; font-size: 13px; padding: 0 8px 0 10px; }
+#vp .irm { display: grid; place-items: center; width: 36px; height: 38px; padding: 0; border: 0; border-radius: 8px; background: none; color: var(--md-on-surface-t); transition: background-color calc(150ms * var(--k)) var(--std), color calc(150ms * var(--k)) var(--std); }
+#vp .irm:hover { background: var(--md-surface-1); color: var(--md-on-surface); }
+#vp .rdd:disabled, #vp .irm:disabled, #vp .inv-more button:disabled { opacity: .5; cursor: default; }
+#vp .rdd:disabled:hover { border-color: var(--md-outline); }
+.inv-more { display: grid; margin-top: 2px; min-height: 30px; }
+.inv-more > * { grid-area: 1 / 1; display: flex; align-items: center; gap: 18px; }
+.inv-more .link .i { width: 14px; height: 14px; }
+.inv-more .dup { margin-left: auto; font-size: 12.5px; color: var(--md-on-surface-t); }
+.inv-more .sum { gap: 8px; font-size: 13.5px; font-weight: 600; color: var(--md-success); opacity: 0; visibility: hidden; }
+.inv-more .sum span { color: var(--md-on-surface-v); font-weight: 500; }
+.inv-more .sum b { color: var(--md-on-surface); font-weight: 600; }
+.inv.sent .inv-more .acts { opacity: 0; visibility: hidden; }
+.inv.sent .inv-more .sum { opacity: 1; visibility: visible; }
+.wel-card:has(.inv.sent) [data-act="skip"] { display: none; }
+#bigWrap .live { margin-top: 10px; padding: 12px 14px; }
+#bigWrap .live button.link { font-size: 13.5px; margin-left: 2px; }
+.errwrap.info .err { color: var(--md-accent-d); }
+.rpop { position: absolute; z-index: 40; width: 340px; padding: 6px; background: #fff; border: 1px solid var(--md-outline); border-radius: 12px; box-shadow: var(--md-elev-3); outline: 0; }
+.ropt { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 10px; padding: 8px 10px; border-radius: 8px; cursor: pointer; }
+.ropt.act { background: var(--md-surface-1); }
+.ropt .ck { color: var(--md-primary); padding-top: 2px; visibility: hidden; }
+.ropt .ck .i { width: 16px; height: 16px; stroke-width: 2.5; }
+.ropt[aria-selected="true"] .ck { visibility: visible; }
+.ropt .tx b { display: block; font-size: 13.5px; font-weight: 600; color: #1a1d21; }
+.ropt .tx span { display: block; font-size: 12.5px; color: var(--md-on-surface-v); white-space: nowrap; }
+.swap.alt .l1 { opacity: 0; }
+.swap.alt .l2 { opacity: 1; }
+.row-acts { display: flex; gap: 10px; margin-top: 24px; }
+.cnt { display: inline-grid; }
+.cnt > b { grid-area: 1 / 1; font-weight: inherit; }
+.cnt:not(:empty) { margin-right: .28em; }
+#sendLbl .l1 { gap: .3em; }
+#sendLbl .cnt:empty { display: none; }
+#sendLbl .cnt:not(:empty) { margin-right: 0; }
+
+/* book a call */
+.slots5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.slots4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 12px; }
+#vp button.slot { font-family: var(--font-ui); transition: background-color calc(150ms * var(--k)) var(--std), border-color calc(150ms * var(--k)) var(--std), box-shadow calc(150ms * var(--k)) var(--std); }
+#vp button.slot:hover { border-color: #aeb4bc; }
+#vp button.slot.on { border: 1px solid var(--md-primary); box-shadow: inset 0 0 0 1px var(--md-primary); }
+
+/* side panel (option C: centred, not stretched) */
+.pslot { flex: none; }
+.pslot.off { display: none; }
+.proof { overflow: hidden; }
+.pc { display: flex; flex-direction: column; gap: 14px; }
+.proof .ill { background: var(--ill-tint, #deebee); border-radius: 14px; padding: 14px; }
+.proof .ill img { width: 100%; height: 120px; object-fit: contain; display: block; }
+.proof ol.pl { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.proof ol.pl li { display: flex; gap: 10px; font-size: 14px; color: var(--md-on-surface); }
+.proof ol.pl li b { font-weight: 600; }
+.proof .pn { flex: none; width: 22px; height: 22px; border-radius: 11px; background: var(--md-selected); color: var(--md-on-selected); font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-top: 1px; font-variant-numeric: tabular-nums; }
+
+/* interstitial */
+.ist-layer { place-items: center; background:
+  radial-gradient(520px 380px at 34% 30%, rgba(42,111,127,.10), transparent 70%),
+  radial-gradient(560px 420px at 70% 66%, rgba(16,52,76,.08), transparent 70%), var(--md-bg); }
+.ist { display: flex; flex-direction: column; align-items: center; text-align: center; width: 560px; }
+.ist .emb { width: 46px; height: 34px; color: var(--md-primary); }
+.ist h1 { font-size: 26px; font-weight: 700; margin-top: 18px; }
+.ist ul { list-style: none; margin: 22px 0 0; padding: 0; display: grid; gap: 12px; text-align: left; }
+.ist li { display: flex; align-items: center; gap: 10px; font-size: 15px; color: var(--md-on-surface-t); transition: color calc(150ms * var(--k)); font-variant-numeric: tabular-nums; }
+.ist li.act, .ist li.done { color: var(--md-on-surface); }
+.ist .st { width: 20px; height: 20px; flex: none; position: relative; display: grid; place-items: center; }
+.ist .st::before { content: ""; width: 16px; height: 16px; border-radius: 50%; border: 1.5px dashed var(--md-on-surface-dis); box-sizing: border-box; }
+.ist li.act .st::before { display: none; }
+.ist li.act .st .spin { display: block; border-color: var(--md-surface-3); border-top-color: var(--md-primary); }
+.ist .st .spin { display: none; }
+.ist li.done .st::before { border: 0; width: 20px; height: 20px; background: var(--md-success); transition: background-color calc(150ms * var(--k)); }
+.ist .st svg { position: absolute; inset: 3px; width: 14px; height: 14px; fill: none; stroke: #fff; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; display: none; }
+.ist li.done .st svg { display: block; }
+.ist .st svg path { stroke-dasharray: 1; stroke-dashoffset: 0; }
+.ist .bar { width: 260px; height: 4px; margin-top: 26px; }
+.ist .bar i { width: 100%; transform-origin: left center; transform: scaleX(0); }
+.ist .bar i.full { transform: none; }
+
+/* get started shell */
+.gs { height: 820px; }
+.gs .sb { min-height: 0; height: 820px; }
+.gs .main { height: 820px; overflow: hidden; }
+.gs .page { overflow-y: auto; min-height: 0; }
+.gs .btn { cursor: default; }
+.gs .bar > i { transition: width calc(280ms * var(--k)) var(--std); }
+.hello-wrap { overflow: hidden; }
+.gs-hello { display: flex; align-items: center; gap: 10px; padding: 9px 8px 9px 14px; margin-bottom: 20px; border-radius: 10px; background: var(--md-success-c); color: var(--md-success); font-size: 14.5px; }
+.gs-hello b { color: var(--md-on-surface); font-weight: 600; }
+.gs-hello .x { margin-left: auto; width: 30px; height: 30px; border-radius: 15px; border: 0; background: none; color: var(--md-on-surface-v); display: grid; place-items: center; }
+.gs-hello .x:hover { background: rgba(21,131,74,.12); }
+.cb { transition: background-color calc(150ms * var(--k)) var(--std), border-color calc(150ms * var(--k)) var(--std); }
+.cb svg.dr { width: 14px; height: 14px; fill: none; stroke: #fff; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ---------- legend ---------- */
+.legend { margin-top: 40px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; }
+.legend h2 { font-family: "Schibsted Grotesk", sans-serif; font-size: 20px; margin: 0 0 4px; color: #1a1d21; }
+.legend .note { color: #3d434a; font-size: 14px; margin: 0; max-width: 92ch; text-wrap: pretty; }
+.legend code, .legend .tok { font-family: inherit; font-weight: 600; color: #10344c; background: #dfe7ee; padding: 0 5px; border-radius: 4px; font-size: .95em; }
+.tbl { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid #e2e4e8; border-radius: 12px; overflow: hidden; font-size: 13.5px; }
+.tbl th, .tbl td { text-align: left; vertical-align: top; padding: 9px 14px; border-top: 1px solid #edeef1; text-wrap: pretty; }
+.tbl th { background: #f6f7f8; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: #565c64; border-top: 0; }
+.tbl td:first-child { font-weight: 700; color: #10344c; white-space: nowrap; }
+.tbl td.t { font-variant-numeric: tabular-nums; color: #1a1d21; }
+.eases { display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: 13.5px; color: #3d434a; }
+.eases b { color: #10344c; }
+</style></head>
+<body>
+<script src="app-icons.js"></script>
+<div class="wrap">
+<header class="pg-hd"><h1>Onboarding motion prototype</h1><p>Click inside the frame. Layout option C (card centred, side panel centred beside it). Every number comes from <b>motion-contract.md</b>.</p></header>
+
+<div class="ctrl" role="toolbar" aria-label="Prototype controls">
+  <span class="lbl">Path</span><div class="grp" id="cPath"><button type="button" data-path="self" aria-pressed="true">Self-serve</button><button type="button" data-path="ent" aria-pressed="false">Enterprise</button></div>
+  <button type="button" id="cRestart"><svg class="i" aria-hidden="true"><use href="#i-refresh"/></svg>Restart</button>
+  <span class="lbl">Speed</span><div class="grp" id="cSpeed"><button type="button" data-s="1" aria-pressed="true">1×</button><button type="button" data-s="0.5" aria-pressed="false">0.5×</button><button type="button" data-s="0.25" aria-pressed="false">0.25×</button></div>
+  <button type="button" id="cRM" aria-pressed="false">Reduced motion</button>
+  <button type="button" id="cFinish"><svg class="i" aria-hidden="true"><use href="#i-confetti"/></svg>Finish section</button>
+  <div class="tl" id="tl" aria-live="polite"><span class="dot"></span><span class="tx">Ready</span></div>
+</div>
+<p class="hint" id="hint"></p>
+
+<div id="stageBox"><div id="stage">
+  <div class="bchrome"><span class="dots"><i></i><i></i><i></i></span><span class="url"><svg class="i" aria-hidden="true"><use href="#i-lock"/></svg><span id="url">id.realwired.com/signup</span></span></div>
+  <div id="vp">
+    <div class="layer frame wel" id="onb">
+      <div class="wel-top"><span class="logo"><svg height="24" width="164" viewBox="0 0 5476 800" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M1674.55 541.056C1808.24 541.056 1861.32 472.245 1861.32 359.205C1861.32 242.229 1805.28 176.375 1671.61 176.375H1656.85V424.08L1657.84 541.056H1674.55ZM1540.87 419.166C1540.87 312.019 1538.9 203.893 1532.02 119.36H1685.36C1889.83 119.36 1980.25 214.711 1980.25 358.216C1980.25 501.741 1890.8 597.081 1693.22 597.081H1658.82C1660.79 659.999 1663.74 716.025 1668.65 758.296H1526.12C1537.92 674.742 1540.87 542.035 1540.87 419.166Z" fill="currentColor"/>
+<path d="M2180.9 701.282C2213.33 701.282 2249.7 683.592 2277.23 644.258L2278.21 488.956L2231.03 497.796C2141.57 514.507 2109.14 553.841 2109.14 610.846C2109.14 672.775 2135.68 701.282 2180.9 701.282ZM2281.15 702.261C2242.82 750.426 2196.62 768.125 2140.59 768.125C2054.08 768.125 2005.93 712.09 2005.93 629.524C2005.93 542.035 2062.94 484.042 2215.31 452.588L2278.21 439.812V427.027C2278.21 351.344 2245.77 318.901 2187.78 318.901C2139.61 318.901 2092.42 334.633 2046.22 365.098L2044.26 363.14V294.329C2086.53 273.683 2149.44 256.973 2200.55 256.973C2327.36 256.973 2384.37 315.955 2384.37 450.62V565.628C2384.37 658.022 2386.33 694.4 2396.16 758.287H2286.08L2281.15 702.261Z" fill="currentColor"/>
+<path d="M2485.13 515.5C2485.13 444.721 2485.13 358.221 2473.33 266.806H2578.51L2584.4 354.285H2586.37C2609.96 287.452 2643.38 255.009 2710.23 259.924V354.285L2708.26 356.253C2646.33 349.371 2618.81 358.221 2590.31 394.589V485.025C2590.31 575.461 2593.25 666.876 2604.07 758.291H2477.27C2483.16 689.48 2485.13 590.204 2485.13 515.5Z" fill="currentColor"/>
+<path d="M2904.37 701.282C2936.81 701.282 2973.18 683.592 3000.71 644.258L3001.69 488.956L2954.52 497.796C2865.06 514.507 2832.63 553.841 2832.63 610.846C2832.63 672.775 2859.16 701.282 2904.37 701.282ZM3004.64 702.261C2966.3 750.426 2920.1 768.125 2864.08 768.125C2777.57 768.125 2729.4 712.09 2729.4 629.524C2729.4 542.035 2786.42 484.042 2938.78 452.588L3001.69 439.812V427.027C3001.69 351.344 2969.26 318.901 2911.26 318.901C2863.09 318.901 2815.9 334.633 2769.71 365.098L2767.74 363.14V294.329C2810.01 273.683 2872.92 256.973 2924.04 256.973C3050.84 256.973 3107.85 315.955 3107.85 450.62V565.628C3107.85 658.022 3109.82 694.4 3119.65 758.287H3009.55L3004.64 702.261Z" fill="currentColor"/>
+<path d="M3170.96 510.581C3170.96 354.291 3273.18 258.94 3411.79 258.94C3444.22 258.94 3476.67 263.855 3506.15 274.672L3509.1 341.515L3507.13 343.483C3477.64 326.762 3442.26 316.934 3413.76 316.934C3332.16 316.934 3282.04 385.744 3282.04 510.581C3282.04 646.235 3352.81 696.358 3427.52 696.358C3457.99 696.358 3482.56 690.474 3517.95 675.721L3520.9 677.689L3517.95 746.5C3485.51 761.243 3450.13 766.157 3417.68 766.157C3275.16 766.157 3170.96 689.476 3170.96 510.581Z" fill="currentColor"/>
+<path d="M3795.64 328.732C3750.42 328.732 3710.12 375.918 3686.53 440.793V759.277H3571.51C3577.42 658.024 3581.35 548.919 3581.35 430.965C3581.35 301.204 3579.38 219.627 3572.5 99.6955H3686.53V358.218C3717.98 288.429 3766.15 257.963 3832 257.963C3921.45 257.963 3966.67 310.063 3966.67 445.708V584.308C3966.67 655.077 3968.64 701.284 3973.55 758.289H3860.51V441.772C3860.51 358.218 3838.89 328.732 3795.64 328.732Z" fill="currentColor"/>
+<path d="M4057.21 544.986V494.854C4057.21 418.182 4055.25 362.156 4049.35 266.806H4164.35V560.709C4164.35 661.952 4189.9 692.427 4235.12 692.427C4270.51 692.427 4301.97 677.684 4340.3 629.519V486.004C4340.3 413.268 4339.32 339.543 4332.44 266.806H4447.45V591.183C4447.45 658.027 4450.4 704.233 4457.29 758.291H4347.18L4343.26 679.661C4305.9 737.645 4257.74 768.12 4196.79 768.12C4115.21 768.12 4057.21 717.988 4057.21 544.986Z" fill="currentColor"/>
+<path d="M4559.32 586.274V315.955H4498.38V267.79C4562.27 260.908 4619.28 221.593 4643.85 161.632H4666.47V266.801H4824.72V315.955H4666.47V584.306C4666.47 685.55 4690.05 706.196 4742.15 706.196C4771.64 706.196 4798.17 700.293 4824.72 689.485L4826.68 690.474V748.458C4789.33 760.264 4752.96 768.125 4710.7 768.125C4614.37 768.125 4559.32 723.886 4559.32 586.274Z" fill="currentColor"/>
+<path d="M5143.31 494.859C5144.29 355.27 5111.86 305.147 5047.96 305.147C4986.03 305.147 4948.68 366.087 4947.7 494.859H5143.31ZM4835.64 513.528C4835.64 360.184 4919.2 256.973 5048.95 256.973C5170.84 256.973 5243.58 340.527 5243.58 470.278C5243.58 496.817 5242.59 522.378 5239.64 544.991L4949.66 545.97C4957.53 665.893 5000.78 706.196 5079.42 706.196C5117.76 706.196 5163.96 694.4 5219 662.946L5221.94 665.893L5219 729.789C5168.86 754.361 5112.84 768.125 5064.67 768.125C4921.16 768.125 4835.64 676.71 4835.64 513.528Z" fill="currentColor"/>
+<path d="M183.616 701.001C183.616 701.001 178.511 372.403 401.702 295.845C401.702 295.845 143.312 145.229 29.5019 334.599C-88.044 530.186 183.616 701.001 183.616 701.001Z" fill="currentColor"/>
+<path d="M887.396 800C887.396 800 1262.66 228.668 804.498 50.9707C404.447 -104.208 159.707 144.439 159.707 144.439C159.707 144.439 671.268 92.415 887.396 800Z" fill="currentColor"/>
+<path d="M5342.41 360.866V282.874H5318.48V271.704H5378.52V282.874H5354.98V360.866H5342.41ZM5391.28 360.866V271.704H5402.85L5436.16 318.978H5430.58L5463.69 271.704H5475.26V360.866H5462.69V287.063L5467.08 288.459L5433.97 334.935H5432.57L5400.06 288.459L5403.85 287.063V360.866H5391.28Z" fill="currentColor"/>
+</svg></span><span class="end" id="topEnd"></span></div>
+      <main class="wel-main" id="main">
+        <div class="ocard auth-card" id="card"><div class="steps-mini" id="steps"><i><b></b></i><i><b></b></i></div><div class="oc" id="oc"></div></div>
+        <div class="pslot off" id="pslot"><div class="proof" id="proof"><div class="pc" id="pc"></div></div></div>
+      </main>
+      <footer class="wel-foot" id="foot"></footer>
+    </div>
+    <div class="layer frame bare ist-layer off" id="istL"><div class="ist" id="ist"></div></div>
+    <div class="layer frame gs off" id="gs"></div>
+    <canvas id="confetti"></canvas>
+  </div>
+</div></div>
+
+<section class="legend">
+  <div><h2>Transitions</h2>
+  <div class="eases"><span><b>ease.standard</b> cubic-bezier(0.2, 0, 0, 1)</span><span><b>ease.enter</b> cubic-bezier(0.05, 0.7, 0.1, 1)</span><span><b>ease.exit</b> cubic-bezier(0.3, 0, 1, 1)</span><span><b>quick</b> 150 ms · <b>standard</b> 280 ms · <b>slow</b> 480 ms</span></div></div>
+  <table class="tbl">
+    <thead><tr><th>ID</th><th>From → to</th><th>What moves</th><th>Timing</th></tr></thead>
+    <tbody>
+      <tr><td>T1</td><td>Sign-up → Verify email</td><td>Same card. Content cross-fades with x −16 px out, +16 px in. Card height animates.</td><td class="t">exit 150 ms ease.exit · enter 280 ms ease.enter · height 280 ms ease.standard</td></tr>
+      <tr><td>T2</td><td>Verify → Org setup</td><td>Card glides from centre to the left column and widens. Side panel enters (opacity + x 24 px) after 120 ms. Step 1 segment fills.</td><td class="t">layout 480 ms ease.standard · panel 280 ms ease.enter, delay 120 ms · segment 400 ms · about 600 ms</td></tr>
+      <tr><td>T3</td><td>Org setup → Invite / Book a call</td><td>Content swaps as T1, forward. Card height animates, so the centred card glides. Step 2 segment fills. Panel content cross-fades (opacity + y 8 px) and its height animates.</td><td class="t">height 280 ms · segment 400 ms · about 400 ms</td></tr>
+      <tr><td>T3b</td><td>Back link</td><td>Mirror of T3: content moves right, step 2 segment empties.</td><td class="t">same as T3</td></tr>
+      <tr><td>T4</td><td>Final step → Setting up</td><td>Card and panel exit together (opacity + scale 0.98). Interstitial enters (opacity + y 12 px).</td><td class="t">280 ms ease.exit, then 280 ms ease.enter · about 560 ms</td></tr>
+      <tr><td>T5</td><td>Setting up → Get started</td><td>Interstitial fades out. App shell fades in, sidebar first, then the page. Self-serve: confetti and the welcome line 200 ms after the page lands.</td><td class="t">280 ms out · 60 ms stagger · about 700 ms + confetti</td></tr>
+    </tbody>
+  </table>
+  <div><h2>Micro-interactions</h2></div>
+  <table class="tbl">
+    <thead><tr><th>Moment</th><th>Behaviour</th><th>Timing</th></tr></thead>
+    <tbody>
+      <tr><td>Option press</td><td>Scale 0.97 on press, back to 1 on release. Selected fill and border change colour.</td><td class="t">press 150 ms · release 280 ms · colour 150 ms</td></tr>
+      <tr><td>Enterprise threshold</td><td>Callout grows from height 0, then fades and lifts in (y 8 px). Button label cross-fades Continue ↔ Book a call; calendar icon slides in from x −6 px. Triggering answer gets a petrol marker.</td><td class="t">280 ms ease.standard</td></tr>
+      <tr><td>Invite rows</td><td>One row per person: email, role menu, remove. Added row grows from height 0 and fades in; focus moves to it. Removed row collapses (height + fade). Paste a list: rows cascade in; past 3 rows "Set all to" fades in and the list scrolls inside (about 5.5 rows); past 10 the big-team callout grows in. Send count cross-fades.</td><td class="t">add 280 ms · remove 150 ms · cascade 30 ms stagger, under 400 ms</td></tr>
+      <tr><td>Role menu</td><td>Custom listbox with a one-line description per role; arrow keys, Enter, Esc. Opens with opacity + y 4 px; selected role shows a check; the trigger label cross-fades.</td><td class="t">150 ms ease.standard</td></tr>
+      <tr><td>Partial send</td><td>Rows already in the org get a note under them; the rest are sent. The add line cross-fades to a summary and the primary becomes Continue. The step waits for Continue.</td><td class="t">note 280 ms · summary + label 280 ms</td></tr>
+      <tr><td>Validation</td><td>No disabled buttons. On click: field shakes ±6 px twice, inline error slides down, focus moves to the field.</td><td class="t">shake 300 ms · error 280 ms</td></tr>
+      <tr><td>Button busy</td><td>Label swaps for a 16 px spinner; width is held. Content swaps on success.</td><td class="t">mock latency 500–700 ms</td></tr>
+      <tr><td>Slot select</td><td>Slot fills; the Book button's label cross-fades to name the slot.</td><td class="t">fill 150 ms · label 280 ms</td></tr>
+      <tr><td>Verify code</td><td>Boxes fill in sequence on paste. Success: a check draws before T2. Wrong code: shake, red outline, code clears.</td><td class="t">30 ms stagger · check 280 ms</td></tr>
+      <tr><td>Interstitial</td><td>Lines resolve one at a time; the bar fills linearly. Hold 300 ms after the last check, then T5. Real build: ends when data is ready, never under 1.2 s.</td><td class="t">500 / 1000 / 1500 ms · bar 1.8 s linear</td></tr>
+      <tr><td>Confetti</td><td>Self-serve only, once per user. Two bursts from the lower corners angled inward (70 particles, spread 60, velocity 45, ticks 200, gravity 1.1, scalar 0.9), then 30 each at +250 ms. Finishing a section: one 30-particle burst from its earn pill.</td><td class="t">200 ms after the page lands</td></tr>
+      <tr><td>Reduced motion</td><td>All travel 0, cross-fades 120 ms, height changes instant, no confetti, interstitial shows the finished list and holds 600 ms.</td><td class="t">120 ms fades</td></tr>
+    </tbody>
+  </table>
+  <p class="note"><b>How the app builds this.</b> The app already ships framer-motion (^12.40), so no new motion dependency: <span class="tok">layout</span> on the card and side panel gives the height and position glide, <span class="tok">AnimatePresence mode="wait"</span> runs each content exit before the next enter, and <span class="tok">useReducedMotion</span> switches to the reduced-motion branch. Confetti uses canvas-confetti (about 6 KB). This page reproduces the same timings with the Web Animations API and an explicit FLIP (measure old and new size, animate width and height), so the numbers carry over one to one. The speed control scales every duration and delay; confetti physics is scaled by approximation (velocity, decay, gravity and lifetime), but its flutter stays at normal speed. Restart resets the once-per-user confetti flag.</p>
+</section>
+</div>
+
+<template id="tpl-gs-self"><aside class="sb">
+  <div class="sb-logo"><svg height="24" width="164" viewBox="0 0 5476 800" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M1674.55 541.056C1808.24 541.056 1861.32 472.245 1861.32 359.205C1861.32 242.229 1805.28 176.375 1671.61 176.375H1656.85V424.08L1657.84 541.056H1674.55ZM1540.87 419.166C1540.87 312.019 1538.9 203.893 1532.02 119.36H1685.36C1889.83 119.36 1980.25 214.711 1980.25 358.216C1980.25 501.741 1890.8 597.081 1693.22 597.081H1658.82C1660.79 659.999 1663.74 716.025 1668.65 758.296H1526.12C1537.92 674.742 1540.87 542.035 1540.87 419.166Z" fill="currentColor"/>
+<path d="M2180.9 701.282C2213.33 701.282 2249.7 683.592 2277.23 644.258L2278.21 488.956L2231.03 497.796C2141.57 514.507 2109.14 553.841 2109.14 610.846C2109.14 672.775 2135.68 701.282 2180.9 701.282ZM2281.15 702.261C2242.82 750.426 2196.62 768.125 2140.59 768.125C2054.08 768.125 2005.93 712.09 2005.93 629.524C2005.93 542.035 2062.94 484.042 2215.31 452.588L2278.21 439.812V427.027C2278.21 351.344 2245.77 318.901 2187.78 318.901C2139.61 318.901 2092.42 334.633 2046.22 365.098L2044.26 363.14V294.329C2086.53 273.683 2149.44 256.973 2200.55 256.973C2327.36 256.973 2384.37 315.955 2384.37 450.62V565.628C2384.37 658.022 2386.33 694.4 2396.16 758.287H2286.08L2281.15 702.261Z" fill="currentColor"/>
+<path d="M2485.13 515.5C2485.13 444.721 2485.13 358.221 2473.33 266.806H2578.51L2584.4 354.285H2586.37C2609.96 287.452 2643.38 255.009 2710.23 259.924V354.285L2708.26 356.253C2646.33 349.371 2618.81 358.221 2590.31 394.589V485.025C2590.31 575.461 2593.25 666.876 2604.07 758.291H2477.27C2483.16 689.48 2485.13 590.204 2485.13 515.5Z" fill="currentColor"/>
+<path d="M2904.37 701.282C2936.81 701.282 2973.18 683.592 3000.71 644.258L3001.69 488.956L2954.52 497.796C2865.06 514.507 2832.63 553.841 2832.63 610.846C2832.63 672.775 2859.16 701.282 2904.37 701.282ZM3004.64 702.261C2966.3 750.426 2920.1 768.125 2864.08 768.125C2777.57 768.125 2729.4 712.09 2729.4 629.524C2729.4 542.035 2786.42 484.042 2938.78 452.588L3001.69 439.812V427.027C3001.69 351.344 2969.26 318.901 2911.26 318.901C2863.09 318.901 2815.9 334.633 2769.71 365.098L2767.74 363.14V294.329C2810.01 273.683 2872.92 256.973 2924.04 256.973C3050.84 256.973 3107.85 315.955 3107.85 450.62V565.628C3107.85 658.022 3109.82 694.4 3119.65 758.287H3009.55L3004.64 702.261Z" fill="currentColor"/>
+<path d="M3170.96 510.581C3170.96 354.291 3273.18 258.94 3411.79 258.94C3444.22 258.94 3476.67 263.855 3506.15 274.672L3509.1 341.515L3507.13 343.483C3477.64 326.762 3442.26 316.934 3413.76 316.934C3332.16 316.934 3282.04 385.744 3282.04 510.581C3282.04 646.235 3352.81 696.358 3427.52 696.358C3457.99 696.358 3482.56 690.474 3517.95 675.721L3520.9 677.689L3517.95 746.5C3485.51 761.243 3450.13 766.157 3417.68 766.157C3275.16 766.157 3170.96 689.476 3170.96 510.581Z" fill="currentColor"/>
+<path d="M3795.64 328.732C3750.42 328.732 3710.12 375.918 3686.53 440.793V759.277H3571.51C3577.42 658.024 3581.35 548.919 3581.35 430.965C3581.35 301.204 3579.38 219.627 3572.5 99.6955H3686.53V358.218C3717.98 288.429 3766.15 257.963 3832 257.963C3921.45 257.963 3966.67 310.063 3966.67 445.708V584.308C3966.67 655.077 3968.64 701.284 3973.55 758.289H3860.51V441.772C3860.51 358.218 3838.89 328.732 3795.64 328.732Z" fill="currentColor"/>
+<path d="M4057.21 544.986V494.854C4057.21 418.182 4055.25 362.156 4049.35 266.806H4164.35V560.709C4164.35 661.952 4189.9 692.427 4235.12 692.427C4270.51 692.427 4301.97 677.684 4340.3 629.519V486.004C4340.3 413.268 4339.32 339.543 4332.44 266.806H4447.45V591.183C4447.45 658.027 4450.4 704.233 4457.29 758.291H4347.18L4343.26 679.661C4305.9 737.645 4257.74 768.12 4196.79 768.12C4115.21 768.12 4057.21 717.988 4057.21 544.986Z" fill="currentColor"/>
+<path d="M4559.32 586.274V315.955H4498.38V267.79C4562.27 260.908 4619.28 221.593 4643.85 161.632H4666.47V266.801H4824.72V315.955H4666.47V584.306C4666.47 685.55 4690.05 706.196 4742.15 706.196C4771.64 706.196 4798.17 700.293 4824.72 689.485L4826.68 690.474V748.458C4789.33 760.264 4752.96 768.125 4710.7 768.125C4614.37 768.125 4559.32 723.886 4559.32 586.274Z" fill="currentColor"/>
+<path d="M5143.31 494.859C5144.29 355.27 5111.86 305.147 5047.96 305.147C4986.03 305.147 4948.68 366.087 4947.7 494.859H5143.31ZM4835.64 513.528C4835.64 360.184 4919.2 256.973 5048.95 256.973C5170.84 256.973 5243.58 340.527 5243.58 470.278C5243.58 496.817 5242.59 522.378 5239.64 544.991L4949.66 545.97C4957.53 665.893 5000.78 706.196 5079.42 706.196C5117.76 706.196 5163.96 694.4 5219 662.946L5221.94 665.893L5219 729.789C5168.86 754.361 5112.84 768.125 5064.67 768.125C4921.16 768.125 4835.64 676.71 4835.64 513.528Z" fill="currentColor"/>
+<path d="M183.616 701.001C183.616 701.001 178.511 372.403 401.702 295.845C401.702 295.845 143.312 145.229 29.5019 334.599C-88.044 530.186 183.616 701.001 183.616 701.001Z" fill="currentColor"/>
+<path d="M887.396 800C887.396 800 1262.66 228.668 804.498 50.9707C404.447 -104.208 159.707 144.439 159.707 144.439C159.707 144.439 671.268 92.415 887.396 800Z" fill="currentColor"/>
+<path d="M5342.41 360.866V282.874H5318.48V271.704H5378.52V282.874H5354.98V360.866H5342.41ZM5391.28 360.866V271.704H5402.85L5436.16 318.978H5430.58L5463.69 271.704H5475.26V360.866H5462.69V287.063L5467.08 288.459L5433.97 334.935H5432.57L5400.06 288.459L5403.85 287.063V360.866H5391.28Z" fill="currentColor"/>
+</svg>
+</div>
+  <div class="sb-action"><svg class="i " aria-hidden="true"><use href="#i-parachute"/></svg><span>Start a review</span></div>
+  <div class="sb-sep"></div>
+  <nav class="sb-nav"><div class="it on"><svg class="i " aria-hidden="true"><use href="#i-rocket"/></svg><span class="sb-gs"><span class="row"><span>Get started</span><span class="ct num">0/8</span></span><span class="bar"><i style="width:0%"></i></span></span></div><div class="it "><svg class="i " aria-hidden="true"><use href="#i-dashboard"/></svg><span>Dashboard</span></div><div class="it "><svg class="i " aria-hidden="true"><use href="#i-reviews"/></svg><span>Reviews</span></div></nav>
+  <div class="sb-grow"></div>
+  <div class="sb-res">
+    <div class="it "><svg class="i s16" aria-hidden="true"><use href="#i-shield-lock"/></svg><span>Trust Center</span></div>
+    <div class="it "><svg class="i s16" aria-hidden="true"><use href="#i-school"/></svg><span>Learning Center</span></div>
+  </div>
+  <div class="sb-foot">
+    <div class="sb-balance "><svg class="i s16" aria-hidden="true"><use href="#i-wallet"/></svg><span class="l">Balance</span><span class="v">6 credits</span></div>
+    <div class="org"><div class="tile">HCB</div><div style="min-width:0"><div class="nm">Harbor Community Bank</div><div class="sub">Bank</div></div><svg class="i s16" aria-hidden="true"><use href="#i-settings"/></svg></div>
+  </div>
+</aside><div class="main"><header class="hd">
+  <span class="tog"><svg class="i " aria-hidden="true"><use href="#i-sidebar"/></svg></span>
+  <div class="crumbs"><b>Get started</b></div>
+  <div class="hd-end">
+    <span class="credits-pill  "><svg class="i s16" aria-hidden="true"><use href="#i-wallet"/></svg><span>6 credits</span><svg class="i s14" aria-hidden="true"><use href="#i-chevron-down"/></svg></span>
+    <span class="icon-btn"><svg class="i " aria-hidden="true"><use href="#i-search"/></svg></span>
+    <span class="icon-btn "><svg class="i " aria-hidden="true"><use href="#i-bell"/></svg></span>
+    <span class="avatar"><span class="a">DR</span><svg class="i s14" aria-hidden="true"><use href="#i-chevron-down"/></svg></span>
+  </div>
+</header><div class="page">
+  
+  <div class="gs-top"><h1>Your trial includes 3 full reviews. Earn 2 more in your first 14 days.</h1><span class="end"><span class="link"><svg class="i s16" aria-hidden="true"><use href="#i-shield-lock"/></svg>Visit Trust Center</span></span></div>
+  <div class="gs-progress"><div class="bar"><i style="width:1%"></i></div><p class="meta"><b>0 of 8 done</b> · 14 days left to earn</p></div>
+  <div class="card gs-sec"><div class="gs-sec-hd"><div><div class="t"><h3>Run your first review</h3><span class="pill pill-earn" title="2 credits"><svg class="i s14" aria-hidden="true"><use href="#i-gift"/></svg>Earn 1 free review</span><span class="faint small">2 credits</span></div><p class="sub">Upload a commercial appraisal and see every figure checked.</p></div><div class="ct">0 of 3<svg class="i s16" aria-hidden="true"><use href="#i-chevron-up"/></svg></div></div><div class="gs-row "><span class="cb"></span><div class="tx"><b>Upload an appraisal</b> to start your first review</div><span class="btn btn-filled btn-sm">Upload appraisal</span></div><div class="gs-row "><span class="cb"></span><div class="tx"><b>Take the 2-minute tour</b> to learn how to accept or flag a finding</div><span class="btn btn-outline btn-sm">Start tour</span></div><div class="gs-row "><span class="cb"></span><div class="tx"><b>Sign the workbook</b> so it’s ready to send to the lender</div><span class="btn btn-outline btn-sm">Sign workbook</span></div></div><div class="card gs-sec"><div class="gs-sec-hd"><div><div class="t"><h3>Make it your bank’s review</h3><span class="pill pill-earn" title="2 credits"><svg class="i s14" aria-hidden="true"><use href="#i-gift"/></svg>Earn 1 free review</span><span class="faint small">2 credits</span></div><p class="sub">Findings cite your rules, and the workbook carries your name.</p></div><div class="ct">0 of 3<svg class="i s16" aria-hidden="true"><use href="#i-chevron-up"/></svg></div></div><div class="gs-row "><span class="cb"></span><div class="tx"><b>Upload your credit policy</b> so findings cite your rules</div><span class="btn btn-filled btn-sm">Upload policy</span></div><div class="gs-row "><span class="cb"></span><div class="tx"><b>Publish your compliance checklist</b> for administrative reviews</div><span class="btn btn-outline btn-sm">Start checklist</span></div><div class="gs-row "><span class="cb"></span><div class="tx"><b>Brand your workbook</b> with your logo and labels</div><span class="btn btn-outline btn-sm">Edit layout</span></div></div><div class="card gs-sec"><div class="gs-sec-hd"><div><div class="t"><h3>Bring your team</h3><span class="pill">Recommended</span></div><p class="sub">Reviews move faster when nobody waits on one person.</p></div><div class="ct">0 of 2<svg class="i s16" aria-hidden="true"><use href="#i-chevron-up"/></svg></div></div><div class="gs-row "><span class="cb"></span><div class="tx"><b>Invite a reviewer</b> so reviews don’t wait on you</div><span class="btn btn-filled btn-sm">Invite</span></div><div class="gs-row "><span class="cb"></span><div class="tx"><b>Send the Trust Center link to IT</b> for vendor approval</div><span class="btn btn-outline btn-sm">Send to IT</span></div></div>
+  <h2 class="sec-label">More resources</h2><div class="res-grid">
+<div class="card res-card"><div class="art"><div class="ill" ><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 90" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" class="pi" role="img"><style>.pi{stroke-width:var(--ill-stroke,2.25)}.pi .p{fill:var(--ill-paper,#FFFFFF)}.pi .a{fill:var(--ill-accent,#2A6F7F)}.pi .t{fill:var(--ill-tint,#DEEBEE)}.pi .s{fill:var(--ill-shadow,#C9D7E3);stroke:none}.pi .m{stroke:var(--ill-muted,#8FA3B3);stroke-width:1.75}.pi .ap{stroke:var(--ill-paper,#FFFFFF)}.pi .af{fill:var(--ill-paper,#FFFFFF);stroke:none}.pi .as{stroke:var(--ill-accent,#2A6F7F)}.pi .ink{fill:currentColor;stroke:none}.pi .ns{stroke:none}</style><rect class="s" x="51" y="13" width="52" height="36" rx="5"/>
+<rect class="p" x="48" y="10" width="52" height="36" rx="5"/>
+<path class="a" d="M69 20V36L82 28Z"/>
+<path class="m" d="M55 40.5H93"/>
+<path class="s" d="M49 55C41 50 31 49 21 51V79C31 77 41 78 49 83C57 78 67 77 77 79V51C67 49 57 50 49 55Z"/>
+<path class="p" d="M46 52C38 47 28 46 18 48V76C28 74 38 75 46 80Z"/>
+<path class="p" d="M46 52C54 47 64 46 74 48V76C64 74 54 75 46 80Z"/>
+<path class="m" d="M24 57C30 55.5 35 55.5 40 57.5M24 64C30 62.5 35 62.5 40 64.5M52 57.5C57 55.5 62 55.5 68 56.5M52 64.5C57 62.5 62 62.5 68 63.5"/></svg>
+</div></div><div class="body"><h4>Learning Center<svg class="i s16" aria-hidden="true"><use href="#i-external"/></svg></h4><p>Short videos and guides for every step, grouped by task.</p></div></div>
+<div class="card res-card"><div class="art"><div class="ill" ><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 90" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" class="pi" role="img"><style>.pi{stroke-width:var(--ill-stroke,2.25)}.pi .p{fill:var(--ill-paper,#FFFFFF)}.pi .a{fill:var(--ill-accent,#2A6F7F)}.pi .t{fill:var(--ill-tint,#DEEBEE)}.pi .s{fill:var(--ill-shadow,#C9D7E3);stroke:none}.pi .m{stroke:var(--ill-muted,#8FA3B3);stroke-width:1.75}.pi .ap{stroke:var(--ill-paper,#FFFFFF)}.pi .af{fill:var(--ill-paper,#FFFFFF);stroke:none}.pi .as{stroke:var(--ill-accent,#2A6F7F)}.pi .ink{fill:currentColor;stroke:none}.pi .ns{stroke:none}</style><g transform="rotate(8 84 40)">
+  <path class="p" d="M68 18H92L100 26V62H68Z"/>
+  <path d="M92 18V26H100"/>
+  <path class="m" d="M80 34H93M80 40H93M80 46H88"/>
+</g>
+<path class="s" d="M57 17C66 23 74 24 81 23V46C81 62 70 71 57 77C44 71 33 62 33 46V23C40 24 48 23 57 17Z"/>
+<path class="p" d="M54 14C63 20 71 21 78 20V43C78 59 67 68 54 74C41 68 30 59 30 43V20C37 21 45 20 54 14Z"/>
+<path d="M48 42V37.5a6 6 0 0 1 12 0V42"/>
+<rect class="a" x="44" y="42" width="20" height="16" rx="3"/>
+<path class="ap" d="M54 47.5v4.5"/>
+<path class="m" d="M20 26v5M17.5 28.5h5"/></svg>
+</div></div><div class="body"><h4>Trust Center<svg class="i s16" aria-hidden="true"><use href="#i-external"/></svg></h4><p>Security and compliance documents for your IT team.</p></div></div>
+<div class="card res-card"><div class="art"><div class="ill" ><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 90" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" class="pi" role="img"><style>.pi{stroke-width:var(--ill-stroke,2.25)}.pi .p{fill:var(--ill-paper,#FFFFFF)}.pi .a{fill:var(--ill-accent,#2A6F7F)}.pi .t{fill:var(--ill-tint,#DEEBEE)}.pi .s{fill:var(--ill-shadow,#C9D7E3);stroke:none}.pi .m{stroke:var(--ill-muted,#8FA3B3);stroke-width:1.75}.pi .ap{stroke:var(--ill-paper,#FFFFFF)}.pi .af{fill:var(--ill-paper,#FFFFFF);stroke:none}.pi .as{stroke:var(--ill-accent,#2A6F7F)}.pi .ink{fill:currentColor;stroke:none}.pi .ns{stroke:none}</style><g transform="rotate(-7 43 42)">
+  <path class="s" d="M27 20H56L65 29V70H27Z"/>
+  <path class="p" d="M24 17H53L62 26V67H24Z"/>
+  <path d="M53 17V26H62"/>
+  <rect class="t ns" x="29" y="23" width="17" height="6" rx="1.5"/>
+  <path class="m" d="M29 37H55M29 43H55M29 49H46"/>
+</g>
+<path class="s" d="M64 49V67A17 6 0 0 0 98 67V49A17 6 0 0 0 64 49Z"/>
+<path class="p" d="M61 46V64A17 6 0 0 0 95 64V46"/>
+<path d="M61 52A17 6 0 0 0 95 52M61 58A17 6 0 0 0 95 58"/>
+<ellipse class="a" cx="78" cy="46" rx="17" ry="6"/>
+<ellipse class="ap" cx="78" cy="46" rx="9" ry="3" stroke-width="1.5"/>
+<path class="m" d="M101 22v6M98 25h6"/></svg>
+</div></div><div class="body"><h4>How credits work<svg class="i s16" aria-hidden="true"><use href="#i-external"/></svg></h4><p>What each review costs, and what happens at zero.</p></div></div>
+</div>
+</div></div></template>
+<template id="tpl-gs-ent"><aside class="sb">
+  <div class="sb-logo"><svg height="24" width="164" viewBox="0 0 5476 800" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M1674.55 541.056C1808.24 541.056 1861.32 472.245 1861.32 359.205C1861.32 242.229 1805.28 176.375 1671.61 176.375H1656.85V424.08L1657.84 541.056H1674.55ZM1540.87 419.166C1540.87 312.019 1538.9 203.893 1532.02 119.36H1685.36C1889.83 119.36 1980.25 214.711 1980.25 358.216C1980.25 501.741 1890.8 597.081 1693.22 597.081H1658.82C1660.79 659.999 1663.74 716.025 1668.65 758.296H1526.12C1537.92 674.742 1540.87 542.035 1540.87 419.166Z" fill="currentColor"/>
+<path d="M2180.9 701.282C2213.33 701.282 2249.7 683.592 2277.23 644.258L2278.21 488.956L2231.03 497.796C2141.57 514.507 2109.14 553.841 2109.14 610.846C2109.14 672.775 2135.68 701.282 2180.9 701.282ZM2281.15 702.261C2242.82 750.426 2196.62 768.125 2140.59 768.125C2054.08 768.125 2005.93 712.09 2005.93 629.524C2005.93 542.035 2062.94 484.042 2215.31 452.588L2278.21 439.812V427.027C2278.21 351.344 2245.77 318.901 2187.78 318.901C2139.61 318.901 2092.42 334.633 2046.22 365.098L2044.26 363.14V294.329C2086.53 273.683 2149.44 256.973 2200.55 256.973C2327.36 256.973 2384.37 315.955 2384.37 450.62V565.628C2384.37 658.022 2386.33 694.4 2396.16 758.287H2286.08L2281.15 702.261Z" fill="currentColor"/>
+<path d="M2485.13 515.5C2485.13 444.721 2485.13 358.221 2473.33 266.806H2578.51L2584.4 354.285H2586.37C2609.96 287.452 2643.38 255.009 2710.23 259.924V354.285L2708.26 356.253C2646.33 349.371 2618.81 358.221 2590.31 394.589V485.025C2590.31 575.461 2593.25 666.876 2604.07 758.291H2477.27C2483.16 689.48 2485.13 590.204 2485.13 515.5Z" fill="currentColor"/>
+<path d="M2904.37 701.282C2936.81 701.282 2973.18 683.592 3000.71 644.258L3001.69 488.956L2954.52 497.796C2865.06 514.507 2832.63 553.841 2832.63 610.846C2832.63 672.775 2859.16 701.282 2904.37 701.282ZM3004.64 702.261C2966.3 750.426 2920.1 768.125 2864.08 768.125C2777.57 768.125 2729.4 712.09 2729.4 629.524C2729.4 542.035 2786.42 484.042 2938.78 452.588L3001.69 439.812V427.027C3001.69 351.344 2969.26 318.901 2911.26 318.901C2863.09 318.901 2815.9 334.633 2769.71 365.098L2767.74 363.14V294.329C2810.01 273.683 2872.92 256.973 2924.04 256.973C3050.84 256.973 3107.85 315.955 3107.85 450.62V565.628C3107.85 658.022 3109.82 694.4 3119.65 758.287H3009.55L3004.64 702.261Z" fill="currentColor"/>
+<path d="M3170.96 510.581C3170.96 354.291 3273.18 258.94 3411.79 258.94C3444.22 258.94 3476.67 263.855 3506.15 274.672L3509.1 341.515L3507.13 343.483C3477.64 326.762 3442.26 316.934 3413.76 316.934C3332.16 316.934 3282.04 385.744 3282.04 510.581C3282.04 646.235 3352.81 696.358 3427.52 696.358C3457.99 696.358 3482.56 690.474 3517.95 675.721L3520.9 677.689L3517.95 746.5C3485.51 761.243 3450.13 766.157 3417.68 766.157C3275.16 766.157 3170.96 689.476 3170.96 510.581Z" fill="currentColor"/>
+<path d="M3795.64 328.732C3750.42 328.732 3710.12 375.918 3686.53 440.793V759.277H3571.51C3577.42 658.024 3581.35 548.919 3581.35 430.965C3581.35 301.204 3579.38 219.627 3572.5 99.6955H3686.53V358.218C3717.98 288.429 3766.15 257.963 3832 257.963C3921.45 257.963 3966.67 310.063 3966.67 445.708V584.308C3966.67 655.077 3968.64 701.284 3973.55 758.289H3860.51V441.772C3860.51 358.218 3838.89 328.732 3795.64 328.732Z" fill="currentColor"/>
+<path d="M4057.21 544.986V494.854C4057.21 418.182 4055.25 362.156 4049.35 266.806H4164.35V560.709C4164.35 661.952 4189.9 692.427 4235.12 692.427C4270.51 692.427 4301.97 677.684 4340.3 629.519V486.004C4340.3 413.268 4339.32 339.543 4332.44 266.806H4447.45V591.183C4447.45 658.027 4450.4 704.233 4457.29 758.291H4347.18L4343.26 679.661C4305.9 737.645 4257.74 768.12 4196.79 768.12C4115.21 768.12 4057.21 717.988 4057.21 544.986Z" fill="currentColor"/>
+<path d="M4559.32 586.274V315.955H4498.38V267.79C4562.27 260.908 4619.28 221.593 4643.85 161.632H4666.47V266.801H4824.72V315.955H4666.47V584.306C4666.47 685.55 4690.05 706.196 4742.15 706.196C4771.64 706.196 4798.17 700.293 4824.72 689.485L4826.68 690.474V748.458C4789.33 760.264 4752.96 768.125 4710.7 768.125C4614.37 768.125 4559.32 723.886 4559.32 586.274Z" fill="currentColor"/>
+<path d="M5143.31 494.859C5144.29 355.27 5111.86 305.147 5047.96 305.147C4986.03 305.147 4948.68 366.087 4947.7 494.859H5143.31ZM4835.64 513.528C4835.64 360.184 4919.2 256.973 5048.95 256.973C5170.84 256.973 5243.58 340.527 5243.58 470.278C5243.58 496.817 5242.59 522.378 5239.64 544.991L4949.66 545.97C4957.53 665.893 5000.78 706.196 5079.42 706.196C5117.76 706.196 5163.96 694.4 5219 662.946L5221.94 665.893L5219 729.789C5168.86 754.361 5112.84 768.125 5064.67 768.125C4921.16 768.125 4835.64 676.71 4835.64 513.528Z" fill="currentColor"/>
+<path d="M183.616 701.001C183.616 701.001 178.511 372.403 401.702 295.845C401.702 295.845 143.312 145.229 29.5019 334.599C-88.044 530.186 183.616 701.001 183.616 701.001Z" fill="currentColor"/>
+<path d="M887.396 800C887.396 800 1262.66 228.668 804.498 50.9707C404.447 -104.208 159.707 144.439 159.707 144.439C159.707 144.439 671.268 92.415 887.396 800Z" fill="currentColor"/>
+<path d="M5342.41 360.866V282.874H5318.48V271.704H5378.52V282.874H5354.98V360.866H5342.41ZM5391.28 360.866V271.704H5402.85L5436.16 318.978H5430.58L5463.69 271.704H5475.26V360.866H5462.69V287.063L5467.08 288.459L5433.97 334.935H5432.57L5400.06 288.459L5403.85 287.063V360.866H5391.28Z" fill="currentColor"/>
+</svg>
+</div>
+  <div class="sb-action"><svg class="i " aria-hidden="true"><use href="#i-parachute"/></svg><span>Start a review</span><span class="trail"><svg class="i s16" aria-hidden="true"><use href="#i-hourglass"/></svg></span></div>
+  <div class="sb-sep"></div>
+  <nav class="sb-nav"><div class="it on"><svg class="i " aria-hidden="true"><use href="#i-rocket"/></svg><span class="sb-gs"><span class="row"><span>Get started</span><span class="ct num">0/8</span></span><span class="bar"><i style="width:0%"></i></span></span></div><div class="it "><svg class="i " aria-hidden="true"><use href="#i-dashboard"/></svg><span>Dashboard</span></div><div class="it "><svg class="i " aria-hidden="true"><use href="#i-reviews"/></svg><span>Reviews</span></div></nav>
+  <div class="sb-grow"></div>
+  <div class="sb-res">
+    <div class="it "><svg class="i s16" aria-hidden="true"><use href="#i-shield-lock"/></svg><span>Trust Center</span></div>
+    <div class="it "><svg class="i s16" aria-hidden="true"><use href="#i-school"/></svg><span>Learning Center</span></div>
+  </div>
+  <div class="sb-foot">
+    <div class="sb-balance "><svg class="i s16" aria-hidden="true"><use href="#i-wallet"/></svg><span class="l">Balance</span><span class="v">On hold</span></div>
+    <div class="org"><div class="tile">HCB</div><div style="min-width:0"><div class="nm">Harbor Community Bank</div><div class="sub">Bank</div></div><svg class="i s16" aria-hidden="true"><use href="#i-settings"/></svg></div>
+  </div>
+</aside><div class="main"><header class="hd">
+  <span class="tog"><svg class="i " aria-hidden="true"><use href="#i-sidebar"/></svg></span>
+  <div class="crumbs"><b>Get started</b></div>
+  <div class="hd-end">
+    <span class="credits-pill pending "><svg class="i s16" aria-hidden="true"><use href="#i-hourglass"/></svg><span>Credits after your call</span><svg class="i s14" aria-hidden="true"><use href="#i-chevron-down"/></svg></span>
+    <span class="icon-btn"><svg class="i " aria-hidden="true"><use href="#i-search"/></svg></span>
+    <span class="icon-btn "><svg class="i " aria-hidden="true"><use href="#i-bell"/></svg></span>
+    <span class="avatar"><span class="a">DR</span><svg class="i s14" aria-hidden="true"><use href="#i-chevron-down"/></svg></span>
+  </div>
+</header><div class="page">
+  <div class="card" style="display:grid;grid-template-columns:1fr 420px;gap:32px;align-items:center;padding:20px 24px;margin-bottom:20px">
+  <div><div style="display:flex;align-items:center;gap:10px"><span class="ficon"><svg class="i " aria-hidden="true"><use href="#i-calendar-event"/></svg></span><div><h3 style="font-size:17px">Call booked for Friday, Nov 13 at 10:00 AM ET</h3><p class="muted small" style="margin-top:2px">Your 6 trial credits are held for Harbor and open as soon as Realwired confirms the account.</p></div></div>
+  <div style="display:flex;gap:8px;margin-top:14px;padding-left:46px"><span class="btn btn-outline btn-sm">Change call</span><span class="btn btn-text btn-sm">Add to calendar</span></div></div>
+  <div class="tracker"><div class="st done"><span class="dot"><svg class="i " aria-hidden="true"><use href="#i-check"/></svg></span><span class="nm">Signed up</span><span class="sm">Nov 11</span></div><div class="st cur"><span class="dot">2</span><span class="nm">Call booked</span><span class="sm">Fri, Nov 13</span></div><div class="st"><span class="dot">3</span><span class="nm">Confirmed</span><span class="sm">Usually same day</span></div></div>
+</div>
+  <div class="gs-top"><h1>Get Harbor ready before your call on Friday.</h1><span class="end"><span class="link"><svg class="i s16" aria-hidden="true"><use href="#i-shield-lock"/></svg>Visit Trust Center</span></span></div>
+  <div class="gs-progress"><div class="bar"><i style="width:1%"></i></div><p class="meta"><b>0 of 8 done</b> · your 14 days to earn start when Harbor is confirmed</p></div>
+  <div class="card gs-sec"><div class="gs-sec-hd"><div><div class="t"><h3>Run your first review</h3><span class="pill pill-navy"><svg class="i s14" aria-hidden="true"><use href="#i-hourglass"/></svg>Unlocks after your call</span></div><p class="sub">Your trial credits are held until Harbor is confirmed. Clicking explains why.</p></div><div class="ct">0 of 3<svg class="i s16" aria-hidden="true"><use href="#i-chevron-up"/></svg></div></div><div class="gs-row "><span class="cb"></span><div class="tx"><b>Upload an appraisal</b> to start your first review</div><span class="btn btn-outline btn-sm">Upload appraisal<svg class="i s14" aria-hidden="true"><use href="#i-hourglass"/></svg></span></div><div class="gs-row "><span class="cb"></span><div class="tx"><b>Take the 2-minute tour</b> to learn how to accept or flag a finding</div><span class="btn btn-outline btn-sm">Start tour<svg class="i s14" aria-hidden="true"><use href="#i-hourglass"/></svg></span></div><div class="gs-row "><span class="cb"></span><div class="tx"><b>Sign the workbook</b> so it’s ready to send to the lender</div><span class="btn btn-outline btn-sm">Sign workbook<svg class="i s14" aria-hidden="true"><use href="#i-hourglass"/></svg></span></div></div><div class="card gs-sec"><div class="gs-sec-hd"><div><div class="t"><h3>Make it your bank’s review</h3><span class="pill pill-earn" title="2 credits"><svg class="i s14" aria-hidden="true"><use href="#i-gift"/></svg>Earn 1 free review</span><span class="faint small">2 credits</span></div><p class="sub">You can do all of this now, so your first review cites your rules.</p></div><div class="ct">0 of 3<svg class="i s16" aria-hidden="true"><use href="#i-chevron-up"/></svg></div></div><div class="gs-row "><span class="cb"></span><div class="tx"><b>Upload your credit policy</b> so findings cite your rules</div><span class="btn btn-filled btn-sm">Upload policy</span></div><div class="gs-row "><span class="cb"></span><div class="tx"><b>Publish your compliance checklist</b> for administrative reviews</div><span class="btn btn-outline btn-sm">Start checklist</span></div><div class="gs-row "><span class="cb"></span><div class="tx"><b>Brand your workbook</b> with your logo and labels</div><span class="btn btn-outline btn-sm">Edit layout</span></div></div><div class="card gs-sec"><div class="gs-sec-hd"><div><div class="t"><h3>Bring your team</h3><span class="pill">Recommended</span></div><p class="sub">Reviews move faster when nobody waits on one person.</p></div><div class="ct">0 of 2<svg class="i s16" aria-hidden="true"><use href="#i-chevron-up"/></svg></div></div><div class="gs-row "><span class="cb"></span><div class="tx"><b>Invite a reviewer</b> so reviews don’t wait on you</div><span class="btn btn-filled btn-sm">Invite</span></div><div class="gs-row "><span class="cb"></span><div class="tx"><b>Send the Trust Center link to IT</b> so vendor approval runs alongside the call</div><span class="btn btn-outline btn-sm">Send to IT</span></div></div>
+  <h2 class="sec-label">More resources</h2><div class="res-grid">
+<div class="card res-card"><div class="art"><div class="ill" ><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 90" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" class="pi" role="img"><style>.pi{stroke-width:var(--ill-stroke,2.25)}.pi .p{fill:var(--ill-paper,#FFFFFF)}.pi .a{fill:var(--ill-accent,#2A6F7F)}.pi .t{fill:var(--ill-tint,#DEEBEE)}.pi .s{fill:var(--ill-shadow,#C9D7E3);stroke:none}.pi .m{stroke:var(--ill-muted,#8FA3B3);stroke-width:1.75}.pi .ap{stroke:var(--ill-paper,#FFFFFF)}.pi .af{fill:var(--ill-paper,#FFFFFF);stroke:none}.pi .as{stroke:var(--ill-accent,#2A6F7F)}.pi .ink{fill:currentColor;stroke:none}.pi .ns{stroke:none}</style><rect class="s" x="51" y="13" width="52" height="36" rx="5"/>
+<rect class="p" x="48" y="10" width="52" height="36" rx="5"/>
+<path class="a" d="M69 20V36L82 28Z"/>
+<path class="m" d="M55 40.5H93"/>
+<path class="s" d="M49 55C41 50 31 49 21 51V79C31 77 41 78 49 83C57 78 67 77 77 79V51C67 49 57 50 49 55Z"/>
+<path class="p" d="M46 52C38 47 28 46 18 48V76C28 74 38 75 46 80Z"/>
+<path class="p" d="M46 52C54 47 64 46 74 48V76C64 74 54 75 46 80Z"/>
+<path class="m" d="M24 57C30 55.5 35 55.5 40 57.5M24 64C30 62.5 35 62.5 40 64.5M52 57.5C57 55.5 62 55.5 68 56.5M52 64.5C57 62.5 62 62.5 68 63.5"/></svg>
+</div></div><div class="body"><h4>Learning Center<svg class="i s16" aria-hidden="true"><use href="#i-external"/></svg></h4><p>Short videos and guides for every step, grouped by task.</p></div></div>
+<div class="card res-card"><div class="art"><div class="ill" ><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 90" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" class="pi" role="img"><style>.pi{stroke-width:var(--ill-stroke,2.25)}.pi .p{fill:var(--ill-paper,#FFFFFF)}.pi .a{fill:var(--ill-accent,#2A6F7F)}.pi .t{fill:var(--ill-tint,#DEEBEE)}.pi .s{fill:var(--ill-shadow,#C9D7E3);stroke:none}.pi .m{stroke:var(--ill-muted,#8FA3B3);stroke-width:1.75}.pi .ap{stroke:var(--ill-paper,#FFFFFF)}.pi .af{fill:var(--ill-paper,#FFFFFF);stroke:none}.pi .as{stroke:var(--ill-accent,#2A6F7F)}.pi .ink{fill:currentColor;stroke:none}.pi .ns{stroke:none}</style><g transform="rotate(8 84 40)">
+  <path class="p" d="M68 18H92L100 26V62H68Z"/>
+  <path d="M92 18V26H100"/>
+  <path class="m" d="M80 34H93M80 40H93M80 46H88"/>
+</g>
+<path class="s" d="M57 17C66 23 74 24 81 23V46C81 62 70 71 57 77C44 71 33 62 33 46V23C40 24 48 23 57 17Z"/>
+<path class="p" d="M54 14C63 20 71 21 78 20V43C78 59 67 68 54 74C41 68 30 59 30 43V20C37 21 45 20 54 14Z"/>
+<path d="M48 42V37.5a6 6 0 0 1 12 0V42"/>
+<rect class="a" x="44" y="42" width="20" height="16" rx="3"/>
+<path class="ap" d="M54 47.5v4.5"/>
+<path class="m" d="M20 26v5M17.5 28.5h5"/></svg>
+</div></div><div class="body"><h4>Trust Center<svg class="i s16" aria-hidden="true"><use href="#i-external"/></svg></h4><p>Security and compliance documents for your IT team.</p></div></div>
+<div class="card res-card"><div class="art"><div class="ill" ><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 90" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" class="pi" role="img"><style>.pi{stroke-width:var(--ill-stroke,2.25)}.pi .p{fill:var(--ill-paper,#FFFFFF)}.pi .a{fill:var(--ill-accent,#2A6F7F)}.pi .t{fill:var(--ill-tint,#DEEBEE)}.pi .s{fill:var(--ill-shadow,#C9D7E3);stroke:none}.pi .m{stroke:var(--ill-muted,#8FA3B3);stroke-width:1.75}.pi .ap{stroke:var(--ill-paper,#FFFFFF)}.pi .af{fill:var(--ill-paper,#FFFFFF);stroke:none}.pi .as{stroke:var(--ill-accent,#2A6F7F)}.pi .ink{fill:currentColor;stroke:none}.pi .ns{stroke:none}</style><g transform="rotate(-7 43 42)">
+  <path class="s" d="M27 20H56L65 29V70H27Z"/>
+  <path class="p" d="M24 17H53L62 26V67H24Z"/>
+  <path d="M53 17V26H62"/>
+  <rect class="t ns" x="29" y="23" width="17" height="6" rx="1.5"/>
+  <path class="m" d="M29 37H55M29 43H55M29 49H46"/>
+</g>
+<path class="s" d="M64 49V67A17 6 0 0 0 98 67V49A17 6 0 0 0 64 49Z"/>
+<path class="p" d="M61 46V64A17 6 0 0 0 95 64V46"/>
+<path d="M61 52A17 6 0 0 0 95 52M61 58A17 6 0 0 0 95 58"/>
+<ellipse class="a" cx="78" cy="46" rx="17" ry="6"/>
+<ellipse class="ap" cx="78" cy="46" rx="9" ry="3" stroke-width="1.5"/>
+<path class="m" d="M101 22v6M98 25h6"/></svg>
+</div></div><div class="body"><h4>How credits work<svg class="i s16" aria-hidden="true"><use href="#i-external"/></svg></h4><p>What each review costs, and what happens at zero.</p></div></div>
+</div>
+</div></div></template>
+
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+<script>
+(() => {
+"use strict";
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const E = { std: "cubic-bezier(0.2, 0, 0, 1)", enter: "cubic-bezier(0.05, 0.7, 0.1, 1)", exit: "cubic-bezier(0.3, 0, 1, 1)" };
+const D = { quick: 150, std: 280, slow: 480 };
+const CODE_OK = "481920";
+const EMBLEM = `<path d="M183.616 701.001C183.616 701.001 178.511 372.403 401.702 295.845C401.702 295.845 143.312 145.229 29.5019 334.599C-88.044 530.186 183.616 701.001 183.616 701.001Z" fill="currentColor"/><path d="M887.396 800C887.396 800 1262.66 228.668 804.498 50.9707C404.447 -104.208 159.707 144.439 159.707 144.439C159.707 144.439 671.268 92.415 887.396 800Z" fill="currentColor"/>`;
+const I = (n, c = "s16") => `<svg class="i ${c}" aria-hidden="true"><use href="#i-${n}"/></svg>`;
+const CHK = (cls = "") => `<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true"><path pathLength="1" d="M5 12.5l4.5 4.5l9.5 -10"/></svg>`;
+
+const S = {
+  speed: 1, rm: matchMedia("(prefers-reduced-motion: reduce)").matches, path: "self", step: "signup", gen: 0, locked: false,
+  org: {}, rows: [], invSent: false, sendN: 0, role: "reviewer", day: 1, time: "10:00 AM", code: "", invites: 0, confettiDone: false, sectionDone: false, entShown: false,
+};
+const k = () => 1 / S.speed;
+const tv = px => (S.rm ? 0 : px);
+const fd = ms => (S.rm ? 120 : ms);
+const alive = g => g === S.gen;
+const wait = ms => new Promise(r => setTimeout(r, ms * k()));
+function A(el, kf, o = {}) {
+  const a = el.animate(kf, { duration: (o.dur ?? D.std) * k(), delay: (o.delay || 0) * k(), easing: o.ease || E.std, fill: o.fill || "backwards" });
+  if (o.id) a.id = o.id;
+  return a;
+}
+const done = a => a.finished.catch(() => {});
+
+const vp = $("#vp"), card = $("#card"), oc = $("#oc"), steps = $("#steps"), pslot = $("#pslot"), proof = $("#proof"), pc = $("#pc"),
+  main = $("#main"), topEnd = $("#topEnd"), foot = $("#foot"), onb = $("#onb"), istL = $("#istL"), ist = $("#ist"), gs = $("#gs");
+const scaleK = () => vp.getBoundingClientRect().width / 1280;
+function rr(el) {
+  const b = el.getBoundingClientRect(), v = vp.getBoundingClientRect(), q = v.width / 1280;
+  return { x: (b.left - v.left) / q, y: (b.top - v.top) / q, w: b.width / q, h: b.height / q };
+}
+
+/* ---------- T-label + hint ---------- */
+const tl = $("#tl"), tlx = $("#tl .tx");
+let tlTimer;
+function T(text, ms = 600) {
+  tlx.textContent = text + (S.rm && !/reduced motion/i.test(text) ? " · reduced motion" : "") + (S.speed !== 1 && !S.rm ? ` · at ${S.speed}×` : "");
+  tl.classList.add("on");
+  clearTimeout(tlTimer);
+  tlTimer = setTimeout(() => tl.classList.remove("on"), Math.max(ms, 200) * k());
+}
+const HINTS = {
+  signup: "Click <b>Create account</b>.",
+  verify: "Click <b>Paste code</b> to fill the boxes, or <b>Demo: wrong code</b> to see the error. Clicking Verify with an empty code shows validation.",
+  org: "Pick <b>11+</b> or <b>200+</b> to cross the enterprise threshold, then click the button.",
+  invite: "Change a role, <b>Add another</b> or remove a row. <b>Paste a list</b> fills 12 rows (or paste a column into any email field). Type a bad address and click Send to see validation. <b>Back</b> plays T3b.",
+  call: "Pick a day and a time: the button names the slot. <b>Back</b> plays T3b.",
+  ist: "Setting up…",
+  gsself: "Click <b>Finish section</b> above for the earn-pill burst. The welcome line can be dismissed.",
+  gsent: "Pending state: no confetti on landing. It fires when Realwired confirms the org. <b>Finish section</b> still shows the section burst.",
+};
+const hint = s => { $("#hint").innerHTML = HINTS[s] || ""; };
+const URLS = { signup: "id.realwired.com/signup", verify: "id.realwired.com/verify-email", org: "parachute.realwired.com/welcome", invite: "parachute.realwired.com/welcome/team", call: "parachute.realwired.com/welcome/call", ist: "parachute.realwired.com/welcome/setting-up", gs: "parachute.realwired.com/get-started" };
+const setUrl = s => { $("#url").textContent = URLS[s]; };
+
+/* ---------- data ---------- */
+const TYPE = [["bank", "Bank or lender"], ["firm", "Appraisal firm"]];
+const TEAM = [["just", "Just me"], ["2-10", "2–10"], ["11+", "11+", 1]];
+const VOL = [["u50", "Under 50"], ["50-200", "50–200"], ["200+", "200+", 1], ["unsure", "I’m not sure yet"]];
+const ROLE = [["reviewer", "Reviewer"], ["approver", "Approver"], ["admin", "Admin"]];
+const DAYS = [["Thu", "Thursday", 12], ["Fri", "Friday", 13], ["Mon", "Monday", 16], ["Tue", "Tuesday", 17], ["Wed", "Wednesday", 18]];
+const TIMES = ["9:00 AM", "9:30 AM", "10:00 AM", "10:30 AM", "1:00 PM", "1:30 PM", "2:30 PM", "3:00 PM"];
+const isEnt = () => S.org.team === "11+" || S.org.vol === "200+";
+const slotText = () => `${DAYS[S.day][0]}, Nov ${DAYS[S.day][2]} at ${S.time}`;
+
+const seg = (q, opts, cur) => `<div class="seg" data-q="${q}">${opts.map(([v, l, ent]) =>
+  `<button type="button" data-v="${v}"${ent ? " data-ent" : ""} class="${v === cur ? "on" : ""}${ent && v === cur ? " trig" : ""}"><span>${l}</span><span class="gh" aria-hidden="true">${l}</span>${ent ? '<i class="mk"></i>' : ""}</button>`).join("")}</div>`;
+const SPIN = '<span class="spin" aria-hidden="true"></span>';
+const errw = id => `<div class="errwrap"${id ? ` id="${id}"` : ""}><p class="err" role="alert"></p></div>`;
+const ROLE_D = { reviewer: "Runs reviews and accepts or flags findings", approver: "Signs workbooks before they go to the lender", admin: "Manages members, billing and credits" };
+const roleName = v => ROLE.find(r => r[0] === v)[1];
+const DOMAIN = "harborcb.com", MEMBERS = ["dana.reyes@harborcb.com"];
+/* "Paste a list" demo: a column copied from a spreadsheet. marcus.ortiz is already on the list (dropped as a duplicate);
+   dana.reyes is the signed-in user (already a member). Result: 12 rows, 11 sent + 1 already a member. */
+const PASTE_DEMO = ["marcus.ortiz@harborcb.com", "priya.shah@harborcb.com", "tom.becker@harborcb.com", "a.nguyen@harborcb.com", "r.goldberg@harborcb.com",
+  "dana.reyes@harborcb.com", "s.okafor@harborcb.com", "k.lindqvist@harborcb.com", "m.alvarez@harborcb.com", "j.patel@harborcb.com", "e.walsh@harborcb.com"].join("\n");
+let rowSeq = 0;
+const newRow = (email = "", role = "reviewer") => ({ id: ++rowSeq, email, role });
+const rowHTML = r => `<div class="irow" data-id="${r.id}"><div class="irow-in"><div class="irow-g">
+<input class="iem" type="email" value="${r.email}" placeholder="name@${DOMAIN}" autocomplete="off" aria-label="Work email"${S.invSent ? " readonly" : ""}>
+<button type="button" class="rdd" data-dd="row" aria-haspopup="listbox" aria-expanded="false" aria-label="Role: ${roleName(r.role)}"${S.invSent ? " disabled" : ""}><span class="v">${roleName(r.role)}</span>${I("chevron-down")}</button>
+<button type="button" class="irm" data-act="rmrow" aria-label="Remove ${r.email || "this row"}"${S.invSent ? " disabled" : ""}>${I("x")}</button></div>${errw()}</div></div>`;
+const bulkLabel = () => { const v = S.rows.length && S.rows.every(r => r.role === S.rows[0].role) ? S.rows[0].role : ""; return v ? roleName(v) : "Role"; };
+const filledRows = () => S.rows.filter(r => r.email.trim());
+const sendLabel = n => `Send <span class="cnt">${n ? `<b>${n}</b>` : ""}</span><span class="w">${n === 1 ? "invite" : "invites"}</span>`;
+
+const HTML = {
+  signup: () => `<h1>Create your Parachute account</h1><p class="muted" style="margin-top:4px">Your trial includes 3 full reviews. No card needed.</p>
+<button type="button" class="btn btn-outline btn-lg btn-block" data-act="create" style="margin-top:22px">${I("building")}Continue with Microsoft</button>
+<div class="or">or with your work email</div>
+<div class="field"><label>Full name</label><div class="input">Dana Reyes</div></div>
+<div class="field"><label>Work email</label><div class="input focus">dana.reyes@harborcb.com</div></div>
+<div class="field"><label>Password</label><div class="input"><span>••••••••••••</span><span style="margin-left:auto;color:#565c64">${I("eye")}</span></div><p class="faint small" style="margin-top:6px">At least 12 characters</p></div>
+<button type="button" class="btn btn-filled btn-lg btn-block pbtn" data-act="create" style="margin-top:20px"><span class="lbl">Create account</span>${SPIN}</button>
+<p class="small muted center" style="margin-top:14px">Already have an account? <span class="link">Sign in</span></p>
+<div class="idbadge">${I("shield-check")}Secured by Realwired ID</div>`,
+  verify: () => `<span class="ficon vicon" style="width:44px;height:44px"><svg class="i s20 mail" aria-hidden="true"><use href="#i-mail"/></svg>${CHK("chk")}</span>
+<h1 style="margin-top:16px">Check your email</h1><p class="muted" style="margin-top:4px">We sent a 6-digit code to <b style="color:var(--md-on-surface)">dana.reyes@harborcb.com</b>. It expires in 10 minutes.</p>
+<div class="code" id="code">${"<span></span>".repeat(6)}</div><input class="sr-in" id="codeIn" inputmode="numeric" autocomplete="one-time-code" maxlength="6" aria-label="6-digit code">
+${errw("codeErr")}
+<div class="code-acts"><button type="button" class="link" data-act="paste">${I("copy", "s14")}Paste code</button><button type="button" class="link demo" data-act="wrong">Demo: wrong code</button></div>
+<button type="button" class="btn btn-filled btn-lg btn-block pbtn" data-act="verify" style="margin-top:20px"><span class="lbl">Verify email</span>${SPIN}</button>
+<p class="small muted center" style="margin-top:14px">Didn’t get it? Resend in 0:42 · <span class="link">Use a different email</span></p>
+<div class="idbadge">${I("shield-check")}Secured by Realwired ID</div>`,
+  org: () => `<h1>Set up your organization</h1><p class="lede muted">Three quick answers, then you’re in.</p>
+<div class="wel-q field"><label>Organization name</label><div class="input">Harbor Community Bank</div></div>
+<div class="wel-q"><label>You are a</label>${seg("type", TYPE, S.org.type)}</div>
+<div class="wel-q"><label>How many people will review reports?</label>${seg("team", TEAM, S.org.team)}</div>
+<div class="wel-q"><label>Reports a month, roughly</label>${seg("vol", VOL, S.org.vol)}</div>
+<div class="live-wrap${isEnt() ? " open" : ""}" id="liveWrap"><div class="live">${I("calendar-event", "s20")}<div><b>Teams your size start with a short call</b>We’ll set up your policy and checklist with you, then open your trial credits.</div></div></div>
+<button type="button" class="btn btn-filled btn-lg btn-block pbtn" data-act="org"><span class="lbl swap${isEnt() ? " ent" : ""}" id="orgLbl"><span class="l1">Continue</span><span class="l2">${I("calendar-event")}Book a call</span></span>${SPIN}</button>`,
+  invite: () => `<button type="button" class="link back" data-act="back">${I("arrow-left")}Back</button>
+<h1>Who else reviews reports?</h1><p class="lede muted">We’ll invite them to Harbor Community Bank. They can start once you’re in.</p>
+<div class="wel-q inv" id="inv">
+<div class="inv-hd${S.rows.length > 3 ? " many" : ""}" id="invHd"><span class="h-em">Work email</span><span class="h-role">Role</span>
+<div class="setall"><span>Set all to</span><button type="button" class="rdd sm" data-dd="all" aria-haspopup="listbox" aria-expanded="false" aria-label="Set all roles"><span class="v">${bulkLabel()}</span>${I("chevron-down")}</button></div></div>
+<div class="inv-list" id="invList">${S.rows.map(rowHTML).join("")}</div>
+<div class="inv-more"><div class="acts"><button type="button" class="link" data-act="addrow">${I("plus")}Add another</button><button type="button" class="link" data-act="pastelist">${I("copy")}Paste a list</button><span class="dup" id="dupNote" aria-live="polite"></span></div><div class="sum" id="invSum" aria-live="polite"></div></div>
+<div class="live-wrap${S.rows.length > 10 ? " open" : ""}" id="bigWrap"><div class="live">${I("calendar-event", "s20")}<div><b>Inviting a bigger team?</b>We can import a list or connect your sign-in system on a short call. <button type="button" class="link" data-act="bigcall">Book a call →</button></div></div></div>
+</div>
+<div class="row-acts"><button type="button" class="btn btn-text btn-lg" data-act="skip">Skip for now</button><button type="button" class="btn btn-filled btn-lg pbtn" data-act="send" style="flex:1"><span class="lbl swap" id="sendLbl"><span class="l1">${sendLabel(filledRows().length)}</span><span class="l2">Continue</span></span>${SPIN}</button></div>`,
+  call: () => `<button type="button" class="link back" data-act="back">${I("arrow-left")}Back</button>
+<h1>Book Harbor’s setup call</h1>
+<p class="lede muted">Twenty minutes with Realwired’s onboarding team, so your first review uses your own rules.</p>
+<div class="wel-q"><label>November 2026 <span class="faint small" style="float:right;font-weight:400">Eastern Time</span></label>
+<div class="slots5">${DAYS.map(([d, , n], i) => `<button type="button" class="slot day${i === S.day ? " on" : ""}" data-act="day" data-i="${i}"><span>${d}</span><b class="num">${n}</b></button>`).join("")}</div></div>
+<div class="slots4">${TIMES.map(t => `<button type="button" class="slot${t === S.time ? " on" : ""}" data-act="time" data-t="${t}">${t}</button>`).join("")}</div>
+<button type="button" class="btn btn-filled btn-lg btn-block pbtn" data-act="book"><span class="lbl">${I("calendar-event")}<span class="swap" id="bookLbl"><span>Book ${slotText()}</span></span></span>${SPIN}</button>
+<p class="small muted center" style="margin-top:12px">Can’t find a time? <span class="link">Email onboarding@realwired.com</span></p>`,
+};
+
+const proofHTML = (img, title, items, ordered) => {
+  const lis = ordered ? items.map((t, n) => `<li><span class="pn">${n + 1}</span><span>${t}</span></li>`).join("")
+                      : items.map(t => `<li>${I("circle-check")}<span>${t}</span></li>`).join("");
+  return `<div class="ill"><img src="../illustrations/${img}" alt=""></div><h3>${title}</h3><${ordered ? "ol" : "ul"} class="pl">${lis}</${ordered ? "ol" : "ul"}>`;
+};
+const PANELS = {
+  org: proofHTML("23-scene-first-review.svg", "What Parachute checks", ["Every figure traced to its page in the appraisal", "Your credit policy and compliance checklist applied", "A signed workbook you can send to the lender"]),
+  invite: proofHTML("15-request-sent.svg", "What your team gets", ["An email to join Harbor Community Bank, no account setup on their side", "Reviews they start come out of the shared credit balance", "You can change anyone’s role later in Members"]),
+  call: proofHTML("25-scene-call-booked.svg", "What happens next", ["<b>You get into Parachute straight away.</b> Upload your policy and invite your team while you wait.", "<b>On the call, we confirm Harbor’s account</b> and run your first review with you.", "<b>Your 6 trial credits open</b> once the account is confirmed, usually that day."], true),
+};
+const FOOT_ID = "<a>Help</a><a>Privacy</a><a>Terms</a>";
+const FOOT_APP = "<span>Secured by Realwired ID</span><a>Help</a><a>Privacy</a>";
+
+/* ---------- FLIP: animate explicit width/height while layout keeps it centred ---------- */
+function flipMany(targets, mutate, o = {}) {
+  const dur = o.dur ?? D.std, ease = o.ease || E.std, pin = o.pin || [], slide = o.slide || [], fix = o.fix || [];
+  const kill = el => el.getAnimations().forEach(a => { if (a.id === "flip") a.cancel(); });
+  targets.forEach(kill); pin.forEach(kill); slide.forEach(s => kill(s.el));
+  const rel = s => { const a = rr(s.el), b = rr(s.ref); return { x: a.x - b.x, y: a.y - b.y }; };
+  const r0 = targets.map(rr), s0 = slide.map(rel);
+  mutate();
+  if (S.rm || !dur) return Promise.resolve();
+  const r1 = targets.map(rr), s1 = slide.map(rel), p1 = pin.map(rr);
+  const fixW = fix.map(el => el.getBoundingClientRect().width / scaleK());
+  targets.forEach((t, i) => { t.style.width = r0[i].w + "px"; t.style.height = r0[i].h + "px"; });
+  const rl = targets.map(rr), pl = pin.map(rr);
+  targets.forEach(t => { t.style.width = ""; t.style.height = ""; });
+  fix.forEach((el, i) => { el.style.width = fixW[i] + "px"; });
+  const anims = [];
+  const tr = (dx, dy) => `translate(${dx}px, ${dy}px)`;
+  targets.forEach((t, i) => {
+    if (Math.abs(r0[i].w - r1[i].w) < .5 && Math.abs(r0[i].h - r1[i].h) < .5 && Math.abs(r0[i].x - rl[i].x) < .5 && Math.abs(r0[i].y - rl[i].y) < .5) return;
+    anims.push(A(t, [{ width: r0[i].w + "px", height: r0[i].h + "px", transform: tr(r0[i].x - rl[i].x, r0[i].y - rl[i].y) },
+                     { width: r1[i].w + "px", height: r1[i].h + "px", transform: tr(0, 0) }], { dur, ease, fill: "none", id: "flip" }));
+  });
+  pin.forEach((p, i) => anims.push(A(p, [{ transform: tr(p1[i].x - pl[i].x, p1[i].y - pl[i].y) }, { transform: tr(0, 0) }], { dur, ease, fill: "none", id: "flip" })));
+  slide.forEach((s, i) => {
+    const dx = s0[i].x - s1[i].x, dy = s0[i].y - s1[i].y;
+    if (Math.abs(dx) > .5 || Math.abs(dy) > .5) anims.push(A(s.el, [{ transform: tr(dx, dy) }, { transform: tr(0, 0) }], { dur, ease, fill: "none", id: "flip" }));
+  });
+  return Promise.all(anims.map(done)).then(() => fix.forEach(el => { el.style.width = ""; }));
+}
+
+/* ---------- content swap helpers ---------- */
+function exitContent(dir) {
+  return done(A(oc, [{ opacity: 1, transform: "none" }, { opacity: 0, transform: `translateX(${tv(-16 * dir)}px)` }], { dur: S.rm ? 120 : D.quick, ease: E.exit, fill: "forwards" }));
+}
+function enterContent(dir) {
+  A(oc, [{ opacity: 0, transform: `translateX(${tv(16 * dir)}px)` }, { opacity: 1, transform: "none" }], { dur: fd(D.std), ease: E.enter });
+}
+function setContent(step) {
+  closePop(true);
+  oc.getAnimations().forEach(a => a.cancel());
+  if (step === "invite") S.sendN = filledRows().length;
+  oc.innerHTML = HTML[step]();
+  S.step = step; setUrl(step); hint(step);
+  if (step === "org") S.entShown = isEnt();
+}
+function setSeg(i, on, animate, delay = 0) {
+  const seg = steps.children[i], bar = seg.firstElementChild;
+  seg.classList.toggle("on", on);
+  if (animate && !S.rm) A(bar, [{ transform: `scaleX(${on ? 0 : 1})` }, { transform: `scaleX(${on ? 1 : 0})` }], { dur: 400, delay, ease: E.std });
+}
+function syncPathButtons(p) { $$("#cPath button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.path === p))); }
+
+/* ---------- busy + validation ---------- */
+async function busy(btn) {
+  btn.classList.add("is-busy");
+  const ms = 500 + Math.round(Math.random() * 200);
+  T(`Micro · Button busy · ${ms} ms mock latency`, ms);
+  await wait(ms);
+}
+function shake(el) {
+  if (S.rm) return;
+  A(el, [{ transform: "translateX(0)" }, { transform: "translateX(-6px)" }, { transform: "translateX(6px)" }, { transform: "translateX(-6px)" }, { transform: "translateX(6px)" }, { transform: "translateX(0)" }], { dur: 300, ease: E.std, fill: "none" });
+}
+function showErr(wrap, msg, icon = "alert") {
+  if (!wrap) return;
+  wrap.firstElementChild.innerHTML = `${I(icon, "s14")}<span>${msg}</span>`;
+  if (wrap.classList.contains("open")) return;
+  wrap.classList.add("open");
+  const h = wrap.offsetHeight;
+  if (S.rm) { A(wrap, [{ opacity: 0 }, { opacity: 1 }], { dur: 120 }); return; }
+  A(wrap, [{ height: "0px", opacity: 0 }, { height: h + "px", opacity: 1 }], { dur: D.std, ease: E.std, fill: "none" });
+}
+function hideErr(wrap) {
+  if (!wrap || !wrap.classList.contains("open")) return;
+  const h = wrap.offsetHeight;
+  wrap.classList.remove("open");
+  if (!S.rm) A(wrap, [{ height: h + "px", opacity: 1 }, { height: "0px", opacity: 0 }], { dur: D.std, ease: E.std, fill: "none" });
+}
+
+/* ---------- verify code ---------- */
+let codeFocused = false;
+function renderCode(popFrom = 99) {
+  const boxes = $$("#code span");
+  boxes.forEach((b, i) => {
+    const d = S.code[i] || "";
+    if ((b.textContent || "") !== d) {
+      b.innerHTML = d ? `<em>${d}</em>` : "";
+      if (d && i >= popFrom) A(b.firstChild, [{ opacity: 0, transform: `translateY(${tv(6)}px)` }, { opacity: 1, transform: "none" }], { dur: fd(D.quick), ease: E.enter });
+    }
+    b.classList.toggle("f", !!d);
+    b.classList.toggle("c", codeFocused && i === S.code.length);
+  });
+  const inp = $("#codeIn"); if (inp && inp.value !== S.code) inp.value = S.code;
+}
+async function fillCode(str) {
+  if (S.locked) return;
+  const g = S.gen; S.locked = true;
+  hideErr($("#codeErr")); $("#code").classList.remove("bad");
+  T("Micro · Code paste · boxes fill with 30 ms stagger", 300);
+  S.code = "";
+  for (let i = 0; i < 6; i++) {
+    S.code += str[i]; renderCode(i);
+    if (!S.rm) await wait(30); if (!alive(g)) return;
+  }
+  S.locked = false;
+  submitCode();
+}
+async function submitCode() {
+  if (S.locked) return;
+  const g = S.gen, btn = $('[data-act="verify"]'), codeEl = $("#code");
+  if (S.code.length < 6) {
+    T("Micro · Validation · shake 300 ms, error slides down 280 ms", 300);
+    codeEl.classList.add("bad"); shake(codeEl); showErr($("#codeErr"), "Enter the 6-digit code from your email.");
+    $("#codeIn").focus({ preventScroll: true });
+    return;
+  }
+  S.locked = true;
+  await busy(btn); if (!alive(g)) return;
+  btn.classList.remove("is-busy");
+  if (S.code !== CODE_OK) {
+    T("Micro · Wrong code · shake, red outline, code clears", 600);
+    codeEl.classList.add("bad"); shake(codeEl);
+    showErr($("#codeErr"), "That code didn’t match. Check your latest email and try again.");
+    await wait(S.rm ? 300 : 420); if (!alive(g)) return;
+    const ems = $$("#code em");
+    await Promise.all(ems.map(e => done(A(e, [{ opacity: 1 }, { opacity: 0 }], { dur: fd(D.quick), ease: E.exit, fill: "forwards" }))));
+    if (!alive(g)) return;
+    S.code = ""; codeFocused = true; renderCode(); $("#codeIn").focus({ preventScroll: true });
+    S.locked = false;
+    return;
+  }
+  $$("#code span").forEach(b => b.classList.add("ok"));
+  const vi = $(".vicon"); vi.classList.add("ok");
+  T("Micro · Code accepted · check draws 280 ms", 280);
+  if (!S.rm) A($(".vicon .chk path"), [{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], { dur: D.std, ease: E.std });
+  await wait(S.rm ? 200 : D.std + 160); if (!alive(g)) return;
+  await goT2(g);
+}
+
+/* ---------- org setup ---------- */
+function pick(btn) {
+  const segEl = btn.parentElement, q = segEl.dataset.q, v = btn.dataset.v;
+  if (btn.classList.contains("on")) return;
+  $$("button", segEl).forEach(b => b.classList.toggle("on", b === btn));
+  if (q === "role") { S.role = v; return; }
+  S.org[q] = v;
+  if (q === "team" || q === "vol") updateEnt();
+}
+function updateEnt() {
+  $$('#oc .seg button[data-ent]').forEach(b => b.classList.toggle("trig", b.classList.contains("on")));
+  const ent = isEnt();
+  if (ent === S.entShown) return;
+  S.entShown = ent; S.path = ent ? "ent" : "self"; syncPathButtons(S.path);
+  const wrap = $("#liveWrap"), live = wrap.firstElementChild, lbl = $("#orgLbl"), l1 = $(".l1", lbl), l2 = $(".l2", lbl);
+  T(`Micro · Enterprise threshold ${ent ? "crossed" : "cleared"} · callout + label 280 ms`, 560);
+  lbl.classList.toggle("ent", ent);
+  const [show, hide] = ent ? [l2, l1] : [l1, l2];
+  A(hide, [{ opacity: 1 }, { opacity: 0 }], { dur: fd(D.std) });
+  A(show, [{ opacity: 0 }, { opacity: 1 }], { dur: fd(D.std) });
+  if (ent && !S.rm) A($(".i", l2), [{ transform: "translateX(-6px)" }, { transform: "none" }], { dur: D.std, ease: E.enter });
+  liveToggle(wrap, ent);
+}
+/* callout reveal (enterprise threshold, big-team nudge): grows from height 0, then fades and lifts in */
+function liveToggle(wrap, on) {
+  if (!wrap || wrap.classList.contains("open") === on) return;
+  const live = wrap.firstElementChild;
+  if (on) {
+    wrap.classList.add("open");
+    const h = wrap.offsetHeight;
+    if (S.rm) { A(live, [{ opacity: 0 }, { opacity: 1 }], { dur: 120 }); return; }
+    A(wrap, [{ height: "0px" }, { height: h + "px" }], { dur: D.std, ease: E.std, fill: "none" });
+    A(live, [{ opacity: 0, transform: `translateY(${tv(8)}px)` }, { opacity: 1, transform: "none" }], { dur: D.std, delay: 120, ease: E.enter });
+  } else {
+    const h = wrap.offsetHeight;
+    wrap.classList.remove("open");
+    if (S.rm) return;
+    A(live, [{ opacity: 1 }, { opacity: 0 }], { dur: D.quick, ease: E.exit, fill: "none" });
+    A(wrap, [{ height: h + "px" }, { height: h + "px", offset: .3 }, { height: "0px" }], { dur: D.std + 80, ease: E.std, fill: "none" });
+  }
+}
+
+/* ---------- invite rows ---------- */
+const emailOk = v => /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(v);
+const rowEl = r => $(`#invList .irow[data-id="${r.id}"]`);
+const rowOf = el => S.rows.find(r => String(r.id) === el.dataset.id);
+function updateSend(force) {
+  const lbl = $("#sendLbl .l1"); if (!lbl) return;
+  const n = filledRows().length;
+  if (n === S.sendN && !force) return;
+  S.sendN = n;
+  const cnt = $(".cnt", lbl), w = $(".w", lbl);
+  w.textContent = n === 1 ? "invite" : "invites";
+  const old = cnt.lastElementChild;
+  if (n) {
+    const b = document.createElement("b"); b.textContent = n; cnt.appendChild(b);
+    A(b, [{ opacity: 0 }, { opacity: 1 }], { dur: fd(D.std) });
+  }
+  if (old) done(A(old, [{ opacity: 1 }, { opacity: 0 }], { dur: fd(D.std), fill: "forwards" })).then(() => old.remove());
+}
+function setRoleLabel(el, v) {
+  const t = $(".rdd", el), s = $(".v", t), name = roleName(v);
+  t.setAttribute("aria-label", `Role: ${name}`);
+  if (s.textContent === name) return;
+  s.textContent = name;
+  A(s, [{ opacity: 0 }, { opacity: 1 }], { dur: fd(D.quick) });
+}
+function syncBulk() {
+  const hd = $("#invHd"); if (!hd) return;
+  hd.classList.toggle("many", S.rows.length > 3);
+  const v = $(".setall .v", hd), t = bulkLabel();
+  if (v.textContent !== t) { v.textContent = t; A(v, [{ opacity: 0 }, { opacity: 1 }], { dur: fd(D.quick) }); }
+}
+function afterRows() { updateSend(); syncBulk(); liveToggle($("#bigWrap"), S.rows.length > 10); }
+function setDup(text) {
+  const d = $("#dupNote"); if (!d || d.textContent === text) return;
+  d.textContent = text;
+  if (text) A(d, [{ opacity: 0, transform: `translateY(${tv(4)}px)` }, { opacity: 1, transform: "none" }], { dur: fd(D.std), ease: E.enter });
+}
+/* row enters: height from 0 + fade */
+function rowIn(el, delay = 0, dur = D.std) {
+  if (S.rm) return A(el, [{ opacity: 0 }, { opacity: 1 }], { dur: 120 });
+  const h = el.offsetHeight;
+  return A(el, [{ height: "0px", opacity: 0 }, { height: h + "px", opacity: 1 }], { dur, delay, ease: E.std });
+}
+function scrollRowTo(el, smooth = true) {
+  const list = $("#invList"); if (!list || !el || !el.isConnected) return;
+  const top = el.offsetTop, bot = top + el.offsetHeight;
+  let to = null;
+  if (top < list.scrollTop) to = top;
+  else if (bot > list.scrollTop + list.clientHeight) to = bot - list.clientHeight;
+  if (to !== null) list.scrollTo({ top: to, behavior: smooth && !S.rm ? "smooth" : "auto" });
+}
+function addRow() {
+  const list = $("#invList"), r = newRow();
+  const wasScroll = list.scrollHeight > list.clientHeight + 1;
+  S.rows.push(r);
+  list.insertAdjacentHTML("beforeend", rowHTML(r));
+  const el = list.lastElementChild;
+  setDup("");
+  T("Micro · Row added · height from 0 + fade 280 ms, focus moves to it", 280);
+  if (wasScroll) {
+    /* list already at its max height: the row can't grow the card, so it fades in and the list scrolls to it */
+    A(el, [{ opacity: 0, transform: `translateY(${tv(8)}px)` }, { opacity: 1, transform: "none" }], { dur: fd(D.std), ease: E.enter });
+    scrollRowTo(el);
+  } else done(rowIn(el)).then(() => scrollRowTo(el));
+  afterRows();
+  $(".iem", el).focus({ preventScroll: true });
+}
+async function removeRow(el) {
+  if (el.dataset.leaving || S.invSent) return;
+  const r = rowOf(el), inp = $(".iem", el);
+  if (S.rows.length === 1) {
+    T("Micro · Last row · cleared, not removed", 300);
+    r.email = ""; inp.value = ""; inp.classList.remove("bad"); hideErr($(".errwrap", el));
+    A(inp, [{ opacity: .4 }, { opacity: 1 }], { dur: fd(D.quick) });
+    updateSend(); inp.focus({ preventScroll: true });
+    return;
+  }
+  el.dataset.leaving = "1";
+  closePop(true);
+  const i = S.rows.indexOf(r);
+  S.rows.splice(i, 1);
+  const next = S.rows[i] || S.rows[i - 1];
+  T("Micro · Row removed · collapses 150 ms (height + fade)", 300);
+  setDup("");
+  afterRows();
+  if (next) $(".irm", rowEl(next)).focus({ preventScroll: true });
+  if (S.rm) { el.remove(); return; }
+  const h = el.offsetHeight;
+  await done(A(el, [{ height: h + "px", opacity: 1 }, { height: "0px", opacity: 0 }], { dur: D.quick, ease: E.std, fill: "forwards" }));
+  el.remove();
+}
+/* paste: a column from a spreadsheet, or anything split by commas / semicolons / spaces / newlines */
+function pasteRows(text) {
+  const toks = text.split(/[\s,;]+/).map(t => t.trim().replace(/^[<"']+|[>"']+$/g, "").toLowerCase()).filter(t => t.includes("@"));
+  if (!toks.length) return false;
+  closePop(true);
+  const have = new Set(filledRows().map(r => r.email.trim().toLowerCase()));
+  let dups = 0; const add = [];
+  toks.forEach(t => { if (have.has(t)) dups++; else { have.add(t); add.push(t); } });
+  const list = $("#invList");
+  /* empty rows are replaced: fill them in place, drop the leftovers */
+  S.rows.filter(r => !r.email.trim()).forEach(r => {
+    const el = rowEl(r);
+    if (add.length) {
+      r.email = add.shift();
+      const inp = $(".iem", el); inp.value = r.email; inp.classList.remove("bad"); hideErr($(".errwrap", el));
+      $(".irm", el).setAttribute("aria-label", `Remove ${r.email}`);
+      A(inp, [{ opacity: .3 }, { opacity: 1 }], { dur: fd(D.quick) });
+    } else if (S.rows.length > 1) {
+      S.rows.splice(S.rows.indexOf(r), 1); el.remove();
+    }
+  });
+  const fresh = add.map(e => newRow(e));
+  S.rows.push(...fresh);
+  list.insertAdjacentHTML("beforeend", fresh.map(rowHTML).join(""));
+  /* micro-cascade: 30 ms stagger, 150 ms each, delay capped at 240 ms so the whole thing lands inside 400 ms */
+  fresh.forEach((r, i) => rowIn(rowEl(r), S.rm ? 0 : Math.min(i * 30, 240), D.quick));
+  T(`Micro · Paste · ${toks.length - dups} added, rows cascade in (30 ms stagger, under 400 ms)${dups ? ` · ${dups} duplicate${dups > 1 ? "s" : ""} dropped` : ""}`, 600);
+  afterRows();
+  setDup(dups ? `${dups} duplicate${dups > 1 ? "s" : ""} removed` : "");
+  return true;
+}
+function markBad(el, msg) {
+  const inp = $(".iem", el);
+  inp.classList.add("bad"); shake(inp);
+  const w = $(".errwrap", el); w.classList.remove("info"); showErr(w, msg);
+}
+function clearBad(el) { $(".iem", el).classList.remove("bad"); hideErr($(".errwrap", el)); }
+/* returns the first invalid row element, or null */
+function validateRows() {
+  if (!filledRows().length) { const el = rowEl(S.rows[0]); markBad(el, "Add at least one work email, or skip for now"); return el; }
+  let first = null;
+  S.rows.forEach(r => {
+    const el = rowEl(r), v = r.email.trim().toLowerCase();
+    const msg = !v ? "" : !emailOk(v) ? "Enter a work email" : !v.endsWith("@" + DOMAIN) ? `Use a ${DOMAIN} address` : "";
+    if (msg) { markBad(el, msg); first = first || el; } else clearBad(el);
+  });
+  return first;
+}
+/* partial success: some rows were already members; the rest went out. Stay on the step, primary becomes Continue */
+function partialSent(mem, sent) {
+  S.invSent = true;
+  const inv = $("#inv"), sum = $("#invSum"), acts = $("#inv .inv-more .acts"), lbl = $("#sendLbl");
+  T("Micro · Partial success · row note slides down 280 ms, summary + label cross-fade 280 ms", 560);
+  $$(".iem", inv).forEach(x => { x.readOnly = true; x.classList.remove("bad"); });
+  $$(".rdd, .irm, .inv-more button", inv).forEach(x => { x.disabled = true; });
+  mem.forEach(r => { const w = $(".errwrap", rowEl(r)); w.classList.add("info"); showErr(w, "Already in Harbor Community Bank", "info"); });
+  sum.innerHTML = `${I("circle-check")}<span><b>${sent} invite${sent === 1 ? "" : "s"} sent</b> · ${mem.length} already ${mem.length === 1 ? "a member" : "members"}</span>`;
+  inv.classList.add("sent");
+  A(acts, [{ opacity: 1, visibility: "visible" }, { opacity: 0, visibility: "visible" }], { dur: fd(D.quick), ease: E.exit });
+  A(sum, [{ opacity: 0, transform: `translateY(${tv(8)}px)` }, { opacity: 1, transform: "none" }], { dur: fd(D.std), delay: S.rm ? 0 : 80, ease: E.enter });
+  lbl.classList.add("alt");
+  A($(".l1", lbl), [{ opacity: 1 }, { opacity: 0 }], { dur: fd(D.std) });
+  A($(".l2", lbl), [{ opacity: 0 }, { opacity: 1 }], { dur: fd(D.std) });
+  /* scroll once the note has finished sliding down, so the whole row and its note are in view */
+  const g = S.gen; wait(S.rm ? 0 : D.std).then(() => { if (alive(g)) scrollRowTo(rowEl(mem[0])); });
+}
+
+/* ---------- role listbox (custom popover, lives in #vp so the scrolling list can't clip it) ---------- */
+let pop = null;
+function openPop(trig) {
+  closePop(true);
+  const isAll = trig.dataset.dd === "all", row = isAll ? null : rowOf(trig.closest(".irow"));
+  const cur = isAll ? (S.rows.every(r => r.role === S.rows[0].role) ? S.rows[0].role : "") : row.role;
+  const el = document.createElement("div");
+  el.className = "rpop"; el.id = "rolePop"; el.tabIndex = -1;
+  el.setAttribute("role", "listbox"); el.setAttribute("aria-label", isAll ? "Set all roles" : "Role");
+  el.innerHTML = ROLE.map(([v, l]) => `<div class="ropt" role="option" id="ro-${v}" data-v="${v}" aria-selected="${v === cur}"><span class="ck">${I("check")}</span><span class="tx"><b>${l}</b><span>${ROLE_D[v]}</span></span></div>`).join("");
+  vp.appendChild(el);
+  const r = rr(trig), w = el.offsetWidth, h = el.offsetHeight;
+  const below = r.y + r.h + 6 + h <= 820 - 8;
+  el.style.left = Math.max(8, r.x + r.w - w) + "px";
+  el.style.top = (below ? r.y + r.h + 6 : r.y - 6 - h) + "px";
+  trig.setAttribute("aria-expanded", "true"); trig.setAttribute("aria-controls", "rolePop");
+  pop = { el, trig, row, isAll, i: Math.max(0, ROLE.findIndex(x => x[0] === cur)) };
+  popActive(pop.i);
+  A(el, [{ opacity: 0, transform: `translateY(${tv(below ? -4 : 4)}px)` }, { opacity: 1, transform: "none" }], { dur: fd(D.quick), ease: E.std });
+  el.focus({ preventScroll: true });
+  T(`Micro · Role menu${isAll ? " (Set all)" : ""} · opacity + y 4 px, 150 ms`, 200);
+}
+function popActive(i) {
+  if (!pop) return;
+  pop.i = (i + ROLE.length) % ROLE.length;
+  $$(".ropt", pop.el).forEach((o, n) => o.classList.toggle("act", n === pop.i));
+  pop.el.setAttribute("aria-activedescendant", "ro-" + ROLE[pop.i][0]);
+}
+function closePop(instant, refocus) {
+  if (!pop) return;
+  const { el, trig } = pop; pop = null;
+  trig.setAttribute("aria-expanded", "false");
+  if (refocus && trig.isConnected) trig.focus({ preventScroll: true });
+  if (instant || S.rm) { el.remove(); return; }
+  done(A(el, [{ opacity: 1 }, { opacity: 0 }], { dur: D.quick, ease: E.exit, fill: "forwards" })).then(() => el.remove());
+}
+function popChoose(v) {
+  const p = pop; if (!p) return;
+  if (p.isAll) {
+    S.rows.forEach(r => { r.role = v; setRoleLabel(rowEl(r), v); });
+    T(`Micro · Set all to ${roleName(v)} · every role cross-fades 150 ms`, 300);
+  } else {
+    p.row.role = v; setRoleLabel(rowEl(p.row), v);
+    T(`Micro · Role → ${roleName(v)} · label cross-fades 150 ms`, 300);
+  }
+  syncBulk();
+  closePop(false, true);
+}
+
+/* ---------- book a call ---------- */
+function crossText(holder, text) {
+  const old = holder.lastElementChild, n = document.createElement("span");
+  n.textContent = text; holder.appendChild(n);
+  A(n, [{ opacity: 0 }, { opacity: 1 }], { dur: fd(D.std) });
+  done(A(old, [{ opacity: 1 }, { opacity: 0 }], { dur: fd(D.std), fill: "forwards" })).then(() => old.remove());
+}
+function pickSlot(btn) {
+  if (btn.classList.contains("on")) return;
+  const grid = btn.parentElement;
+  $$("button", grid).forEach(b => b.classList.toggle("on", b === btn));
+  if (btn.dataset.act === "day") S.day = +btn.dataset.i; else S.time = btn.dataset.t;
+  crossText($("#bookLbl"), `Book ${slotText()}`);
+  T("Micro · Slot select · fill 150 ms, label cross-fades 280 ms", 280);
+}
+
+/* ---------- transitions ---------- */
+async function goT1(g) {
+  S.locked = true;
+  T("T1 · Sign-up → Verify email · 150 ms out, 280 ms in, height 280 ms", 430);
+  await exitContent(1); if (!alive(g)) return;
+  await flipMany([card], () => { setContent("verify"); enterContent(1); renderCode(); }, { dur: D.std, fix: [oc] });
+  if (!alive(g)) return;
+  codeFocused = true; renderCode(); $("#codeIn").focus({ preventScroll: true });
+  S.locked = false;
+}
+async function goT2(g) {
+  S.locked = true;
+  T("T2 · Verify → Org setup · 480 ms layout", 630);
+  await exitContent(1); if (!alive(g)) return;
+  topEnd.textContent = "Signed in as dana.reyes@harborcb.com";
+  A(topEnd, [{ opacity: 0 }, { opacity: 1 }], { dur: fd(D.std), delay: S.rm ? 0 : 120 });
+  foot.innerHTML = FOOT_APP; A(foot, [{ opacity: 0 }, { opacity: 1 }], { dur: fd(D.std) });
+  await flipMany([card], () => {
+    card.className = "ocard wel-card";
+    setSeg(0, true, true, 80); setSeg(1, false, false);
+    setContent("org");
+    pslot.classList.remove("off"); pc.innerHTML = PANELS.org;
+    enterContent(1);
+    A(steps, [{ opacity: 0 }, { opacity: 1 }], { dur: fd(D.std), ease: E.enter });
+    A(proof, [{ opacity: 0, transform: `translateX(${tv(24)}px)` }, { opacity: 1, transform: "none" }], { dur: fd(D.std), delay: S.rm ? 0 : 120, ease: E.enter });
+  }, { dur: D.slow, pin: [pslot], fix: [oc] });
+  if (!alive(g)) return;
+  S.locked = false;
+}
+async function goT3(to, dir, g) {
+  S.locked = true;
+  const name = { org: "Org setup", invite: "Invite", call: "Book a call" }, from = name[S.step];
+  T(dir > 0 ? `T3 · ${from} → ${name[to]} · 280 ms height + swap, segment 400 ms` : `T3b · ${from} → ${name[to]} (Back) · mirror of T3`, 430);
+  await Promise.all([exitContent(dir), done(A(pc, [{ opacity: 1, transform: "none" }, { opacity: 0, transform: `translateY(${tv(-8)}px)` }], { dur: fd(D.quick), ease: E.exit, fill: "forwards" }))]);
+  if (!alive(g)) return;
+  await flipMany([card, proof], () => {
+    setContent(to);
+    pc.getAnimations().forEach(a => a.cancel());
+    pc.innerHTML = PANELS[to];
+    enterContent(dir);
+    A(pc, [{ opacity: 0, transform: `translateY(${tv(8)}px)` }, { opacity: 1, transform: "none" }], { dur: fd(D.std), ease: E.enter });
+    setSeg(1, dir > 0, true);
+  }, { dur: D.std });
+  if (!alive(g)) return;
+  S.locked = false;
+}
+async function goT4(g) {
+  S.locked = true;
+  const from = { invite: "Invite", call: "Book a call" }[S.step];
+  T(`T4 · ${from} → Setting up · 280 ms out, 280 ms in`, 560);
+  const sc = S.rm ? 1 : .98;
+  await Promise.all([
+    done(A(main, [{ opacity: 1, transform: "none" }, { opacity: 0, transform: `scale(${sc})` }], { dur: fd(D.std), ease: E.exit, fill: "forwards" })),
+    done(A(topEnd, [{ opacity: 1 }, { opacity: 0 }], { dur: fd(D.std), ease: E.exit, fill: "forwards" })),
+    done(A(foot, [{ opacity: 1 }, { opacity: 0 }], { dur: fd(D.std), ease: E.exit, fill: "forwards" })),
+  ]);
+  if (!alive(g)) return;
+  onb.classList.add("off");
+  const self = S.path === "self";
+  const lines = self ? ["Creating your organization", "Adding your 6 trial credits", "Preparing your setup guide"]
+                     : ["Creating your organization", `Booking ${slotText()}`, "Preparing your setup guide"];
+  ist.innerHTML = `<svg class="emb" viewBox="-60 -20 1360 840" aria-hidden="true">${EMBLEM}</svg><h1>${self ? "Setting up Harbor Community Bank" : "Getting Harbor ready for your call"}</h1>
+<ul>${lines.map(l => `<li><span class="st">${SPIN}${CHK()}</span><span>${l}</span></li>`).join("")}</ul><div class="bar" aria-hidden="true"><i></i></div>`;
+  istL.classList.remove("off");
+  S.step = "ist"; setUrl("ist"); hint("ist");
+  A(ist, [{ opacity: 0, transform: `translateY(${tv(12)}px)` }, { opacity: 1, transform: "none" }], { dur: fd(D.std), ease: E.enter });
+  const ok = await runIst(g);
+  if (ok) goT5(g);
+}
+async function runIst(g) {
+  const lis = $$("#ist li"), bar = $("#ist .bar i");
+  const finish = li => { li.className = "done"; if (!S.rm) A($(".st svg path", li), [{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], { dur: D.std, ease: E.std }); };
+  if (S.rm) {
+    lis.forEach(li => { li.className = "done"; }); bar.classList.add("full");
+    T("Interstitial · finished list, hold 600 ms", 600);
+    await wait(600); return alive(g);
+  }
+  T("Interstitial · lines at 500 / 1000 / 1500 ms · bar 1.8 s linear", 1800);
+  A(bar, [{ transform: "scaleX(0)" }, { transform: "scaleX(1)" }], { dur: 1800, ease: "linear", fill: "forwards" });
+  lis[0].className = "act";
+  for (let i = 0; i < 3; i++) {
+    await wait(500); if (!alive(g)) return false;
+    finish(lis[i]); if (lis[i + 1]) lis[i + 1].className = "act";
+  }
+  await wait(300);
+  return alive(g);
+}
+async function goT5(g) {
+  const self = S.path === "self";
+  T(`T5 · Setting up → Get started · 280 ms out, shell 60 ms stagger${self ? " · confetti +200 ms" : " · no confetti (pending)"}`, 700);
+  await done(A(istL, [{ opacity: 1 }, { opacity: 0 }], { dur: fd(D.std), ease: E.exit, fill: "forwards" }));
+  if (!alive(g)) return;
+  istL.classList.add("off"); istL.getAnimations().forEach(a => a.cancel());
+  buildGS(self);
+  gs.classList.remove("off");
+  S.step = "gs"; setUrl("gs"); hint(self ? "gsself" : "gsent");
+  const sb = $(".sb", gs), mn = $(".main", gs);
+  A(sb, [{ opacity: 0, transform: `translateX(${tv(-12)}px)` }, { opacity: 1, transform: "none" }], { dur: fd(D.std), ease: E.enter });
+  A(mn, [{ opacity: 0, transform: `translateY(${tv(12)}px)` }, { opacity: 1, transform: "none" }], { dur: fd(D.std), delay: S.rm ? 0 : 60, ease: E.enter });
+  S.locked = false;
+  if (!self) return;
+  await wait(S.rm ? 0 : 60 + D.std + 200); if (!alive(g)) return;
+  const hello = $(".hello-wrap", gs);
+  hello.style.opacity = "";
+  A(hello, [{ opacity: 0, transform: `translateY(${tv(8)}px)` }, { opacity: 1, transform: "none" }], { dur: fd(D.std), ease: E.enter });
+  if (S.rm) { T("Confetti skipped · reduced motion", 600); return; }
+  if (S.confettiDone) return;
+  S.confettiDone = true;
+  T("Confetti · 2 × 70 particles from the lower corners, then 2 × 30 at +250 ms", 1600);
+  landingConfetti(g);
+}
+
+/* ---------- Get started ---------- */
+function setProgress(n) {
+  $(".sb-gs .ct", gs).textContent = `${n}/8`;
+  $(".sb-gs .bar i", gs).style.width = `${Math.max(n / 8 * 100, 0)}%`;
+  $(".gs-progress .bar i", gs).style.width = `${Math.max(n / 8 * 100, 1)}%`;
+  $(".gs-progress .meta b", gs).textContent = `${n} of 8 done`;
+}
+function rowByText(t) { return $$(".gs-row", gs).find(r => r.textContent.includes(t)); }
+function setCount(sec, txt) { const ct = $(".gs-sec-hd .ct", sec); ct.firstChild.nodeValue = txt; }
+function buildGS(self) {
+  gs.innerHTML = $(self ? "#tpl-gs-self" : "#tpl-gs-ent").innerHTML;
+  S.sectionDone = false; S.base = 0;
+  if (self) {
+    const page = $(".page", gs);
+    page.insertAdjacentHTML("afterbegin", `<div class="hello-wrap" style="opacity:0"><div class="gs-hello">${I("confetti")}<b>You’re in. 6 trial credits are ready.</b><button type="button" class="x" data-act="hello" aria-label="Dismiss">${I("x")}</button></div></div>`);
+    if (S.invites) {
+      const row = rowByText("Invite a reviewer");
+      row.classList.add("done");
+      const cb = $(".cb", row); cb.classList.add("on"); cb.innerHTML = I("check", "");
+      $(".tx", row).insertAdjacentHTML("beforeend", `<span class="note">${S.invites} invite${S.invites > 1 ? "s" : ""} sent today</span>`);
+      const b = $(".btn", row); b.className = "btn btn-outline btn-sm"; b.textContent = "Manage team";
+      const nx = rowByText("Send the Trust Center"); $(".btn", nx).className = "btn btn-filled btn-sm";
+      setCount(row.closest(".gs-sec"), "1 of 2");
+      S.base = 1;
+    }
+    setProgress(S.base);
+  } else {
+    const d = DAYS[S.day];
+    const h3 = $$("h3", gs).find(h => h.textContent.startsWith("Call booked"));
+    if (h3) h3.textContent = `Call booked for ${d[1]}, Nov ${d[2]} at ${S.time} ET`;
+    const sm = $(".tracker .st.cur .sm", gs); if (sm) sm.textContent = `${d[0]}, Nov ${d[2]}`;
+    const h1 = $(".gs-top h1", gs); if (h1) h1.textContent = `Get Harbor ready before your call on ${d[1]}.`;
+  }
+}
+async function finishSection() {
+  if (S.step !== "gs") { T("Finish section · reach Get started first", 400); return; }
+  if (S.sectionDone) { T("Finish section · already finished (Restart to replay)", 400); return; }
+  const g = S.gen, sec = $$(".gs-sec", gs).find(s => s.textContent.includes("Make it your bank")), page = $(".page", gs);
+  S.sectionDone = true;
+  const top = sec.offsetTop - 16;
+  if (Math.abs(page.scrollTop - top) > 4 && (sec.offsetTop + 160 > page.scrollTop + page.clientHeight || sec.offsetTop < page.scrollTop)) page.scrollTo({ top, behavior: S.rm ? "auto" : "smooth" });
+  T("Section finished · rows tick 60 ms stagger · 30-particle burst from the earn pill", 900);
+  const rows = $$(".gs-row", sec);
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i], cb = $(".cb", r);
+    r.classList.add("done"); cb.classList.add("on"); cb.innerHTML = CHK("dr");
+    if (!S.rm) A($("path", cb), [{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], { dur: D.std, ease: E.std });
+    $(".btn", r).className = "btn btn-outline btn-sm";
+    if (!S.rm) await wait(60); if (!alive(g)) return;
+  }
+  setCount(sec, "3 of 3");
+  setProgress((S.base || 0) + 3);
+  const sbc = $(".sb-gs .ct", gs); if (S.path === "ent") { /* enterprise pending: same counters */ }
+  await wait(S.rm ? 0 : D.std); if (!alive(g)) return;
+  const pill = $(".pill-earn", sec);
+  pill.className = "pill pill-done"; pill.innerHTML = `${I("check", "s14")}1 free review earned`;
+  A(pill, [{ opacity: 0, transform: `scale(${S.rm ? 1 : .9})` }, { opacity: 1, transform: "none" }], { dur: fd(D.quick), ease: E.enter });
+  if (S.rm) { T("Section burst skipped · reduced motion", 500); return; }
+  const r = rr(pill);
+  burst({ particleCount: 30, spread: 55, startVelocity: 24, ticks: 140, gravity: 1.1, scalar: .8, angle: 90, origin: { x: (r.x + r.w / 2) / 1280, y: (r.y + r.h / 2) / 820 } });
+}
+
+/* ---------- confetti ---------- */
+const COLORS = ["#10344c", "#2a6f7f", "#d6e3ee", "#2e7d4f", "#e0a43a"];
+let fire = null;
+function burst(o) {
+  if (!fire) { if (window.confetti) fire = window.confetti.create($("#confetti"), { resize: true, useWorker: false }); else { T("Confetti library did not load (offline?)", 800); return; } }
+  const s = S.speed;
+  fire(Object.assign({ shapes: ["square", "circle"], colors: COLORS }, o, {
+    startVelocity: o.startVelocity * s, gravity: (o.gravity ?? 1) * s, decay: Math.pow(o.decay ?? .9, s), ticks: Math.round((o.ticks ?? 200) / s),
+  }));
+}
+async function landingConfetti(g) {
+  const base = { particleCount: 70, spread: 60, startVelocity: 45, ticks: 200, gravity: 1.1, scalar: .9 };
+  burst({ ...base, angle: 60, origin: { x: 0, y: 1 } });
+  burst({ ...base, angle: 120, origin: { x: 1, y: 1 } });
+  await wait(250); if (!alive(g)) return;
+  burst({ ...base, particleCount: 30, angle: 60, origin: { x: 0, y: 1 } });
+  burst({ ...base, particleCount: 30, angle: 120, origin: { x: 1, y: 1 } });
+}
+
+/* ---------- events (delegated) ---------- */
+vp.addEventListener("click", async e => {
+  const opt = e.target.closest(".ropt");
+  if (opt && pop) { popChoose(opt.dataset.v); return; }
+  const dd = e.target.closest(".rdd");
+  if (dd) { if (pop && pop.trig === dd) closePop(false, true); else if (!dd.disabled) openPop(dd); return; }
+  const t = e.target.closest("[data-act], .seg button, #code");
+  if (!t) return;
+  const g = S.gen, act = t.dataset.act;
+  if (t.matches(".seg button")) { pick(t); return; }
+  if (t.id === "code") { codeFocused = true; renderCode(); $("#codeIn").focus({ preventScroll: true }); return; }
+  if (act === "hello") {
+    const w = t.closest(".hello-wrap"), h = w.offsetHeight;
+    T("Micro · Welcome line dismissed · 150 ms fade, 280 ms collapse", 430);
+    if (!S.rm) { await done(A(w, [{ opacity: 1 }, { opacity: 0 }], { dur: D.quick, ease: E.exit, fill: "forwards" })); await done(A(w, [{ height: h + "px" }, { height: "0px" }], { dur: D.std, ease: E.std, fill: "forwards" })); }
+    w.remove(); return;
+  }
+  if (act === "rmrow") { removeRow(t.closest(".irow")); return; }
+  if (act === "addrow") { addRow(); return; }
+  if (act === "pastelist") { pasteRows(PASTE_DEMO); return; }
+  if (act === "bigcall") { T("Book a call → · would open Book a call", 900); return; }
+  if (act === "day" || act === "time") { pickSlot(t); return; }
+  if (S.locked) return;
+  if (act === "create") { S.locked = true; const pb = $('.pbtn[data-act="create"]'); await busy(pb); if (alive(g)) { S.locked = false; goT1(g); } return; }
+  if (act === "paste") { fillCode(CODE_OK); return; }
+  if (act === "wrong") { fillCode("123456"); return; }
+  if (act === "verify") { submitCode(); return; }
+  if (act === "org") { S.locked = true; await busy(t); if (alive(g)) goT3(isEnt() ? "call" : "invite", 1, g); return; }
+  if (act === "back") { closePop(true); S.invSent = false; goT3("org", -1, g); return; }
+  if (act === "skip") { S.invites = 0; goT4(g); return; }
+  if (act === "send") {
+    closePop(true);
+    if (S.invSent) { goT4(g); return; }
+    const bad = validateRows();
+    if (bad) {
+      T("Micro · Validation · shake 300 ms, error slides down 280 ms", 300);
+      scrollRowTo(bad); $(".iem", bad).focus({ preventScroll: true }); return;
+    }
+    S.locked = true; await busy(t); if (!alive(g)) return;
+    const filled = filledRows(), mem = filled.filter(r => MEMBERS.includes(r.email.trim().toLowerCase()));
+    S.invites = filled.length - mem.length;
+    if (!mem.length) { goT4(g); return; }
+    t.classList.remove("is-busy"); S.locked = false;
+    partialSent(mem, S.invites); return;
+  }
+  if (act === "book") { S.locked = true; await busy(t); if (alive(g)) goT4(g); return; }
+});
+vp.addEventListener("pointerdown", e => {
+  const b = e.target.closest(".seg button, button.slot");
+  if (!b || S.rm) return;
+  b._press && b._press.cancel();
+  b._press = A(b, [{ transform: "scale(1)" }, { transform: "scale(0.97)" }], { dur: D.quick, fill: "forwards" });
+});
+const release = e => {
+  const b = e.target.closest && e.target.closest(".seg button, button.slot");
+  if (!b || !b._press) return;
+  b._press.cancel(); b._press = null;
+  A(b, [{ transform: "scale(0.97)" }, { transform: "scale(1)" }], { dur: D.std });
+};
+vp.addEventListener("pointerup", release);
+vp.addEventListener("pointerout", release);
+vp.addEventListener("input", e => {
+  if (e.target.id === "codeIn") {
+    const prev = S.code.length;
+    S.code = e.target.value.replace(/\D/g, "").slice(0, 6);
+    $("#code").classList.remove("bad"); hideErr($("#codeErr"));
+    renderCode(prev);
+    if (S.code.length === 6) submitCode();
+  } else if (e.target.matches(".iem")) {
+    const el = e.target.closest(".irow"), r = rowOf(el);
+    if (!r) return;
+    r.email = e.target.value;
+    $(".irm", el).setAttribute("aria-label", `Remove ${r.email.trim() || "this row"}`);
+    if (e.target.classList.contains("bad")) clearBad(el);
+    updateSend();
+  }
+});
+vp.addEventListener("paste", e => {
+  if (!e.target.matches || !e.target.matches(".iem") || e.target.readOnly) return;
+  const txt = (e.clipboardData && e.clipboardData.getData("text")) || "";
+  if (!/[,;\s]/.test(txt.trim())) return;
+  if (pasteRows(txt)) e.preventDefault();
+});
+vp.addEventListener("keydown", e => {
+  if (pop && e.target === pop.el) {
+    const k = e.key;
+    if (k === "ArrowDown" || k === "ArrowUp") { e.preventDefault(); popActive(pop.i + (k === "ArrowDown" ? 1 : -1)); }
+    else if (k === "Home" || k === "End") { e.preventDefault(); popActive(k === "Home" ? 0 : ROLE.length - 1); }
+    else if (k === "Enter" || k === " ") { e.preventDefault(); popChoose(ROLE[pop.i][0]); }
+    else if (k === "Escape" || k === "Tab") { e.preventDefault(); closePop(false, true); }
+    return;
+  }
+  if (e.target.matches(".rdd") && (e.key === "ArrowDown" || e.key === "ArrowUp")) { e.preventDefault(); if (!e.target.disabled) openPop(e.target); return; }
+  if (e.target.matches(".iem") && e.key === "Enter") {
+    e.preventDefault();
+    const el = e.target.closest(".irow"), nx = el.nextElementSibling;
+    if (nx) $(".iem", nx).focus({ preventScroll: true }), scrollRowTo(nx);
+    else if (e.target.value.trim() && !S.invSent) addRow();
+  }
+});
+vp.addEventListener("mousemove", e => { const o = pop && e.target.closest(".ropt"); if (o) { const i = ROLE.findIndex(x => x[0] === o.dataset.v); if (i !== pop.i) popActive(i); } });
+vp.addEventListener("scroll", e => { if (pop && e.target.id === "invList") closePop(true); }, true);
+document.addEventListener("pointerdown", e => { if (pop && !e.target.closest(".rpop") && e.target.closest(".rdd") !== pop.trig) closePop(); });
+vp.addEventListener("focusin", e => { if (e.target.id === "codeIn") { codeFocused = true; renderCode(); } });
+vp.addEventListener("focusout", e => { if (e.target.id === "codeIn") { codeFocused = false; renderCode(); } });
+
+/* ---------- controls ---------- */
+function restart() {
+  S.gen++;
+  document.getAnimations().forEach(a => { if (!(window.CSSAnimation && a instanceof CSSAnimation)) a.cancel(); });
+  if (fire) fire.reset();
+  closePop(true);
+  const ent = S.path === "ent";
+  Object.assign(S, { step: "signup", locked: false, code: "", invites: 0, confettiDone: false, sectionDone: false, role: "reviewer", day: 1, time: "10:00 AM",
+    org: { type: "bank", team: ent ? "11+" : "2-10", vol: ent ? "200+" : "u50" }, invSent: false,
+    rows: [newRow("marcus.ortiz@harborcb.com", "reviewer"), newRow("l.chen@harborcb.com", "approver"), newRow()] });
+  onb.classList.remove("off"); istL.classList.add("off"); gs.classList.add("off"); gs.innerHTML = ""; ist.innerHTML = "";
+  card.className = "ocard auth-card"; card.style.width = card.style.height = "";
+  pslot.classList.add("off"); pc.innerHTML = ""; setSeg(0, false, false); setSeg(1, false, false);
+  topEnd.textContent = ""; foot.innerHTML = FOOT_ID;
+  setContent("signup");
+  syncPathButtons(S.path);
+  T(`Ready · ${ent ? "Enterprise" : "Self-serve"} path · Sign-up`, 200);
+}
+$("#cPath").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; S.path = b.dataset.path; restart(); });
+$("#cRestart").addEventListener("click", restart);
+$("#cSpeed").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  S.speed = +b.dataset.s; document.documentElement.style.setProperty("--k", String(1 / S.speed));
+  $$("#cSpeed button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+});
+function setRM(on) { S.rm = on; $("#cRM").setAttribute("aria-pressed", String(on)); }
+$("#cRM").addEventListener("click", () => { setRM(!S.rm); T(S.rm ? "Reduced motion on: travel 0, fades 120 ms, no confetti" : "Reduced motion off", 300); });
+$("#cFinish").addEventListener("click", finishSection);
+
+/* ---------- stage fit ---------- */
+function fit() {
+  const box = $("#stageBox"), W = box.parentElement.clientWidth;
+  const offTop = box.getBoundingClientRect().top + window.scrollY;
+  const wFit = W / 1280, hFit = (window.innerHeight - offTop - 16) / 856;
+  let s = Math.min(wFit, 1.25);
+  if (hFit < s && hFit >= .55) s = hFit;
+  box.style.width = 1280 * s + "px"; box.style.height = 856 * s + "px";
+  $("#stage").style.transform = `scale(${s})`;
+}
+window.addEventListener("resize", fit);
+fit();
+setRM(S.rm);
+restart();
+window.__proto = { S, restart };
+})();
+</script>
+</body></html>

@@ -25,6 +25,7 @@ export const seedWalletSettings: WalletSettings[] = [
     monthlyCap: AUTO_RELOAD_DEFAULTS.monthlyCap,
     paymentMethod: "card",
     cardLast4: "4242",
+    cardExpiry: "08/28",
     billingEmail: "billing@harborcb.com",
   },
   {
@@ -37,6 +38,7 @@ export const seedWalletSettings: WalletSettings[] = [
     monthlyCap: AUTO_RELOAD_DEFAULTS.monthlyCap,
     paymentMethod: "card",
     cardLast4: "4242",
+    cardExpiry: "08/28",
     billingEmail: "ap@cedarridgebank.com",
   },
   {

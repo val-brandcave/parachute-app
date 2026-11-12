@@ -44,3 +44,9 @@ desktop.ini
 # Meeting records (raw transcripts, processed calls, notes): never committed.
 # They can hold client-confidential remarks; this repo is mirrored to the client.
 /docs/meetings/
+
+# Smoke-run screenshots (pattern-change harness)
+/app/.smoke/
+
+# Python bytecode (smoke flows)
+__pycache__/

@@ -17,6 +17,7 @@ export const Collections = {
   WALLET_SETTINGS: "wallet_settings",
   SETUP_PROGRESS: "setup_progress",
   INVITES: "invites",
+  CREDIT_REQUESTS: "credit_requests",
 } as const;
 
 export type CollectionName = (typeof Collections)[keyof typeof Collections];

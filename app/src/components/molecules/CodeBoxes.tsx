@@ -1,10 +1,14 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
+import { animate } from "framer-motion";
+import { dist, dur, ease, motionModeNow, stagger } from "@/lib/motion";
 
 /**
  * Six single-digit boxes for a one-time code. Typing advances, Backspace steps
- * back, arrows move, and pasting a code fills every box.
+ * back, arrows move, and pasting a code fills every box (in sequence, 30 ms
+ * apart, when motion is full). `shakeKey` shakes the row ±6 px (motion-spec §4);
+ * `focusKey` moves focus to the first empty box. Bump either to trigger it.
  */
 export function CodeBoxes({
   value,
@@ -13,6 +17,9 @@ export function CodeBoxes({
   invalid,
   autoFocus,
   label = "Verification code",
+  shakeKey = 0,
+  focusKey = 0,
+  describedBy,
 }: {
   value: string;
   onChange: (v: string) => void;
@@ -20,10 +27,31 @@ export function CodeBoxes({
   invalid?: boolean;
   autoFocus?: boolean;
   label?: string;
+  shakeKey?: number;
+  focusKey?: number;
+  /** id of the error text; set on every box while `invalid`. */
+  describedBy?: string;
 }) {
   const refs = useRef<(HTMLInputElement | null)[]>([]);
+  const rowRef = useRef<HTMLDivElement>(null);
+  const valueRef = useRef(value);
   const digits = Array.from({ length }, (_, i) => value[i] ?? "");
   const focusAt = (i: number) => refs.current[Math.max(0, Math.min(length - 1, i))]?.focus();
+
+  useEffect(() => {
+    valueRef.current = value;
+  }, [value]);
+
+  useEffect(() => {
+    if (!shakeKey || motionModeNow() !== "full" || !rowRef.current) return;
+    const s = dist.shake;
+    animate(rowRef.current, { x: [0, -s, s, -s, s, 0] }, { duration: dur.shake, ease: ease.standard });
+  }, [shakeKey]);
+
+  useEffect(() => {
+    if (!focusKey) return;
+    refs.current[Math.min(valueRef.current.length, length - 1)]?.focus();
+  }, [focusKey, length]);
 
   const setAt = (i: number, d: string) => {
     const next = digits.slice();
@@ -32,7 +60,7 @@ export function CodeBoxes({
   };
 
   return (
-    <div className="kc-code" role="group" aria-label={label}>
+    <div className="kc-code" ref={rowRef} role="group" aria-label={label}>
       {digits.map((d, i) => (
         <input
           key={i}
@@ -46,6 +74,7 @@ export function CodeBoxes({
           autoFocus={autoFocus && i === 0}
           aria-label={`Digit ${i + 1} of ${length}`}
           aria-invalid={invalid || undefined}
+          aria-describedby={invalid ? describedBy : undefined}
           onFocus={(e) => e.currentTarget.select()}
           onChange={(e) => {
             const ch = e.target.value.replace(/\D/g, "").slice(-1);
@@ -72,6 +101,12 @@ export function CodeBoxes({
             if (!text) return;
             e.preventDefault();
             onChange(text);
+            if (motionModeNow() === "full") {
+              text.split("").forEach((_, k) => {
+                const el = refs.current[k];
+                if (el) animate(el, { opacity: [0, 1], y: [dist.lift / 2, 0] }, { duration: dur.quick, delay: k * stagger.codeFill, ease: ease.enter });
+              });
+            }
             focusAt(text.length >= length ? length - 1 : text.length);
           }}
         />

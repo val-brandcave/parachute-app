@@ -1,0 +1,336 @@
+/* Get started v4 (spec §5.2): one column — bodied hero, sections, More resources.
+   Replaces setup-checklist.css (its hover-reveal rules are gone: every row button
+   shows at rest). Tokens only; light and dark both read from --md-*. */
+
+/* The column's own width drives the narrow layout (the shell sidebar may stay open). */
+.gs-page {
+  container-type: inline-size;
+}
+.gs-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+/* ---- sections ---- */
+.gs-secs {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.gs-sec {
+  overflow: hidden;
+  border: 1px solid var(--md-outline);
+  box-shadow: none;
+}
+.gs-sec-hd {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px 24px 16px;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 120ms ease;
+}
+.gs-sec-hd:hover {
+  background: var(--md-surface-1);
+}
+.gs-sec-main {
+  min-width: 0;
+}
+.gs-sec-t {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+}
+.gs-sec-t h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 650;
+  color: var(--md-on-surface);
+}
+.gs-sec-sub {
+  margin: 6px 0 0;
+  font-size: 14px;
+  color: var(--md-on-surface-v);
+}
+.gs-sec-ct {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  height: 28px;
+  padding: 0 6px 0 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  color: var(--md-on-surface-t);
+  cursor: pointer;
+}
+.gs-sec-ct:hover {
+  background: var(--md-surface-1);
+  color: var(--md-on-surface-v);
+}
+.gs-sec-ct:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-accent);
+}
+.gs-sec-chev {
+  display: inline-flex;
+  transform: rotate(0deg);
+  /* = lib/motion dur.quick + ease.standard (globals.css has no motion custom properties). */
+  transition: transform 0.15s cubic-bezier(0.2, 0, 0, 1);
+}
+.gs-sec-chev.is-open {
+  transform: rotate(180deg);
+}
+.gs-held,
+.gs-earn {
+  height: 24px;
+}
+
+/* earn pill (PC-35: navy-selected; earned = success) */
+.gs-earn {
+  gap: 5px;
+}
+.gs-earn-ic,
+.gs-earn-ic-in {
+  display: inline-flex;
+}
+
+/* ---- rows ---- */
+.gs-rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow: hidden;
+}
+.gs-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  min-height: 60px;
+  padding: 12px 24px;
+  border-top: 1px solid var(--md-outline-v);
+}
+.gs-cb {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex: none;
+  border-radius: 50%;
+  border: 1.5px solid var(--md-outline);
+  background: var(--md-surface);
+  color: var(--md-on-primary);
+}
+.gs-cb.is-on {
+  border-color: var(--md-success);
+  background: var(--md-success);
+  color: var(--md-surface);
+}
+.gs-row-tx {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.gs-row-copy {
+  font-size: 14.5px;
+  color: var(--md-on-surface-v);
+  text-wrap: pretty;
+}
+.gs-row-copy b {
+  font-weight: 600;
+  color: var(--md-on-surface);
+}
+.gs-row.is-done .gs-row-copy,
+.gs-row.is-done .gs-row-copy b {
+  color: var(--md-on-surface-t);
+}
+.gs-row-note {
+  font-size: 12.5px;
+  color: var(--md-on-surface-t);
+  font-variant-numeric: tabular-nums;
+}
+.gs-row.is-doing .gs-row-note {
+  color: var(--md-on-surface-v);
+}
+/* Every row's button shows at rest — no hover or focus-only reveal. */
+.gs-row-act {
+  display: flex;
+  justify-content: flex-end;
+}
+.gs-row-act .ui-btn {
+  min-width: 128px;
+  white-space: nowrap;
+}
+.gs-row-lockic {
+  display: inline-flex;
+  margin-left: -2px;
+  color: var(--md-on-surface-v);
+}
+
+/* ---- pending card (board 9) + tracker ---- */
+.gs-pending {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  align-items: center;
+  gap: 24px;
+  padding: 22px 24px;
+  border: 1px solid var(--md-outline);
+  box-shadow: none;
+}
+.gs-pending-main {
+  display: flex;
+  gap: 14px;
+  min-width: 0;
+}
+.gs-pending-ic {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border-radius: 8px;
+  background: var(--md-surface-2);
+  color: var(--md-on-surface-v);
+}
+.gs-pending-t {
+  margin: 4px 0 4px;
+  font-size: 17px;
+  font-weight: 650;
+  color: var(--md-on-surface);
+}
+.gs-pending-p {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--md-on-surface-v);
+}
+.gs-pending-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.gs-track {
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.gs-track-step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  text-align: center;
+}
+/* The rule into each step: solid once the previous step is done. */
+.gs-track-step + .gs-track-step::before {
+  content: "";
+  position: absolute;
+  top: 13px;
+  right: calc(50% + 18px);
+  left: calc(-50% + 18px);
+  height: 2px;
+  border-radius: 2px;
+  background: var(--md-outline);
+}
+.gs-track-step.is-done + .gs-track-step::before {
+  background: var(--md-success);
+}
+.gs-track-dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid var(--md-outline);
+  background: var(--md-surface);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--md-on-surface-t);
+  font-variant-numeric: tabular-nums;
+}
+.gs-track-step.is-done .gs-track-dot {
+  border-color: var(--md-success);
+  background: var(--md-success);
+  color: var(--md-surface);
+}
+.gs-track-step.is-current .gs-track-dot {
+  border-color: var(--md-primary);
+  color: var(--md-on-surface);
+  box-shadow: 0 0 0 3px var(--md-selected);
+}
+.gs-track-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--md-on-surface);
+  overflow-wrap: anywhere;
+}
+.gs-track-step.is-todo .gs-track-label {
+  color: var(--md-on-surface-v);
+}
+.gs-track-date {
+  font-size: 12px;
+  color: var(--md-on-surface-t);
+  font-variant-numeric: tabular-nums;
+}
+.gs-track--compact .gs-track-dot {
+  width: 22px;
+  height: 22px;
+  font-size: 11px;
+}
+.gs-track--compact .gs-track-step + .gs-track-step::before {
+  top: 10px;
+  right: calc(50% + 15px);
+  left: calc(-50% + 15px);
+}
+.gs-track--compact .gs-track-label {
+  font-size: 12px;
+}
+
+/* ---- reduced motion: state changes snap, no rotation or colour glide ---- */
+@media (prefers-reduced-motion: reduce) {
+  .gs-sec-chev {
+    transition: none;
+  }
+}
+
+/* ---- narrow ---- */
+@container (max-width: 720px) {
+  .gs-sec-hd {
+    padding: 16px 16px 12px;
+  }
+  .gs-row {
+    grid-template-columns: auto minmax(0, 1fr);
+    padding: 12px 16px;
+  }
+  .gs-row-act {
+    grid-column: 2;
+    justify-content: flex-start;
+  }
+  .gs-row-act .ui-btn {
+    min-width: 0;
+    white-space: normal;
+  }
+  .gs-pending {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 18px 16px;
+  }
+}

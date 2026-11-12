@@ -1,6 +1,8 @@
 export { Icon, ICONS, type IconName } from "./Icon";
+export { Illustration, type IllustrationName } from "./Illustration";
 export { MicrosoftGlyph, YouConnectGlyph, ParachuteGlyph, ChuteEmblem } from "./BrandGlyph";
 export { Button } from "./Button";
+export { ProgressBar } from "./ProgressBar";
 export { IconButton } from "./IconButton";
 export { Chip, type ChipTone } from "./Chip";
 export { CreditChip, type CreditChipTone } from "./CreditChip";

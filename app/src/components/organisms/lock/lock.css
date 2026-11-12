@@ -1,0 +1,166 @@
+/* ==========================================================================
+   LockDialog (spec §5.5, T4.1): the lock-then-explain dialog.
+   DS Dialog size="sm" (md for the admin credits options) + hideTitle supplies the shell (portal, scrim, focus trap,
+   Esc, --rw-z-modal 140 so it sits over the review takeover .run at 120).
+   These rules only shape the centred body: spot art, title, copy, options, actions.
+   ========================================================================== */
+
+/* hideTitle still renders the header (close button only): drop its rule so the
+   close button floats over the art, as on board 1 #lock-explain. */
+.lock-dlg > header {
+  border-bottom-width: 0;
+  padding-bottom: 0;
+}
+
+.lock-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+  padding: 0 4px;
+}
+
+.lock-art {
+  color: var(--md-on-surface);
+  line-height: 0;
+  margin-bottom: 6px;
+}
+
+.lock-title {
+  font-family: var(--font-display), system-ui, sans-serif;
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--md-on-surface);
+  margin: 0;
+}
+
+.lock-title-ic {
+  display: inline-flex;
+  vertical-align: -3px;
+  margin-right: 6px;
+  color: var(--md-success);
+}
+
+.lock-copy {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--md-on-surface-v);
+  margin: 0;
+  max-width: 46ch;
+}
+
+.lock-track {
+  align-self: stretch;
+  margin-top: 10px;
+}
+
+/* Options (DS OptionCard type="radio") read left-aligned under the centred head. */
+.lock-opts {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+  text-align: left;
+  border: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.lock-price {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.lock-note {
+  align-self: stretch;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: var(--r, 8px);
+  background: var(--md-surface-1);
+  color: var(--md-on-surface-v);
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 2px 0 0;
+}
+
+.lock-note > svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.lock-link {
+  color: var(--md-accent);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+}
+
+.lock-link:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-accent);
+  border-radius: 3px;
+}
+
+.lock-field {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+  text-align: left;
+}
+
+.lock-field .ui-textarea {
+  min-height: 72px;
+  resize: vertical;
+}
+
+/* Actions: a ruled row at the foot of the body (board: border-top, right aligned,
+   a ghost Back on the left when there is one). Sticky so it never scrolls away. */
+.lock-acts {
+  position: sticky;
+  bottom: -16px;
+  align-self: stretch;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin: 18px -24px -16px;
+  padding: 14px 20px 16px;
+  border-top: 1px solid var(--md-outline-v);
+  background: var(--md-surface);
+}
+
+.lock-acts-start {
+  margin-right: auto;
+}
+
+/* Phone: one action per row, primary on top (DOM order is Back → … → primary). */
+@media (max-width: 480px) {
+  .lock-acts {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+  .lock-acts-start {
+    margin-right: 0;
+  }
+}
+
+/* Exit animation: the body stays drawn while Radix animates out (data-state="closed"),
+   so make it inert; a second click must not fire an action again. */
+.lock-dlg[data-state="closed"] {
+  pointer-events: none;
+}

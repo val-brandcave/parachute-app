@@ -64,7 +64,12 @@ export function useBouncerAdmin() {
   };
 
   const sendInvites = async (emails: string[], role: UserRole, message?: string) => {
-    const made = await store.getState().sendInvites(emails, role, message);
+    // One role for every row (the Bouncer dialog's model); no domain rule here.
+    const results = await store.getState().sendInvites(
+      emails.map((email) => ({ email, role })),
+      message,
+    );
+    const made = results.filter((r) => r.status === "sent");
     toast({
       title: made.length === 1 ? "Invite sent" : `${made.length} invites sent`,
       description: made.length === 1 ? made[0].email : `As ${ROLE_META[role].label.toLowerCase()}, expiring in ${INVITE_LIFE_DAYS} days.`,

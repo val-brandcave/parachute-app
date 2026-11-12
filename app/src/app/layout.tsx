@@ -11,6 +11,7 @@ import "@realwired/ui/themes/parachute.css";
 import "./realwired-bridge.css";
 import { ToastHost } from "@/components/providers/ToastHost";
 import { SeedProvider } from "@/components/providers/SeedProvider";
+import { MotionProvider } from "@/components/providers/MotionProvider";
 import { DensityProvider } from "@/components/providers/DensityProvider";
 
 const display = Schibsted_Grotesk({
@@ -45,9 +46,11 @@ export default function RootLayout({
     >
       <body>
         <DensityProvider>
-          <ToastHost>
-            <SeedProvider>{children}</SeedProvider>
-          </ToastHost>
+          <MotionProvider>
+            <ToastHost>
+              <SeedProvider>{children}</SeedProvider>
+            </ToastHost>
+          </MotionProvider>
         </DensityProvider>
       </body>
     </html>

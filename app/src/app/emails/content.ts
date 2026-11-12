@@ -1,14 +1,17 @@
 import {
   CREDIT_PACKS,
   CREDIT_USD,
-  EARNED_LIFE_DAYS,
   EARN_CAP_CREDITS,
   EARN_REWARD_CREDITS,
   TRIAL_GRANT_CREDITS,
+  DEFAULT_PACK_ID,
   approxValue,
+  packById,
   costFor,
   formatUsd,
 } from "@/lib/pricing";
+import { checkoutHref } from "@/lib/checkout";
+import { slotLabel } from "@/lib/call-slots";
 import { seedCreditLedger } from "@/data/seed/credit-ledger.seed";
 
 /**
@@ -23,7 +26,8 @@ export type EmailBlock =
   | { kind: "p"; text: string }
   | { kind: "code"; value: string }
   | { kind: "rows"; rows: [label: string, value: string][] }
-  | { kind: "cta"; label: string }
+  /** `href`: where the live e-mail's button goes (the preview renders it as a link). */
+  | { kind: "cta"; label: string; href?: string }
   | { kind: "small"; text: string };
 
 export interface EmailSpec {
@@ -62,17 +66,35 @@ const sampleCount = Math.floor(TRIAL_GRANT_CREDITS / fullReview);
 const packList = CREDIT_PACKS.map((p) => `${p.credits}`).join(", ").replace(/, (\d+)$/, " or $1");
 const packPrices = CREDIT_PACKS.map((p) => formatUsd(p.priceUsd)).join(", ");
 
-// "You earned a credit": the bank-policy reward row.
-const earnedRow = ledger.find((e) => e.kind === "earned" && e.setupStepId === "bank_policy")!;
-const earnedBalance = balanceThrough(earnedRow.id);
-const remainingRewards = Math.max(EARN_CAP_CREDITS - EARN_REWARD_CREDITS, 0);
+// "You earned a free review": Harbor finishes "Run your first review" (section reward, Get started v4).
+// The seed ledger has no earned row (Harbor is mid-setup), so the e-mail shows the reward on top of today's balance.
+const earnedAt = ledger[ledger.length - 1].createdAt;
+const earnedBalance = ledger.reduce((s, e) => s + e.credits, 0) + EARN_REWARD_CREDITS;
+const rewardReviews = Math.floor(EARN_REWARD_CREDITS / costFor(["technical", "administrative"]));
+const remainingReviews = Math.floor(Math.max(EARN_CAP_CREDITS - EARN_REWARD_CREDITS, 0) / EARN_REWARD_CREDITS);
 
 // Receipt: the 220 Commerce Way debit.
 const receiptRow = ledger.find((e) => e.receiptId === "RCT-40918")!;
 const receiptBalance = balanceThrough(receiptRow.id);
 const receiptCredits = Math.abs(receiptRow.credits);
 
+// Reviewer credit requests (spec §5.9): Marcus asks, Dana adds, Marcus hears back.
+const REQUESTER = "Marcus Ortiz";
+const REQUESTER_FIRST = "Marcus";
+const REQUESTER_TO = "m.ortiz@harborcb.com";
+const REQUEST_NOTE = "3 reports due Friday, Lakeview Plaza needs both reviews.";
+const requestBalance = ledger.reduce((s, e) => s + e.credits, 0);
+const packCredits = packById(DEFAULT_PACK_ID).credits;
+
 const LOW_BALANCE = 1;
+
+// Every "Add credits" e-mail button opens checkout on the default pack (no `return`:
+// Exit checkout falls back to Billing).
+const ADD_CREDITS_HREF = checkoutHref({ pack: DEFAULT_PACK_ID });
+
+// Setup call: the demo slot is Fri 13 Nov, 10:00 AM Eastern.
+const CALL_AT = Date.UTC(2026, 10, 13, 15, 0);
+const CALL_WHEN = slotLabel(CALL_AT);
 
 export const emails: EmailSpec[] = [
   {
@@ -109,46 +131,45 @@ export const emails: EmailSpec[] = [
         rows: [
           ["Trial credits", `${TRIAL_GRANT_CREDITS} ${sep} ${approxValue(TRIAL_GRANT_CREDITS)} value`],
           ["Full reviews", `About ${sampleCount}`],
-          ["Sample review", `Free ${sep} included`],
         ],
       },
       {
         kind: "p",
-        text: "Start with the sample review: a finished review on 4410 Bayside Office Park, a fictional office building. Then add your bank policy, publish a compliance checklist and set a workbook layout.",
+        text: "Start with your first review: upload a commercial appraisal and see every figure checked. Then upload your credit policy, publish a compliance checklist and brand your workbook.",
       },
       { kind: "cta", label: "Go to Parachute" },
       {
         kind: "small",
-        text: `Trial credits are spent before any you earn or buy. 1 credit = 1 review type on 1 report, about ${formatUsd(CREDIT_USD)}.`,
+        text: `Credits that expire soonest are used first; trial credits go last. 1 credit = 1 review type on 1 report, about ${formatUsd(CREDIT_USD)}.`,
       },
     ],
   },
   {
     id: "earned",
-    chip: "Credit earned",
+    chip: "Review earned",
     product: "Parachute",
     ...FROM_PARACHUTE,
     to: TO,
-    subject: "You earned a credit",
+    subject: `You earned ${plural(rewardReviews, "free review", "free reviews")}`,
     blocks: [
       { kind: "p", text: `Hi ${FIRST},` },
       {
         kind: "p",
-        text: `Your bank policy is active on ${ORG}. Every review now checks reports against it, and we added ${plural(EARN_REWARD_CREDITS, "credit", "credits")} to your balance.`,
+        text: `You finished "Run your first review" on ${ORG}, so we added ${plural(EARN_REWARD_CREDITS, "credit", "credits")} to your balance: ${plural(rewardReviews, "full review", "full reviews")}, free.`,
       },
       {
         kind: "rows",
         rows: [
-          [`${day(earnedRow.createdAt)} ${sep} ${time(earnedRow.createdAt)}`, "Setup credit"],
-          ["Bank policy uploaded", `+${earnedRow.credits} ${sep} $0`],
+          [`${day(earnedAt)} ${sep} ${time(earnedAt)}`, "Setup reward"],
+          ["Run your first review", `+${EARN_REWARD_CREDITS} ${sep} $0`],
           ["Paid from", "Earned"],
           ["Balance", `${plural(earnedBalance, "credit", "credits")} ${sep} ${approxValue(earnedBalance)}`],
         ],
       },
-      { kind: "cta", label: "View billing" },
+      { kind: "cta", label: "Back to Get started" },
       {
         kind: "small",
-        text: `Earned credits last ${EARNED_LIFE_DAYS} days. ${remainingRewards === 1 ? "One more setup step" : `${remainingRewards} more setup steps`} can each earn ${EARN_REWARD_CREDITS} credit: a published compliance checklist and a custom workbook layout.`,
+        text: `Earned credits don't expire. Finish "Make it your bank's review" to earn ${plural(remainingReviews, "more free review", "more free reviews")}.`,
       },
     ],
   },
@@ -173,10 +194,38 @@ export const emails: EmailSpec[] = [
           ["Auto-reload", "Off"],
         ],
       },
-      { kind: "cta", label: "Add credits" },
+      { kind: "cta", label: "Add credits", href: ADD_CREDITS_HREF },
       {
         kind: "small",
         text: `Packs of ${packList} credits (${packPrices}). Only an organization admin can buy. Uploads stay saved as drafts until the balance covers them.`,
+      },
+    ],
+  },
+  {
+    id: "zero-balance",
+    chip: "Zero balance",
+    product: "Parachute",
+    ...FROM_PARACHUTE,
+    to: TO,
+    subject: `${ORG} is out of credits`,
+    blocks: [
+      { kind: "p", text: `Hi ${FIRST},` },
+      {
+        kind: "p",
+        text: `${ORG} has **0 credits left**. A full review uses ${fullReview} credits, so new reviews wait at Start until credits are added. Uploads stay saved as drafts and nothing is charged.`,
+      },
+      {
+        kind: "rows",
+        rows: [
+          ["Balance", "0 credits"],
+          ["Full review", `${fullReview} credits ${sep} ${approxValue(fullReview)}`],
+          ["Auto-reload", "Off"],
+        ],
+      },
+      { kind: "cta", label: "Add credits", href: ADD_CREDITS_HREF },
+      {
+        kind: "small",
+        text: `Packs of ${packList} credits (${packPrices}). Only an organization admin can buy.`,
       },
     ],
   },
@@ -216,6 +265,117 @@ export const emails: EmailSpec[] = [
       {
         kind: "small",
         text: `Re-scans after send-back are included. Receipts also go to ${BILLING_EMAIL}.`,
+      },
+    ],
+  },
+  {
+    id: "call-booked",
+    chip: "Call booked",
+    product: "Parachute",
+    ...FROM_PARACHUTE,
+    to: TO,
+    subject: `Your setup call is booked: ${CALL_WHEN}`,
+    blocks: [
+      { kind: "p", text: `Hi ${FIRST},` },
+      {
+        kind: "p",
+        text: `Your twenty-minute setup call for ${ORG} is booked. Realwired's onboarding team will confirm the account on the call and run your first review with you.`,
+      },
+      {
+        kind: "rows",
+        rows: [
+          ["When", `${CALL_WHEN} ${sep} Eastern Time`],
+          ["Length", "20 minutes"],
+          ["Trial credits", `${plural(TRIAL_GRANT_CREDITS, "credit", "credits")} ${sep} open once the account is confirmed`],
+        ],
+      },
+      { kind: "cta", label: "Open Parachute" },
+      {
+        kind: "small",
+        text: "Until then you can upload your policy and invite your team. To change the time, reply to this e-mail.",
+      },
+    ],
+  },
+  {
+    id: "enterprise-confirmed",
+    chip: "Account confirmed",
+    product: "Parachute",
+    ...FROM_PARACHUTE,
+    to: TO,
+    subject: `${ORG} is confirmed`,
+    blocks: [
+      { kind: "p", text: `Hi ${FIRST},` },
+      {
+        kind: "p",
+        text: `Thanks for the call. ${ORG} is confirmed on Parachute and your trial credits are open.`,
+      },
+      {
+        kind: "rows",
+        rows: [
+          ["Trial credits", `${TRIAL_GRANT_CREDITS} ${sep} ${approxValue(TRIAL_GRANT_CREDITS)} value`],
+          ["Full reviews", `About ${sampleCount}`],
+          ["Billing", "Set up on the call"],
+        ],
+      },
+      { kind: "cta", label: "Go to Parachute" },
+      {
+        kind: "small",
+        text: `Credits that expire soonest are used first; trial credits go last. 1 credit = 1 review type on 1 report, about ${formatUsd(CREDIT_USD)}.`,
+      },
+    ],
+  },
+  {
+    id: "credit-request",
+    chip: "Credit request",
+    product: "Parachute",
+    ...FROM_PARACHUTE,
+    to: TO,
+    subject: `${REQUESTER} asked for more credits`,
+    blocks: [
+      { kind: "p", text: `Hi ${FIRST},` },
+      {
+        kind: "p",
+        text: `**${REQUESTER}** asked for more credits for ${ORG}. Only an organization admin can add them.`,
+      },
+      { kind: "p", text: `"${REQUEST_NOTE}"` },
+      {
+        kind: "rows",
+        rows: [
+          ["Balance", `${plural(requestBalance, "credit", "credits")} ${sep} ${approxValue(requestBalance)}`],
+          ["Full review", `${fullReview} credits ${sep} ${approxValue(fullReview)}`],
+        ],
+      },
+      { kind: "cta", label: "Add credits", href: ADD_CREDITS_HREF },
+      {
+        kind: "small",
+        text: `You can also add credits or dismiss the request from the credits menu in Parachute. ${REQUESTER_FIRST} is told either way.`,
+      },
+    ],
+  },
+  {
+    id: "credits-added",
+    chip: "Credits added",
+    product: "Parachute",
+    ...FROM_PARACHUTE,
+    to: REQUESTER_TO,
+    subject: `${FIRST} added credits for ${ORG}`,
+    blocks: [
+      { kind: "p", text: `Hi ${REQUESTER_FIRST},` },
+      {
+        kind: "p",
+        text: `${FIRST} added **${plural(packCredits, "credit", "credits")}** after your request. They are ready to use now.`,
+      },
+      {
+        kind: "rows",
+        rows: [
+          ["Added", `${plural(packCredits, "credit", "credits")} ${sep} ${approxValue(packCredits)}`],
+          ["Full review", `${fullReview} credits ${sep} ${approxValue(fullReview)}`],
+        ],
+      },
+      { kind: "cta", label: "Start a review" },
+      {
+        kind: "small",
+        text: "If a review was waiting on credits, it can start now.",
       },
     ],
   },

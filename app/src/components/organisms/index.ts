@@ -12,6 +12,16 @@ export { SearchTrigger } from "./SearchTrigger";
 export { MembersPanel } from "./MembersPanel";
 export { InviteMemberModal } from "./InviteMemberModal";
 export { BrandingPanel } from "./BrandingPanel";
-export { DemoDock } from "./DemoDock";
-export { BalancePill } from "./BalancePill";
 export { EarnedToastHost } from "./EarnedToastHost";
+// Pattern change mount points (T0.6 stubs; owners fill them in later phases)
+export { CreditsPill } from "./CreditsPill";
+export { SidebarResourceLinks } from "./SidebarResourceLinks";
+export { LockDialog } from "./LockDialog";
+export { CheckoutLauncher } from "./CheckoutLauncher";
+export { HeaderChipSlot } from "./HeaderChipSlot";
+export { TourHost } from "./tour/TourHost";
+export { ProtoPill } from "./prototype/ProtoPill";
+export { EmptyVideo } from "./EmptyVideo";
+export { FirstRunHero } from "./FirstRunHero";
+export { SettingVideoHint } from "./SettingVideoHint";
+export { useTourTarget } from "./useTourTarget";

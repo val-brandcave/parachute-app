@@ -7,10 +7,13 @@ import { Button, Icon, MicrosoftGlyph } from "@/components/atoms";
 import { demoPersonas } from "@/data/seed/demo-personas.seed";
 import { landingRoute, resolveEntryRoute } from "@/lib/landing";
 import { seedUsers } from "@/data/seed/users.seed";
-import { useDemoStore } from "@/store/demo.store";
+import { useProtoStore } from "@/store/prototype.store";
+import { PRESETS } from "@/lib/prototype/presets";
 import { useSessionStore } from "@/store/session.store";
 import { useUsersStore } from "@/store/users.store";
 import { loadSessionData } from "@/store/session-data";
+import { useProtoFill } from "@/components/organisms/prototype/useProtoFill";
+import { useAuthVariant } from "./useAuthVariant";
 
 const BAD_CREDENTIALS = "E-mail or password is incorrect.";
 
@@ -21,17 +24,43 @@ export function signInPersonas() {
     .map((p) => ({ persona: p, email: seedUsers.find((u) => u.id === p.userId)?.email ?? "" }));
 }
 
+/** Becomes a legacy persona through its preset alias (its seeded identity, rows untouched). */
+async function enterLegacy(personaId: string): Promise<void> {
+  const preset = PRESETS.find((p) => p.legacyPersonaId === personaId);
+  if (preset) await useProtoStore.getState().enterPreset(preset, { alias: true });
+}
+
+const personaById = (id: string) => demoPersonas.find((p) => p.id === id);
+
 /** Keycloak login-username then login-password, themed (identity-first, one card). */
-export function SignInForm() {
+function SignInFormBody() {
   const router = useRouter();
-  const [step, setStep] = useState<"email" | "password">("email");
-  const [email, setEmail] = useState("");
+  const variant = useAuthVariant();
+  const bad = variant === "bad-credentials";
+  const [step, setStep] = useState<"email" | "password">(bad ? "password" : "email");
+  const [email, setEmail] = useState(bad ? "dana.reyes@harborcb.com" : "");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(bad ? BAD_CREDENTIALS : null);
+
+  // Fill wand: the demo admin's email and password; Shift = an address and password that fail.
+  useProtoFill("sign-in", {
+    valid: () => {
+      if (step === "email") setEmail("dana.reyes@harborcb.com");
+      else setPassword("harbor-demo-2026");
+      setError(null);
+    },
+    invalid: () => {
+      if (step === "email") setEmail("dana.reyes@");
+      else setPassword("nope");
+    },
+  });
 
   const continueEmail = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim()) return;
+    if (!email.trim()) {
+      setError("Enter your work email.");
+      return;
+    }
     setError(null);
     setStep("password"); // never reveals whether the address exists
   };
@@ -41,8 +70,8 @@ export function SignInForm() {
     const wanted = email.trim().toLowerCase();
     const known = signInPersonas().find((p) => p.email.toLowerCase() === wanted);
     if (password && known) {
-      const persona = await useDemoStore.getState().apply(known.persona.id);
-      if (persona) router.push(resolveEntryRoute(persona.entryRoute));
+      await enterLegacy(known.persona.id);
+      router.push(resolveEntryRoute(known.persona.entryRoute));
       return;
     }
     // A member created at runtime (the sign-up flow) signs in too.
@@ -57,8 +86,10 @@ export function SignInForm() {
   };
 
   const microsoft = async () => {
-    const persona = await useDemoStore.getState().apply("returning");
-    if (persona) router.push(resolveEntryRoute(persona.entryRoute));
+    const persona = personaById("returning");
+    if (!persona) return;
+    await enterLegacy(persona.id);
+    router.push(resolveEntryRoute(persona.entryRoute));
   };
 
   if (step === "password") {
@@ -127,7 +158,12 @@ export function SignInForm() {
           onChange={(e) => setEmail(e.target.value)}
         />
       </div>
-      <Button type="submit" size="lg" block disabled={!email.trim()}>
+      {error && (
+        <p className="kc-err" role="alert">
+          {error}
+        </p>
+      )}
+      <Button type="submit" size="lg" block>
         Continue
       </Button>
       <div className="kc-or">or</div>
@@ -145,30 +181,8 @@ export function SignInForm() {
   );
 }
 
-/** PROTOTYPE ONLY: picks a signed-in demo persona without typing credentials. */
-export function DemoAccounts() {
-  const router = useRouter();
-  const [open, setOpen] = useState(false);
-  const pick = async (id: string) => {
-    const persona = await useDemoStore.getState().apply(id);
-    if (persona) router.push(persona.entryRoute);
-  };
-  return (
-    <div className="kc-demo">
-      <button type="button" className="kc-demo-toggle" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
-        Demo accounts
-        <Icon name={open ? "chevron-down" : "chevron-right"} size={14} />
-      </button>
-      {open && (
-        <div className="kc-demo-list">
-          {signInPersonas().map(({ persona, email }) => (
-            <button key={persona.id} type="button" className="kc-demo-row" onClick={() => pick(persona.id)}>
-              <span className="kc-demo-name">{persona.label}</span>
-              <span className="kc-demo-mail">{email}</span>
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
+/** Remounts on a state-pill variant change so the form's fields and error reset to that state. */
+export function SignInForm() {
+  const variant = useAuthVariant();
+  return <SignInFormBody key={variant ?? "default"} />;
 }

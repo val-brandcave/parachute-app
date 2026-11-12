@@ -13,6 +13,7 @@ export function Button({
   iconLeft,
   iconRight,
   block,
+  busy = false,
   className,
   children,
   ...rest
@@ -22,8 +23,15 @@ export function Button({
   iconLeft?: IconName;
   iconRight?: IconName;
   block?: boolean;
+  /**
+   * Working state: a 16 px spinner over the label, width held, `aria-busy`.
+   * Clicks are swallowed while busy (the button stays focusable, never `disabled`).
+   * DS-candidate: Button `loading` prop — @realwired/ui Button has no busy state.
+   */
+  busy?: boolean;
 } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
   const iconSize = size === "sm" ? 15 : 17;
+  const { onClick, ...buttonProps } = rest;
   return (
     <button type="button"
       className={cn(
@@ -31,13 +39,22 @@ export function Button({
         `ui-btn--${variant}`,
         size !== "md" && `ui-btn--${size}`,
         block && "ui-btn--block",
+        busy && "is-busy",
         className,
       )}
-      {...rest}
+      aria-busy={busy || undefined}
+      onClick={busy ? swallow : onClick}
+      {...buttonProps}
     >
       {iconLeft && <Icon name={iconLeft} size={iconSize} />}
       {children}
       {iconRight && <Icon name={iconRight} size={iconSize} />}
+      {busy && <span className="ui-btn-spin" aria-hidden="true" />}
     </button>
   );
+}
+
+/** While busy, a click does nothing (the button stays focusable and announced). */
+function swallow(e: React.MouseEvent<HTMLButtonElement>) {
+  e.preventDefault();
 }

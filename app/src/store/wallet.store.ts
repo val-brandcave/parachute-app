@@ -11,7 +11,9 @@ import {
   packById,
   usd,
 } from "@/lib/pricing";
-import { rewardFor } from "@/lib/setup-steps";
+import { sectionDef, sectionReward } from "@/lib/setup-steps";
+import { SPEND_ORDER } from "@/lib/wallet-breakdown";
+import { autoReloadDue, walletView } from "@/lib/wallet-view";
 import { DEFAULT_ORG_ID } from "@/lib/identity-defaults";
 import { getCurrentUser } from "@/lib/current-user";
 import {
@@ -21,44 +23,31 @@ import {
   type CreditSource,
   type LedgerKind,
   type ReviewType,
-  type SetupStepId,
+  type SetupSectionId,
   type WalletSettings,
 } from "@/types";
 import { useOrgStore } from "./org.store";
 import { useSessionStore } from "./session.store";
 
-/** Credits still spendable, by origin, after applying spend order trial > earned > purchased.
- *  Refunds and adjustments sit in the purchased bucket. */
+/** Credits still spendable, by origin, after the PC-16 spend order (purchased, oldest pack first →
+ *  earned → trial). Refunds and adjustments sit in the purchased bucket. */
 export interface RemainingBySource {
   trial: number;
   earned: number;
   purchased: number;
 }
 
+/** Same numbers as `walletView().bySource` (lib/wallet-view.ts), which is the one derivation. */
 export function remainingFromLedger(ledger: readonly CreditLedgerEntry[]): RemainingBySource {
-  let trial = 0;
-  let earned = 0;
-  let purchased = 0;
-  let used = 0;
-  for (const e of ledger) {
-    if (e.kind === "trial_grant") trial += e.credits;
-    else if (e.kind === "earned") earned += e.credits;
-    else if (e.kind === "debit" || e.kind === "rescan") used += -e.credits;
-    else purchased += e.credits;
-  }
-  const spend = (bucket: number) => {
-    const take = Math.min(Math.max(bucket, 0), used);
-    used -= take;
-    return bucket - take;
-  };
-  return { trial: spend(trial), earned: spend(earned), purchased: spend(purchased) };
+  // `now` only feeds runway and month figures, which this does not read.
+  return { ...walletView(ledger, { now: 0 }).bySource };
 }
 
-/** Which buckets a charge of `credits` would draw from, in spend order. */
+/** Which buckets a charge of `credits` would draw from, in spend order (PC-16). */
 export function sourcesFor(remaining: RemainingBySource, credits: number): CreditSource[] {
   const out: CreditSource[] = [];
   let left = credits;
-  for (const k of ["trial", "earned", "purchased"] as const) {
+  for (const k of SPEND_ORDER) {
     if (left <= 0) break;
     if (remaining[k] > 0) {
       out.push(k);
@@ -68,17 +57,12 @@ export function sourcesFor(remaining: RemainingBySource, credits: number): Credi
   return out;
 }
 
-export type TopUpReason = "manual" | "low_balance";
-
-/** Gross credits by origin, plus what has been spent. */
-export interface BalanceBySource {
-  trial: number;
-  earned: number;
-  purchased: number;
-  /** refunds + adjustments */
-  other: number;
-  /** credits consumed (positive number) */
-  used: number;
+/** A pending "Add credits" request, consumed by CheckoutLauncher. */
+export interface TopUpIntent {
+  /** Shortfall in credits (cost − balance), never the full cost (RF2). */
+  needed?: number;
+  /** Credit request being fulfilled (phase 4). */
+  request?: string;
 }
 
 type NewEntry = Partial<
@@ -96,6 +80,7 @@ function defaultSettings(orgId: string): WalletSettings {
     autoReload: false,
     reloadPackId: AUTO_RELOAD_DEFAULTS.packId,
     reloadBelow: AUTO_RELOAD_DEFAULTS.below,
+    monthlyCap: AUTO_RELOAD_DEFAULTS.monthlyCap,
     paymentMethod: null,
   };
 }
@@ -106,23 +91,16 @@ interface WalletState {
   settings: WalletSettings | null;
   loading: boolean;
 
-  /** Global top-up dialog + receipt dialog open state (mounted once in the shell). */
-  topUpOpen: boolean;
-  topUpReason: TopUpReason;
-  /** Credits the blocked action needed, when opened from a low-balance state. */
-  topUpNeeded: number | null;
+  /** "Add credits" was asked for (spec §5.6). CheckoutLauncher (mounted once in AppShell)
+   *  turns it into a /checkout/credits navigation and clears it. `needed` is the SHORTFALL. */
+  topUpIntent: TopUpIntent | null;
   receiptId: string | null;
 
   fetchWallet: (orgId?: string | null) => Promise<void>;
 
   // --- Derived (never stored) ---
   balance: () => number;
-  balanceBySource: () => BalanceBySource;
-  /** Spendable credits by origin after spend order (use this for meters). */
-  remainingBySource: () => RemainingBySource;
   cost: (types: readonly ReviewType[]) => number;
-  /** Can the org run this? Invoiced orgs are billed outside the wallet, so always yes. */
-  canAfford: (credits: number) => boolean;
 
   // --- Writes (all through the adapter) ---
   debitForReview: (args: {
@@ -132,8 +110,9 @@ interface WalletState {
     sample?: boolean;
   }) => Promise<CreditLedgerEntry | null>;
   grantTrial: () => Promise<CreditLedgerEntry | null>;
-  /** Idempotent per step and bounded by the earn cap. */
-  award: (stepId: SetupStepId) => Promise<CreditLedgerEntry | null>;
+  /** Pay a finished section's reward (Get started v4). Idempotent per section and bounded by
+   *  the earn cap. The earn-window check is the caller's (`sectionRewardDue`). */
+  awardSection: (id: SetupSectionId) => Promise<CreditLedgerEntry | null>;
   /** Buy a pack, or a custom amount priced at its tier rate (`customPriceUsd`). */
   purchase: (choice: CreditPackId | { credits: number }) => Promise<CreditLedgerEntry>;
   /** Free-form signed adjustment (demo "+5 credits", support goodwill). */
@@ -148,8 +127,9 @@ interface WalletState {
   /** Finance details and alert preferences (Billing > Settings). */
   setBillingSettings: (patch: Partial<Omit<WalletSettings, "id" | "orgId" | "createdAt">>) => Promise<void>;
 
-  openTopUp: (opts?: { reason?: TopUpReason; needed?: number }) => void;
-  closeTopUp: () => void;
+  /** Records the intent only; CheckoutLauncher routes to checkout. Callers unchanged. */
+  openTopUp: (opts?: { needed?: number; request?: string }) => void;
+  clearTopUpIntent: () => void;
   openReceipt: (receiptId: string) => void;
   closeReceipt: () => void;
 }
@@ -186,9 +166,7 @@ export const useWalletStore = create<WalletState>((set, get) => {
     ledger: [],
     settings: null,
     loading: false,
-    topUpOpen: false,
-    topUpReason: "manual",
-    topUpNeeded: null,
+    topUpIntent: null,
     receiptId: null,
 
     fetchWallet: async (orgId) => {
@@ -211,24 +189,9 @@ export const useWalletStore = create<WalletState>((set, get) => {
       set({ orgId: id, ledger, settings: row, loading: false });
     },
 
-    balance: () => get().ledger.reduce((sum, e) => sum + e.credits, 0),
-    balanceBySource: () => {
-      const out: BalanceBySource = { trial: 0, earned: 0, purchased: 0, other: 0, used: 0 };
-      for (const e of get().ledger) {
-        if (e.kind === "trial_grant") out.trial += e.credits;
-        else if (e.kind === "earned") out.earned += e.credits;
-        else if (e.kind === "purchase") out.purchased += e.credits;
-        else if (e.kind === "debit" || e.kind === "rescan") out.used += -e.credits;
-        else out.other += e.credits;
-      }
-      return out;
-    },
-    remainingBySource: () => remainingFromLedger(get().ledger),
+    // `now` only feeds runway and month figures, which balance does not read.
+    balance: () => walletView(get().ledger, { now: 0 }).balance,
     cost: (types) => costFor(types),
-    canAfford: (credits) => {
-      if (useOrgStore.getState().org?.billing === "invoiced") return true;
-      return get().balance() >= credits;
-    },
 
     debitForReview: async ({ reviewId, types, loanNo, sample }) => {
       if (sample) return null; // samples never cost anything
@@ -248,27 +211,19 @@ export const useWalletStore = create<WalletState>((set, get) => {
         paidFrom,
         receiptId: `RCT-${generateId().slice(0, 5).toUpperCase()}`,
       });
-      // Auto-reload: top up once when the balance drops below the threshold.
+      // Auto-reload: top up once when the balance drops below the threshold, within the monthly cap.
       const st = get().settings;
-      if (st?.autoReload && get().balance() < st.reloadBelow) {
+      if (st && autoReloadDue(get().ledger, st, Date.now())) {
         const pack = packById(st.reloadPackId);
-        const monthStart = new Date();
-        monthStart.setDate(1);
-        monthStart.setHours(0, 0, 0, 0);
-        const spentThisMonth = get()
-          .ledger.filter((e) => e.kind === "purchase" && e.auto && e.createdAt >= monthStart.getTime())
-          .reduce((s2, e) => s2 + (e.amountUsd ?? 0), 0);
-        if (spentThisMonth + pack.priceUsd <= (st.monthlyCap ?? AUTO_RELOAD_DEFAULTS.monthlyCap)) {
-          await addEntry({
-            kind: "purchase",
-            credits: pack.credits,
-            amountUsd: pack.priceUsd,
-            packId: pack.id,
-            auto: true,
-            receiptId: `RCT-${generateId().slice(0, 5).toUpperCase()}`,
-            note: `Auto-reload · ${pack.credits}-credit pack`,
-          });
-        }
+        await addEntry({
+          kind: "purchase",
+          credits: pack.credits,
+          amountUsd: pack.priceUsd,
+          packId: pack.id,
+          auto: true,
+          receiptId: `RCT-${generateId().slice(0, 5).toUpperCase()}`,
+          note: `Auto-reload · ${pack.credits}-credit pack`,
+        });
       }
       return entry;
     },
@@ -282,15 +237,15 @@ export const useWalletStore = create<WalletState>((set, get) => {
       });
     },
 
-    award: async (stepId) => {
-      const reward = rewardFor(stepId);
+    awardSection: async (id) => {
+      const reward = sectionReward(id);
       if (reward <= 0) return null;
       const earned = get().ledger.filter((e) => e.kind === "earned");
-      if (earned.some((e) => e.setupStepId === stepId)) return null;
+      if (earned.some((e) => e.setupSectionId === id)) return null;
       const room = EARN_CAP_CREDITS - earned.reduce((s, e) => s + e.credits, 0);
       const credits = Math.min(EARN_REWARD_CREDITS, reward, room);
       if (credits <= 0) return null;
-      return addEntry({ kind: "earned", credits, setupStepId: stepId, note: "Setup reward" });
+      return addEntry({ kind: "earned", credits, setupSectionId: id, note: `Setup reward · ${sectionDef(id).title(useOrgStore.getState().org?.profile?.kind ?? "bank")}` });
     },
 
     purchase: async (choice) => {
@@ -324,11 +279,12 @@ export const useWalletStore = create<WalletState>((set, get) => {
 
     openTopUp: (opts) =>
       set({
-        topUpOpen: true,
-        topUpReason: opts?.reason ?? "manual",
-        topUpNeeded: opts?.needed ?? null,
+        topUpIntent: {
+          ...(opts?.needed !== undefined ? { needed: opts.needed } : {}),
+          ...(opts?.request ? { request: opts.request } : {}),
+        },
       }),
-    closeTopUp: () => set({ topUpOpen: false, topUpNeeded: null }),
+    clearTopUpIntent: () => set({ topUpIntent: null }),
     openReceipt: (receiptId) => set({ receiptId }),
     closeReceipt: () => set({ receiptId: null }),
   };

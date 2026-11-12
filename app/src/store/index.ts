@@ -17,7 +17,10 @@ export {
   type AttestationSignature,
 } from "./admin.store";
 export { usePrefsStore, resolveTheme, useBuildNotes, setBuildNotes } from "./prefs.store";
-export type { Density, ThemePref } from "./prefs.store";
+export type { Density, ThemePref, CelebrationKind } from "./prefs.store";
+export { useLockStore } from "./lock.store";
+export type { LockReason } from "./lock.store";
+export { useWalletSource, useWalletView } from "./useWalletView";
 export {
   useOrderStore,
   ORDER_STEP,
@@ -31,12 +34,24 @@ export { useIdentityStore } from "./identity.store";
 export { useSessionStore } from "./session.store";
 export type { AppMode, AuthState } from "./session.store";
 export { useWalletStore } from "./wallet.store";
-export type { BalanceBySource, TopUpReason } from "./wallet.store";
-export { useOnboardingStore, useSetupSummary, useOrgStage, useSetupHidden, useApprovalPending, deriveSteps } from "./onboarding.store";
-export type { DerivedStep, SetupSummary, EarnedNotice } from "./onboarding.store";
-export { useDemoStore } from "./demo.store";
+export type { TopUpIntent } from "./wallet.store";
+export {
+  useOnboardingStore,
+  useSetupSummary,
+  useOrgStage,
+  useSetupHidden,
+  useApprovalPending,
+  deriveSteps,
+  deriveEarn,
+  setupEligible,
+  awardedSectionsOf,
+  earnGrantAt,
+} from "./onboarding.store";
+export type { DerivedStep, SetupSummary, SectionSummary, EarnSummary, EarnedNotice } from "./onboarding.store";
 export { loadSessionData } from "./session-data";
 export { useRunStore, DEMO_RUN_REVIEW_ID, beginRunInPlace } from "./run.store";
 export type { RunSpoke, RunDisplay, RunSource, RunReviewType } from "./run.store";
 export { useBouncerStore, useOrgInvites } from "./bouncer.store";
-export type { JoinedInfo } from "./bouncer.store";
+export { useCreditRequestStore } from "./credit-request.store";
+export type { JoinedInfo, InviteInput, InviteResult, InviteResultStatus } from "./bouncer.store";
+export { useTourStore, type TourStopReason } from "./tour.store";

@@ -1,0 +1,222 @@
+/* Trust Center (spec §5.10). Tokens only; light and dark both inherit from --md-*. */
+.tc {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+.tc--public {
+  min-height: 100vh;
+  padding: 32px clamp(16px, 4vw, 56px) 56px;
+  background: var(--md-bg);
+  color: var(--md-on-surface);
+}
+.tc-shared {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  align-self: flex-start;
+  margin: 0;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--md-surface-2);
+  color: var(--md-on-surface-v);
+  font-size: 13px;
+}
+/* Same white hero card as Billing → How credits work (.hcw-hero). */
+.tc-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px 32px;
+  padding: 28px;
+}
+.tc-hero-text {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+.tc-hero-art {
+  line-height: 0;
+  color: var(--md-on-surface);
+  max-width: 100%;
+}
+.tc-hero-art svg {
+  max-width: 100%;
+  height: auto;
+}
+.tc-h1 {
+  margin: 0;
+  font-family: var(--font-display), system-ui, sans-serif;
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--md-on-surface);
+}
+.tc-h2 {
+  margin: 0;
+  font-family: var(--font-display), system-ui, sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--md-on-surface);
+}
+.tc-lead {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--md-on-surface-v);
+}
+.tc-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.tc-note,
+.tc-muted {
+  margin: 0;
+  font-size: 13px;
+  color: var(--md-on-surface-t);
+}
+.tc-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(280px, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+.tc-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px;
+  border: 1px solid var(--md-outline);
+  border-radius: 14px;
+  background: var(--md-surface);
+}
+.tc-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+}
+.tc-docs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+.tc-doc {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 0;
+  border-top: 1px solid var(--md-outline-v);
+}
+.tc-doc:first-child {
+  border-top: 0;
+}
+.tc-doc-ic {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--md-surface-2);
+  color: var(--md-on-surface-v);
+}
+.tc-doc-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+.tc-doc-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: var(--md-on-surface);
+}
+.tc-doc-desc {
+  font-size: 13px;
+  color: var(--md-on-surface-v);
+}
+.tc-facts {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+.tc-fact {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--md-outline-v);
+}
+.tc-fact:first-child {
+  border-top: 0;
+}
+.tc-fact dt {
+  color: var(--md-on-surface-v);
+  font-size: 14px;
+}
+.tc-fact dd {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  font-weight: 600;
+  color: var(--md-on-surface);
+}
+.tc-contact {
+  margin: 0;
+  font-size: 13px;
+  color: var(--md-on-surface-v);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+}
+.tc-contact a {
+  color: var(--md-accent-d);
+  text-decoration: underline;
+}
+.tc-expired {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+  padding: 72px 16px;
+}
+.tc-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.tc-err {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--md-error);
+}
+@media (max-width: 900px) {
+  .tc-hero {
+    grid-template-columns: 1fr;
+  }
+  .tc-hero-art {
+    order: -1;
+  }
+  .tc-grid {
+    grid-template-columns: 1fr;
+  }
+  .tc-doc {
+    flex-wrap: wrap;
+  }
+}

@@ -1,8 +1,12 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { Chip, Icon } from "@/components/atoms";
-import { EmptyLine, type ActionItem } from "@/components/molecules";
+import { useEffect, useRef, useState } from "react";
+import { Button, Chip, Icon } from "@/components/atoms";
+import { EmptyState, type ActionItem } from "@/components/molecules";
+import { EmptyVideo } from "@/components/organisms/EmptyVideo";
+import { SettingVideoHint } from "@/components/organisms/SettingVideoHint";
+import { useTourTarget } from "@/components/organisms/useTourTarget";
+import { useTemplatesStore } from "@/store";
 import {
   FamilyTable,
   type FamilyColumn,
@@ -33,6 +37,18 @@ export default function ChecklistsPage() {
   // The dropzone captures the file itself (click → picker, or drag-and-drop);
   // the wizard then opens already showing it. Non-null filename = wizard open.
   const [uploadFile, setUploadFile] = useState<string | null>(null);
+  // First "Set as default" this user makes shows the Mapping a checklist video once (spec §5.12).
+  const [defaultSet, setDefaultSet] = useState(false);
+  // Level 1 needs to know the library really is empty, not just not loaded yet.
+  const [fetched, setFetched] = useState(false);
+  useEffect(() => {
+    void useTemplatesStore
+      .getState()
+      .fetchTemplates()
+      .then(() => setFetched(true));
+  }, []);
+  // Tour target (spec §5.13): the first row's ⋯ trigger lives inside FamilyTable.
+  useTourTarget("checklists-default", ".cktable .ckrow-actions button");
   const [dragging, setDragging] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const capture = (name?: string) => {
@@ -55,7 +71,10 @@ export default function ChecklistsPage() {
             {
               label: "Set as default",
               icon: "check-circle" as const,
-              onClick: () => setDefaultChecklist(c.family.id),
+              onClick: () => {
+                setDefaultChecklist(c.family.id);
+                setDefaultSet(true);
+              },
             },
           ]
         : []),
@@ -107,50 +126,71 @@ export default function ChecklistsPage() {
     };
   });
 
+  const level1 = checklistFamilies.length === 0;
+
+  if (!fetched) return <div className="pagebody" aria-busy="true" />;
+
   return (
     <div className="pagebody">
-      {/* Ingest affordance — a checklist is uploaded, not authored from scratch,
+      {level1 ? (
+        // Level 1 (spec §5.12): nothing uploaded yet. One block, no table, no dropzone above it.
+        <EmptyState
+          layout="stack"
+          title="Your compliance checklist lives here"
+          media={<EmptyVideo videoId="mapping-checklist" />}
+          actions={
+            <Button iconLeft="upload" onClick={() => fileRef.current?.click()}>
+              Upload a checklist
+            </Button>
+          }
+        >
+          Upload the form your bank uses. Parachute extracts each item and maps it to a question for you to confirm,
+          then runs it on every administrative review.
+        </EmptyState>
+      ) : (
+        /* Ingest affordance — a checklist is uploaded, not authored from scratch,
           so the create action is a dropzone. It captures the file directly (click
-          to browse or drop one on it); the wizard then opens showing that file. */}
-      <button
-        type="button"
-        className={`cfg-uploadzone${dragging ? " drag" : ""}`}
-        onClick={() => fileRef.current?.click()}
-        onDragOver={(e) => {
-          e.preventDefault();
-          setDragging(true);
+          to browse or drop one on it); the wizard then opens showing that file. */
+        <button
+          type="button"
+          className={`cfg-uploadzone${dragging ? " drag" : ""}`}
+          data-tour="checklists-upload"
+          onClick={() => fileRef.current?.click()}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragging(true);
+          }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDragging(false);
+            capture(e.dataTransfer.files?.[0]?.name);
+          }}
+        >
+          <Icon name="upload" size={22} />
+          <span className="cfg-uploadzone-main">Upload a checklist</span>
+          <span className="cfg-uploadzone-sub">
+            .docx / .xlsx / .pdf — the AI extracts and maps each item
+          </span>
+        </button>
+      )}
+      <input
+        ref={fileRef}
+        type="file"
+        accept=".doc,.docx,.xls,.xlsx,.pdf"
+        hidden
+        aria-label="Upload a checklist"
+        onChange={(e) => {
+          capture(e.target.files?.[0]?.name);
+          e.target.value = "";
         }}
-        onDragLeave={() => setDragging(false)}
-        onDrop={(e) => {
-          e.preventDefault();
-          setDragging(false);
-          capture(e.dataTransfer.files?.[0]?.name);
-        }}
-      >
-        <Icon name="upload" size={22} />
-        <span className="cfg-uploadzone-main">Upload a checklist</span>
-        <span className="cfg-uploadzone-sub">
-          .docx / .xlsx / .pdf — the AI extracts and maps each item
-        </span>
-        <input
-          ref={fileRef}
-          type="file"
-          accept=".doc,.docx,.xls,.xlsx,.pdf"
-          hidden
-          onChange={(e) => capture(e.target.files?.[0]?.name)}
-        />
-      </button>
-
-      <FamilyTable
-        columns={COLUMNS}
-        rows={rows}
-        ariaLabel="Compliance checklists"
-        empty={
-          <div className="card">
-            <EmptyLine>Checklists you upload appear here, ready to set as the default.</EmptyLine>
-          </div>
-        }
       />
+
+      <SettingVideoHint hintId="checklist-default" videoId="mapping-checklist" show={defaultSet} />
+
+      {!level1 && (
+        <FamilyTable columns={COLUMNS} rows={rows} ariaLabel="Compliance checklists" />
+      )}
 
       <ChecklistUploadWizard
         open={!!uploadFile}

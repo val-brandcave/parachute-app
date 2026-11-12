@@ -2,33 +2,31 @@ import type { SetupProgress } from "@/types";
 
 const T0 = 1_785_000_000_000;
 const DAY = 86_400_000;
-/** 6 Nov 2026, 09:12 local: the demo's "account created" moment. */
-const NOV6 = new Date(2026, 10, 6, 9, 12).getTime();
 const HOUR = 3_600_000;
 
-/** One row per org (`id` === `orgId`). org-hcb is the C2 state (4 of 9 done; its `invite` step stays open, with one
- *  pending invite shown live from the bouncer store);
+/** Harbor's workspace: created with the trial grant two days before load (matches the ledger). */
+const HCB_START = Date.now() - 2 * DAY;
+
+/** One row per org (`id` === `orgId`). org-hcb is the Get started v4 Mid state: 2 of 8 done
+ *  (`first_review` on 220 Commerce Way, `invite` — Marcus Ortiz joined), the checklist draft in progress;
  *  org-cedar is mid-setup; org-001 (invoiced) is fully set up; org-lakeside has
- *  not started. The first step, "account", is always done. */
+ *  not started. The pre-ticked "account" line is always done and not counted. */
 export const seedSetupProgress: SetupProgress[] = [
   {
     id: "org-hcb",
     orgId: "org-hcb",
-    createdAt: NOV6,
+    createdAt: HCB_START,
     completed: {
-      account: NOV6,
-      sample_review: NOV6 + 1 * HOUR,
-      first_review: NOV6 + 26 * HOUR,
-      bank_policy: NOV6 + 26 * HOUR,
+      account: HCB_START,
+      first_review: HCB_START + 20 * HOUR,
+      invite: HCB_START + 26 * HOUR,
     },
     completedBy: {
       account: "user-dr",
-      sample_review: "user-dr",
       first_review: "user-dr",
-      bank_policy: "user-mo",
+      invite: "user-dr",
     },
     inProgress: {
-      sign_workbook: { note: "Priya has it · 220 Commerce Way", href: "/reviews/review-hcb-1" },
       checklist: { note: "Draft saved · 18 of 24 items mapped", href: "/configure/checklists" },
     },
   },

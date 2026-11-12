@@ -47,7 +47,7 @@ export const demoPersonas: DemoPersona[] = [
     userId: null,
     orgId: null,
     mode: "full",
-    entryRoute: "/welcome?preset=large",
+    entryRoute: "/welcome",
   },
   {
     id: "pending-admin",

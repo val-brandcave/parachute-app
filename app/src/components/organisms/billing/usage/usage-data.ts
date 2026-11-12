@@ -1,6 +1,6 @@
-import { CREDIT_USD, REVIEW_TYPE_COST } from "@/lib/pricing";
-import type { CreditLedgerEntry, CreditSource, Review, ReviewType } from "@/types";
-import { DEMO_TODAY, invoicedReviews, rebasedDate, shortName, sourceLabel, type UserName } from "../billing-data";
+import { CREDIT_USD } from "@/lib/pricing";
+import type { CreditLedgerEntry, CreditSource, ReviewType } from "@/types";
+import { DEMO_TODAY, shortName, sourceLabel, type UserName } from "../billing-data";
 
 /**
  * Everything the Usage tab and the Overview chart need, as pure functions over the ledger (wallet orgs)
@@ -32,26 +32,7 @@ const startOfDay = (ts: number) => {
 
 /* ------------------------------------------------------------------ lines */
 
-export function buildUsageLines(
-  ledger: readonly CreditLedgerEntry[],
-  reviews: readonly Review[],
-  invoiced: boolean,
-): UsageLine[] {
-  if (invoiced) {
-    const list = invoicedReviews(reviews);
-    return list.flatMap((r) =>
-      r.reviewTypes.map((t): UsageLine => ({
-        id: `${r.id}-${t}`,
-        at: rebasedDate(r, list),
-        credits: REVIEW_TYPE_COST[t] ?? 1,
-        type: t,
-        personId: r.assigneeId ?? "system",
-        source: "invoiced",
-        reviewKey: r.id,
-      })),
-    );
-  }
-
+export function buildUsageLines(ledger: readonly CreditLedgerEntry[]): UsageLine[] {
   // A debit that was refunded in full (failed on our side) is not usage: drop it and its refund.
   const refunded = new Set(ledger.filter((e) => e.kind === "refund" && e.loanNo).map((e) => e.loanNo));
   const sorted = [...ledger].sort((a, b) => a.createdAt - b.createdAt);
@@ -326,26 +307,10 @@ export function factsFor(lines: readonly UsageLine[], ledger: readonly CreditLed
   };
 }
 
-export interface Runway {
-  pacePerDay: number;
-  /** Days the balance lasts at that pace, or null when there is no usage to go on. */
-  days: number | null;
-  runsOut: number | null;
-}
-export function runwayFor(balance: number, lines: readonly UsageLine[], anchorEnd: number): Runway {
-  const used = creditsOf(within(lines, anchorEnd - 30 * DAY, anchorEnd));
-  const pacePerDay = used / 30;
-  if (pacePerDay <= 0) return { pacePerDay: 0, days: null, runsOut: null };
-  const days = balance / pacePerDay;
-  return { pacePerDay, days, runsOut: anchorEnd - DAY + Math.ceil(days) * DAY };
-}
-
-/** One runway scale everywhere (Billing overview, Home wallet): the bar fills against a month and
- *  turns amber when the balance lasts less than a week. */
+/** One runway scale everywhere (Billing overview, Home wallet): the bar fills against a month.
+ *  The low tone itself comes from `wallet.lowTone` (balance vs LOW_BALANCE_AT), never from days. */
 export const RUNWAY_SCALE_DAYS = 30;
-export const RUNWAY_WARN_DAYS = 7;
 export const runwayFill = (days: number) => Math.max(0.02, Math.min(1, days / RUNWAY_SCALE_DAYS));
-export const runwayWarn = (days: number) => days < RUNWAY_WARN_DAYS;
 /** "less than a day" · "about 5 days" · "about 3 weeks" · "more than a month". */
 export function runwayText(days: number): string {
   if (days < 1) return "less than a day";

@@ -1,0 +1,357 @@
+/* ==========================================================================
+   Onboarding frame (T1.1, spec §5.1 option C, motion-spec §2–§5).
+   Tokens only. Motion numbers arrive as --onb-* custom properties set by
+   OnboardingFrame from lib/motion.ts, so nothing here types its own timing.
+   ========================================================================== */
+
+.onb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  font-weight: 400; /* .wel-main sets 700 for the old card */
+}
+
+/* Card + side panel, centred as a pair; the panel is centred on the card, never stretched. */
+.onb-steps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  width: 100%;
+}
+
+/* Fixed card width on a centred stage (allowed by the global constraints).
+   content-box: the measured height animates the content box, the border sits outside. */
+.onb-card {
+  box-sizing: content-box;
+  flex: none;
+  width: 520px;
+  max-width: calc(100% - 2px);
+  background: var(--md-surface);
+  border: 1px solid var(--md-outline);
+  border-radius: 16px;
+  box-shadow: var(--md-elev-2);
+}
+.onb-card-in {
+  padding: 32px;
+}
+.onb-hidden {
+  visibility: hidden;
+}
+
+/* ---- 2-segment progress bar (ProgressBar atom) with the fill animation ---- */
+.onb-progress-wrap {
+  position: relative;
+  margin-bottom: 20px;
+}
+.onb-progress-wrap.is-filling-0 .ui-progress-seg:nth-child(1),
+.onb-progress-wrap.is-filling-1 .ui-progress-seg:nth-child(2) {
+  background: var(--md-outline);
+}
+.onb-progress-fill {
+  position: absolute;
+  top: 0;
+  height: 4px;
+  width: calc(50% - 3px);
+  border-radius: 999px;
+  background: var(--md-primary);
+  transform-origin: left center;
+  animation: onb-seg-fill var(--onb-dur-fill) var(--onb-ease-standard) both;
+}
+.onb-progress-fill[data-seg="0"] {
+  left: 0;
+}
+.onb-progress-fill[data-seg="1"] {
+  left: calc(50% + 3px);
+}
+@keyframes onb-seg-fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.onb-error {
+  margin-bottom: 16px;
+}
+
+/* ---- Step content ---- */
+.onb-step .wel-title,
+.onb-title {
+  font-size: 24px;
+  line-height: 1.2;
+  margin-bottom: 4px;
+}
+.onb-step .wel-title:focus {
+  outline: none;
+}
+.onb-step .wel-title:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-accent);
+  border-radius: 4px;
+}
+.onb-sub {
+  font-size: 14.5px;
+  color: var(--md-on-surface-v);
+}
+
+/* Name field: inline error, red outline (also the reduced-motion stand-in for the shake). */
+.onb-field.is-invalid input,
+.onb-field.is-invalid input:focus {
+  border-color: var(--md-error);
+}
+.onb-field-err {
+  margin: 0;
+  padding-top: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--md-error);
+  overflow: hidden;
+}
+.onb-form-err {
+  padding: 0 0 12px;
+}
+
+/* Threshold marker: a petrol dot on the answer that routes to a call. */
+.onb-q.is-trigger .ui-seg button.on .ui-seg-lb::after {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-left: 6px;
+  border-radius: 50%;
+  background: var(--md-accent);
+  vertical-align: 2px;
+  animation: onb-fade-in var(--onb-dur-standard) var(--onb-ease-standard) both;
+}
+@keyframes onb-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Height reveals (callout, "not sure" note) clip only their own box. */
+.onb-reveal {
+  overflow: hidden;
+}
+.onb-callout {
+  padding-bottom: 20px;
+}
+.onb-note {
+  margin: 0;
+  padding-bottom: 16px;
+  font-size: 13px;
+  color: var(--md-on-surface-v);
+}
+
+.onb-submit {
+  margin-top: 6px;
+}
+.onb-submit-lb {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.onb-submit-ic {
+  display: inline-flex;
+}
+
+/* ---- Side panel ---- */
+.onb-panel {
+  flex: none;
+  width: 360px;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 28px;
+  background: var(--md-surface);
+  border: 1px solid var(--md-outline);
+  border-radius: 16px;
+  color: var(--md-on-surface-v);
+}
+.onb-panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.onb-panel-art {
+  display: flex;
+  justify-content: center;
+}
+.onb-panel-art .ill {
+  max-width: 100%;
+}
+.onb-panel-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--md-on-surface);
+}
+.onb-panel-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+.onb-panel-list li {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--md-on-surface);
+}
+.onb-panel-list li > svg {
+  flex: none;
+  margin-top: 3px;
+  color: var(--md-success);
+}
+.onb-panel-list b {
+  font-weight: 600;
+}
+.onb-panel-list--num {
+  gap: 12px;
+}
+.onb-panel-num {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin-top: 1px;
+  border-radius: 50%;
+  background: var(--md-selected);
+  color: var(--md-on-selected);
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Interstitial (PC-26): a centred column, no card ---- */
+.onb-inter-wrap {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+.onb-inter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  width: 360px;
+  max-width: 100%;
+  text-align: center;
+}
+.onb-inter-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--md-on-surface);
+}
+.onb-inter-title:focus {
+  outline: none;
+}
+.onb-inter-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+  text-align: left;
+}
+.onb-inter-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14.5px;
+  color: var(--md-on-surface-t);
+}
+.onb-inter-list li.is-done {
+  color: var(--md-on-surface);
+}
+.onb-inter-mark {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+}
+.is-done .onb-inter-mark {
+  background: var(--md-success-c);
+  color: var(--md-success);
+}
+/* Reuses the Spinner atom's .ui-spinner (colours + spin); only the size differs. */
+.onb-inter-mark .onb-spin {
+  width: 16px;
+  height: 16px;
+}
+.onb-inter-bar {
+  position: relative;
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--md-outline);
+  overflow: hidden;
+}
+.onb-inter-fill {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--md-primary);
+  transform-origin: left center;
+}
+
+/* ---- Narrow screens: the panel stacks under the card ---- */
+@media (max-width: 960px) {
+  .onb-steps {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+  .onb-card {
+    width: auto;
+  }
+  .onb-panel {
+    width: auto;
+  }
+}
+@media (max-width: 560px) {
+  .onb-card-in {
+    padding: 24px 20px;
+  }
+  .onb-panel {
+    padding: 24px 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .onb-progress-fill,
+  .onb-q.is-trigger .ui-seg button.on .ui-seg-lb::after {
+    animation: none;
+  }
+}
+
+/* Four short answers fit on one line in the 520 px card: size to the label, share the rest. */
+.onb-step .ui-seg--block button {
+  flex: 1 1 auto;
+  padding-left: 10px;
+  padding-right: 10px;
+  white-space: nowrap;
+}
+@media (max-width: 560px) {
+  .onb-step .ui-seg--block button {
+    white-space: normal;
+  }
+}

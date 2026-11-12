@@ -55,7 +55,7 @@ export default function EmailsPage() {
               { value: "dark", label: "Dark" },
             ]}
           />
-          <Link className="em-back" href="/start">
+          <Link className="em-back" href="/prototype">
             Back to start
           </Link>
         </div>

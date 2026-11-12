@@ -1,6 +1,9 @@
 "use client";
 
+import { SettingVideoHint } from "@/components/organisms/SettingVideoHint";
 import { useEffect, useState } from "react";
+import { useCurrentUser } from "@/lib/current-user";
+import { usePrefsStore } from "@/store";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/templates/PageHeader";
 import { Button, Card, Chip, Icon } from "@/components/atoms";
@@ -19,6 +22,10 @@ function formatDate(ts?: number): string {
 export default function WorkbookLayoutPage() {
   const router = useRouter();
   const { layouts, fetchTemplates, promoteWorkbookVersion } = useTemplatesStore();
+
+  const me = useCurrentUser();
+  const hintSeen = usePrefsStore((st) => !!st.hintsSeen[me.id]?.["layout-publish"]);
+  const [promoted, setPromoted] = useState(false);
 
   const [versionId] = useState<string | undefined>(() => {
     if (typeof window === "undefined") return undefined;
@@ -63,7 +70,9 @@ export default function WorkbookLayoutPage() {
                 iconLeft="publish"
                 onClick={async () => {
                   await promoteWorkbookVersion(family.id, version.id);
-                  router.push("/configure/workbook-layouts");
+                  // First time: stay so the video hint shows right after the click; later: go back as before.
+                  if (hintSeen) router.push("/configure/workbook-layouts");
+                  else setPromoted(true);
                 }}
               >
                 Promote to published
@@ -78,6 +87,9 @@ export default function WorkbookLayoutPage() {
       />
 
       <div className="pagebody">
+        {/* First Promote this user makes (spec §5.12): the video, once. The page stays put that one time. */}
+        <SettingVideoHint hintId="layout-publish" videoId="workbook-layouts" show={promoted} />
+
         <div className="wl-shell">
           <Card style={{ padding: 0, overflow: "hidden" }}>
             <div className="wl-head">

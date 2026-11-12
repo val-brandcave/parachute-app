@@ -22,6 +22,8 @@ export interface BankPolicyDoc {
 }
 
 const KEY = "parachute:org:bank-policy";
+/** The stage org every /welcome run and scenario rebuilds (PC-19). */
+export const STAGE_ORG_ID = "org-hcb";
 
 /** Seeded org policy — the org IS the bank (Meridian Trust). */
 const DEFAULT_POLICY: BankPolicyDoc = {
@@ -76,7 +78,15 @@ interface OrgState {
   patchOrg: (patch: Partial<Org>) => Promise<void>;
   /** "Talk to us" — record that the prospect asked for sales. */
   requestSales: (note?: string) => Promise<void>;
-  /** Staff approval (demo control). */
+  /**
+   * Create or update the stage org `org-hcb` from `/welcome` (PC-19): same id every
+   * time, so demo resets don't pile up orgs. Starts it fresh: clears its ledger,
+   * setup progress, reviews and invites (members are kept).
+   */
+  upsertStageOrg: (input: NewOrgInput) => Promise<Org>;
+  /** Enterprise: a call booked from `/welcome/call`. Also marks sales requested. */
+  bookCall: (slot: { at: number; label: string }) => Promise<void>;
+  /** Staff approval. Also grants the trial credits once (no-op if already granted). */
   approve: () => Promise<void>;
   setFlag: (flag: keyof OrgFlags, value: boolean) => Promise<void>;
 }
@@ -148,8 +158,48 @@ export const useOrgStore = create<OrgState>((set, get) => ({
       profile: { ...current.profile, salesRequested: true, salesNote: note },
     });
   },
+  upsertStageOrg: async ({ name, profile, adminId, approvalGate = false }) => {
+    const existing = await adapter.getById<Org>(Collections.ORGS, STAGE_ORG_ID);
+    // A new workspace starts empty: drop the stage org's credits, setup progress,
+    // reviews and invites. Members stay (the invite step's "already a member" case
+    // reads them). A persona switch restores the seed via resetOrgRows().
+    for (const c of [Collections.CREDIT_LEDGER, Collections.SETUP_PROGRESS, Collections.REVIEWS, Collections.INVITES]) {
+      const rows = await adapter.getWhere<{ id: string; orgId?: string }>(c, (r) => r.orgId === STAGE_ORG_ID);
+      for (const r of rows) await adapter.remove(c, r.id);
+    }
+    const fields = {
+      name,
+      profile,
+      billing: "trial" as const,
+      approval: approvalGate ? ("pending" as const) : ("none" as const),
+      flags: { ...existing?.flags, approvalGate, membersInBouncer: true, welcomeBanner: true },
+      billingContactId: adminId ?? existing?.billingContactId,
+    };
+    const org = existing
+      ? await adapter.update<Org>(Collections.ORGS, STAGE_ORG_ID, { ...fields, updatedAt: Date.now() })
+      : await adapter.create<Org>(Collections.ORGS, {
+          id: STAGE_ORG_ID,
+          brandPrimary: "#10344c",
+          brandAccent: "#2a6f7f",
+          brandFont: "Inter",
+          createdAt: Date.now(),
+          ...fields,
+        });
+    set({ org });
+    return org;
+  },
+  bookCall: async (slot) => {
+    const current = get().org;
+    if (!current?.profile) return;
+    await get().patchOrg({
+      profile: { ...current.profile, salesRequested: true, callBookedAt: slot.at, callSlot: slot.label },
+    });
+  },
   approve: async () => {
     await get().patchOrg({ approval: "approved" });
+    // Lazy: wallet.store imports this store, so a static import would be circular.
+    const { useWalletStore } = await import("./wallet.store");
+    await useWalletStore.getState().grantTrial();
   },
   setFlag: async (flag, value) => {
     const current = get().org;

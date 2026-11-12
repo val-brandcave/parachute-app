@@ -4,10 +4,11 @@ import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { IconCloudFilled } from "@tabler/icons-react";
 import { Button, Icon, Chip, ChuteEmblem } from "@/components/atoms";
-import { EmptyLine, SegmentedControl } from "@/components/molecules";
+import { EmptyLine, LockedAction, SegmentedControl } from "@/components/molecules";
 import { cn, formatShortDate } from "@/lib/utils";
 import { useStartGate } from "@/components/organisms/home/useStartGate";
-import { useRunStore, useOrderStore, DEMO_RUN_REVIEW_ID, type RunDisplay } from "@/store";
+import { useOrderStore } from "@/store";
+import { useIntakeStart } from "./useIntakeStart";
 import type { YcDelivery } from "@/types";
 
 type IntakeMode = "drop" | "yc";
@@ -45,53 +46,32 @@ const CLOUDS = [
   { top: "46%", size: 12, dur: 6.2, delay: 4.6, op: 0.55 },
 ] as const;
 export function IntakeWidget() {
-  const openRun = useRunStore((s) => s.openRun);
-  const { locked, reason } = useStartGate();
+  const gate = useStartGate();
+  const { locked, reasonText: reason } = gate;
+  const { start, parsing } = useIntakeStart();
   const { deliveries, loadDeliveries } = useOrderStore();
   const [mode, setMode] = useState<IntakeMode>("drop");
   const [query, setQuery] = useState("");
   const [dragging, setDragging] = useState(false);
-  const [parsing, setParsing] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     loadDeliveries();
   }, [loadDeliveries]);
-  useEffect(
-    () => () => {
-      if (timer.current) clearTimeout(timer.current);
-    },
-    [],
-  );
-
-  const start = (
-    docLabel: string,
-    display: RunDisplay | null = null,
-    source: "drop" | "yc" = "drop",
-  ) => {
-    if (parsing || locked) return;
-    setParsing(true);
-    // Cosmetic "reading the PDF" beat, then hand off to the run flow's confirm
-    // gate. The chosen property's identity (display) carries through; findings
-    // stay mock content.
-    timer.current = setTimeout(() => {
-      setParsing(false);
-      openRun(DEMO_RUN_REVIEW_ID, { startAt: "confirm", docLabel, display, source });
-    }, 700);
-  };
 
   const onDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setDragging(false);
-    if (locked) return;
-    const name = e.dataTransfer.files?.[0]?.name ?? "Appraisal.pdf";
-    start(name, null, "drop");
+    if (locked) {
+      gate.explain(e.currentTarget as HTMLElement);
+      return;
+    }
+    start(e.dataTransfer.files?.[0] ?? null, "upload");
   };
 
   const onPick = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const name = e.target.files?.[0]?.name ?? "Appraisal.pdf";
-    start(name, null, "drop");
+    start(e.target.files?.[0] ?? null, "upload");
+    e.target.value = "";
   };
 
   const q = query.trim().toLowerCase();
@@ -188,7 +168,8 @@ export function IntakeWidget() {
             transition={{ duration: 0.2, ease: "easeOut" }}
           >
             {drop ? (
-              <div
+              <DropZone
+                locked={locked}
                 className={cn("intake-drop ih-drop", dragging && "drag", parsing && "busy", locked && "is-locked")}
                 onDragOver={(e) => {
                   e.preventDefault();
@@ -196,14 +177,11 @@ export function IntakeWidget() {
                 }}
                 onDragLeave={() => setDragging(false)}
                 onDrop={onDrop}
-                role="button"
-                tabIndex={0}
-                aria-disabled={locked || undefined}
-                onClick={() => !parsing && !locked && fileRef.current?.click()}
-                onKeyDown={(e) => {
-                  if ((e.key === "Enter" || e.key === " ") && !parsing && !locked) fileRef.current?.click();
+                onActivate={(el) => {
+                  if (parsing) return;
+                  if (locked) gate.explain(el);
+                  else fileRef.current?.click();
                 }}
-                aria-label="Drop an appraisal PDF or browse to upload"
               >
                 <input
                   ref={fileRef}
@@ -233,7 +211,7 @@ export function IntakeWidget() {
                     </motion.span>
                     <div className="intake-drop-title">{locked ? "Not open yet" : "Drop your file here"}</div>
                     {locked ? (
-                      <p>{reason}. The sample review is open meanwhile.</p>
+                      <p id="ih-drop-reason">{reason}.</p>
                     ) : (
                       <p>
                         PDF · or <span className="intake-link">click to browse</span>
@@ -241,7 +219,7 @@ export function IntakeWidget() {
                     )}
                   </>
                 )}
-              </div>
+              </DropZone>
             ) : (
               <div className="ih-yc">
                 {totalNew > 0 && (
@@ -281,35 +259,31 @@ export function IntakeWidget() {
                         : `Nothing matches “${query.trim()}”.`}
                     </EmptyLine>
                   ) : (
-                    newDeliveries.map((d) => (
-                      <button
-                        key={d.id}
-                        className="intake-yc-item"
-                        onClick={() =>
-                          start(
-                            d.propertyAddress,
-                            {
-                              address: d.propertyAddress,
-                              propertyType: d.propertyType,
-                              bank: d.bank,
-                              loanNo: d.loanNo,
-                              firm: d.appraisalFirm,
-                            },
-                            "yc",
-                          )
-                        }
-                        disabled={parsing || locked}
-                        title={locked ? reason : undefined}
-                      >
-                        <span className="intake-yc-item-main">
-                          <span className="intake-yc-item-title">{d.propertyAddress}</span>
-                          <span className="intake-yc-item-sub">
-                            Loan #{d.loanNo} · {deliveredLabel(d)}
+                    newDeliveries.map((d) => {
+                      const row = (
+                        <button
+                          key={d.id}
+                          type="button"
+                          className="intake-yc-item"
+                          onClick={() => start(null, "yc", d.id)}
+                        >
+                          <span className="intake-yc-item-main">
+                            <span className="intake-yc-item-title">{d.propertyAddress}</span>
+                            <span className="intake-yc-item-sub">
+                              Loan #{d.loanNo} · {deliveredLabel(d)}
+                            </span>
                           </span>
-                        </span>
-                        <Chip tone="info">New</Chip>
-                      </button>
-                    ))
+                          <Chip tone="info">New</Chip>
+                        </button>
+                      );
+                      return locked && gate.reason ? (
+                        <LockedAction key={d.id} reason={gate.reason} glyph="hourglass">
+                          {row}
+                        </LockedAction>
+                      ) : (
+                        row
+                      );
+                    })
                   )}
                 </div>
               </div>
@@ -334,4 +308,45 @@ export function IntakeWidget() {
 
 function deliveredLabel(d: YcDelivery) {
   return `delivered ${formatShortDate(d.deliveredAt)}`;
+}
+
+/** The Launchpad drop target. While locked it is a LockedAction (aria-disabled, never
+ *  `disabled`; click / Enter / Space opens the approval dialog). The reason line inside is
+ *  its accessible description. */
+function DropZone({
+  locked,
+  className,
+  onActivate,
+  children,
+  ...drag
+}: {
+  locked: boolean;
+  className: string;
+  onActivate: (el: HTMLElement) => void;
+  children: React.ReactNode;
+} & Pick<React.HTMLAttributes<HTMLDivElement>, "onDragOver" | "onDragLeave" | "onDrop">) {
+  const zone = (
+    <div
+      {...drag}
+      className={className}
+      role="button"
+      tabIndex={0}
+      aria-label="Drop an appraisal PDF or browse to upload"
+      onClick={(e) => onActivate(e.currentTarget)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onActivate(e.currentTarget);
+        }
+      }}
+    >
+      {children}
+    </div>
+  );
+  if (!locked) return zone;
+  return (
+    <LockedAction reason={{ kind: "approval" }} glyph="hourglass" describedBy="ih-drop-reason">
+      {zone}
+    </LockedAction>
+  );
 }

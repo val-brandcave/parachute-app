@@ -1,7 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Button, Tooltip } from "@/components/atoms";
+import { Button } from "@/components/atoms";
+import { LockedAction } from "@/components/molecules";
 import { useStartGate } from "@/components/organisms/home/useStartGate";
 
 /**
@@ -20,16 +21,19 @@ export function OrderButton({
 }) {
   const router = useRouter();
   const { locked, reason } = useStartGate();
-  const button = (
-    <Button
-      variant={variant}
-      iconLeft="add"
-      disabled={locked}
-      onClick={() => router.push("/launchpad")}
-    >
+  // Pending approval: same look, aria-disabled + reason + hourglass; a click explains (§5.5).
+  if (locked && reason) {
+    return (
+      <LockedAction reason={reason} glyph="hourglass">
+        <Button variant={variant} iconLeft="add">
+          Start a review
+        </Button>
+      </LockedAction>
+    );
+  }
+  return (
+    <Button variant={variant} iconLeft="add" onClick={() => router.push("/launchpad")}>
       Start a review
     </Button>
   );
-  if (!locked) return button;
-  return <Tooltip content={reason}>{button}</Tooltip>;
 }

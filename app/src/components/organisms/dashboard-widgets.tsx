@@ -3,19 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Icon, Chip, Button, Tooltip } from "@/components/atoms";
-import { useStartGate, START_LOCKED_REASON } from "./home/useStartGate";
-import { useOrgStore, useWalletStore } from "@/store";
-import { costFor } from "@/lib/pricing";
-import { FULL_REVIEW_TYPES } from "@/lib/setup-steps";
-import {
-  ActionMenu,
-  type ActionItem,
-  EmptyState,
-  EmptyLine,
-  GhostStats,
-  GhostBars,
-} from "@/components/molecules";
+import { Icon, Chip, Button } from "@/components/atoms";
+import { ActionMenu, type ActionItem, EmptyLine } from "@/components/molecules";
 import { cn, relativeDue } from "@/lib/utils";
 import { reviewHref } from "./ReviewTable";
 import type { Review } from "@/types";
@@ -129,82 +118,6 @@ export function NewFromYouConnect({ reviews }: { reviews: Review[] }) {
         )}
       </div>
     </div>
-  );
-}
-
-const FIRST_STEPS = [
-  { title: "Add an appraisal", text: "Drop a PDF or pick a delivery from YouConnect." },
-  { title: "Parachute checks it", text: "Every figure is traced to the source and findings are drafted." },
-  { title: "You decide and sign", text: "Accept or flag each finding, then sign the workbook." },
-];
-
-/** The dashboard before the org has run a review of its own (the sample never counts): one
- *  block instead of tiles and a chart of zeros. Start respects the approval gate; the sample
- *  is always open. */
-export function DashboardFirstRun() {
-  const router = useRouter();
-  const { locked } = useStartGate();
-  const orgName = useOrgStore((s) => s.org?.name);
-  const metered = useOrgStore((s) => s.org?.billing === "trial" || s.org?.billing === "payg");
-  const credits = useWalletStore((s) => s.ledger.reduce((sum, e) => sum + e.credits, 0));
-  const full = Math.floor(credits / costFor(FULL_REVIEW_TYPES));
-  const start = (
-    <Button iconLeft="rocket" disabled={locked} onClick={() => router.push("/launchpad")}>
-      Start a review
-    </Button>
-  );
-  const status = locked ? (
-    <>
-      <b>{orgName ?? "Your organization"} is waiting for approval.</b> The sample review is open
-      meanwhile.
-    </>
-  ) : metered && credits > 0 && full > 0 ? (
-    <>
-      You have {credits} credit{credits === 1 ? "" : "s"}, enough for about {full} full review
-      {full === 1 ? "" : "s"}.
-    </>
-  ) : null;
-  return (
-    <EmptyState
-      layout="split"
-      title="Your dashboard fills in after your first review"
-      status={status}
-      statusTone={locked ? "warn" : "info"}
-      actions={
-        <>
-          {locked ? <Tooltip content={START_LOCKED_REASON}>{start}</Tooltip> : start}
-          <Button
-            variant="outline"
-            iconRight="forward"
-            onClick={() => router.push("/reviews/review-sample")}
-          >
-            Open the sample review
-          </Button>
-        </>
-      }
-      aside={
-        <ol className="db-steps">
-          {FIRST_STEPS.map((st, i) => (
-            <li className="db-step" key={st.title}>
-              <span className="db-step-n">{i + 1}</span>
-              <span>
-                <b>{st.title}</b>
-                <span>{st.text}</span>
-              </span>
-            </li>
-          ))}
-        </ol>
-      }
-      preview={
-        <>
-          <GhostStats count={4} />
-          <GhostBars height={150} />
-        </>
-      }
-    >
-      Review volume, turnaround and what needs your attention show up here once Parachute has
-      checked an appraisal for you.
-    </EmptyState>
   );
 }
 

@@ -1,23 +1,21 @@
 import type { CreditLedgerEntry } from "@/types";
-import { TRIAL_GRANT_CREDITS, CREDIT_USD, packById } from "@/lib/pricing";
+import { TRIAL_GRANT_CREDITS, CREDIT_USD, costFor, packById } from "@/lib/pricing";
+
+const FULL_REVIEW: ("technical" | "administrative")[] = ["technical", "administrative"];
 
 const DAY = 86_400_000;
 const HOUR = 3_600_000;
-/** 6 Nov 2026, 09:12 local. Harbor's setup reward and pack land here; every HCB row sits on or before 7 Nov. */
-const NOV6 = new Date(2026, 10, 6, 9, 12).getTime();
-/** 24 Oct 2026, 09:12 local: Harbor's workspace is two weeks old, so its usage chart has a real trial history. */
-const OCT24 = new Date(2026, 9, 24, 9, 12).getTime();
-
-const PACK10 = packById("pack10");
+/** Harbor's trial grant is two days before the page loads, so the 14-day earn window always
+ *  reads "12 days left to earn" (spec §5.2 Mid state). Seeds load once per SEED_VERSION. */
+const HCB_GRANT = Date.now() - 2 * DAY;
 
 /**
  * Wallet movements per org. Balance is derived from these rows - never stored.
  *
- *  org-hcb    trial grant +6, four real reports (220 Commerce Way 2, 18 Lighthouse Rd 1,
- *             905 Bayview Ave 1, 41 Mill Pond Ln 1 then refunded), +1 earned (bank policy),
- *             a 10-credit pack → 13 credits: trial 1 / earned 1 / purchased 11.
- *             (The canvas shows 9 as 1 / 2 / 6; that split cannot happen under the
- *             trial > earned > purchased spend order, so the seed derives its own numbers.)
+ *  org-hcb    pure trial (seed v23, spec §7): trial grant +6, one full review on its first
+ *             real report (220 Commerce Way, Technical + Administrative) → 4 credits. The split
+ *             by source is derived by lib/wallet-view.ts under the PC-16 spend order; the seed
+ *             never states it.
  *  org-cedar  pay-as-you-go: about 12 months of history (generated at the bottom of this file),
  *             2 to 4 reviews every weekday by four people, packs bought as needed, 1 credit left
  *  org-001    invoiced via YouConnect → no wallet rows
@@ -31,99 +29,22 @@ export const seedCreditLedger: CreditLedgerEntry[] = [
     credits: TRIAL_GRANT_CREDITS,
     actorId: "user-dr",
     note: "Welcome trial credits",
-    createdAt: OCT24,
-  },
-  {
-    id: "led-hcb-2",
-    orgId: "org-hcb",
-    kind: "debit",
-    credits: -1,
-    amountUsd: 0,
-    loanNo: "HCB-26-0890",
-    reviewTypes: ["technical"],
-    paidFrom: ["trial"],
-    receiptId: "RCT-40890",
-    actorId: "user-dr",
-    note: "41 Mill Pond Ln, Suffolk - Technical",
-    createdAt: OCT24 + 3 * DAY + HOUR,
-  },
-  {
-    id: "led-hcb-3",
-    orgId: "org-hcb",
-    kind: "refund",
-    credits: 1,
-    amountUsd: 0,
-    loanNo: "HCB-26-0890",
-    receiptId: "RCT-40891",
-    actorId: "user-dr",
-    note: "41 Mill Pond Ln, Suffolk - failed on our side, refunded",
-    createdAt: OCT24 + 3 * DAY + 2 * HOUR,
+    createdAt: HCB_GRANT,
   },
   {
     id: "led-hcb-4",
     orgId: "org-hcb",
     kind: "debit",
-    credits: -2,
+    credits: -costFor(FULL_REVIEW),
     amountUsd: 0,
     reviewId: "review-hcb-1",
     loanNo: "HCB-26-0918",
-    reviewTypes: ["technical", "administrative"],
+    reviewTypes: FULL_REVIEW,
     paidFrom: ["trial"],
     receiptId: "RCT-40918",
     actorId: "user-dr",
     note: "220 Commerce Way, Norfolk - Technical + Administrative",
-    createdAt: OCT24 + 6 * DAY + 5 * HOUR,
-  },
-  {
-    id: "led-hcb-5",
-    orgId: "org-hcb",
-    kind: "debit",
-    credits: -1,
-    amountUsd: 0,
-    reviewId: "review-hcb-2",
-    loanNo: "HCB-26-0907",
-    reviewTypes: ["technical"],
-    paidFrom: ["trial"],
-    receiptId: "RCT-40907",
-    actorId: "user-dr",
-    note: "18 Lighthouse Rd, Newport News - Technical",
-    createdAt: OCT24 + 10 * DAY + 2 * HOUR,
-  },
-  {
-    id: "led-hcb-6",
-    orgId: "org-hcb",
-    kind: "debit",
-    credits: -1,
-    amountUsd: 0,
-    loanNo: "HCB-26-0899",
-    reviewTypes: ["technical"],
-    paidFrom: ["trial"],
-    receiptId: "RCT-40899",
-    actorId: "user-mo",
-    note: "905 Bayview Ave, Hampton - Technical",
-    createdAt: OCT24 + 12 * DAY + 7 * HOUR,
-  },
-  {
-    id: "led-hcb-7",
-    orgId: "org-hcb",
-    kind: "earned",
-    credits: 1,
-    setupStepId: "bank_policy",
-    actorId: "user-mo",
-    note: "Setup reward",
-    createdAt: NOV6 + 30 * HOUR,
-  },
-  {
-    id: "led-hcb-8",
-    orgId: "org-hcb",
-    kind: "purchase",
-    credits: PACK10.credits,
-    amountUsd: PACK10.priceUsd,
-    packId: "pack10",
-    receiptId: "RCT-41010",
-    actorId: "user-dr",
-    note: `${PACK10.credits}-credit pack`,
-    createdAt: NOV6 + 36 * HOUR,
+    createdAt: HCB_GRANT + 20 * HOUR,
   },
 ];
 

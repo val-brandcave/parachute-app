@@ -1,0 +1,127 @@
+/* Get started cards (12 Nov 2026): the all-done card, the "More resources" tiles.
+   Same tile language as the Configure hub (.cfg-card) and the Learning Center:
+   text on the left, spot illustration on the right. Tokens only; light + dark. */
+
+/* ---- all done: matches the in-progress hero (text left, art right) ---- */
+.gs-alldone {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  padding: 28px;
+  background: var(--md-surface);
+  border: 1px solid var(--md-outline);
+  box-shadow: none;
+}
+.gs-alldone-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+.gs-alldone-art {
+  flex: none;
+}
+.gs-alldone-chip {
+  height: 22px;
+  gap: 4px;
+}
+.gs-alldone-h {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 34px;
+  color: var(--md-on-surface);
+}
+/* Focus lands here programmatically on arrival (a landmark for screen readers, not a control). */
+.gs-alldone-h:focus {
+  outline: none;
+}
+.gs-alldone-p {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--md-on-surface-v);
+}
+.gs-alldone-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+/* ---- More resources ---- */
+.gs-res {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+.gs-res-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 650;
+  color: var(--md-on-surface);
+}
+.gs-res-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 14px;
+}
+.gs-res-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 22px;
+  background: var(--md-surface);
+  border: 1px solid var(--md-outline-v);
+  border-radius: 14px;
+  box-shadow: var(--md-elev-1);
+}
+.gs-res-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+.gs-res-name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 24px;
+  color: var(--md-on-surface);
+}
+.gs-res-desc {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--md-on-surface-v);
+}
+.gs-res-btn {
+  margin-top: 10px;
+}
+.gs-res-art {
+  flex: none;
+}
+
+/* ---- narrow ---- */
+@container (max-width: 720px) {
+  .gs-alldone {
+    padding: 20px 16px;
+  }
+  .gs-alldone-h {
+    font-size: 24px;
+    line-height: 30px;
+  }
+}
+@media (max-width: 600px) {
+  .gs-alldone-art,
+  .gs-res-art {
+    display: none;
+  }
+}
