@@ -15,7 +15,7 @@ import {
   ReviewStep,
 } from "@/components/organisms/checkout";
 import { autoReloadPitch, type NextAction } from "@/components/organisms/checkout/PaidStep";
-import type { CheckoutStep } from "@/lib/checkout";
+import type { CheckoutBlock, CheckoutStep } from "@/lib/checkout";
 import { useStepVariants, type Dir } from "@/lib/motion";
 import { CREDIT_USD, CUSTOM_CREDITS, formatUsd } from "@/lib/pricing";
 import { useLockStore, useWalletStore } from "@/store";
@@ -78,7 +78,7 @@ function Checkout() {
   // ---- Lock-then-explain: a reviewer or a pending org reaching the URL ----
   const lockedOnce = useRef(false);
   useEffect(() => {
-    if (lockedOnce.current || !co.block || co.block === "invoiced") return;
+    if (lockedOnce.current || !co.block || co.block === "invoiced" || co.block === "embedded") return;
     lockedOnce.current = true;
     const lock = useLockStore.getState();
     if (co.block === "role") lock.openLock({ kind: "role", action: "buy credits", admin: co.admin?.name ?? "your organization admin" });
@@ -454,7 +454,7 @@ function BlockedNote({
   onExplain,
   onExit,
 }: {
-  kind: "role" | "approval" | "invoiced";
+  kind: Exclude<CheckoutBlock, null>;
   admin?: string;
   onExplain: () => void;
   onExit: () => void;
@@ -475,12 +475,19 @@ function BlockedNote({
             body: "Realwired is setting up your workspace. You can buy credits once it is approved.",
             cta: "Why am I waiting?",
           }
-        : {
-            icon: "file-invoice" as const,
-            title: "Your organization is billed monthly",
-            body: "Reviews are invoiced at the end of each month, so there are no credits to buy.",
-            cta: null,
-          };
+        : kind === "embedded"
+          ? {
+              icon: "file-invoice" as const,
+              title: "Credits are billed through YouConnect",
+              body: "This session runs inside YouConnect, so reviews are billed there and there are no credits to buy here.",
+              cta: null,
+            }
+          : {
+              icon: "file-invoice" as const,
+              title: "Your organization is billed monthly",
+              body: "Reviews are invoiced at the end of each month, so there are no credits to buy.",
+              cta: null,
+            };
   return (
     <div className="co-step co-blocked">
       <span className="co-blocked-ic" aria-hidden="true">

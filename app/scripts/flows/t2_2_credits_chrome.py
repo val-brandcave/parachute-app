@@ -1,12 +1,15 @@
 """T2.2 header credits pill, popover and sidebar resource links.
 
 numbers_agree (RF3): pill number = sidebar Balance number = /configure/billing hero number.
+numbers_agree_invoiced_reviewer (RF3): an invoiced reviewer's pill = popover headline (org usage),
+and the popover's "You used N" = the Billing usage strip = the credits in the "Every review you
+ran" table for this month (the table holds only the reviewer's own runs).
 Popover, sidebar and route checks run for every persona; layout checks only at desktop width.
 """
 
 import re
 
-PERSONAS = ["trial-admin", "payg-admin-low", "approver", "pending-admin", "reviewer", "returning"]
+PERSONAS = ["trial-admin", "payg-admin-low", "approver", "pending-admin", "reviewer", "returning", "invoiced-reviewer"]
 AGREE = {"trial-admin", "payg-admin-low", "approver", "pending-admin"}
 
 
@@ -61,6 +64,52 @@ def numbers_agree(page, ctx):
     ctx.visit("/dashboard")
 
 
+def numbers_agree_invoiced_reviewer(page, ctx):
+    pill = pill_text(page)
+    pn = num(pill)
+    ctx.check(re.fullmatch(r"\d+ credits? used", pill) is not None, f"invoiced reviewer pill is a used state ({pill!r})")
+    open_pill(page)
+    pop = popover(page)
+    big = pop.locator(".cp-big b")
+    ctx.check(big.count() == 1 and num(big.first.inner_text()) == pn, f"popover headline = pill {pn}")
+    text = " ".join(pop.inner_text().split()) if pop.count() else ""
+    m = re.search(r"You used (\d+) this month", text)
+    ctx.check(m is not None, f"popover has the 'You used N this month' line ({text[:120]!r})")
+    mine = int(m.group(1)) if m else None
+    page.keyboard.press("Escape")
+    page.wait_for_timeout(300)
+    ctx.visit("/configure/billing?tab=usage")
+    page.wait_for_timeout(1500)
+    rows = page.locator(".bl-table .bl-trow")
+    if mine == 0:
+        # Nothing of theirs this month: no row (in particular no teammate's review) may claim otherwise.
+        this_month = page.evaluate(
+            """() => { const m = new Date().toLocaleDateString('en-GB', { month: 'short' });
+                 return [...document.querySelectorAll('.bl-table .bl-trow')]
+                   .filter(r => (r.querySelector('.bl-date')?.textContent || '').includes(m))
+                   .map(r => parseInt((r.querySelector('.bl-credits')?.textContent || '0').replace(/[^0-9]/g, '') || '0', 10)) }"""
+        )
+        ctx.check(sum(this_month) == 0, f"no table credits this month for a reviewer who used 0 ({this_month})")
+        strip = page.locator(".us-strip")
+        if strip.count():
+            note = " ".join(strip.locator(".bl-note").first.inner_text().split())
+            ctx.check(note.startswith("0 review types"), f"billing strip reads 0 for the reviewer ({note!r})")
+        else:
+            ctx.check(rows.count() == 0 and "Your usage starts with your first review" in page.inner_text("main"),
+                      "billing shows the reviewer's empty usage, not the org's reviews")
+    elif mine is not None:
+        note = " ".join(page.locator(".us-strip .bl-note").first.inner_text().split())
+        ctx.check(num(note) == mine, f"billing strip {note!r} = popover You used {mine}")
+        this_month = page.evaluate(
+            """() => { const m = new Date().toLocaleDateString('en-GB', { month: 'short' });
+                 return [...document.querySelectorAll('.bl-table .bl-trow')]
+                   .filter(r => (r.querySelector('.bl-date')?.textContent || '').includes(m))
+                   .map(r => parseInt((r.querySelector('.bl-credits')?.textContent || '0').replace(/[^0-9]/g, '') || '0', 10)) }"""
+        )
+        ctx.check(sum(this_month) == mine, f"table credits this month {sum(this_month)} = popover You used {mine}")
+    ctx.visit("/dashboard")
+
+
 def run(page, ctx):
     ctx.visit("/dashboard")
     ctx.check(page.locator(".credits-pill").count() == 1, "one header credits pill")
@@ -75,9 +124,11 @@ def run(page, ctx):
 
     if ctx.persona in AGREE:
         numbers_agree(page, ctx)
+    if ctx.persona == "invoiced-reviewer":
+        numbers_agree_invoiced_reviewer(page, ctx)
 
     pill = pill_text(page)
-    if ctx.persona == "returning":
+    if ctx.persona in ("returning", "invoiced-reviewer"):
         ctx.check(re.fullmatch(r"\d+ credits? used", pill) is not None, f"invoiced pill is a used state ({pill!r})")
         ctx.check(page.locator(".sb-balance").count() == 0, "sidebar Balance absent when invoiced")
 
@@ -105,7 +156,7 @@ def run(page, ctx):
     if p in ("reviewer", "approver"):
         ctx.check(re.search(r"Ask \w+ for more credits", text) is not None, f"non-admin asks the admin ({text[:80]!r})")
         ctx.check("Add credits" not in text, "non-admin has no Add credits")
-    if p == "returning":
+    if p in ("returning", "invoiced-reviewer"):
         ctx.check(re.search(r"so far\s+\d+ credits? used", text) is not None, f"invoiced: month line, then used ({text[:60]!r})")
         ctx.check("Next statement" in text or "You used" in text, "invoiced second line")
 

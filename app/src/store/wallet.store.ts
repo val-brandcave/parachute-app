@@ -57,11 +57,8 @@ export function sourcesFor(remaining: RemainingBySource, credits: number): Credi
   return out;
 }
 
-export type TopUpReason = "manual" | "low_balance";
-
 /** A pending "Add credits" request, consumed by CheckoutLauncher. */
 export interface TopUpIntent {
-  reason: TopUpReason;
   /** Shortfall in credits (cost − balance), never the full cost (RF2). */
   needed?: number;
   /** Credit request being fulfilled (phase 4). */
@@ -103,11 +100,7 @@ interface WalletState {
 
   // --- Derived (never stored) ---
   balance: () => number;
-  /** Spendable credits by origin after spend order (use this for meters). */
-  remainingBySource: () => RemainingBySource;
   cost: (types: readonly ReviewType[]) => number;
-  /** Can the org run this? Invoiced orgs are billed outside the wallet, so always yes. */
-  canAfford: (credits: number) => boolean;
 
   // --- Writes (all through the adapter) ---
   debitForReview: (args: {
@@ -135,7 +128,7 @@ interface WalletState {
   setBillingSettings: (patch: Partial<Omit<WalletSettings, "id" | "orgId" | "createdAt">>) => Promise<void>;
 
   /** Records the intent only; CheckoutLauncher routes to checkout. Callers unchanged. */
-  openTopUp: (opts?: { reason?: TopUpReason; needed?: number; request?: string }) => void;
+  openTopUp: (opts?: { needed?: number; request?: string }) => void;
   clearTopUpIntent: () => void;
   openReceipt: (receiptId: string) => void;
   closeReceipt: () => void;
@@ -198,12 +191,7 @@ export const useWalletStore = create<WalletState>((set, get) => {
 
     // `now` only feeds runway and month figures, which balance does not read.
     balance: () => walletView(get().ledger, { now: 0 }).balance,
-    remainingBySource: () => remainingFromLedger(get().ledger),
     cost: (types) => costFor(types),
-    canAfford: (credits) => {
-      if (useOrgStore.getState().org?.billing === "invoiced") return true;
-      return get().balance() >= credits;
-    },
 
     debitForReview: async ({ reviewId, types, loanNo, sample }) => {
       if (sample) return null; // samples never cost anything
@@ -292,7 +280,6 @@ export const useWalletStore = create<WalletState>((set, get) => {
     openTopUp: (opts) =>
       set({
         topUpIntent: {
-          reason: opts?.reason ?? "manual",
           ...(opts?.needed !== undefined ? { needed: opts.needed } : {}),
           ...(opts?.request ? { request: opts.request } : {}),
         },

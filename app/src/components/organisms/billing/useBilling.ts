@@ -54,7 +54,7 @@ export function useBilling() {
     remaining,
     rows,
     askAdmin,
-    openTopUp: () => useWalletStore.getState().openTopUp({ reason: "manual" }),
+    openTopUp: () => useWalletStore.getState().openTopUp(),
     openReceipt: (id: string) => useWalletStore.getState().openReceipt(id),
     patchOrg: (p: Parameters<ReturnType<typeof useOrgStore.getState>["patchOrg"]>[0]) => useOrgStore.getState().patchOrg(p),
     shortName,

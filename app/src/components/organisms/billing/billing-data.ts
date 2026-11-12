@@ -1,4 +1,4 @@
-import { CREDIT_USD, REVIEW_TYPE_COST, formatUsd, usd } from "@/lib/pricing";
+import { CREDIT_USD, INVOICED_CREDIT_USD, formatUsd, usd } from "@/lib/pricing";
 import { nextExpiring, type BalanceGrant } from "@/lib/wallet-breakdown";
 import { spendOrderSentence as spendOrder } from "@/lib/wallet-view";
 import type { CreditLedgerEntry, CreditSource, Review, ReviewType } from "@/types";
@@ -162,24 +162,33 @@ export function buildActivity(
     });
 }
 
-/** Invoiced orgs have no ledger: one row per review run, billed at list value. */
-export function invoicedActivity(reviews: readonly Review[], userName: UserName, anchor: number = DEMO_TODAY): ActivityRow[] {
-  const list = invoicedReviews(reviews);
-  return list
-    .map((r): ActivityRow => {
-      const credits = r.reviewTypes.reduce((n, t) => n + (REVIEW_TYPE_COST[t] ?? 0), 0);
+/**
+ * Invoiced orgs have no ledger: one row per review run, billed at the invoiced list value.
+ * Built from `invoicedSpendEntries` (lib/wallet-view.ts) so the table, the header pill and the
+ * usage cards share one cost and one date re-basing (RF3). Pass the entries already scoped
+ * (e.g. to the viewer's own runs).
+ */
+export function invoicedActivity(
+  entries: readonly CreditLedgerEntry[],
+  reviews: readonly Review[],
+  userName: UserName,
+): ActivityRow[] {
+  return entries
+    .filter((e) => e.kind === "debit")
+    .map((e): ActivityRow => {
+      const review = e.reviewId ? reviews.find((r) => r.id === e.reviewId) : undefined;
       return {
-        id: r.id,
-        at: rebasedDate(r, list, anchor),
-        title: r.propertyAddress,
-        sub: r.propertyType,
-        loan: r.loanNo,
-        types: typesLabel(r.reviewTypes),
-        credits: -credits,
-        amountUsd: credits * CREDIT_USD,
+        id: review?.id ?? e.id,
+        at: e.createdAt,
+        title: review?.propertyAddress ?? e.note ?? "Review",
+        sub: review?.propertyType,
+        loan: e.loanNo,
+        types: typesLabel(e.reviewTypes),
+        credits: e.credits,
+        amountUsd: -e.credits * INVOICED_CREDIT_USD,
         from: [],
-        by: shortName(userName(r.assigneeId)),
-        byId: r.assigneeId,
+        by: shortName(userName(e.actorId)),
+        byId: e.actorId,
         kind: "debit",
       };
     })

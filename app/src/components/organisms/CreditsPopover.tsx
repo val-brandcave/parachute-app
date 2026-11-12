@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
+import { useToast } from "@realwired/ui";
 import { useRouter } from "next/navigation";
 import { Avatar, Button, CreditChip, Icon, Illustration, type IconName } from "@/components/atoms";
 import { useCurrentOrg, useCurrentUser } from "@/lib/current-user";
 import { INVOICED_CREDIT_USD, REVIEW_TYPE_COST, TRIAL_GRANT_CREDITS, costFor, formatUsd } from "@/lib/pricing";
 import { FULL_REVIEW_TYPES } from "@/lib/setup-steps";
-import { usageByPerson, type WalletView } from "@/lib/wallet-view";
-import { useCreditRequestStore, useSetupSummary, useUsersStore, useWalletStore } from "@/store";
+import { monthOf, usedBy, type WalletView } from "@/lib/wallet-view";
+import { useCreditRequestStore, useSetupSummary, useUsersStore, useWalletSource, useWalletStore } from "@/store";
 import { canRequest, isLive } from "@/lib/credit-requests";
 import type { BillingModel, UserRole } from "@/types";
 import "./credits-chrome.css";
@@ -73,10 +74,10 @@ export function CreditsPopover({
   const router = useRouter();
   const me = useCurrentUser();
   const { org, name: orgName } = useCurrentOrg();
-  const ledger = useWalletStore((s) => s.ledger);
+  // The same entries the wallet view reads (invoiced orgs: their reviews), so "You used" agrees with it.
+  const { source, now } = useWalletSource();
   const earn = useSetupSummary().earn;
   const users = useUsersStore((s) => s.allUsers);
-  const [now] = useState(() => Date.now());
   const [asking, setAsking] = useState(false);
   const requests = useCreditRequestStore((s) => s.requests);
 
@@ -92,6 +93,16 @@ export function CreditsPopover({
     [isAdmin, org, requests],
   );
   const iHaveLive = useMemo(() => !canRequest(requests.filter((r) => r.orgId === org?.id), me.id), [requests, org?.id, me.id]);
+  // The viewer's own live request (newest), for the "Request sent <when>" reason.
+  const myLive = useMemo(
+    () =>
+      requests
+        .filter((r) => r.orgId === org?.id && r.requesterId === me.id && isLive(r))
+        .sort((a, b) => b.createdAt - a.createdAt)[0],
+    [requests, org?.id, me.id],
+  );
+  const toast = useToast();
+  const askReasonId = useId();
   const unopened = waiting.filter((r) => r.status === "open").map((r) => r.id).join(",");
   // Opening the popover is what an admin "seeing" a request means.
   useEffect(() => {
@@ -104,26 +115,41 @@ export function CreditsPopover({
   };
 
   const month = new Date(now);
-  const mine =
-    usageByPerson(ledger, {
-      from: new Date(month.getFullYear(), month.getMonth(), 1).getTime(),
-      to: new Date(month.getFullYear(), month.getMonth() + 1, 1).getTime(),
-    }).find((r) => r.userId === me.id)?.credits ?? 0;
+  const mine = usedBy(source, me.id, monthOf(now));
 
+  // Lock-then-explain: with a request already live the button keeps its look, reads aria-disabled
+  // with the reason, and a click says what is happening instead of doing nothing.
+  const sentReason = `Request sent ${myLive ? requestAge(myLive.createdAt, now) : "already"}`;
   const askButton = (
-    <Button
-      variant="primary"
-      size="sm"
-      aria-busy={asking}
-      onClick={async () => {
-        if (iHaveLive) return;
-        setAsking(true);
-        await useCreditRequestStore.getState().request();
-        setAsking(false);
-      }}
-    >
-      {iHaveLive ? `${adminFirst} has been asked` : `Ask ${adminFirst} for more credits`}
-    </Button>
+    <>
+      <Button
+        variant="primary"
+        size="sm"
+        aria-busy={asking}
+        aria-disabled={iHaveLive ? true : undefined}
+        aria-describedby={iHaveLive ? askReasonId : undefined}
+        onClick={async () => {
+          if (iHaveLive) {
+            toast({
+              title: sentReason,
+              description: `${adminFirst} has your request. You can ask again once it is answered.`,
+              tone: "info",
+            });
+            return;
+          }
+          setAsking(true);
+          await useCreditRequestStore.getState().request();
+          setAsking(false);
+        }}
+      >
+        {iHaveLive ? `${adminFirst} has been asked` : `Ask ${adminFirst} for more credits`}
+      </Button>
+      {iHaveLive && (
+        <span id={askReasonId} className="ui-visually-hidden">
+          {sentReason}
+        </span>
+      )}
+    </>
   );
   const usageButton = (
     <Button variant="outline" size="sm" onClick={() => go("/configure/billing?tab=usage")}>
@@ -273,7 +299,7 @@ export function CreditsPopover({
                 size="sm"
                 onClick={() => {
                   onClose();
-                  useWalletStore.getState().openTopUp({ reason: "manual", request: r.id });
+                  useWalletStore.getState().openTopUp({ request: r.id });
                 }}
               >
                 Add credits
@@ -303,7 +329,7 @@ export function CreditsPopover({
               size="sm"
               onClick={() => {
                 onClose();
-                useWalletStore.getState().openTopUp({ reason: "manual" });
+                useWalletStore.getState().openTopUp();
               }}
             >
               Add credits

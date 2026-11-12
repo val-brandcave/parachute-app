@@ -38,7 +38,7 @@ export function BonusNotice({ className }: { className?: string }) {
         actions={
           <>
             <TalkToUs>Talk to us about invoicing</TalkToUs>
-            <Button size="sm" variant="outline" iconLeft="add" onClick={() => useWalletStore.getState().openTopUp({ reason: "manual" })}>
+            <Button size="sm" variant="outline" iconLeft="add" onClick={() => useWalletStore.getState().openTopUp()}>
               Add credits
             </Button>
           </>

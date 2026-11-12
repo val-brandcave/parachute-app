@@ -1,6 +1,6 @@
 /* ==========================================================================
    LockDialog (spec §5.5, T4.1): the lock-then-explain dialog.
-   DS Dialog size="sm" + hideTitle supplies the shell (portal, scrim, focus trap,
+   DS Dialog size="sm" (md for the admin credits options) + hideTitle supplies the shell (portal, scrim, focus trap,
    Esc, --rw-z-modal 140 so it sits over the review takeover .run at 120).
    These rules only shape the centred body: spot art, title, copy, options, actions.
    ========================================================================== */

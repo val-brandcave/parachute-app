@@ -22,7 +22,7 @@ import {
   startLock,
   type RunAddCreditsHandler,
 } from "@/components/run/RunConfirm";
-import { checkoutBlock, useLaunchCheckout } from "@/components/organisms/CheckoutLauncher";
+import { currentCheckoutBlock, useLaunchCheckout } from "@/components/organisms/CheckoutLauncher";
 
 /**
  * The review details page IS the run wizard. It seeds the run store for this
@@ -109,7 +109,7 @@ export default function ReviewDetailPage() {
   // with `return=/reviews/<id>&types=…`. On return, intake → Review setup reads them.
   const onAddCredits: RunAddCreditsHandler = ({ display, types, needed, choice }) => {
     if (!review) return;
-    if (checkoutBlock()) {
+    if (currentCheckoutBlock()) {
       launchCheckout({ needed });
       return;
     }

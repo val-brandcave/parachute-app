@@ -20,6 +20,7 @@ import {
   type ScreenDef,
 } from "@/lib/prototype-registry";
 import { cn } from "@/lib/utils";
+import { plannedToast } from "@/components/organisms/prototype/ProtoKeys";
 import { copyScenarioLink, goHref, hrefForState, landPreset } from "./land";
 import "@/components/organisms/prototype/proto-index.css";
 
@@ -304,9 +305,7 @@ export function PrototypeIndex({ pageRoutes, thumbs = [] }: { pageRoutes?: strin
                         <span className="pi-route">{screen.route}</span>
                       </td>
                       <td>
-                        <Link className="pi-chip" href={goHref(screen.id, state.id)}>
-                          {state.label}
-                        </Link>
+                        <StateChip screenId={screen.id} state={state} />
                       </td>
                       <td>
                         <StatusBadge status={state.status} />
@@ -342,6 +341,31 @@ function Thumb({ screen, exists }: { screen: ScreenDef; exists: boolean }) {
         <img src={screen.thumb ?? `/proto-thumbs/${screen.id}.png`} alt="" loading="lazy" onError={() => setMissing(true)} />
       )}
     </div>
+  );
+}
+
+/**
+ * One page-state chip. A Planned state has nothing to land on, so (like the state pill and
+ * Alt+1…9) a click shows the "not built yet" toast instead of navigating: the chip keeps its
+ * look, reads aria-disabled, and explains.
+ */
+function StateChip({ screenId, state, title }: { screenId: string; state: PageState; title?: string }) {
+  const toast = useToast();
+  const planned = state.status === "planned";
+  return (
+    <Link
+      className={cn("pi-chip", planned && "is-planned")}
+      href={goHref(screenId, state.id)}
+      title={title}
+      aria-disabled={planned ? true : undefined}
+      onClick={(e) => {
+        if (!planned) return;
+        e.preventDefault();
+        plannedToast(toast, state.label);
+      }}
+    >
+      {state.label}
+    </Link>
   );
 }
 
@@ -406,9 +430,7 @@ function ScreenCard({ screen, flows, hasThumb }: { screen: ScreenDef; flows: num
         {screen.states.length > 0 && (
           <div className="pi-chips" role="group" aria-label={`States of ${screen.title}`}>
             {chips.map((st) => (
-              <Link key={st.id} className={cn("pi-chip", st.status === "planned" && "is-planned")} href={goHref(screen.id, st.id)} title={st.description}>
-                {st.label}
-              </Link>
+              <StateChip key={st.id} screenId={screen.id} state={st} title={st.description} />
             ))}
             {more > 0 && (
               <button type="button" className="pi-chip pi-chip--more" aria-expanded={all} onClick={() => setAll((v) => !v)}>

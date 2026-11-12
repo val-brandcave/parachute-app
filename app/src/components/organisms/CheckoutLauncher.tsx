@@ -6,11 +6,8 @@ import { useToast } from "@realwired/ui";
 import { useOrgStore, useSessionStore, useUsersStore, useWalletStore } from "@/store";
 import { useLockStore } from "@/store/lock.store";
 import { getCurrentUser } from "@/lib/current-user";
-import { checkoutHref, initialChoice } from "@/lib/checkout";
+import { checkoutBlock, checkoutHref, initialChoice, type CheckoutBlock } from "@/lib/checkout";
 import type { ReviewType } from "@/types";
-
-/** Why checkout can't open for this session (null = it can). */
-export type CheckoutBlock = "embedded" | "invoiced" | "role" | null;
 
 export interface LaunchCheckoutOpts {
   /** The SHORTFALL (cost − balance), never the full cost (RF2). Omitted = default pack. */
@@ -23,28 +20,29 @@ export interface LaunchCheckoutOpts {
   request?: string;
 }
 
-/** Same rule everywhere: no checkout inside an embedded YouConnect session, for an
- *  invoiced org, or for anyone who isn't an org admin. Reads stores at call time. */
-export function checkoutBlock(): CheckoutBlock {
-  if (useSessionStore.getState().mode === "embedded") return "embedded";
-  if (useOrgStore.getState().org?.billing === "invoiced") return "invoiced";
-  if (getCurrentUser().role !== "org_admin") return "role";
-  return null;
+/** `checkoutBlock` (lib/checkout.ts, the one rule) for this session, read from the stores at call time. */
+export function currentCheckoutBlock(): CheckoutBlock {
+  const org = useOrgStore.getState().org;
+  return checkoutBlock({
+    embedded: useSessionStore.getState().mode === "embedded",
+    billing: org?.billing,
+    role: getCurrentUser().role,
+    approval: org?.approval,
+  });
 }
 
 /**
- * The one way into `/checkout/credits`. `launch` applies `checkoutBlock()`; on the
- * role path it opens the role lock dialog, in an
- * embedded YouConnect session it says credits are billed there, and invoiced is a
- * silent no-op; each returns false. Returns true when it
- * navigated.
+ * The one way into `/checkout/credits`. `launch` applies `currentCheckoutBlock()`: role
+ * opens the role lock dialog, approval opens the approval lock dialog, an embedded
+ * YouConnect session says credits are billed there, and invoiced is a silent no-op;
+ * each returns false. Returns true when it navigated.
  */
 export function useLaunchCheckout() {
   const router = useRouter();
   const toast = useToast();
   return useCallback(
     (o: LaunchCheckoutOpts, current?: string): boolean => {
-      const block = checkoutBlock();
+      const block = currentCheckoutBlock();
       if (block === "role") {
         const me = getCurrentUser();
         const admin = useUsersStore
@@ -52,6 +50,10 @@ export function useLaunchCheckout() {
           .allUsers.find((u) => u.orgId === me.orgId && u.role === "org_admin");
         const adminName = admin?.name ?? "your admin";
         useLockStore.getState().openLock({ kind: "role", action: "buy credits", admin: adminName });
+        return false;
+      }
+      if (block === "approval") {
+        useLockStore.getState().openLock({ kind: "approval" });
         return false;
       }
       if (block === "embedded") {

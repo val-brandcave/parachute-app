@@ -12,6 +12,7 @@ import type { CreditPackId, ReviewType } from "@/types";
 import { ApprovalBody } from "./lock/ApprovalBody";
 import { CreditsBody } from "./lock/CreditsBody";
 import { LockPreview, type LockPreviewState } from "./lock/LockPreview";
+import { NeedsReviewBody } from "./lock/NeedsReviewBody";
 import { ReviewerRequestBody } from "./lock/ReviewerRequestBody";
 import { RoleBody } from "./lock/RoleBody";
 import "./lock/lock.css";
@@ -42,12 +43,13 @@ const A11Y_TITLE: Record<LockReason["kind"], string> = {
   approval: "Waiting on setup",
   credits: "Not enough credits",
   role: "Only admins can buy credits",
+  "needs-review": "Run a review first",
 };
 
 // DS-candidate: Dialog centred-art layout — DS dialog headers are left-aligned with no art slot.
 /**
  * Store-driven lock-then-explain dialog (spec §5.5), driven by `useLockStore`.
- * Mounted once per frame (AppShell, onboarding, checkout). DS `Dialog size="sm"` with
+ * Mounted once per frame (AppShell, onboarding, checkout). DS `Dialog size="sm"` (md for the admin credits options) with
  * `hideTitle`: Radix portals it to body at `--rw-z-modal` (140), above the review
  * takeover (`.run`, 120), and its `role="dialog"` root is what RunExperience's Esc guard
  * looks for, so Esc closes only this dialog. Focus returns to the opener on close.
@@ -149,6 +151,8 @@ export function LockDialog() {
     );
   } else if (current?.kind === "role") {
     body = <RoleBody ctx={ctx} />;
+  } else if (current?.kind === "needs-review") {
+    body = <NeedsReviewBody ctx={ctx} />;
   }
 
   return (
@@ -158,7 +162,8 @@ export function LockDialog() {
         onOpenChange={(o) => {
           if (!o) close();
         }}
-        // Credits carry two option cards and three actions (board 2 draws them at 600 px).
+        // sm everywhere, except the admin credits options dialog (two option cards and
+        // three actions; board 2 draws them at 600 px).
         size={current?.kind === "credits" && isAdmin ? "md" : "sm"}
         hideTitle
         title={current ? A11Y_TITLE[current.kind] : "Locked"}

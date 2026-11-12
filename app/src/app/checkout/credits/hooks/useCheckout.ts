@@ -5,7 +5,9 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { CreditLedgerEntry } from "@/types";
 import {
   CHECKOUT_STEPS,
+  checkoutBlock,
   parseCheckoutQuery,
+  type CheckoutBlock,
   type CheckoutChoice,
   type CheckoutDraft,
   type CheckoutStep,
@@ -21,7 +23,7 @@ import {
   customPriceUsd,
   packById,
 } from "@/lib/pricing";
-import { useCreditRequestStore, useOrgStore, useUsersStore, useWalletStore, useWalletView } from "@/store";
+import { useCreditRequestStore, useOrgStore, useSessionStore, useUsersStore, useWalletStore, useWalletView } from "@/store";
 
 /**
  * Page hook for `/checkout/credits` (spec §5.6). Everything that must survive a hard
@@ -124,8 +126,8 @@ function clearForm() {
   }
 }
 
-/** Why this viewer can't pay here (lock-then-explain), or null. */
-export type CheckoutBlock = null | "role" | "approval" | "invoiced";
+/** Why this viewer can't pay here (lock-then-explain), or null: the one rule in lib/checkout.ts. */
+export type { CheckoutBlock } from "@/lib/checkout";
 
 export function useCheckout() {
   const router = useRouter();
@@ -138,6 +140,7 @@ export function useCheckout() {
   const user = useCurrentUser();
   const org = useCurrentOrg();
   const orgRecord = useOrgStore((s) => s.org);
+  const sessionMode = useSessionStore((s) => s.mode);
   const allUsers = useUsersStore((s) => s.allUsers);
   const wallet = useWalletView();
   const ledger = useWalletStore((s) => s.ledger);
@@ -218,14 +221,12 @@ export function useCheckout() {
     () => allUsers.find((u) => u.orgId === org.id && u.role === "org_admin" && u.id !== user.id),
     [allUsers, org.id, user.id],
   );
-  const block: CheckoutBlock =
-    orgRecord?.billing === "invoiced"
-      ? "invoiced"
-      : user.role !== "org_admin"
-        ? "role"
-        : orgRecord?.approval === "pending"
-          ? "approval"
-          : null;
+  const block: CheckoutBlock = checkoutBlock({
+    embedded: sessionMode === "embedded",
+    billing: orgRecord?.billing,
+    role: user.role,
+    approval: orgRecord?.approval,
+  });
 
   // ---- Paid ----
   const paidEntry: CreditLedgerEntry | null = useMemo(

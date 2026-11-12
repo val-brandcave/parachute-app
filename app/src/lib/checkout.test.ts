@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkoutHref, initialChoice, parseCheckoutQuery, safeReturn } from "./checkout";
+import { checkoutBlock, checkoutHref, initialChoice, parseCheckoutQuery, safeReturn } from "./checkout";
 import { CUSTOM_CREDITS, DEFAULT_PACK_ID } from "./pricing";
 
 describe("safeReturn", () => {
@@ -50,4 +50,18 @@ describe("parseCheckoutQuery", () => {
     expect(d.returnTo).toBe("/configure/billing");
     expect(d.hasReturn).toBe(false);
   });
+});
+
+describe("checkoutBlock", () => {
+  const admin = { embedded: false, billing: "payg" as const, role: "org_admin" as const, approval: "approved" as const };
+  it("admin on a wallet org → null", () => expect(checkoutBlock(admin)).toBeNull());
+  it("embedded → embedded (wins over everything)", () =>
+    expect(checkoutBlock({ ...admin, embedded: true, billing: "invoiced", role: "reviewer", approval: "pending" })).toBe("embedded"));
+  it("invoiced → invoiced (before role)", () => expect(checkoutBlock({ ...admin, billing: "invoiced", role: "reviewer" })).toBe("invoiced"));
+  it("reviewer → role", () => expect(checkoutBlock({ ...admin, role: "reviewer" })).toBe("role"));
+  it("approver → role", () => expect(checkoutBlock({ ...admin, role: "approver" })).toBe("role"));
+  it("non-admin on a pending org → role (role before approval)", () =>
+    expect(checkoutBlock({ ...admin, role: "reviewer", approval: "pending" })).toBe("role"));
+  it("admin on a pending org → approval", () => expect(checkoutBlock({ ...admin, approval: "pending" })).toBe("approval"));
+  it("trial admin, no approval field → null", () => expect(checkoutBlock({ embedded: false, billing: "trial", role: "org_admin" })).toBeNull());
 });

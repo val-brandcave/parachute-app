@@ -19,7 +19,9 @@ export type LockReason =
        *  When absent the dialog builds the checkout URL itself (checkoutHref + resume). */
       onAdd?: (choice: { credits: number } | { pack: CreditPackId }) => void;
     }
-  | { kind: "role"; action: string; admin: string };
+  | { kind: "role"; action: string; admin: string }
+  /** The tour and signing need a review of the org's own (Get started rows). */
+  | { kind: "needs-review" };
 
 interface LockState {
   reason: LockReason | null;

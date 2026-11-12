@@ -51,24 +51,25 @@ function mineOnlyLedger(ledger: readonly CreditLedgerEntry[], me: string): Credi
  */
 export function UsageTab({ b, invoiced }: { b: Billing; invoiced: boolean }) {
   const mine = !b.isAdmin;
-  
-  const rows = useMemo(() => {
-    if (invoiced) return invoicedActivity(b.reviews, b.userName, b.now);
-    const all = b.rows;
-    if (!mine) return all;
-    return all.filter((r) => r.byId === b.me.id && (r.kind === "debit" || r.kind === "rescan" || r.kind === "refund"));
-  }, [invoiced, mine, b.rows, b.reviews, b.userName, b.me.id, b.now]);
-
-  const people = useMemo(() => {
-    const ids = [...new Set(rows.map((r) => r.byId).filter((x): x is string => !!x))];
-    return ids.map((id) => ({ id, name: b.userName(id) ?? "Unknown" })).sort((a, c) => a.name.localeCompare(c.name));
-  }, [rows, b]);
 
   // The ledger the donut and the list both read: one derivation, one period.
   const source = useMemo(() => {
     const base = invoiced ? invoicedSpendEntries(b.reviews, b.now) : b.ledger;
     return mine ? mineOnlyLedger(base, b.me.id) : base;
   }, [invoiced, mine, b.reviews, b.now, b.ledger, b.me.id]);
+
+  // Invoiced rows come from that same source, so a reviewer's table holds only their own runs (RF3).
+  const rows = useMemo(() => {
+    if (invoiced) return invoicedActivity(source, b.reviews, b.userName);
+    const all = b.rows;
+    if (!mine) return all;
+    return all.filter((r) => r.byId === b.me.id && (r.kind === "debit" || r.kind === "rescan" || r.kind === "refund"));
+  }, [invoiced, mine, source, b.rows, b.reviews, b.userName, b.me.id]);
+
+  const people = useMemo(() => {
+    const ids = [...new Set(rows.map((r) => r.byId).filter((x): x is string => !!x))];
+    return ids.map((id) => ({ id, name: b.userName(id) ?? "Unknown" })).sort((a, c) => a.name.localeCompare(c.name));
+  }, [rows, b]);
 
   const current = monthStart(b.now);
   const months = useMemo(() => {

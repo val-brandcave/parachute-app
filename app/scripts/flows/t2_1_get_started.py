@@ -290,5 +290,13 @@ def run(page, ctx):
         page.locator(".gs-row .ui-btn", has_text="Start tour").click(force=True)
         page.wait_for_timeout(300)
         kind = lock_kind(page)
-        ctx.check(kind == "role", f"tour with no own review opens the role lock (got {kind!r})")
+        ctx.check(kind == "needs-review", f"tour with no own review opens the needs-review lock (got {kind!r})")
+        dlg = page.locator(".lock-dlg")
+        dlg_text = norm(dlg.inner_text()) if dlg.count() else ""
+        ctx.check("Run a review first" in dlg_text, f"needs-review dialog reads 'Run a review first' (got {dlg_text[:80]!r})")
+        ctx.check("Only admins can buy credits" not in dlg_text, "needs-review dialog is not the buy-credits role lock")
+        ctx.check(
+            dlg.get_by_role("button", name="Upload appraisal").count() == 1 and dlg.get_by_role("button", name="Close").count() >= 1,
+            "needs-review dialog offers Upload appraisal + Close",
+        )
         ctx.shoot("t2-1-approver", full_page=True)

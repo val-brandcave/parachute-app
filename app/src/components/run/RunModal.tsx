@@ -17,7 +17,7 @@ import type { ReviewType } from "@/types";
 import { checkoutHref } from "@/lib/checkout";
 import { RunExperience, type RunStartHandler } from "./RunExperience";
 import { RunAddCreditsContext, startLock, type RunAddCreditsHandler } from "./RunConfirm";
-import { checkoutBlock, useLaunchCheckout } from "@/components/organisms/CheckoutLauncher";
+import { currentCheckoutBlock, useLaunchCheckout } from "@/components/organisms/CheckoutLauncher";
 
 // Re-exported for the run subviews that still import the shared context shape.
 export type { RunContext } from "./RunExperience";
@@ -127,7 +127,7 @@ export function RunModal() {
       if (choice) router.push(checkoutHref({ ...choice, returnTo, types: reviewTypes }));
       else launchCheckout({ needed, returnTo, types: reviewTypes });
     };
-    if (embedded || checkoutBlock()) {
+    if (embedded || currentCheckoutBlock()) {
       launchCheckout({ needed }); // explains (embedded / role) or no-ops (invoiced); creates nothing
       return;
     }

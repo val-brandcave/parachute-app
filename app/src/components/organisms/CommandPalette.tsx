@@ -146,7 +146,7 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
               label: "Add credits",
               icon: "wallet" as IconName,
               // CheckoutLauncher turns the intent into /checkout/credits?pack=…&return=<here>.
-              run: () => go(() => useWalletStore.getState().openTopUp({ reason: "manual" })),
+              run: () => go(() => useWalletStore.getState().openTopUp()),
             },
           ]
         : []),

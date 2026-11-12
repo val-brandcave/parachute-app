@@ -13,6 +13,8 @@ export function lockReasonText(reason: LockReason): string {
       return `Needs ${reason.needed} more ${reason.needed === 1 ? "credit" : "credits"}. Select to add credits.`;
     case "role":
       return `Only admins can ${reason.action}. Select to ask ${reason.admin}.`;
+    case "needs-review":
+      return "Run a review first. Select to see how.";
   }
 }
 

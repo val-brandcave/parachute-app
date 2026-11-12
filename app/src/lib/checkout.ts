@@ -1,4 +1,4 @@
-import type { CreditPackId, ReviewType } from "@/types";
+import type { ApprovalState, BillingModel, CreditPackId, ReviewType, UserRole } from "@/types";
 import { CREDIT_PACKS, CUSTOM_CREDITS, DEFAULT_PACK_ID } from "@/lib/pricing";
 
 /**
@@ -102,4 +102,25 @@ export function parseCheckoutQuery(sp: URLSearchParams): CheckoutDraft {
     request: sp.get("request") || undefined,
     error: sp.get("error") === "card" ? "card" : undefined,
   };
+}
+
+/**
+ * Why checkout can't open for this viewer (null = it can). The ONE rule, used by the
+ * launcher (`currentCheckoutBlock` in CheckoutLauncher) and by `/checkout/credits`
+ * (`useCheckout`). Order: an embedded YouConnect session bills through YouConnect; an
+ * invoiced org has nothing to buy; only an org_admin buys; a pending org waits for approval.
+ */
+export type CheckoutBlock = "embedded" | "invoiced" | "role" | "approval" | null;
+
+export function checkoutBlock(i: {
+  embedded: boolean;
+  billing?: BillingModel;
+  role: UserRole;
+  approval?: ApprovalState;
+}): CheckoutBlock {
+  if (i.embedded) return "embedded";
+  if (i.billing === "invoiced") return "invoiced";
+  if (i.role !== "org_admin") return "role";
+  if (i.approval === "pending") return "approval";
+  return null;
 }

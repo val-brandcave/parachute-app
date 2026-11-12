@@ -114,7 +114,7 @@ export function SetupRow({ step, primary, summary }: { step: DerivedStep; primar
           label,
           reason: "Run a review first",
           icon: "lock",
-          open: (el) => openLock({ kind: "role", action: "Run a review first", admin }, { returnFocus: el }),
+          open: (el) => openLock({ kind: "needs-review" }, { returnFocus: el }),
         };
       }
       return { kind: "link", label, href: step.id === "tutorial" ? `${reviewHref}?tour=first-review` : reviewHref };

@@ -20,7 +20,7 @@ export { usePrefsStore, resolveTheme, useBuildNotes, setBuildNotes } from "./pre
 export type { Density, ThemePref, CelebrationKind } from "./prefs.store";
 export { useLockStore } from "./lock.store";
 export type { LockReason } from "./lock.store";
-export { useWalletView } from "./useWalletView";
+export { useWalletSource, useWalletView } from "./useWalletView";
 export {
   useOrderStore,
   ORDER_STEP,
@@ -34,7 +34,7 @@ export { useIdentityStore } from "./identity.store";
 export { useSessionStore } from "./session.store";
 export type { AppMode, AuthState } from "./session.store";
 export { useWalletStore } from "./wallet.store";
-export type { TopUpReason, TopUpIntent } from "./wallet.store";
+export type { TopUpIntent } from "./wallet.store";
 export {
   useOnboardingStore,
   useSetupSummary,
