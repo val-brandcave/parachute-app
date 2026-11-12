@@ -51,7 +51,7 @@ def reviewer_run(page, ctx):
     page.wait_for_selector(".co-blocked", timeout=15000)
     ctx.check(page.locator("text=Only an admin can buy credits").count() == 1, "reviewer sees the inline explanation")
     ctx.check(page.locator(".co-blocked button", has_text="Ask").count() == 1, "reviewer gets an Ask action")
-    ctx.check(page.locator(".co-pay, .co-sum, .co-terms").count() == 0, "no Pay, summary or terms for a reviewer")
+    ctx.check(page.locator(".co-sum-cta, .co-sum, .co-terms").count() == 0, "no Pay, summary or terms for a reviewer")
     no_disabled(page, ctx, "reviewer")
     dlg = page.locator(".lock-dlg[role=dialog]")
     try:
@@ -85,7 +85,7 @@ def run(page, ctx):
     ctx.check(page.locator(".credits-pill, .sb-balance, aside nav").count() == 0, "no shell header or sidebar")
     labels = [t.strip() for t in page.locator(".hstep-label").all_text_contents()]
     nums = [t.strip() for t in page.locator(".hstep-n").all_text_contents()]
-    ctx.check(labels == ["Amount", "Payment", "Review"], f"stepper labels {labels}")
+    ctx.check(labels == ["Amount", "Payment", "Checkout"], f"stepper labels {labels}")
     ctx.check(nums == ["1", "2", "3"], f"stepper numbers {nums}")
     ctx.check(page.locator(".co-pack.is-selected", has_text="10").count() == 1, "pack10 preselected")
     ctx.check("Exit checkout" in page.locator(".co-exit").inner_text(), "Exit checkout in the top bar")
@@ -114,7 +114,7 @@ def run(page, ctx):
     ctx.shoot("t3-1-amount")
 
     # ---- Saved card: Amount → Review ----
-    page.locator(".co-actions button", has_text="Continue to review").click()
+    page.locator(".co-sum-cta", has_text="Continue to checkout").click()
     page.wait_for_url(re.compile(r"step=review"), timeout=10000)
     page.wait_for_selector("text=Review and pay", timeout=10000)
     page.wait_for_timeout(500)
@@ -126,18 +126,18 @@ def run(page, ctx):
     ctx.check("Visa ending in 4242" in page.inner_text("body"), "saved card on Review")
 
     # ---- Pay without terms ----
-    page.locator(".co-pay").click()
+    page.locator(".co-sum-cta").click()
     page.wait_for_timeout(300)
     ctx.check(page.locator("text=Agree to the credit terms to pay").count() == 1, "terms error shows")
     focused = page.evaluate("() => { const a = document.activeElement; return !!a && a.type === 'checkbox' && !!a.closest('.co-terms') }")
     ctx.check(focused, "focus moves to the terms checkbox")
-    pay_disabled = page.evaluate("() => document.querySelector('.co-pay').disabled")
+    pay_disabled = page.evaluate("() => document.querySelector('.co-sum-cta').disabled")
     ctx.check(not pay_disabled, "Pay is never disabled")
     ctx.shoot("t3-1-review-terms")
 
     # ---- Pay (double-click: must buy once) ----
     page.locator(".co-terms input[type=checkbox]").check()
-    page.locator(".co-pay").dblclick()
+    page.locator(".co-sum-cta").dblclick()
     page.wait_for_url(re.compile(r"step=done"), timeout=15000)
     page.wait_for_selector("text=10 credits added", timeout=10000)
     ctx.check(page.locator(".co-root .ill").count() == 1, "Paid shows its one scene")
@@ -161,13 +161,13 @@ def run(page, ctx):
     # ---- Back from Paid, then buy again in the same mounted page ----
     page.wait_for_selector(".co-sum-cta", timeout=10000)
     ctx.check(page.locator(".co-sum-cta").get_attribute("aria-busy") != "true", "summary CTA is not stuck busy after Back")
-    page.locator(".co-actions button", has_text="Continue to review").click()
+    page.locator(".co-sum-cta", has_text="Continue to checkout").click()
     page.wait_for_url(re.compile(r"step=review"), timeout=10000)
     page.wait_for_selector("text=Review and pay", timeout=10000)
     page.wait_for_timeout(500)
     ctx.check(not page.locator(".co-terms input[type=checkbox]").is_checked(), "terms start unticked for the new order")
     page.locator(".co-terms input[type=checkbox]").check()
-    page.locator(".co-pay").click()
+    page.locator(".co-sum-cta").click()
     page.wait_for_url(re.compile(r"step=done"), timeout=15000)
     page.wait_for_selector("text=10 credits added", timeout=10000)
     ctx.check(True, "second Pay after Back reached Paid")
@@ -207,7 +207,7 @@ def run(page, ctx):
     page.wait_for_selector("text=Review and pay", timeout=15000)
     bal_review = summary_balance(page)
     page.locator(".co-terms input[type=checkbox]").check()
-    page.locator(".co-pay").click()
+    page.locator(".co-sum-cta").click()
     page.wait_for_url(re.compile(r"step=payment"), timeout=10000)
     page.wait_for_timeout(500)
     ctx.check(page.locator("text=Your card was declined. Try another card or ask your bank.").count() == 1, "Pay with error=card lands on the decline")

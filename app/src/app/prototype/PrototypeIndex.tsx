@@ -3,9 +3,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useToast } from "@realwired/ui";
+import { SearchInput, useToast } from "@realwired/ui";
 import { Logo } from "@/components/Logo";
-import { Icon } from "@/components/atoms";
+import { Icon, type IconName } from "@/components/atoms";
 import { ActionMenu, SegmentedControl } from "@/components/molecules";
 import {
   FLOWS,
@@ -43,8 +43,7 @@ const GROUPS: { id: GroupId; label: string }[] = [
 const STATUS_LABEL: Record<BuildStatus, string> = { built: "Built", variant: "Variant", planned: "Planned", retired: "Retired" };
 const STATUS_TONE: Record<BuildStatus, string> = { built: "pass", variant: "info", planned: "flag", retired: "na" };
 const AUDIENCE_LABEL: Record<Audience, string> = { self_serve: "PLG", enterprise: "Ent", youconnect: "YC" };
-const ROLE_LABEL = { org_admin: "Admin only", approver: "Approver only", reviewer: "Reviewer only" } as const;
-const CHIPS_SHOWN = 4;
+
 
 function matches(q: string, ...parts: (string | undefined)[]): boolean {
   if (!q) return true;
@@ -110,11 +109,6 @@ export function PrototypeIndex({ pageRoutes, thumbs = [] }: { pageRoutes?: strin
   const query = q.trim().toLowerCase();
   const statusOk = (s: BuildStatus) => status === "all" || (status === "built" ? s !== "planned" : s === "planned");
 
-  const flowCount = useMemo(() => {
-    const n: Record<string, number> = {};
-    for (const f of FLOWS) for (const id of new Set(f.steps.map((s) => s.screen))) n[id] = (n[id] ?? 0) + 1;
-    return n;
-  }, []);
 
   /** Screens that pass the search and the status filter (the rail counts use these, before the group filter). */
   const searched = SCREENS.filter((s) => statusOk(s.status) && matches(query, screenText(s)));
@@ -135,6 +129,13 @@ export function PrototypeIndex({ pageRoutes, thumbs = [] }: { pageRoutes?: strin
         ? `${shownFlows.length} of ${FLOWS.length} flows`
         : `${stateRows.length} of ${SCREENS.reduce((n, s) => n + s.states.length, 0)} states`;
 
+  const filtered = group !== "all" || status !== "all";
+  const clearFilters = () => {
+    setQ("");
+    setGroup("all");
+    setStatus("all");
+  };
+
   const openPreset = async (id: string) => {
     const p = PRESETS.find((x) => x.id === id);
     if (!p) return;
@@ -150,27 +151,25 @@ export function PrototypeIndex({ pageRoutes, thumbs = [] }: { pageRoutes?: strin
     <div className="pi-page">
       <header className="pi-head">
         <div className="pi-brand">
-          <Logo full height={24} themeAware />
+          <Logo full height={20} themeAware />
           <h1 className="pi-title">Prototype Index</h1>
         </div>
-        <div className="pi-search field">
-          <label htmlFor="pi-q" className="sr-only">
-            Search pages, routes, states, tags
-          </label>
-          <Icon name="search" size={16} />
-          <input
-            id="pi-q"
-            ref={searchRef}
-            type="search"
-            placeholder="Search pages, routes, states, tags"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-          />
-        </div>
-        <span className="pi-count" role="status" aria-live="polite" data-testid="pi-count">
+        {/* Result count: announced to screen readers only (not shown in the header). */}
+        <span className="sr-only" role="status" aria-live="polite" data-testid="pi-count">
           {counter}
         </span>
         <div className="pi-actions">
+          <SearchInput
+            id="pi-q"
+            ref={searchRef}
+            size="sm"
+            width={280}
+            label="Search pages, routes, states, tags"
+            placeholder="Search pages, routes, states, tags"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            onClear={() => setQ("")}
+          />
           <button type="button" className="ui-btn ui-btn--outline ui-btn--sm" onClick={copy}>
             <Icon name="copy" size={15} />
             Copy scenario link
@@ -258,12 +257,12 @@ export function PrototypeIndex({ pageRoutes, thumbs = [] }: { pageRoutes?: strin
 
           {tab === "screens" &&
             (shown.length === 0 ? (
-              <Empty q={q} />
+              <Empty kind="screens" q={q.trim()} filtered={filtered} onClear={clearFilters} />
             ) : (
               <ul className="pi-grid">
                 {shown.map((s) => (
                   <li key={s.id}>
-                    <ScreenCard screen={s} flows={flowCount[s.id] ?? 0} hasThumb={thumbs.includes(s.id)} />
+                    <ScreenCard screen={s} hasThumb={thumbs.includes(s.id)} />
                   </li>
                 ))}
               </ul>
@@ -271,7 +270,7 @@ export function PrototypeIndex({ pageRoutes, thumbs = [] }: { pageRoutes?: strin
 
           {tab === "flows" &&
             (shownFlows.length === 0 ? (
-              <Empty q={q} />
+              <Empty kind="flows" q={q.trim()} filtered={filtered} onClear={clearFilters} />
             ) : (
               <ol className="pi-flows">
                 {shownFlows.map((f) => (
@@ -284,7 +283,7 @@ export function PrototypeIndex({ pageRoutes, thumbs = [] }: { pageRoutes?: strin
 
           {tab === "states" &&
             (stateRows.length === 0 ? (
-              <Empty q={q} />
+              <Empty kind="states" q={q.trim()} filtered={filtered} onClear={clearFilters} />
             ) : (
               <table className="pi-states">
                 <thead>
@@ -322,20 +321,54 @@ export function PrototypeIndex({ pageRoutes, thumbs = [] }: { pageRoutes?: strin
   );
 }
 
-function Empty({ q }: { q: string }) {
-  return <p className="pi-empty">{q ? `Nothing matches “${q}”.` : "Nothing here."}</p>;
+/** Shared empty state for the Screens, Flows and States tabs when search or filters leave nothing. */
+function Empty({ kind, q, filtered, onClear }: { kind: Tab; q: string; filtered: boolean; onClear: () => void }) {
+  const title = q ? `No ${kind} match “${q}”` : `No ${kind} in this group`;
+  const help = q
+    ? filtered
+      ? "Try a different word, or clear the search and filters to see everything."
+      : "Try a different word, or clear the search to see everything."
+    : "Pick another group or status, or clear the filters to see everything.";
+  return (
+    <div className="pi-empty" role="status">
+      <span className="pi-empty-badge" aria-hidden="true">
+        <Icon name={q ? "search" : "filter"} size={22} />
+      </span>
+      <h2 className="pi-empty-title">{title}</h2>
+      <p className="pi-empty-help">{help}</p>
+      <button type="button" className="ui-btn ui-btn--outline ui-btn--sm" onClick={onClear}>
+        {q && !filtered ? "Clear search" : "Clear filters"}
+      </button>
+    </div>
+  );
 }
 
 function StatusBadge({ status }: { status: BuildStatus }) {
   return <span className={cn("ui-chip", `ui-chip--${STATUS_TONE[status]}`)}>{STATUS_LABEL[status]}</span>;
 }
 
+/** Fallback art when a screen has no generated thumbnail: its category's icon on a soft tile. */
+const GROUP_ICON: Record<GroupId, IconName> = {
+  auth: "key",
+  onboarding: "rocket",
+  "get-started": "checklist",
+  reviews: "reviews",
+  billing: "wallet",
+  configure: "settings",
+  "trust-learning": "shield",
+  emails: "mail",
+  integrations: "connect",
+  "design-system": "templates",
+};
+
 function Thumb({ screen, exists }: { screen: ScreenDef; exists: boolean }) {
   const [missing, setMissing] = useState(false);
   return (
     <div className="pi-thumb" aria-hidden="true">
       {missing || !exists ? (
-        <Icon name="templates" size={28} />
+        <span className="pi-thumb-fallback">
+          <Icon name={GROUP_ICON[screen.group] ?? "templates"} size={26} />
+        </span>
       ) : (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={screen.thumb ?? `/proto-thumbs/${screen.id}.png`} alt="" loading="lazy" onError={() => setMissing(true)} />
@@ -369,11 +402,8 @@ function StateChip({ screenId, state, title }: { screenId: string; state: PageSt
   );
 }
 
-function ScreenCard({ screen, flows, hasThumb }: { screen: ScreenDef; flows: number; hasThumb: boolean }) {
-  const [all, setAll] = useState(false);
+function ScreenCard({ screen, hasThumb }: { screen: ScreenDef; hasThumb: boolean }) {
   const toast = useToast();
-  const chips: PageState[] = all ? screen.states : screen.states.slice(0, CHIPS_SHOWN);
-  const more = screen.states.length - CHIPS_SHOWN;
   const copyDeep = async () => {
     try {
       await navigator.clipboard.writeText(new URL(goHref(screen.id), window.location.origin).toString());
@@ -386,6 +416,9 @@ function ScreenCard({ screen, flows, hasThumb }: { screen: ScreenDef; flows: num
     <article className="pi-card" data-screen={screen.id}>
       <Link href={goHref(screen.id)} className="pi-thumb-link" aria-label={`Open ${screen.title}`} tabIndex={-1}>
         <Thumb screen={screen} exists={hasThumb} />
+        <span className="pi-thumb-status">
+          <StatusBadge status={screen.status} />
+        </span>
       </Link>
       <div className="pi-card-body">
         <div className="pi-card-top">
@@ -403,42 +436,6 @@ function ScreenCard({ screen, flows, hasThumb }: { screen: ScreenDef; flows: num
           />
         </div>
         <p className="pi-route">{screen.route}</p>
-        <div className="pi-meta">
-          <StatusBadge status={screen.status} />
-          {screen.audiences?.map((a) => (
-            <span key={a} className="pi-aud" data-aud={a}>
-              {AUDIENCE_LABEL[a]}
-            </span>
-          ))}
-          {screen.roles?.map((r) => (
-            <span key={r} className="pi-aud">
-              {ROLE_LABEL[r]}
-            </span>
-          ))}
-          {flows > 0 && (
-            <span className="pi-aud">
-              In {flows} {flows === 1 ? "flow" : "flows"}
-            </span>
-          )}
-          {screen.fill && (
-            <span className="pi-aud pi-wand">
-              <Icon name="wand" size={13} />
-              Has wand
-            </span>
-          )}
-        </div>
-        {screen.states.length > 0 && (
-          <div className="pi-chips" role="group" aria-label={`States of ${screen.title}`}>
-            {chips.map((st) => (
-              <StateChip key={st.id} screenId={screen.id} state={st} title={st.description} />
-            ))}
-            {more > 0 && (
-              <button type="button" className="pi-chip pi-chip--more" aria-expanded={all} onClick={() => setAll((v) => !v)}>
-                {all ? "Show less" : `+${more} more`}
-              </button>
-            )}
-          </div>
-        )}
       </div>
     </article>
   );

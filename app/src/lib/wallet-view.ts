@@ -153,11 +153,6 @@ export function usageByPerson(
     .sort((a, b) => b.credits - a.credits || a.userId.localeCompare(b.userId));
 }
 
-/** Credits one person used in [from, to), net of refunds (0 when none). Same rows as `usageByPerson`. */
-export function usedBy(ledger: readonly CreditLedgerEntry[], userId: string, period: UsagePeriod): number {
-  return usageByPerson(ledger, period).find((r) => r.userId === userId)?.credits ?? 0;
-}
-
 /** True when auto-reload should buy now: below `reloadBelow` after a debit, within `monthlyCap`. */
 export function autoReloadDue(
   ledger: readonly CreditLedgerEntry[],

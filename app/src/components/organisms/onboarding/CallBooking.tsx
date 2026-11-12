@@ -11,14 +11,11 @@ import "./call.css";
 
 type Slot = { at: number; label: string };
 
-/** After booking, hold the confirmation this long before handing on (ms). */
-const BOOKED_HOLD = 2200;
-
 
 /**
  * Book-a-call step for enterprise prospects (spec §5.1, PC-24 option C): a mock
  * scheduler inside the onboarding card. Pick a day and a time, book, see the
- * confirmation, then `onBooked`. The interstitial and routing belong to the
+ * confirmation, then `onBooked` when the user clicks Continue. The interstitial and routing belong to the
  * caller. "I'll book later" calls `onLater`.
  */
 export function CallBooking({
@@ -58,10 +55,9 @@ export function CallBooking({
   const headingRef = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
     if (!booked) return;
+    // Hold on the confirmation until the user clicks Continue (no auto-advance).
     headingRef.current?.focus();
-    const t = window.setTimeout(() => finish(booked), BOOKED_HOLD);
-    return () => window.clearTimeout(t);
-  }, [booked, finish]);
+  }, [booked]);
 
   // Fill wand: the first free slot. Shift-wand clears the pick and shows the "pick a time" error. Never books.
   useProtoFill("welcome-call", {

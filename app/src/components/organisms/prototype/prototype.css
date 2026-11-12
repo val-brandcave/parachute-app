@@ -35,13 +35,6 @@
   font-weight: 700;
   color: var(--md-on-surface);
 }
-.proto-tick {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  font-weight: 600;
-  color: var(--md-success);
-}
 .proto-sep {
   width: 1px;
   align-self: stretch;
@@ -125,7 +118,7 @@
   color-scheme: dark;
 }
 @media (max-width: 600px) {
-  .proto-label > span:not(.proto-tick) {
+  .proto-label > span {
     display: none;
   }
 }

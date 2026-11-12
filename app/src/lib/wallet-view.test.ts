@@ -4,7 +4,7 @@ import { LOW_BALANCE_AT } from "@/lib/pricing";
 import { balanceGrants } from "@/lib/wallet-breakdown";
 import { remainingFromLedger, sourcesFor } from "@/store/wallet.store";
 import type { CreditLedgerEntry, LedgerKind, WalletSettings } from "@/types";
-import { autoReloadDue, invoicedSpendEntries, monthOf, spendOrderSentence, usageByPerson, usageByType, usedBy, walletView } from "./wallet-view";
+import { autoReloadDue, invoicedSpendEntries, spendOrderSentence, usageByPerson, usageByType, walletView } from "./wallet-view";
 
 const DAY = 86_400_000;
 const NOW = new Date(2026, 10, 12, 12, 0).getTime();
@@ -231,20 +231,6 @@ describe("invoicedSpendEntries", () => {
       ["a", -2, anchor],
       ["b", -1, anchor - 600],
     ]);
-    expect(walletView(rows, { now: anchor, billing: "invoiced" }).usedThisMonth).toBe(3);
-  });
-  it("usedBy reads the same entries per person: a reviewer with no runs used 0, the org total is unchanged (RF3)", () => {
-    const anchor = NOW;
-    const rows = invoicedSpendEntries(
-      [rev("a", 1000, ["technical", "administrative"]), rev("b", 400, ["technical"])].map((r, i) =>
-        i === 1 ? ({ ...r, assigneeId: "u2" } as typeof r) : r,
-      ),
-      anchor,
-    );
-    const month = monthOf(anchor);
-    expect(usedBy(rows, "u1", month)).toBe(2);
-    expect(usedBy(rows, "u2", month)).toBe(1);
-    expect(usedBy(rows, "u3", month)).toBe(0);
     expect(walletView(rows, { now: anchor, billing: "invoiced" }).usedThisMonth).toBe(3);
   });
 });

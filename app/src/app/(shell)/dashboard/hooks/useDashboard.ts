@@ -15,6 +15,8 @@ export function useDashboard() {
   const own = billing === "trial" || billing === "payg";
   const meId = useSessionStore((s) => s.userId);
   const [initial, setInitial] = useState(true);
+  /** The first read has landed: from here `isEmpty` is known (before the skeleton's minimum hold ends). */
+  const [fetched, setFetched] = useState(false);
   const [period, setPeriod] = useState<Period>("month");
   const [range, setRangeState] = useState<DateRange | null>(null);
 
@@ -28,7 +30,9 @@ export function useDashboard() {
     // Mock reads resolve synchronously, so hold the loading state for a short
     // minimum to emulate real data loading (and let the skeleton shimmer show).
     const minVisible = new Promise((r) => setTimeout(r, 700));
-    Promise.all([fetchReviews(), minVisible]).then(() => setInitial(false));
+    const load = fetchReviews();
+    void load.then(() => setFetched(true));
+    Promise.all([load, minVisible]).then(() => setInitial(false));
   }, [fetchReviews]);
 
   const [now] = useState(() => Date.now());
@@ -175,6 +179,7 @@ export function useDashboard() {
 
   return {
     isLoading: initial,
+    isResolved: fetched,
     /** The org has no reviews of its own yet (the sample never counts). */
     isEmpty: reviews.length === 0,
     reviews,

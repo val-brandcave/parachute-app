@@ -1,7 +1,7 @@
 "use client";
 
 import { forwardRef } from "react";
-import { Button, Icon, Input } from "@/components/atoms";
+import { Icon, Input } from "@/components/atoms";
 import { SelectTile } from "@/components/molecules";
 import {
   CREDIT_PACKS,
@@ -37,8 +37,6 @@ export const AmountStep = forwardRef<
     onPickCustom: () => void;
     onCustomText: (t: string) => void;
     onTalkToUs: () => void;
-    onNext: () => void;
-    nextLabel: string;
   }
 >(function AmountStep(p, customRef) {
   const isCustom = p.selectedPack === null;
@@ -136,13 +134,6 @@ export const AmountStep = forwardRef<
       </ul>
 
       <CostBlock />
-
-      <div className="co-actions">
-        <span />
-        <Button size="lg" onClick={p.onNext} iconRight="forward">
-          {p.nextLabel}
-        </Button>
-      </div>
     </div>
   );
 });

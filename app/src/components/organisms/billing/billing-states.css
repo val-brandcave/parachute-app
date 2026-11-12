@@ -179,6 +179,22 @@
   gap: 8px;
   margin-bottom: 8px;
 }
+/* FAQ: the DS Accordion draws only a border, so on the canvas it read grey.
+   `.card` gives it the sibling cards' surface + elevation; the border drops
+   so it matches them. Hover rows are clipped to the card's corners by
+   rounding the end triggers (not overflow:hidden, which would clip the
+   focus ring). */
+.hcw .hcw-faq {
+  border: 0;
+}
+.hcw-faq > :first-child button {
+  border-top-left-radius: var(--r);
+  border-top-right-radius: var(--r);
+}
+.hcw-faq > :last-child[data-state="closed"] button {
+  border-bottom-left-radius: var(--r);
+  border-bottom-right-radius: var(--r);
+}
 .hcw .bl-sales {
   flex-direction: row;
   align-items: center;

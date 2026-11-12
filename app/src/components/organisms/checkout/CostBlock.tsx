@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { CreditChip } from "@/components/atoms";
 import { CREDIT_USD, REVIEW_TYPE_COST, costFor, formatUsd, usd } from "@/lib/pricing";
 import "./cost-block.css";
 
@@ -49,9 +50,9 @@ export function CostBlock({
               <span className="cost-block-label">{r.title}</span>
               {!compact && <span className="cost-block-desc tw-pretty">{r.desc}</span>}
             </span>
-            <span className="cost-block-credits mono">
+            <CreditChip tone="credit" className="cost-block-credits">
               {r.credits} {r.credits === 1 ? "credit" : "credits"}
-            </span>
+            </CreditChip>
             <span className="cost-block-usd mono">{formatUsd(usd(r.credits))}</span>
           </li>
         ))}

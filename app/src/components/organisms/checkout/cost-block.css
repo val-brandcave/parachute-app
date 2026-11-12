@@ -41,9 +41,10 @@
   color: var(--md-on-surface-v);
   font-size: 13px;
 }
+/* Credit amount is a CreditChip (tone="credit", md) — same as TypeCostChip on Review setup.
+   Right-aligned so "1 credit" / "2 credits" chips line up against the price column. */
 .cost-block-credits {
-  color: var(--md-on-surface);
-  white-space: nowrap;
+  justify-self: end;
 }
 .cost-block-usd {
   color: var(--md-on-surface-v);

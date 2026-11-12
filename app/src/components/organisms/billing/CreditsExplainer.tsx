@@ -78,6 +78,7 @@ export function CreditsExplainer({ b }: { b: Billing }) {
           Questions
         </h2>
         <Accordion
+          className="card hcw-faq"
           items={[
             {
               id: "used",

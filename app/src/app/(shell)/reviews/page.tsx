@@ -2,26 +2,31 @@
 
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { EMPTY_FILTERS, activeFilterCount, useReviewQueue } from "./hooks/useReviewQueue";
+import {
+  EMPTY_FILTERS,
+  activeFilterCount,
+  useReviewQueue,
+} from "./hooks/useReviewQueue";
 import "./reviews.css";
-import { UploadZone } from "./UploadZone";
-import { ReviewTable, ReviewTableSkeleton, OrderButton } from "@/components/organisms";
+import {
+  ReviewTable,
+  ReviewTableSkeleton,
+  OrderButton,
+  FirstRunHero,
+} from "@/components/organisms";
 import {
   QueueFilters,
   ActiveFilters,
-  EmptyState,
   EmptyLine,
 } from "@/components/molecules";
 import { Button } from "@/components/atoms";
-import { useStartGate } from "@/components/organisms/home/useStartGate";
-import { EmptyVideo } from "@/components/organisms/EmptyVideo";
 import { useTourTarget } from "@/components/organisms/useTourTarget";
-import { useOrgStore, useUsersStore } from "@/store";
 import { PageBody, PageHeader, SearchInput, Tabs } from "@realwired/ui";
 
 export default function MyReviewsPage() {
   const {
     isLoading,
+    isResolved,
     isEmpty,
     counts,
     team,
@@ -39,30 +44,9 @@ export default function MyReviewsPage() {
     cycleSort,
   } = useReviewQueue();
 
-  const { locked } = useStartGate();
-  const orgName = useOrgStore((s) => s.org?.name);
-  const members = useUsersStore((s) => s.users);
 
   // Tour targets (spec §5.13): the first row's action cell lives inside ReviewTable.
   useTourTarget("reviews-row-action", ".qrow .qactions");
-
-  // Footnote at level 1: who sees this page until the first review is in.
-  const firstNames = members
-    .filter((m) => m.status !== "deactivated")
-    .map((m) => m.name.split(" ")[0])
-    .filter(Boolean)
-    .slice(0, 3);
-  const seenBy =
-    firstNames.length === 0
-      ? "Your team"
-      : firstNames.length === 1
-        ? firstNames[0]
-        : `${firstNames.slice(0, -1).join(", ")} and ${firstNames[firstNames.length - 1]}`;
-  const shortOrg = orgName?.trim().split(/\s+/)[0];
-
-  // Level 1: the org has no reviews of its own yet (the sample never counts). Hide every
-  // control that needs rows; the header keeps only the primary action.
-  const firstRun = !isLoading && isEmpty;
 
   // Level 3: filtered to nothing. Name what is active and offer the way out.
   const nFilters = activeFilterCount(filters);
@@ -80,15 +64,41 @@ export default function MyReviewsPage() {
   // "All" so there's always a home + a visible empty state for a no-results query).
   const allTabs = [
     { value: "all" as const, label: "All", count: counts.all },
-    { value: "needs_action" as const, label: "Needs action", count: counts.needs_action },
-    { value: "in_pipeline" as const, label: "In pipeline", count: counts.in_pipeline },
+    {
+      value: "needs_action" as const,
+      label: "Needs action",
+      count: counts.needs_action,
+    },
+    {
+      value: "in_pipeline" as const,
+      label: "In pipeline",
+      count: counts.in_pipeline,
+    },
     // "Sent back" tab removed pending client Q1 (see client-questions doc).
     { value: "intake" as const, label: "Intake", count: counts.intake },
-    { value: "completed" as const, label: "Completed", count: counts.completed },
+    {
+      value: "completed" as const,
+      label: "Completed",
+      count: counts.completed,
+    },
   ];
   const visibleTabs = allTabs.filter(
     (t) => t.value === "all" || !searching || t.count > 0,
   );
+
+  // Level 1 (the org has no reviews of its own yet; the sample never counts): just the hero,
+  // no toolbar strip, no table skeleton. Until the first read lands, render nothing.
+  if (!isResolved) return null;
+  if (isEmpty) {
+    return (
+      <PageBody>
+        <FirstRunHero title="Every figure checked against the appraisal">
+          Parachute traces each number in a commercial appraisal to its page and
+          drafts the findings for you to concur with or reject.
+        </FirstRunHero>
+      </PageBody>
+    );
+  }
 
   return (
     <>
@@ -102,8 +112,7 @@ export default function MyReviewsPage() {
       <PageHeader
         toolbar={
           <>
-            {!firstRun && (
-              <div className="rq-tourwrap" data-tour="reviews-tabs">
+            <div className="rq-tourwrap" data-tour="reviews-tabs">
               <Tabs
                 label="Review queue"
                 value={tab}
@@ -127,9 +136,7 @@ export default function MyReviewsPage() {
                   onOpenChange={setFilterOpen}
                 />
               </>
-              </div>
-            )}
-            {firstRun && <div style={{ flex: 1 }} />}
+            </div>
             <span className="rq-start" data-tour="reviews-start">
               <OrderButton />
             </span>
@@ -137,104 +144,76 @@ export default function MyReviewsPage() {
         }
       />
 
-      {!firstRun && (
-        <ActiveFilters
-          filters={filters}
-          setFilters={setFilters}
-          team={team}
-          onExpand={() => setFilterOpen(true)}
-        />
-      )}
+      <ActiveFilters
+        filters={filters}
+        setFilters={setFilters}
+        team={team}
+        onExpand={() => setFilterOpen(true)}
+      />
 
       <PageBody>
-        {firstRun ? (
-          <EmptyState
-            layout="stack"
-            title="Every figure checked against the appraisal"
-            media={<EmptyVideo videoId="how-a-review-works" />}
-            actions={<UploadZone />}
-            aside={
-              <p className="rq-foot">
-                {seenBy} {firstNames.length <= 1 ? "sees" : "see"} this until {shortOrg ? `${shortOrg}’s` : "your"}{" "}
-                first review is in.
-              </p>
-            }
-            status={
-              locked ? (
-                <>
-                  <b>{orgName ?? "Your organization"} is waiting for approval.</b> Start a review
-                  opens once that is done.
-                </>
-              ) : undefined
-            }
-          >
-            Upload a commercial appraisal. Parachute traces each number to its page and drafts the findings for you to
-            concur with or reject.
-          </EmptyState>
-        ) : (
-          <div
-            style={{
-              background: "var(--md-surface)",
-              border: "1px solid var(--md-outline-v)",
-              borderRadius: "var(--r)",
-              overflow: "hidden",
-            }}
-          >
-            <AnimatePresence mode="wait">
-              {isLoading ? (
-                <motion.div
-                  key="skeleton"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <ReviewTableSkeleton />
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="content"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.25 }}
-                >
-                  {reviews.length === 0 ? (
-                    <EmptyLine
-                      action={
-                        <Button variant="ghost" size="sm" onClick={clearAll}>
-                          {searchOnly ? "Clear search" : "Clear filters"}
-                        </Button>
-                      }
+        <div
+          style={{
+            background: "var(--md-surface)",
+            border: "1px solid var(--md-outline-v)",
+            borderRadius: "var(--r)",
+            overflow: "hidden",
+          }}
+        >
+          <AnimatePresence mode="wait">
+            {isLoading ? (
+              <motion.div
+                key="skeleton"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <ReviewTableSkeleton />
+              </motion.div>
+            ) : (
+              <motion.div
+                key="content"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.25 }}
+              >
+                {reviews.length === 0 ? (
+                  <EmptyLine
+                    action={
+                      <Button variant="ghost" size="sm" onClick={clearAll}>
+                        {searchOnly ? "Clear search" : "Clear filters"}
+                      </Button>
+                    }
+                  >
+                    {searchOnly
+                      ? `Nothing matches “${query.trim()}”`
+                      : "No reviews match these filters"}
+                  </EmptyLine>
+                ) : (
+                  <>
+                    <ReviewTable
+                      reviews={reviews}
+                      team={team}
+                      sort={sort}
+                      onSort={cycleSort}
+                    />
+                    <div
+                      style={{
+                        padding: "10px 20px",
+                        fontSize: 12.5,
+                        color: "var(--md-on-surface-v)",
+                        borderTop: "1px solid var(--md-outline-v)",
+                      }}
                     >
-                      {searchOnly
-                        ? `Nothing matches “${query.trim()}”`
-                        : "No reviews match these filters"}
-                    </EmptyLine>
-                  ) : (
-                    <>
-                      <ReviewTable
-                        reviews={reviews}
-                        team={team}
-                        sort={sort}
-                        onSort={cycleSort}
-                      />
-                      <div
-                        style={{
-                          padding: "10px 20px",
-                          fontSize: 12.5,
-                          color: "var(--md-on-surface-v)",
-                          borderTop: "1px solid var(--md-outline-v)",
-                        }}
-                      >
-                        Showing {reviews.length} of {total}
-                      </div>
-                    </>
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        )}
+                      Showing {reviews.length} of {total}
+                    </div>
+                  </>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </PageBody>
     </>
   );

@@ -32,7 +32,6 @@ export function PaymentStep({
   cardRef,
   autoReloadOn,
   onBack,
-  onContinue,
 }: {
   form: PaymentFormValue;
   onChange: (patch: Partial<PaymentFormValue>) => void;
@@ -47,7 +46,6 @@ export function PaymentStep({
   /** Auto-reload is already on in Billing settings: no opt-in to offer. */
   autoReloadOn: boolean;
   onBack: () => void;
-  onContinue: () => void;
 }) {
   const reload = packById(AUTO_RELOAD_DEFAULTS.packId);
   const field = (k: keyof PaymentFormValue) => (e: React.ChangeEvent<HTMLInputElement>) => onChange({ [k]: e.target.value });
@@ -218,9 +216,6 @@ export function PaymentStep({
       <div className="co-actions">
         <Button variant="outline" size="lg" iconLeft="back" onClick={onBack}>
           Back
-        </Button>
-        <Button size="lg" onClick={onContinue}>
-          Continue to review
         </Button>
       </div>
     </div>

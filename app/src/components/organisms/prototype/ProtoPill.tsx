@@ -36,26 +36,15 @@ export function ProtoPill() {
   );
 }
 
-const APPLIED_MS = 1000;
 function Pill() {
   const view = useProtoView();
   const hidden = useProtoStore((s) => s.hidden);
   const busy = useProtoStore((s) => s.busy);
-  const appliedAt = useProtoStore((s) => s.appliedAt);
   const fill = useProtoFillStore((s) => s.fill);
   const hideWithToast = useHideToast();
   const toast = useToast();
   const [tip, setTip] = useState<{ text: string; x: number; y: number } | null>(null);
-  const [ticked, setTicked] = useState(false);
   const segsRef = useRef<HTMLDivElement>(null);
-
-  // The 1-second inline "Applied" tick after each apply.
-  useEffect(() => {
-    if (!appliedAt) return;
-    setTicked(true); // eslint-disable-line react-hooks/set-state-in-effect -- a timed flag keyed to the store's apply stamp
-    const t = window.setTimeout(() => setTicked(false), APPLIED_MS);
-    return () => window.clearTimeout(t);
-  }, [appliedAt]);
 
   const { screen, active } = view;
   const states = screen?.states ?? [];
@@ -86,17 +75,6 @@ function Pill() {
           <span className="proto-label">
             <Icon name="switch-horizontal" size={14} />
             <span>{screen?.pillLabel ?? screen?.title ?? "Prototype"}</span>
-            {ticked && (
-              <motion.span
-                className="proto-tick"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: dur.quick, ease: ease.enter }}
-                role="status"
-              >
-                <Icon name="check" size={13} /> Applied
-              </motion.span>
-            )}
           </span>
 
           {states.length > 0 && (

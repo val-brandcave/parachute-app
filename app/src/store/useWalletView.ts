@@ -11,7 +11,7 @@ import { useWalletStore } from "./wallet.store";
  * The entries every wallet number reads, and the `now` they are anchored on. Wallet orgs:
  * the ledger. Invoiced orgs have no ledger: their usage comes from their reviews
  * (`invoicedSpendEntries`, anchored on `now`), the same source Billing reads, so the header
- * pill, the popover's "You used" line and Billing agree (RF3). `now` comes from a lazy
+ * pill, the popover and Billing agree (RF3). `now` comes from a lazy
  * useState so render stays pure (React 19).
  */
 export function useWalletSource(): { source: CreditLedgerEntry[]; now: number } {

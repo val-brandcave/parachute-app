@@ -63,6 +63,11 @@ def run(page, ctx):
     ctx.check(focused == "H1", f"focus moved to the booked heading (got {focused})")
     ctx.shoot("t1-3-booked")
 
+    # No auto-advance: the booked card stays until Continue is clicked.
+    page.wait_for_timeout(3000)
+    ctx.check(page.locator(".call--booked").count() == 1, "booked card waits for Continue")
+    page.locator(".call--booked").get_by_role("button", name="Continue").click()
+
     title = page.locator(".onb-inter-title")
     try:
         title.wait_for(timeout=10000)

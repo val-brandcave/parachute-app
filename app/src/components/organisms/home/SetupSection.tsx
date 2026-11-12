@@ -46,7 +46,15 @@ export function SetupSection({ section, summary }: { section: SectionSummary; su
 
   return (
     <section className="card gs-sec" aria-labelledby={titleId}>
-      <div className="gs-sec-hd">
+      {/* The whole header toggles the section (mouse). The count button stays the
+          keyboard / screen-reader control, so the header itself isn't a second tab stop. */}
+      <div
+        className="gs-sec-hd"
+        onClick={(e) => {
+          if ((e.target as HTMLElement).closest(".gs-sec-ct")) return; // the button handles its own click
+          setOpen((o) => !o);
+        }}
+      >
         <div className="gs-sec-main">
           <div className="gs-sec-t">
             <h2 id={titleId}>{section.title}</h2>

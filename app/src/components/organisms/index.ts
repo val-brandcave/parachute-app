@@ -23,5 +23,6 @@ export { HeaderChipSlot } from "./HeaderChipSlot";
 export { TourHost } from "./tour/TourHost";
 export { ProtoPill } from "./prototype/ProtoPill";
 export { EmptyVideo } from "./EmptyVideo";
+export { FirstRunHero } from "./FirstRunHero";
 export { SettingVideoHint } from "./SettingVideoHint";
 export { useTourTarget } from "./useTourTarget";

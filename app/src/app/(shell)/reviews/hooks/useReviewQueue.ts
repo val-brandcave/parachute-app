@@ -106,6 +106,8 @@ export function useReviewQueue() {
   const { reviews, fetchReviews } = useReviewsStore();
   const { users, fetchUsers } = useUsersStore();
   const [initial, setInitial] = useState(true);
+  /** The first read has landed: from here `isEmpty` is known (before the skeleton's minimum hold ends). */
+  const [fetched, setFetched] = useState(false);
   const [tab, setTab] = useState<QueueTab>("all");
   const [filters, setFilters] = useState<QueueFilters>(EMPTY_FILTERS);
   const [query, setQuery] = useState("");
@@ -123,9 +125,9 @@ export function useReviewQueue() {
 
   useEffect(() => {
     const minVisible = new Promise((r) => setTimeout(r, 700));
-    Promise.all([fetchReviews(), fetchUsers(), minVisible]).then(() =>
-      setInitial(false),
-    );
+    const load = Promise.all([fetchReviews(), fetchUsers()]);
+    void load.then(() => setFetched(true));
+    Promise.all([load, minVisible]).then(() => setInitial(false));
   }, [fetchReviews, fetchUsers]);
 
   // Honor a `?tab=` deep-link once on mount (dashboard widgets link straight to
@@ -249,6 +251,7 @@ export function useReviewQueue() {
 
   return {
     isLoading: initial,
+    isResolved: fetched,
     /** The org has no reviews of its own yet. */
     isEmpty: real.length === 0,
     sample,

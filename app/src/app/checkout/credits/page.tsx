@@ -24,7 +24,7 @@ import { FULL_REVIEW_CREDITS, fullReviewsIn, lineFor, useCheckout } from "./hook
 const STEPS: HStep[] = [
   { id: "amount", label: "Amount" },
   { id: "payment", label: "Payment" },
-  { id: "review", label: "Review" },
+  { id: "review", label: "Checkout" },
 ];
 const ORDER: CheckoutStep[] = ["amount", "payment", "review", "done"];
 
@@ -226,10 +226,10 @@ function Checkout() {
   const summaryCta =
     step === "amount"
       ? co.savedCard && form?.payWith !== "new"
-        ? { label: "Continue to review", run: amountNext }
+        ? { label: "Continue to checkout", run: amountNext }
         : { label: "Next: Payment", run: amountNext }
       : step === "payment"
-        ? { label: "Continue to review", run: paymentNext }
+        ? { label: "Continue to checkout", run: paymentNext }
         : { label: `Pay ${formatUsd(line.priceUsd)}`, run: onPay };
 
   // ---- Stepper ----
@@ -290,8 +290,6 @@ function Checkout() {
         onPickCustom={onPickCustom}
         onCustomText={onCustomText}
         onTalkToUs={talkToUs}
-        onNext={amountNext}
-        nextLabel={summaryCta.label}
       />
     );
   } else if (step === "payment" && form) {
@@ -310,7 +308,6 @@ function Checkout() {
         cardRef={cardRef}
         autoReloadOn={!!co.settings?.autoReload}
         onBack={() => co.go("amount")}
-        onContinue={paymentNext}
       />
     );
   } else if (step === "review" && form) {
@@ -328,7 +325,6 @@ function Checkout() {
         agreed={agreed}
         termsError={termsError}
         termsRef={termsRef}
-        paying={paying}
         onAgree={(v) => {
           setAgreed(v);
           if (v) setTermsError(false);
@@ -336,7 +332,6 @@ function Checkout() {
         onChangePayment={() => co.go("payment")}
         onTurnOnAutoReload={() => co.setForm({ autoReload: true })}
         onBack={() => co.go(co.savedCard && form.payWith !== "new" ? "amount" : "payment")}
-        onPay={onPay}
       />
     );
   } else if (step === "done" && co.paidEntry) {

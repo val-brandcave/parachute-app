@@ -139,7 +139,7 @@ def pay_through(page, ctx):
                 pass
             ctx.settle(600)
             continue
-        if not click_first(page, re.compile(r"^(Next: Payment|Continue to review|Next)\b")):
+        if not click_first(page, re.compile(r"^(Next: Payment|Continue to checkout|Next)\b")):
             break
         ctx.settle(500)
     return "step=done" in page.url

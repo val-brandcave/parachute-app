@@ -7,40 +7,17 @@ import { Avatar, Button, CreditChip, Icon, Illustration, type IconName } from "@
 import { useCurrentOrg, useCurrentUser } from "@/lib/current-user";
 import { INVOICED_CREDIT_USD, REVIEW_TYPE_COST, TRIAL_GRANT_CREDITS, costFor, formatUsd } from "@/lib/pricing";
 import { FULL_REVIEW_TYPES } from "@/lib/setup-steps";
-import { monthOf, usedBy, type WalletView } from "@/lib/wallet-view";
+import type { WalletView } from "@/lib/wallet-view";
 import { useCreditRequestStore, useSetupSummary, useUsersStore, useWalletSource, useWalletStore } from "@/store";
 import { canRequest, isLive } from "@/lib/credit-requests";
 import type { BillingModel, UserRole } from "@/types";
 import "./credits-chrome.css";
 
-const DAY = 86_400_000;
 const FULL_COST = costFor(FULL_REVIEW_TYPES);
 const SINGLE_COST = REVIEW_TYPE_COST.technical;
 
 const credits = (n: number) => `${n} credit${n === 1 ? "" : "s"}`;
 const reviews = (n: number) => `${n} full review${n === 1 ? "" : "s"}`;
-
-/** "about 2 weeks" from a runway in days. */
-function runwayPhrase(days: number): string {
-  if (days < 7) {
-    const d = Math.max(1, Math.round(days));
-    return `about ${d} day${d === 1 ? "" : "s"}`;
-  }
-  if (days < 56) {
-    const w = Math.round(days / 7);
-    return `about ${w} week${w === 1 ? "" : "s"}`;
-  }
-  const m = Math.round(days / 30);
-  return `about ${m} month${m === 1 ? "" : "s"}`;
-}
-
-/** "Thursday" inside the coming week, else "Nov 24". */
-function runsOutPhrase(at: number, now: number): string {
-  const d = new Date(at);
-  return at - now < 7 * DAY
-    ? d.toLocaleDateString("en-US", { weekday: "long" })
-    : d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-}
 
 /** "just now", "2 h ago", "yesterday", else "Nov 9". Pure: `now` is passed in. */
 function requestAge(at: number, now: number): string {
@@ -74,8 +51,8 @@ export function CreditsPopover({
   const router = useRouter();
   const me = useCurrentUser();
   const { org, name: orgName } = useCurrentOrg();
-  // The same entries the wallet view reads (invoiced orgs: their reviews), so "You used" agrees with it.
-  const { source, now } = useWalletSource();
+  // The same `now` the wallet view is anchored on.
+  const { now } = useWalletSource();
   const earn = useSetupSummary().earn;
   const users = useUsersStore((s) => s.allUsers);
   const [asking, setAsking] = useState(false);
@@ -115,7 +92,6 @@ export function CreditsPopover({
   };
 
   const month = new Date(now);
-  const mine = usedBy(source, me.id, monthOf(now));
 
   // Lock-then-explain: with a request already live the button keeps its look, reads aria-disabled
   // with the reason, and a click says what is happening instead of doing nothing.
@@ -172,12 +148,10 @@ export function CreditsPopover({
           <div className="cp-big">
             <b>{credits(view.usedThisMonth)} used</b>
           </div>
-          {isAdmin ? (
+          {isAdmin && (
             <p className="cp-muted">
               Estimated {formatUsd(view.usedThisMonth * INVOICED_CREDIT_USD)} · Next statement {next}
             </p>
-          ) : (
-            <p className="cp-muted">You used {mine} this month</p>
           )}
         </div>
         <div className="cp-ft">{usageButton}</div>
@@ -255,12 +229,6 @@ export function CreditsPopover({
               )}
             </div>
             {billing === "trial" && view.bySource.trial > 0 && <p className="cp-faint">Trial credits · never expire</p>}
-            {view.runwayDays !== null && (
-              <p className="cp-muted">
-                At this month&rsquo;s pace, that lasts {runwayPhrase(view.runwayDays)}.
-                {low && view.runsOutOn !== null && <> It runs out {runsOutPhrase(view.runsOutOn, now)}.</>}
-              </p>
-            )}
             {pct > 0 && (
               <div className="cp-bar" aria-hidden="true">
                 <i style={{ width: `${pct}%` }} />
@@ -268,7 +236,6 @@ export function CreditsPopover({
             )}
           </>
         )}
-        {!zero && <p className="cp-faint">{isAdmin ? `Used ${view.usedThisMonth} this month` : `You used ${mine} this month`}</p>}
       </div>
       {!zero && (
         <div className="cp-rows">

@@ -114,6 +114,12 @@
   justify-content: space-between;
   gap: 12px;
   padding: 20px 24px 16px;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 120ms ease;
+}
+.gs-sec-hd:hover {
+  background: var(--md-surface-1);
 }
 .gs-sec-main {
   min-width: 0;
@@ -208,7 +214,7 @@
   width: 20px;
   height: 20px;
   flex: none;
-  border-radius: 5px;
+  border-radius: 50%;
   border: 1.5px solid var(--md-outline);
   background: var(--md-surface);
   color: var(--md-on-primary);

@@ -35,12 +35,10 @@ export function ReviewStep({
   agreed,
   termsError,
   termsRef,
-  paying,
   onAgree,
   onChangePayment,
   onTurnOnAutoReload,
   onBack,
-  onPay,
 }: {
   line: { credits: number; priceUsd: number; rateUsd: number; isPack: boolean };
   validUntil: string;
@@ -54,12 +52,10 @@ export function ReviewStep({
   agreed: boolean;
   termsError: boolean;
   termsRef: React.Ref<HTMLInputElement>;
-  paying: boolean;
   onAgree: (v: boolean) => void;
   onChangePayment: () => void;
   onTurnOnAutoReload: () => void;
   onBack: () => void;
-  onPay: () => void;
 }) {
   const after = balance + line.credits;
   return (
@@ -221,9 +217,6 @@ export function ReviewStep({
       <div className="co-actions">
         <Button variant="outline" size="lg" iconLeft="back" onClick={onBack}>
           Back
-        </Button>
-        <Button size="lg" busy={paying} onClick={onPay} className="co-pay">
-          Pay {formatUsd(line.priceUsd)}
         </Button>
       </div>
     </div>

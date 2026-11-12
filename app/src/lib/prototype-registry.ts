@@ -651,26 +651,6 @@ export const SCREENS: ScreenDef[] = [
 
   // ───────────────────────────── Design system and prototype ─────────────────────────────
   {
-    id: "components",
-    title: "Components",
-    route: "/components",
-    group: "design-system",
-    status: built,
-    pillLabel: "Components",
-    tags: ["design system", "patterns"],
-    states: [],
-  },
-  {
-    id: "styleguide",
-    title: "Style guide",
-    route: "/styleguide",
-    group: "design-system",
-    status: built,
-    pillLabel: "Style guide",
-    tags: ["design system", "tokens", "type"],
-    states: [],
-  },
-  {
     id: "prototype",
     title: "Prototype Index",
     route: "/prototype",
@@ -678,16 +658,6 @@ export const SCREENS: ScreenDef[] = [
     status: built,
     pillLabel: "Index",
     tags: ["index", "states", "flows"],
-    states: [],
-  },
-  {
-    id: "start",
-    title: "Start (launcher)",
-    route: "/start",
-    group: "design-system",
-    status: "retired",
-    pillLabel: "Start",
-    tags: ["launcher", "personas"],
     states: [],
   },
   {
