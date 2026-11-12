@@ -1,5 +1,6 @@
 import { STORAGE_PREFIX } from "../collections";
 import { seedAll } from "../seed";
+import type { BankPolicyDoc } from "@/types";
 import type { DataAdapter } from "./types";
 
 function storageKey(collection: string): string {
@@ -16,6 +17,10 @@ function writeCollection<T>(collection: string, items: T[]): void {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(storageKey(collection), JSON.stringify(items));
 }
+
+/** Bank policy doc. Same key the org store used before it went through the adapter,
+ *  so existing browsers keep their upload. JSON doc, or "none" once removed. */
+const BANK_POLICY_KEY = `${STORAGE_PREFIX}:org:bank-policy`;
 
 const SEEDED_KEY = `${STORAGE_PREFIX}:__seeded__`;
 // Bump this whenever seed data changes so existing browsers re-seed on next
@@ -109,6 +114,23 @@ export const mockAdapter: DataAdapter = {
       collection,
       items.filter((i) => i.id !== id),
     );
+  },
+
+  async getBankPolicy(): Promise<BankPolicyDoc | null | undefined> {
+    if (typeof window === "undefined") return undefined;
+    const raw = window.localStorage.getItem(BANK_POLICY_KEY);
+    if (raw === "none") return null;
+    if (!raw) return undefined;
+    try {
+      return JSON.parse(raw) as BankPolicyDoc;
+    } catch {
+      return undefined;
+    }
+  },
+
+  async setBankPolicy(doc: BankPolicyDoc | null): Promise<void> {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(BANK_POLICY_KEY, doc ? JSON.stringify(doc) : "none");
   },
 
   async seed(force = false): Promise<void> {

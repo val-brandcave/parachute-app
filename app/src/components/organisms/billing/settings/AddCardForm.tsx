@@ -4,13 +4,11 @@ import { useState } from "react";
 import { useToast } from "@realwired/ui";
 import { Button, Icon, Input, Label } from "@/components/atoms";
 import { useWalletStore } from "@/store";
-import { rememberCardExp } from "../billing-data";
-import type { Billing } from "../useBilling";
 
 const digits = (v: string) => v.replace(/\D/g, "");
 
 /** Inline card form. Prototype only: accepts anything well-formed. Card data never reaches Parachute. */
-export function AddCardForm({ b, onDone }: { b: Billing; onDone: () => void }) {
+export function AddCardForm({ onDone }: { onDone: () => void }) {
   const toast = useToast();
   const [name, setName] = useState("");
   const [num, setNum] = useState("");
@@ -20,8 +18,7 @@ export function AddCardForm({ b, onDone }: { b: Billing; onDone: () => void }) {
 
   const save = async () => {
     const last4 = digits(num).slice(-4);
-    rememberCardExp(b.org?.id, exp.replace(/\s/g, ""));
-    await useWalletStore.getState().setPaymentMethod({ paymentMethod: "card", cardLast4: last4 });
+    await useWalletStore.getState().setPaymentMethod({ paymentMethod: "card", cardLast4: last4, cardExpiry: exp.replace(/\s/g, "") });
     toast({ title: "Card saved", description: `Visa •••• ${last4} is now your default card.`, tone: "success" });
     onDone();
   };

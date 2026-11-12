@@ -4,9 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Callout, useToast } from "@realwired/ui";
 import { Button, CreditChip, Icon, Illustration, Textarea } from "@/components/atoms";
-import { useCreditRequestStore } from "@/store";
+import { useCreditRequestStore, usePrefsStore } from "@/store";
 import { isLive } from "@/lib/credit-requests";
-import type { CreditRequest } from "@/types";
 import { EmptyLine } from "@/components/molecules";
 import { BillingEmptyCard } from "./BillingEmptyCard";
 import { usageByPerson } from "@/lib/wallet-view";
@@ -412,8 +411,6 @@ export function OverviewTab({
 }
 
 const NOTE_MAX = 200;
-const seenKey = (r: CreditRequest) => `parachute:request-seen:${r.id}`;
-
 /** "just now", "2 h ago", "yesterday", else "Nov 9". Pure: `now` is passed in. */
 function agoText(at: number, now: number): string {
   const mins = Math.floor((now - at) / 60_000);
@@ -448,18 +445,12 @@ function RequestAsk({ b }: { b: Billing }) {
   const live = !!last && isLive(last);
   const resolved = last && !live && last.status !== "cancelled" ? last : undefined;
 
-  // The "Credits added" toast fires once per fulfilled request, remembered in this browser.
+  // The "Credits added" toast fires once per fulfilled request, remembered in this browser (prefs).
   useEffect(() => {
     if (!last || last.status !== "fulfilled") return;
-    try {
-      const key = seenKey(last);
-      if (window.localStorage.getItem(key)) return;
-      window.localStorage.setItem(key, String(last.resolvedAt ?? 1));
-    } catch {
-      return;
-    }
+    if (!usePrefsStore.getState().markRequestSeen(b.me.id, last.id, last.resolvedAt ?? 1)) return;
     toast({ title: "Credits added", description: `${b.adminFirst} added credits to ${b.org?.name ?? "your organization"}.`, tone: "success" });
-  }, [last, toast, b.adminFirst, b.org?.name]);
+  }, [last, toast, b.me.id, b.adminFirst, b.org?.name]);
 
   const ask = async () => {
     setBusy(true);

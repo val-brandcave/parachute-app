@@ -35,6 +35,12 @@ const TOURKEY = "parachute:tours-seen";
 const HINTKEY = "parachute:hints-seen";
 const VKEY = "parachute:video-progress";
 const PKEY = "parachute:proto:hidden";
+/** Value strip's placeholder banner: user ids ("anon" when signed out) who dismissed it. */
+const VBKEY = "parachute:value-banner-dismissed";
+/** Fulfilled credit requests whose "Credits added" toast already played, per user. */
+const RSKEY = "parachute:requests-seen";
+/** Before RSKEY, one key per request; still honoured so a seen toast never replays. */
+const legacyRequestSeenKey = (requestId: string) => `parachute:request-seen:${requestId}`;
 
 export type CelebrationKind = "onboarding" | "approval" | "setup-done";
 type PerUser<T> = Record<string, T>;
@@ -97,6 +103,13 @@ interface PrefsState {
   /** Video progress 0..1, per user per video. */
   videoProgress: PerUser<Record<string, number>>;
   setVideoProgress: (userId: string, videoId: string, progress: number) => void;
+  /** User ids ("anon" = no session) who dismissed the value strip's placeholder banner. */
+  valueBannerDismissed: string[];
+  dismissValueBanner: (userId: string | null) => void;
+  /** Fulfilled credit requests already announced, per user: requestId -> resolvedAt. */
+  requestsSeen: PerUser<Record<string, number>>;
+  /** Mark a fulfilled request as announced. Returns false if it already was. */
+  markRequestSeen: (userId: string, requestId: string, resolvedAt: number) => boolean;
   /** Prototype controls hidden (per browser, not per user). */
   protoHidden: boolean;
   setProtoHidden: (hidden: boolean) => void;
@@ -151,6 +164,30 @@ export const usePrefsStore = create<PrefsState>((set, get) => ({
     const next = { ...cur, [userId]: { ...cur[userId], [videoId]: p } };
     writeJson(VKEY, next);
     set({ videoProgress: next });
+  },
+  valueBannerDismissed: readJson<string[]>(VBKEY, []),
+  dismissValueBanner: (userId) => {
+    const id = userId ?? "anon";
+    const cur = get().valueBannerDismissed;
+    if (cur.includes(id)) return;
+    const next = [...cur, id];
+    writeJson(VBKEY, next);
+    set({ valueBannerDismissed: next });
+  },
+  requestsSeen: readJson(RSKEY, {}),
+  markRequestSeen: (userId, requestId, resolvedAt) => {
+    const cur = get().requestsSeen;
+    if (cur[userId]?.[requestId] !== undefined) return false;
+    let legacy: string | null = null;
+    try {
+      legacy = typeof window === "undefined" ? null : window.localStorage.getItem(legacyRequestSeenKey(requestId));
+    } catch {
+      /* storage blocked */
+    }
+    const next = { ...cur, [userId]: { ...cur[userId], [requestId]: legacy ? Number(legacy) || 1 : resolvedAt } };
+    writeJson(RSKEY, next);
+    set({ requestsSeen: next });
+    return !legacy;
   },
   protoHidden: readJson(PKEY, false),
   setProtoHidden: (hidden) => {

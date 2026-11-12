@@ -1,3 +1,5 @@
+import type { BankPolicyDoc } from "@/types";
+
 /**
  * The data-source contract. Both the mock (localStorage) and the future API
  * (HTTP) adapters implement this exact interface, so the UI never changes when
@@ -24,6 +26,13 @@ export interface DataAdapter {
     partial: Partial<T>,
   ): Promise<T>;
   remove(collection: string, id: string): Promise<void>;
+
+  // --- Org config (single documents, not collections) ---
+  /** The bank's uploaded credit-policy document. `null` = explicitly removed;
+   *  `undefined` = never set (the store falls back to its seeded default). */
+  getBankPolicy(): Promise<BankPolicyDoc | null | undefined>;
+  /** Replace (doc) or remove (null) the bank's credit-policy document. */
+  setBankPolicy(doc: BankPolicyDoc | null): Promise<void>;
 
   // --- Lifecycle ---
   seed(force?: boolean): Promise<void>;
