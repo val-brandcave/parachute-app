@@ -1,6 +1,6 @@
 """T2.3 sample sweep (PC-4): the sample review is reachable by URL only.
 No link, button or copy offers it on /dashboard, /reviews (empty org), /configure/billing (fresh).
-Also: the locked Start on the pending-admin dashboard explains itself (lock store + toast)."""
+Also: the locked Start on the pending-admin dashboard explains itself (lock store + approval dialog)."""
 import re
 
 PERSONAS = ["pending-admin", "payg-admin-low"]
@@ -11,7 +11,7 @@ EXPECT = {
     "/reviews": r"No reviews yet",
     "/configure/billing": r"Your balance and usage show up here|Usage starts with your first review|waiting for approval|Plan|Billing|Credits|Balance",
 }
-REASON = "Opens when your organization is approved"
+REASON = re.compile(r"Opens (after .+ setup call|when your organization is approved|once Realwired confirms)")  # useStartGate().reasonText (phase 4)
 
 
 def run(page, ctx):
@@ -38,16 +38,16 @@ def run(page, ctx):
             ctx.check(btn.get_attribute("aria-disabled") == "true", "locked Start has aria-disabled")
             ctx.check(btn.get_attribute("disabled") is None, "locked Start has no disabled attribute")
             desc = btn.get_attribute("aria-describedby")
-            ctx.check(bool(desc) and REASON in page.locator("#" + desc).inner_text(), "aria-describedby points at the reason")
+            ctx.check(bool(desc) and REASON.search(page.locator("#" + desc).inner_text() or "") is not None, "aria-describedby points at the reason")
             before = page.url
-            toast_sel = '[role="region"] > ol > li'  # Radix toast viewport (ToastProvider in @realwired/ui) > toast item
-            toasts = page.locator(toast_sel).filter(has_text=REASON)
-            ctx.check(toasts.count() == 0, "no reason toast before the click")
+            # Phase 4: the click explains with the approval lock dialog (LockedAction → LockDialog), not a toast.
+            dlg = page.locator('[role="dialog"]').filter(has_not=page.locator(".run"))
+            ctx.check(dlg.count() == 0, "no dialog before the click")
             btn.click(force=True)  # Playwright treats aria-disabled as not enabled
             page.wait_for_timeout(600)
             ctx.check(page.url == before, "locked Start click does not navigate")
-            toasts.first.wait_for(state="visible", timeout=3000)
-            ctx.check(toasts.first.is_visible(), "locked Start click shows a visible toast (in the toast viewport) with the reason")
+            dlg.first.wait_for(state="visible", timeout=3000)
+            ctx.check(dlg.first.is_visible(), "locked Start click opens the approval lock dialog")
             ctx.shoot("t2-3-locked-start")
 
     ran = False

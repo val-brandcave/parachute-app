@@ -562,10 +562,15 @@ export function RunExperience({
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      // B2: a dialog that handled this Esc (Radix calls preventDefault) has already closed
+      // itself by the time this runs, so the query below can't see it — trust the flag.
+      if (e.defaultPrevented) return;
       const el = e.target as HTMLElement;
       if (el?.tagName === "INPUT" || el?.tagName === "TEXTAREA" || el?.isContentEditable)
         return;
       if (document.querySelector(".ui-menu-pop")) return;
+      // B2: a dialog over the takeover (LockDialog, ReceiptDialog, the Sign modal) owns Esc.
+      if (document.querySelector('[role="dialog"]:not(.run), [role="alertdialog"], .ui-modal')) return;
       if (e.key === "Escape" && spoke !== "progress") onClose();
     };
     document.addEventListener("keydown", onKey);

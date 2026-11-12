@@ -42,8 +42,8 @@ def summary_balance(page):
 
 def reviewer_run(page, ctx):
     """A reviewer reaching the URL: a plain explanation, never a form or a Pay button.
-    (The lock store is in-memory zustand; the LockDialog is still the phase-4 stub, so the
-    flow asserts the inline explanation and that nothing can be bought.)"""
+    Phase 4: landing on the URL also opens the role lock dialog (LockDialog) over the page;
+    the flow asserts it, closes it with Esc, then uses the inline Ask action."""
     pill0 = page.locator(".credits-pill")
     bal0 = num(pill0.first.inner_text()) if pill0.count() else None
     ctx.check(pill0.count() > 0 and bal0 is not None, "reviewer balance source (.credits-pill) exists before the visit")
@@ -53,7 +53,17 @@ def reviewer_run(page, ctx):
     ctx.check(page.locator(".co-blocked button", has_text="Ask").count() == 1, "reviewer gets an Ask action")
     ctx.check(page.locator(".co-pay, .co-sum, .co-terms").count() == 0, "no Pay, summary or terms for a reviewer")
     no_disabled(page, ctx, "reviewer")
+    dlg = page.locator(".lock-dlg[role=dialog]")
+    try:
+        dlg.first.wait_for(state="visible", timeout=4000)
+    except Exception:
+        pass
+    ctx.check(dlg.count() > 0 and "Only admins can buy credits" in dlg.first.inner_text(),
+              "reviewer on the URL gets the role lock dialog")
     ctx.shoot("t3-1-reviewer")
+    page.keyboard.press("Escape")
+    page.wait_for_timeout(500)
+    ctx.check(page.locator(".lock-dlg[role=dialog]").count() == 0, "Esc closes the role dialog")
     page.locator(".co-blocked button", has_text="Ask").click()
     page.wait_for_timeout(300)
     ctx.visit("/dashboard")

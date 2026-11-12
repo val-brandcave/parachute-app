@@ -379,8 +379,8 @@ Return: PASS, or a numbered list of issues each with file:line, the rule or spec
 
 **Consumes:** `useLockStore`, DS `Dialog size="sm" hideTitle` at `--rw-z-modal`, DS `OptionCard`, `PendingTracker`, `Illustration` (`09b`, `10b`, `01b`, `15-request-sent`), `checkoutHref`, `useCreditRequestStore.request`, `bookCall` route. **Produces:** nothing shared (store-driven).
 
-- [ ] Flow `t4_1_lock_dialog.py`: drive `useLockStore` via a `?lock=<kind>` prototype hook on `/dashboard` (dev only, inside `LockDialog`) for each variant in spec §5.5: titles, options, actions match; credits short "Add 1 credit" → checkout `credits=1`; zero "Continue to checkout" → pack choice carried; reviewer "Ask Dana for more credits" → "Requested · Dana will be notified" with spot 15 and a stored request; role → "Only admins can buy credits"; focus returns to the opener on close; Esc closes only the dialog.
-- [ ] Implement per spec §5.5 dialog table (art 96–104 px, centred body). Flow passes.
+- [x] Flow `t4_1_lock_dialog.py`: drive `useLockStore` via a `?lock=<kind>` prototype hook on `/dashboard` (dev only, inside `LockDialog`) for each variant in spec §5.5: titles, options, actions match; credits short "Add 1 credit" → checkout `credits=1`; zero "Continue to checkout" → pack choice carried; reviewer "Ask Dana for more credits" → "Requested · Dana will be notified" with spot 15 and a stored request; role → "Only admins can buy credits"; focus returns to the opener on close; Esc closes only the dialog.
+- [x] Implement per spec §5.5 dialog table (art 96–104 px, centred body). Flow passes.
 
 ### Task 4.2: Shell Start sites and the Reviews upload zone (agent C2)
 
@@ -388,8 +388,8 @@ Return: PASS, or a numbered list of issues each with file:line, the rule or spec
 
 **Consumes:** `LockedAction`, `useStartGate`, `openRun`. **Produces:** `useIntakeStart(): { start(file: File | null, source: "upload" | "yc", deliveryId?: string): void; parsing: boolean }`.
 
-- [ ] Flow `t4_2_start_sites.py::every_site_explains` (RF5), persona `pending-admin`: sidebar Start (expanded and collapsed), Reviews `OrderButton`, dashboard first-run, command palette Start (both entries), Launchpad dropzone and a YC row, Get started Upload row, Reviews level-1 upload zone, billing "Add credits": each has `aria-disabled="true"`, no `disabled`, an hourglass glyph, and a click opens the approval dialog. Persona `trial-admin`: the same controls work (Reviews upload zone opens Review setup in `RunModal`). `/launchpad` breadcrumb shows a plain reason line, not a chip.
-- [ ] Implement per spec §5.5 Start-site table and PC-37. Flow passes.
+- [x] Flow `t4_2_start_sites.py::every_site_explains` (RF5), persona `pending-admin`: sidebar Start (expanded and collapsed), Reviews `OrderButton`, dashboard first-run, command palette Start (both entries), Launchpad dropzone and a YC row, Get started Upload row, Reviews level-1 upload zone, billing "Add credits": each has `aria-disabled="true"`, no `disabled`, an hourglass glyph, and a click opens the approval dialog. Persona `trial-admin`: the same controls work (Reviews upload zone opens Review setup in `RunModal`). `/launchpad` breadcrumb shows a plain reason line, not a chip.
+- [x] Implement per spec §5.5 Start-site table and PC-37. Flow passes.
 
 ### Task 4.3: Review setup (agent C3)
 
@@ -397,9 +397,9 @@ Return: PASS, or a numbered list of issues each with file:line, the rule or spec
 
 **Consumes:** `lockReasonForStart`, `openLock`, `useStartGate`, `checkoutHref`. **Produces:** `RunConfirm` passes `onRunOnly(type)` in the credits reason.
 
-- [ ] Flow `t4_3_review_setup.py::lock_over_takeover` (RF1): short persona, Review setup with both types, click Start → dialog visible; `elementFromPoint(centre)` is inside the lock dialog; Review setup still rendered behind the scrim; Esc → dialog gone, `.run` still attached, focus on Start review.
-- [ ] Flow: "Run Technical only (1 credit)" → review starts with Technical only (progress spoke) and the ledger shows one debit (PC-32); zero types → Start clickable, inline note, focus to the type list; empty address → inline note, focus on the field; pending persona via the queue "Run" on an intake row → approval dialog (bug B5); `LowBalanceCallout` text absent; no `button[disabled]` in `.run-cf-footbar`.
-- [ ] Implement per spec §5.5 Review setup table. Flow passes.
+- [x] Flow `t4_3_review_setup.py::lock_over_takeover` (RF1): short persona, Review setup with both types, click Start → dialog visible; `elementFromPoint(centre)` is inside the lock dialog; Review setup still rendered behind the scrim; Esc → dialog gone, `.run` still attached, focus on Start review.
+- [x] Flow: "Run Technical only (1 credit)" → review starts with Technical only (progress spoke) and the ledger shows one debit (PC-32); zero types → Start clickable, inline note, focus to the type list; empty address → inline note, focus on the field; pending persona via the queue "Run" on an intake row → approval dialog (bug B5); `LowBalanceCallout` text absent; no `button[disabled]` in `.run-cf-footbar`.
+- [x] Implement per spec §5.5 Review setup table. Flow passes.
 
 ### Task 4.4: Reviewer credit requests (agent C4)
 

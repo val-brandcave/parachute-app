@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -12,10 +12,11 @@ import {
   beginRunInPlace,
 } from "@/store";
 import { CURRENT_USER } from "@/lib/current-user";
+import { useLockStore } from "@/store/lock.store";
 import type { ReviewType } from "@/types";
-import { costFor } from "@/lib/pricing";
+import { checkoutHref } from "@/lib/checkout";
 import { RunExperience, type RunStartHandler } from "./RunExperience";
-import { RunAddCreditsContext, type RunAddCreditsHandler } from "./RunConfirm";
+import { RunAddCreditsContext, startLock, type RunAddCreditsHandler } from "./RunConfirm";
 import { checkoutBlock, useLaunchCheckout } from "@/components/organisms/CheckoutLauncher";
 
 // Re-exported for the run subviews that still import the shared context shape.
@@ -56,20 +57,29 @@ export function RunModal() {
     }
   };
 
+  // Re-armed each time the overlay opens (the drop / YC pick reuses one demo run id).
+  const startedRef = useRef(false);
+  useEffect(() => {
+    if (open) startedRef.current = false;
+  }, [open]);
   const onStart: RunStartHandler = (display, types) => {
     // Embedded (single-document SSO) has no queue — advance in place.
     if (embedded) {
       beginRunInPlace(display, types);
       return;
     }
-    // Balance is checked at Start only. The confirm gate already disables Start when
-    // short; this is the backstop (balance changed underneath). Nothing is created.
+    // Approval + balance are checked at Start only. Review setup already opens the lock
+    // dialog; this is the backstop (state changed underneath). Nothing is created.
     const wallet = useWalletStore.getState();
-    const need = costFor(types as ReviewType[]);
-    if (!wallet.canAfford(need)) {
-      onAddCredits({ display, types, needed: need - wallet.balance() });
+    const lock = startLock(display, types, wallet.balance(), (t) => onStart(display, [t]), onAddCredits);
+    if (lock) {
+      useLockStore.getState().openLock(lock);
       return;
     }
+    // One review per overlay run: a second Start (double click, or run-only during the
+    // lock dialog's exit) must not create a second review or a second debit.
+    if (startedRef.current) return;
+    startedRef.current = true;
     // Standalone: the drop / dashboard-YC pick becomes a real running review the
     // moment Start is clicked. Create it, then route into it — the wizard resumes
     // on the routed page at the pipeline-progress spoke.
@@ -111,7 +121,12 @@ export function RunModal() {
   // One draft per overlay run: a double click, or the callout then the Start backstop,
   // reuses the draft (in flight or created) instead of adding a second intake review.
   const draftRef = useRef<{ runId: string | null; id: Promise<string> } | null>(null);
-  const onAddCredits: RunAddCreditsHandler = ({ display, types, needed }) => {
+  const onAddCredits: RunAddCreditsHandler = ({ display, types, needed, choice }) => {
+    // The lock dialog's pick (custom amount or pack) wins; else checkout opens on the shortfall.
+    const leave = (returnTo: string, reviewTypes: ReviewType[]) => {
+      if (choice) router.push(checkoutHref({ ...choice, returnTo, types: reviewTypes }));
+      else launchCheckout({ needed, returnTo, types: reviewTypes });
+    };
     if (embedded || checkoutBlock()) {
       launchCheckout({ needed }); // explains (embedded / role) or no-ops (invoiced); creates nothing
       return;
@@ -123,7 +138,7 @@ export function RunModal() {
         const id = await existing.id;
         await updateReview(id, { reviewTypes });
         close();
-        launchCheckout({ needed, returnTo: `/reviews/${id}`, types: reviewTypes });
+        leave(`/reviews/${id}`, reviewTypes);
       })();
       return;
     }
@@ -148,7 +163,7 @@ export function RunModal() {
     void (async () => {
       const draftId = await id;
       close();
-      launchCheckout({ needed, returnTo: `/reviews/${draftId}`, types: reviewTypes });
+      leave(`/reviews/${draftId}`, reviewTypes);
     })();
   };
 

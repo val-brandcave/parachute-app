@@ -34,7 +34,7 @@ export function checkoutBlock(): CheckoutBlock {
 
 /**
  * The one way into `/checkout/credits`. `launch` applies `checkoutBlock()`; on the
- * role path it explains (toast now; the role lock dialog once T4.1 fills it), in an
+ * role path it opens the role lock dialog, in an
  * embedded YouConnect session it says credits are billed there, and invoiced is a
  * silent no-op; each returns false. Returns true when it
  * navigated.
@@ -50,10 +50,7 @@ export function useLaunchCheckout() {
         const admin = useUsersStore
           .getState()
           .allUsers.find((u) => u.orgId === me.orgId && u.role === "org_admin");
-        const adminName = admin?.name ?? "your organization admin";
-        const first = admin ? admin.name.split(" ")[0] : "your organization admin";
-        // T4.1: drop this toast once LockDialog renders the role body
-        toast({ title: "Only admins can buy credits", description: `Ask ${first}.`, tone: "info" });
+        const adminName = admin?.name ?? "your admin";
         useLockStore.getState().openLock({ kind: "role", action: "buy credits", admin: adminName });
         return false;
       }

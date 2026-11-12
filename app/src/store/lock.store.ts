@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { ReviewType } from "@/types";
+import type { CreditPackId, ReviewType } from "@/types";
 
 /**
  * Why an action is locked (spec §5.5). `credits.needed` is the SHORTFALL
@@ -15,6 +15,9 @@ export type LockReason =
       resume?: string;
       /** PC-32: "Run Technical only" — start now with one type. */
       onRunOnly?: (type: ReviewType) => void;
+      /** Review setup's own checkout path (draft-before-checkout, return + types, §5.6).
+       *  When absent the dialog builds the checkout URL itself (checkoutHref + resume). */
+      onAdd?: (choice: { credits: number } | { pack: CreditPackId }) => void;
     }
   | { kind: "role"; action: string; admin: string };
 

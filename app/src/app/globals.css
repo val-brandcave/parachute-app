@@ -15283,7 +15283,8 @@ select.qfilter {
 .intake-drop.is-locked,
 .intake-drop.is-locked:hover,
 .intake-drop.is-locked:focus-visible {
-  cursor: not-allowed;
+  /* Locked sites explain on click (lock-then-explain, phase 4), so the cursor stays a pointer. */
+  cursor: pointer;
   background: var(--md-surface-1);
   border-color: var(--md-outline-v);
 }
@@ -15297,12 +15298,12 @@ select.qfilter {
 .start-locked,
 .start-locked:hover {
   opacity: 0.55;
-  cursor: not-allowed;
+  cursor: pointer;
   transform: none;
 }
 .cmdk-item.is-disabled {
   opacity: 0.55;
-  cursor: not-allowed;
+  cursor: pointer;
 }
 .crumb-lock {
   margin-left: 8px;

@@ -21,7 +21,7 @@ import {
   customPriceUsd,
   packById,
 } from "@/lib/pricing";
-import { useOrgStore, useUsersStore, useWalletStore, useWalletView } from "@/store";
+import { useCreditRequestStore, useOrgStore, useUsersStore, useWalletStore, useWalletView } from "@/store";
 
 /**
  * Page hook for `/checkout/credits` (spec §5.6). Everything that must survive a hard
@@ -285,11 +285,20 @@ export function useCheckout() {
       const results = await Promise.allSettled(writes);
       settingsFailed = results.some((r) => r.status === "rejected");
     }
-    // SEAM (T4.4): when `draft.request` is set, mark that credit request fulfilled here,
-    // after the purchase lands (request store, phase 4). Nothing to do until then.
+    // A reviewer's credit request rides in as `request=<id>`: Paid fulfils it. Best-effort,
+    // like the settings writes above: the money has moved, so a failure here never fails the pay.
+    if (draft.request) {
+      try {
+        const rs = useCreditRequestStore.getState();
+        if (!rs.loaded) await rs.fetchRequests();
+        await rs.fulfil(draft.request);
+      } catch {
+        /* the purchase stands; the request stays open and the admin can dismiss it */
+      }
+    }
     clearForm();
     return { receiptId: entry.receiptId ?? "", settingsFailed };
-  }, [draft.choice, form, settings?.autoReload]);
+  }, [draft.choice, draft.request, form, settings?.autoReload]);
 
   /** After pay(): replace, so browser Back can't land on Review and pay twice. */
   const finish = useCallback(

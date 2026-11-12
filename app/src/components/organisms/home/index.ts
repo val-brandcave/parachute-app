@@ -6,4 +6,4 @@ export { PendingTracker, type PendingTrackerStep } from "./PendingTracker";
 export { ResourceCards } from "./ResourceCards";
 export { AllDone } from "./AllDone";
 export { useSetupActions } from "./useSetupActions";
-export { useStartGate, START_LOCKED_REASON } from "./useStartGate";
+export { useStartGate, START_LOCKED_REASON, startLockedReason } from "./useStartGate";

@@ -12,11 +12,16 @@ import {
   useWalletStore,
   beginRunInPlace,
 } from "@/store";
-import { costFor } from "@/lib/pricing";
+import { useLockStore } from "@/store/lock.store";
+import { checkoutHref } from "@/lib/checkout";
 import { runEntry } from "@/lib/review-lifecycle";
 import type { ReviewType } from "@/types";
 import { RunExperience, type RunStartHandler } from "@/components/run/RunExperience";
-import { RunAddCreditsContext, type RunAddCreditsHandler } from "@/components/run/RunConfirm";
+import {
+  RunAddCreditsContext,
+  startLock,
+  type RunAddCreditsHandler,
+} from "@/components/run/RunConfirm";
 import { checkoutBlock, useLaunchCheckout } from "@/components/organisms/CheckoutLauncher";
 
 /**
@@ -64,11 +69,19 @@ export default function ReviewDetailPage() {
   // Route Start: the review already exists — flip it to running + commit the
   // chosen types, then advance to the pipeline in place.
   const onStart: RunStartHandler = (display, types, opts) => {
-    // Balance is checked at Start only (backstop; the confirm gate already disables Start).
+    // Approval + balance are checked at Start only. Review setup already opens the lock
+    // dialog; this is the backstop (state changed underneath). The sample never locks.
     const wallet = useWalletStore.getState();
-    const need = review?.sample ? 0 : costFor(types as ReviewType[]);
-    if (!wallet.canAfford(need)) {
-      onAddCredits({ display, types, needed: need - wallet.balance() });
+    const lock = review?.sample
+      ? null
+      : startLock(display, types, wallet.balance(), (t) =>
+            // Run-only: keep only the chosen type's template override (as RunConfirm does).
+            onStart(display, [t], {
+              checklistId: t === "administrative" ? (opts?.checklistId ?? null) : null,
+              layoutId: t === "technical" ? (opts?.layoutId ?? null) : null,
+            }), onAddCredits);
+    if (lock) {
+      useLockStore.getState().openLock(lock);
       return;
     }
     if (review)
@@ -94,7 +107,7 @@ export default function ReviewDetailPage() {
   // Draft before checkout (spec §5.6): the review already exists, so keep its id —
   // commit the chosen types (an intake review is the draft), then leave for checkout
   // with `return=/reviews/<id>&types=…`. On return, intake → Review setup reads them.
-  const onAddCredits: RunAddCreditsHandler = ({ display, types, needed }) => {
+  const onAddCredits: RunAddCreditsHandler = ({ display, types, needed, choice }) => {
     if (!review) return;
     if (checkoutBlock()) {
       launchCheckout({ needed });
@@ -109,7 +122,10 @@ export default function ReviewDetailPage() {
           loanNo: display.loanNo || review.loanNo,
           reviewTypes: types as ReviewType[],
         });
-      launchCheckout({ needed, returnTo: `/reviews/${review.id}`, types: types as ReviewType[] });
+      const returnTo = `/reviews/${review.id}`;
+      // The lock dialog's pick (custom amount or pack) wins; else checkout opens on the shortfall.
+      if (choice) router.push(checkoutHref({ ...choice, returnTo, types: types as ReviewType[] }));
+      else launchCheckout({ needed, returnTo, types: types as ReviewType[] });
     })();
   };
 

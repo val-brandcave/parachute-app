@@ -392,3 +392,43 @@
   font-size: 20px;
   line-height: 34px;
 }
+
+/* ---- reviewer credit request: form and tracker (spec §5.9, T4.4) ---- */
+.rq {
+  gap: 8px;
+}
+.rq .bl-body.rq-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 0;
+  font-weight: 600;
+}
+.rq-title--ok {
+  color: var(--md-success);
+}
+.rq-when {
+  margin-left: 4px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--md-on-surface-v);
+}
+.rq-quote {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--md-surface-1);
+  color: var(--md-on-surface-v);
+  font-size: 13px;
+  line-height: 20px;
+  text-wrap: pretty;
+}
+.rq-label {
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--md-on-surface);
+}
+.rq-actions {
+  margin-top: 4px;
+}

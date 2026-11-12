@@ -11,7 +11,7 @@ import {
   type NavNode,
 } from "@realwired/ui";
 
-import { Icon, Logo, Tooltip } from "@/components/atoms";
+import { Icon, Logo } from "@/components/atoms";
 import { Breadcrumbs } from "@/components/molecules";
 import { OrgCard } from "@/components/organisms/OrgCard";
 import { BalancePill } from "@/components/organisms/BalancePill";
@@ -157,32 +157,42 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         // breaks that column the moment the label length changes.
         navAction={(collapsed) =>
           startGate.locked ? (
-            // Pending approval: same structure as the enabled link (an element
-            // handed to SidebarAction asChild) so icon + label keep their row.
-            // Expanded: our Tooltip carries the reason. Collapsed: the library
-            // already wraps a tooltip around `label`, so the reason rides there.
-            collapsed ? (
-              <SidebarAction
-                asChild
-                collapsed
-                label={`Start a review. ${startGate.reason}`}
-                aria-disabled="true"
-                className="start-locked"
+            // Pending approval (spec §5.5 lock-then-explain): same structure as the enabled
+            // link so icon + label keep their row; never disabled. aria-disabled + a
+            // visually-hidden reason; click / Enter / Space opens the approval dialog.
+            // (LockedAction can't wrap a SidebarAction asChild — Slot takes one child — so the
+            // same contract is applied inline here.)
+            <SidebarAction
+              asChild
+              collapsed={collapsed}
+              label={collapsed ? `Start a review. ${startGate.reasonText}` : "Start a review"}
+              aria-disabled="true"
+              className="start-locked"
+            >
+              <span
+                role="button"
+                tabIndex={0}
+                aria-describedby="sb-start-reason"
+                onClick={(e) => startGate.explain(e.currentTarget)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    startGate.explain(e.currentTarget);
+                  }
+                }}
               >
-                <span role="button" tabIndex={0}>
-                  <Icon name="parachute" size={19} />
-                </span>
-              </SidebarAction>
-            ) : (
-              <Tooltip side="right" block content={startGate.reason}>
-                <SidebarAction asChild aria-disabled="true" className="start-locked">
-                  <span role="button" tabIndex={-1}>
-                    <Icon name="parachute" size={19} />
-                    <span className="truncate">Start a review</span>
+                <Icon name="parachute" size={19} />
+                {!collapsed && <span className="truncate">Start a review</span>}
+                {!collapsed && (
+                  <span className="locked-glyph" aria-hidden="true">
+                    <Icon name="hourglass-high" size={14} />
                   </span>
-                </SidebarAction>
-              </Tooltip>
-            )
+                )}
+                <span id="sb-start-reason" className="ui-visually-hidden">
+                  {startGate.reasonText}
+                </span>
+              </span>
+            </SidebarAction>
           ) : (
             <SidebarAction asChild collapsed={collapsed} label="Start a review">
               <Link href="/launchpad">

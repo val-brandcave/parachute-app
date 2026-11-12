@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CreditChip, Icon } from "@/components/atoms";
+import { Icon } from "@/components/atoms";
 import { useStartGate } from "@/components/organisms/home/useStartGate";
 import { useReviewsStore, useTemplatesStore } from "@/store";
 
@@ -101,9 +101,7 @@ export function Breadcrumbs() {
             )}
             {!last && <Icon name="chevron-right" size={15} className="sep" />}
             {last && segs[0] === "launchpad" && startGate.locked && (
-              <CreditChip tone="low" size="sm" className="crumb-lock">
-                {startGate.reason}
-              </CreditChip>
+              <span className="crumb-lock text-tertiary">{startGate.reasonText}</span>
             )}
           </span>
         );

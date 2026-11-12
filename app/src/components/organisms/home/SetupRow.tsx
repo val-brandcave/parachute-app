@@ -102,7 +102,7 @@ export function SetupRow({ step, primary, summary }: { step: DerivedStep; primar
       return {
         kind: "lock",
         label,
-        reason: gate.reason,
+        reason: gate.reasonText,
         icon: "hourglass-high",
         open: (el) => openLock({ kind: "approval" }, { returnFocus: el }),
       };

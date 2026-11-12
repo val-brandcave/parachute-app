@@ -1,5 +1,6 @@
 import { Logo } from "@/components/atoms";
 import { DemoDock } from "@/components/organisms";
+import { LockDialog } from "@/components/organisms/LockDialog";
 
 /**
  * (onboarding) route group: Parachute-owned, standalone (no shell), after the
@@ -20,6 +21,7 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
         <span aria-hidden="true">·</span>
         <a href="#privacy">Privacy</a>
       </footer>
+      <LockDialog />
       <DemoDock />
     </div>
   );

@@ -65,7 +65,7 @@ export function AllDone({ summary }: { summary: SetupSummary }) {
                   </span>
                 </button>
                 <span id={reasonId} className="ui-visually-hidden">
-                  {gate.reason}
+                  {gate.reasonText}
                 </span>
               </>
             ) : (

@@ -14,6 +14,7 @@ import { seedCreditLedger } from "./credit-ledger.seed";
 import { seedWalletSettings } from "./wallet-settings.seed";
 import { seedSetupProgress } from "./setup-progress.seed";
 import { seedInvites } from "./invites.seed";
+import { seedCreditRequests } from "./credit-requests.seed";
 
 /** Populate initial data. Parents before children. */
 export async function seedAll(adapter: DataAdapter): Promise<void> {
@@ -23,6 +24,7 @@ export async function seedAll(adapter: DataAdapter): Promise<void> {
   await adapter.createMany(Collections.WALLET_SETTINGS, seedWalletSettings);
   await adapter.createMany(Collections.SETUP_PROGRESS, seedSetupProgress);
   await adapter.createMany(Collections.INVITES, seedInvites);
+  await adapter.createMany(Collections.CREDIT_REQUESTS, seedCreditRequests);
   await adapter.createMany(Collections.REVIEWS, seedReviews);
   await adapter.createMany(Collections.FINDINGS, seedFindings);
   await adapter.createMany(Collections.ATTESTATIONS, seedAttestations);

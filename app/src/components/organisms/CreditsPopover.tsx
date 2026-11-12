@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button, CreditChip, Icon, Illustration, type IconName } from "@/components/atoms";
+import { Avatar, Button, CreditChip, Icon, Illustration, type IconName } from "@/components/atoms";
 import { useCurrentOrg, useCurrentUser } from "@/lib/current-user";
 import { INVOICED_CREDIT_USD, REVIEW_TYPE_COST, TRIAL_GRANT_CREDITS, costFor, formatUsd } from "@/lib/pricing";
 import { FULL_REVIEW_TYPES } from "@/lib/setup-steps";
 import { usageByPerson, type WalletView } from "@/lib/wallet-view";
-import { useSetupSummary, useUsersStore, useWalletStore } from "@/store";
+import { useCreditRequestStore, useSetupSummary, useUsersStore, useWalletStore } from "@/store";
+import { canRequest, isLive } from "@/lib/credit-requests";
 import type { BillingModel, UserRole } from "@/types";
 import "./credits-chrome.css";
 
@@ -40,11 +41,23 @@ function runsOutPhrase(at: number, now: number): string {
     : d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
+/** "just now", "2 h ago", "yesterday", else "Nov 9". Pure: `now` is passed in. */
+function requestAge(at: number, now: number): string {
+  const mins = Math.floor((now - at) / 60_000);
+  if (mins < 2) return "just now";
+  if (mins < 60) return `${mins} min ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours} h ago`;
+  if (hours < 48) return "yesterday";
+  return new Date(at).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
 /**
  * Header credits popover content (spec §5.3, board 1 #credits-popover). One body per state:
  * healthy / low / zero, held, invoiced, and the non-admin variants (Reviewer and Approver ask
  * the admin instead of buying). Numbers come from the one wallet view; nothing here sums credits.
- * T4.4 adds the request card.
+ * Admins see waiting reviewer requests (opening the popover marks them opened); a reviewer's
+ * ask writes the same CreditRequest as Billing.
  */
 export function CreditsPopover({
   view,
@@ -64,13 +77,26 @@ export function CreditsPopover({
   const earn = useSetupSummary().earn;
   const users = useUsersStore((s) => s.allUsers);
   const [now] = useState(() => Date.now());
-  const [asked, setAsked] = useState(false);
+  const [asking, setAsking] = useState(false);
+  const requests = useCreditRequestStore((s) => s.requests);
 
   const isAdmin = role === "org_admin";
   const admin =
     users.find((u) => u.id === org?.billingContactId) ??
     users.find((u) => u.orgId === org?.id && u.role === "org_admin");
   const adminFirst = admin?.name.split(" ")[0] ?? "your admin";
+
+  // Admin: live requests from this org's reviewers, newest first. Reviewer: whether they can ask.
+  const waiting = useMemo(
+    () => (isAdmin && org ? requests.filter((r) => r.orgId === org.id && isLive(r)).sort((a, b) => b.createdAt - a.createdAt) : []),
+    [isAdmin, org, requests],
+  );
+  const iHaveLive = useMemo(() => !canRequest(requests.filter((r) => r.orgId === org?.id), me.id), [requests, org?.id, me.id]);
+  const unopened = waiting.filter((r) => r.status === "open").map((r) => r.id).join(",");
+  // Opening the popover is what an admin "seeing" a request means.
+  useEffect(() => {
+    for (const id of unopened ? unopened.split(",") : []) void useCreditRequestStore.getState().markOpened(id);
+  }, [unopened]);
 
   const go = (href: string) => {
     onClose();
@@ -85,8 +111,18 @@ export function CreditsPopover({
     }).find((r) => r.userId === me.id)?.credits ?? 0;
 
   const askButton = (
-    <Button variant="primary" size="sm" onClick={() => setAsked(true)}>
-      {asked ? `${adminFirst} has been asked` : `Ask ${adminFirst} for more credits`}
+    <Button
+      variant="primary"
+      size="sm"
+      aria-busy={asking}
+      onClick={async () => {
+        if (iHaveLive) return;
+        setAsking(true);
+        await useCreditRequestStore.getState().request();
+        setAsking(false);
+      }}
+    >
+      {iHaveLive ? `${adminFirst} has been asked` : `Ask ${adminFirst} for more credits`}
     </Button>
   );
   const usageButton = (
@@ -219,6 +255,36 @@ export function CreditsPopover({
           ))}
         </div>
       )}
+      {waiting.map((r) => {
+        const who = users.find((u) => u.id === r.requesterId);
+        return (
+          <div key={r.id} className="cp-req">
+            <div className="cp-req-who">
+              <Avatar initials={who?.initials ?? "?"} size={32} tone="navy" />
+              <div>
+                <b>{who?.name ?? "A reviewer"} asked for more credits</b>
+                {r.note && <span className="cp-req-note">&ldquo;{r.note}&rdquo;</span>}
+                <span className="cp-faint">{requestAge(r.createdAt, now)}</span>
+              </div>
+            </div>
+            <div className="cp-req-act">
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => {
+                  onClose();
+                  useWalletStore.getState().openTopUp({ reason: "manual", request: r.id });
+                }}
+              >
+                Add credits
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => void useCreditRequestStore.getState().dismiss(r.id)}>
+                Dismiss
+              </Button>
+            </div>
+          </div>
+        );
+      })}
       {earnOpen && isAdmin && (
         <button type="button" className="cp-note" onClick={() => go("/get-started")}>
           <Icon name="gift" size={15} />

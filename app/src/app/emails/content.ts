@@ -6,6 +6,7 @@ import {
   TRIAL_GRANT_CREDITS,
   DEFAULT_PACK_ID,
   approxValue,
+  packById,
   costFor,
   formatUsd,
 } from "@/lib/pricing";
@@ -76,6 +77,14 @@ const remainingReviews = Math.floor(Math.max(EARN_CAP_CREDITS - EARN_REWARD_CRED
 const receiptRow = ledger.find((e) => e.receiptId === "RCT-40918")!;
 const receiptBalance = balanceThrough(receiptRow.id);
 const receiptCredits = Math.abs(receiptRow.credits);
+
+// Reviewer credit requests (spec §5.9): Marcus asks, Dana adds, Marcus hears back.
+const REQUESTER = "Marcus Ortiz";
+const REQUESTER_FIRST = "Marcus";
+const REQUESTER_TO = "m.ortiz@harborcb.com";
+const REQUEST_NOTE = "3 reports due Friday, Lakeview Plaza needs both reviews.";
+const requestBalance = ledger.reduce((s, e) => s + e.credits, 0);
+const packCredits = packById(DEFAULT_PACK_ID).credits;
 
 const LOW_BALANCE = 1;
 
@@ -312,6 +321,61 @@ export const emails: EmailSpec[] = [
       {
         kind: "small",
         text: `Credits that expire soonest are used first; trial credits go last. 1 credit = 1 review type on 1 report, about ${formatUsd(CREDIT_USD)}.`,
+      },
+    ],
+  },
+  {
+    id: "credit-request",
+    chip: "Credit request",
+    product: "Parachute",
+    ...FROM_PARACHUTE,
+    to: TO,
+    subject: `${REQUESTER} asked for more credits`,
+    blocks: [
+      { kind: "p", text: `Hi ${FIRST},` },
+      {
+        kind: "p",
+        text: `**${REQUESTER}** asked for more credits for ${ORG}. Only an organization admin can add them.`,
+      },
+      { kind: "p", text: `"${REQUEST_NOTE}"` },
+      {
+        kind: "rows",
+        rows: [
+          ["Balance", `${plural(requestBalance, "credit", "credits")} ${sep} ${approxValue(requestBalance)}`],
+          ["Full review", `${fullReview} credits ${sep} ${approxValue(fullReview)}`],
+        ],
+      },
+      { kind: "cta", label: "Add credits", href: ADD_CREDITS_HREF },
+      {
+        kind: "small",
+        text: `You can also add credits or dismiss the request from the credits menu in Parachute. ${REQUESTER_FIRST} is told either way.`,
+      },
+    ],
+  },
+  {
+    id: "credits-added",
+    chip: "Credits added",
+    product: "Parachute",
+    ...FROM_PARACHUTE,
+    to: REQUESTER_TO,
+    subject: `${FIRST} added credits for ${ORG}`,
+    blocks: [
+      { kind: "p", text: `Hi ${REQUESTER_FIRST},` },
+      {
+        kind: "p",
+        text: `${FIRST} added **${plural(packCredits, "credit", "credits")}** after your request. They are ready to use now.`,
+      },
+      {
+        kind: "rows",
+        rows: [
+          ["Added", `${plural(packCredits, "credit", "credits")} ${sep} ${approxValue(packCredits)}`],
+          ["Full review", `${fullReview} credits ${sep} ${approxValue(fullReview)}`],
+        ],
+      },
+      { kind: "cta", label: "Start a review" },
+      {
+        kind: "small",
+        text: "If a review was waiting on credits, it can start now.",
       },
     ],
   },

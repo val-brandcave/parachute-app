@@ -192,3 +192,34 @@
   display: block;
   color: var(--md-on-surface-v);
 }
+
+/* ---- popover: reviewer request card for admins (spec §5.9, T4.4) ---- */
+.cp-req {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0 16px 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--md-surface-1);
+}
+.cp-req-who {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.cp-req-who > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.cp-req-note {
+  color: var(--md-on-surface-v);
+  text-wrap: pretty;
+}
+.cp-req-act {
+  display: flex;
+  gap: 8px;
+  padding-left: 42px;
+}

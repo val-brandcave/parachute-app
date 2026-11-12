@@ -1,9 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Callout } from "@realwired/ui";
-import { Button, CreditChip, Illustration } from "@/components/atoms";
+import { Callout, useToast } from "@realwired/ui";
+import { Button, CreditChip, Icon, Illustration, Textarea } from "@/components/atoms";
+import { useCreditRequestStore } from "@/store";
+import { isLive } from "@/lib/credit-requests";
+import type { CreditRequest } from "@/types";
 import { EmptyLine, EmptyState, GhostBars, GhostStats } from "@/components/molecules";
 import { usageByPerson } from "@/lib/wallet-view";
 import { AUTO_RELOAD_DEFAULTS, CREDIT_USD, approxValue, costFor, formatUsd, packById } from "@/lib/pricing";
@@ -405,6 +408,148 @@ export function OverviewTab({
   );
 }
 
+const NOTE_MAX = 200;
+const seenKey = (r: CreditRequest) => `parachute:request-seen:${r.id}`;
+
+/** "just now", "2 h ago", "yesterday", else "Nov 9". Pure: `now` is passed in. */
+function agoText(at: number, now: number): string {
+  const mins = Math.floor((now - at) / 60_000);
+  if (mins < 2) return "just now";
+  if (mins < 60) return `${mins} min ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours} h ago`;
+  if (hours < 48) return "yesterday";
+  return monthDay(at);
+}
+
+/**
+ * Reviewer credit request (spec §5.9): the form, then the tracker. One live request per
+ * requester; while one is open the form is not offered. Resolved requests read back as
+ * "Credits added" (plus a toast the first time) or "<Admin> closed your request" with Ask again.
+ */
+function RequestAsk({ b }: { b: Billing }) {
+  const toast = useToast();
+  const requests = useCreditRequestStore((s) => s.requests);
+  const [now] = useState(() => Date.now());
+  const [note, setNote] = useState("");
+  const [again, setAgain] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const orgId = b.org?.id;
+  const last = useMemo(
+    () =>
+      requests
+        .filter((r) => r.requesterId === b.me.id && r.orgId === orgId)
+        .sort((x, y) => y.createdAt - x.createdAt)[0],
+    [requests, b.me.id, orgId],
+  );
+  const live = !!last && isLive(last);
+  const resolved = last && !live && last.status !== "cancelled" ? last : undefined;
+
+  // The "Credits added" toast fires once per fulfilled request, remembered in this browser.
+  useEffect(() => {
+    if (!last || last.status !== "fulfilled") return;
+    try {
+      const key = seenKey(last);
+      if (window.localStorage.getItem(key)) return;
+      window.localStorage.setItem(key, String(last.resolvedAt ?? 1));
+    } catch {
+      return;
+    }
+    toast({ title: "Credits added", description: `${b.adminFirst} added credits to ${b.org?.name ?? "your organization"}.`, tone: "success" });
+  }, [last, toast, b.adminFirst, b.org?.name]);
+
+  const ask = async () => {
+    setBusy(true);
+    const made = await useCreditRequestStore.getState().request(note);
+    setBusy(false);
+    if (!made) return;
+    setNote("");
+    setAgain(false);
+    toast({ title: `We emailed ${b.adminName}`, description: "They can add credits from the credits menu.", tone: "success" });
+  };
+  const remind = async () => {
+    if (!last) return;
+    await useCreditRequestStore.getState().remind(last.id);
+    toast({ title: `We reminded ${b.adminFirst}`, tone: "success" });
+  };
+  const cancel = async () => {
+    if (!last) return;
+    await useCreditRequestStore.getState().cancel(last.id);
+  };
+
+  if (live && last) {
+    return (
+      <div className="bl-ask rq" role="status">
+        <p className="bl-body rq-title">
+          <Icon name="hourglass-high" size={16} /> You asked {b.adminName} {agoText(last.createdAt, now)}
+        </p>
+        {last.note && <p className="rq-quote">&ldquo;{last.note}&rdquo;</p>}
+        <p className="bl-note">
+          {last.status === "opened" ? `${b.adminFirst} has seen your request.` : `${b.adminFirst} has not opened it yet.`}
+          {last.remindedAt ? ` You reminded ${b.adminFirst} ${agoText(last.remindedAt, now)}.` : ""}
+        </p>
+        <div className="bl-row bl-row--tight bl-row--start rq-actions">
+          {!last.remindedAt && (
+            <Button variant="outline" size="sm" iconLeft="send" onClick={remind}>
+              Remind {b.adminFirst}
+            </Button>
+          )}
+          <Button variant="ghost" size="sm" onClick={cancel}>
+            Cancel request
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  const showForm = !resolved || again;
+  return (
+    <div className="bl-ask rq">
+      {resolved && resolved.status === "fulfilled" && (
+        <p className="bl-body rq-title rq-title--ok" role="status">
+          <Icon name="check-circle" size={16} /> Credits added
+          <span className="rq-when">{resolved.resolvedAt ? agoText(resolved.resolvedAt, now) : ""}</span>
+        </p>
+      )}
+      {resolved && resolved.status === "dismissed" && (
+        <p className="bl-body rq-title" role="status">
+          <Icon name="info" size={16} /> {b.adminFirst} closed your request
+          <span className="rq-when">{resolved.resolvedAt ? agoText(resolved.resolvedAt, now) : ""}</span>
+        </p>
+      )}
+      {resolved && !again && (
+        <div className="bl-row bl-row--tight bl-row--start">
+          <Button variant="outline" size="sm" iconLeft="send" onClick={() => setAgain(true)}>
+            {resolved.status === "dismissed" ? "Ask again" : "Ask for more"}
+          </Button>
+        </div>
+      )}
+      {showForm && (
+        <>
+          {!resolved && <p className="bl-body">Only your organization admin can buy credits. Ask {b.adminName}.</p>}
+          <label className="rq-label" htmlFor="rq-note">
+            Add a note <span className="bl-note">(optional)</span>
+          </label>
+          <Textarea
+            id="rq-note"
+            rows={2}
+            maxLength={NOTE_MAX}
+            value={note}
+            placeholder="What is due, and why you need more"
+            onChange={(e) => setNote(e.target.value)}
+          />
+          <div className="bl-row bl-row--tight bl-row--start rq-actions">
+            <Button iconLeft="send" onClick={ask} aria-busy={busy}>
+              Ask {b.adminFirst} for more credits
+            </Button>
+            <span className="bl-note">We&rsquo;ll send {b.adminFirst} an email with your balance.</span>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 /** Read-only for reviewers and approvers: the organization's balance and your own numbers. Credits only, no dollars. */
 export function ReviewerBilling({ b, onViewAll }: { b: Billing; onViewAll: () => void }) {
   const mine = useMemo(
@@ -417,14 +562,10 @@ export function ReviewerBilling({ b, onViewAll }: { b: Billing; onViewAll: () =>
         <EmptyState
           title="Your organization has no credits yet"
           preview={<GhostStats count={3} />}
-          actions={
-            <Button iconLeft="send" onClick={b.askAdmin}>
-              Ask your admin
-            </Button>
-          }
         >
           Only your organization admin can add credits. Once they do, the balance and the reviews you run show up here.
         </EmptyState>
+        <RequestAsk b={b} />
       </div>
     );
   }
@@ -433,17 +574,7 @@ export function ReviewerBilling({ b, onViewAll }: { b: Billing; onViewAll: () =>
       <BalanceHero
         b={b}
         showValue={false}
-        aside={
-          <div className="bl-ask">
-            <p className="bl-body">Only your organization admin can buy credits. Ask {b.adminName}.</p>
-            <div className="bl-row bl-row--tight bl-row--start">
-              <Button iconLeft="send" onClick={b.askAdmin}>
-                Ask your admin
-              </Button>
-              <span className="bl-note">We&rsquo;ll send {b.adminFirst} an email with your balance.</span>
-            </div>
-          </div>
-        }
+        aside={<RequestAsk b={b} />}
       />
       <ExpiryAlert b={b} />
       <ReviewerFacts b={b} />

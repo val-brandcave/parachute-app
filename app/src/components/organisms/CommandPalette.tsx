@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Icon, type IconName } from "@/components/atoms";
 import { cn } from "@/lib/utils";
 import { useStartGate } from "@/components/organisms/home/useStartGate";
+import { useLockProbe } from "@/components/organisms/home/useLockProbe";
 import { useSetupGuideVisible } from "@/lib/landing";
 import { useOrgStore, useReviewsStore, useWalletStore } from "@/store";
 import { useCurrentUser } from "@/lib/current-user";
@@ -18,7 +19,8 @@ type Cmd = {
   sub?: string;
   icon: IconName;
   run: () => void;
-  /** Shown instead of `sub` and blocks `run` (e.g. awaiting approval). */
+  /** Shown instead of `sub`, with `aria-disabled` and an hourglass (awaiting approval). `run` still
+   *  fires and explains (opens the approval dialog); the row is never inert (spec §5.5). */
   disabledReason?: string;
 };
 
@@ -44,6 +46,7 @@ export function CommandPalette({
   open: boolean;
   onClose: () => void;
 }) {
+  useLockProbe();
   return (
     <AnimatePresence>
       {open && (
@@ -81,6 +84,10 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
     if (!reviews.length) fetchReviews();
   }, [reviews.length, fetchReviews]);
 
+  // Where focus returns after the approval dialog: whatever had focus before the palette opened.
+  const [opener] = useState<HTMLElement | null>(() =>
+    typeof document === "undefined" ? null : (document.activeElement as HTMLElement | null),
+  );
   const go = (fn: () => void) => {
     fn();
     onClose();
@@ -115,8 +122,9 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
       group: "Go to",
       label: n.label,
       icon: n.icon,
-      disabledReason: gate.locked && n.href === "/launchpad" ? gate.reason : undefined,
-      run: () => go(() => router.push(n.href)),
+      disabledReason: gate.locked && n.href === "/launchpad" ? gate.reasonText : undefined,
+      run: () =>
+        go(() => (gate.locked && n.href === "/launchpad" ? gate.explain(opener) : router.push(n.href))),
     }));
 
     const actionItems: Cmd[] = [
@@ -125,8 +133,8 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
         group: "Actions",
         label: "Start a review",
         icon: "add" as IconName,
-        disabledReason: gate.locked ? gate.reason : undefined,
-        run: () => go(() => router.push("/launchpad")),
+        disabledReason: gate.locked ? gate.reasonText : undefined,
+        run: () => go(() => (gate.locked ? gate.explain(opener) : router.push("/launchpad"))),
       },
       ...(canBuy
         ? [
@@ -151,7 +159,7 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
 
     return [...reviewItems, ...navItems, ...actionItems];
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q, reviews, gate.locked, gate.reason, setupVisible, canBuy]);
+  }, [q, reviews, gate.locked, gate.reasonText, gate.explain, opener, setupVisible, canBuy]);
 
   // Keep the active row scrolled into view (DOM sync, no setState).
   useEffect(() => {
@@ -178,7 +186,7 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
       setActive((a) => (a - 1 + items.length) % items.length);
     } else if (e.key === "Enter") {
       e.preventDefault();
-      if (!items[active]?.disabledReason) items[active]?.run();
+      items[active]?.run();
     } else if (e.key === "Escape") {
       onClose();
     }
@@ -227,8 +235,9 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
                   key={cmd.id}
                   className={cn("cmdk-item", idx === active && "active", cmd.disabledReason && "is-disabled")}
                   aria-disabled={cmd.disabledReason ? true : undefined}
+                  aria-describedby={cmd.disabledReason ? `cmdk-reason-${cmd.id.replace(/\W/g, "-")}` : undefined}
                   onMouseMove={() => setActive(idx)}
-                  onClick={cmd.disabledReason ? undefined : cmd.run}
+                  onClick={cmd.run}
                 >
                   <span className="cmdk-ic">
                     <Icon name={cmd.icon} size={16} />
@@ -236,10 +245,16 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
                   <span className="cmdk-main">
                     <div className="cmdk-label">{cmd.label}</div>
                     {(cmd.disabledReason ?? cmd.sub) && (
-                      <div className="cmdk-sub">{cmd.disabledReason ?? cmd.sub}</div>
+                      <div className="cmdk-sub" id={cmd.disabledReason ? `cmdk-reason-${cmd.id.replace(/\W/g, "-")}` : undefined}>{cmd.disabledReason ?? cmd.sub}</div>
                     )}
                   </span>
-                  <Icon name="chevron-right" size={16} className="cmdk-go" />
+                  {cmd.disabledReason ? (
+                    <span className="locked-glyph" aria-hidden="true">
+                      <Icon name="hourglass-high" size={14} />
+                    </span>
+                  ) : (
+                    <Icon name="chevron-right" size={16} className="cmdk-go" />
+                  )}
                 </div>
               ))}
             </div>

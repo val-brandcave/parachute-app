@@ -4,6 +4,7 @@ import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { EMPTY_FILTERS, activeFilterCount, useReviewQueue } from "./hooks/useReviewQueue";
 import "./reviews.css";
+import { UploadZone } from "./UploadZone";
 import { ReviewTable, ReviewTableSkeleton, OrderButton } from "@/components/organisms";
 import {
   QueueFilters,
@@ -129,6 +130,7 @@ export default function MyReviewsPage() {
             layout="stack"
             title="No reviews yet"
             preview={<GhostRows rows={3} />}
+            actions={<UploadZone />}
             status={
               locked ? (
                 <>

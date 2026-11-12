@@ -1,19 +1,23 @@
 """T3.3 Reroute Add credits, draft before checkout.
 
 short_by_one_prefills_one (RF2): persona short by one (payg-admin-low, 1 credit), drop a
-  file on /launchpad -> Review setup with both types -> callout "Add 1 credit" -> URL is
+  file on /launchpad -> Review setup with both types -> Start review -> lock dialog (T4.1)
+  "Add 1 credit" -> URL is
   /checkout/credits?credits=1&return=%2Freviews%2F<id>&types=technical%2Cadministrative.
-round_trip_with_reload (RF4): zero balance, Technical only -> credits=1&types=technical;
+round_trip_with_reload (RF4): zero balance, Technical only -> Start -> "You're out of credits"
+  dialog, pick "1 credit · Just this review", Continue to checkout -> credits=1&types=technical;
   one `intake` draft (double click safe) listed in /reviews Intake; hard reload on Payment;
   pay -> "Back to your review" -> /reviews/<id> with exactly Technical checked; Start runs.
 entry_points: header popover, billing band, Invoices empty, command palette each land on
   checkout with the right amount and `return`; /emails "Add credits" CTAs carry
   href="/checkout/credits?pack=pack10"; reviewer has no palette "Add credits"; an embedded
-  YouConnect run never navigates to checkout.
+  YouConnect run on a wallet org at 0 opens no lock dialog and never navigates to checkout.
 
 RF4 uses zero balance + Technical only (short by 1) so the round trip proves the
 selection survives: exactly Technical is checked on return. The embedded check puts the
-YouConnect org on wallet billing at 0 credits so the callout really shows.
+YouConnect org on wallet billing at 0 credits, so a wallet lock WOULD fire if embedded runs
+were not exempt (spec §5.0: no lock dialog and no checkout in embedded runs).
+T4.3 deleted the LowBalanceCallout: Add credits is now the lock dialog's (T4.1).
 """
 
 import re
@@ -24,6 +28,8 @@ PERSONAS = ["payg-admin-low", "reviewer", "enterprise-yc"]
 REVIEWS_KEY = "parachute:reviews"
 LEDGER_KEY = "parachute:credit_ledger"
 ORGS_KEY = "parachute:orgs"
+LOCK_SEL = '.lock-dlg[role="dialog"], .lock-dlg [role="dialog"], [role="dialog"]:has(.lock-body)'
+START = ".run-cf-footbar button:has-text('Start review')"
 PDF = {"name": "Short-by-one appraisal.pdf", "mimeType": "application/pdf", "buffer": b"%PDF-1.4\n%mock\n"}
 
 
@@ -61,19 +67,33 @@ def checked_types(page):
     )
 
 
+def open_lock(page, ctx, what):
+    """Click Start review (aria-disabled while short, so force) and wait for the lock dialog."""
+    page.locator(START).first.click(force=True)
+    try:
+        page.wait_for_selector(LOCK_SEL, state="visible", timeout=6000)
+    except Exception:
+        pass
+    dlg = page.locator(LOCK_SEL)
+    ok = ctx.check(dlg.count() >= 1, f"{what}: Start review opens the lock dialog")
+    page.wait_for_timeout(400)
+    return dlg.first if ok else None
+
+
 def short_by_one_prefills_one(page, ctx):
     open_review_setup(page, ctx)
     on = checked_types(page)
     ctx.check(len(on) == 2, f"Review setup opens with both types checked ({on})")
-    callout = page.locator(".cs-callout")
-    ctx.check(callout.count() == 1, "low-balance callout shows when short")
-    btn = callout.get_by_role("button", name=re.compile(r"^Add 1 credit\b"))
-    ctx.check(btn.count() == 1, f"callout offers 'Add 1 credit' (callout: {callout.inner_text()[:120] if callout.count() else ''!r})")
+    dlg = open_lock(page, ctx, "short by one")
+    if dlg is None:
+        return None
+    btn = dlg.get_by_role("button", name=re.compile(r"^Add 1 credit\b"))
+    ctx.check(btn.count() == 1, f"dialog offers 'Add 1 credit' ({dlg.inner_text()[:120]!r})")
     ctx.shoot("t3-3-review-setup-short")
     if not btn.count():
         return None
     btn.first.click()
-    if not wait_checkout(page, ctx, "callout Add 1 credit"):
+    if not wait_checkout(page, ctx, "dialog Add 1 credit"):
         return None
     raw = urlparse(page.url).query
     q = query(page.url)
@@ -169,8 +189,17 @@ def round_trip_with_reload(page, ctx, org_id):
     ctx.check(st == {"technical": True, "administrative": False}, f"Technical only selected ({st})")
     addr = page.locator(".run-cf-form input").first.input_value()
     before = intake_count_at(page, addr)
-    btn = page.locator(".cs-callout").get_by_role("button", name=re.compile(r"^Add 1 credit\b"))
-    if not ctx.check(btn.count() == 1, "zero balance + Technical only: callout offers 'Add 1 credit'"):
+    dlg = open_lock(page, ctx, "zero balance + Technical only")
+    if dlg is None:
+        return
+    ctx.check("out of credits" in dlg.inner_text(), f"zero variant ({dlg.inner_text()[:80]!r})")
+    just = dlg.get_by_text(re.compile(r"1 credit · Just this review"))
+    if not ctx.check(just.count() >= 1, "zero dialog offers '1 credit · Just this review'"):
+        return
+    just.first.click()
+    page.wait_for_timeout(300)
+    btn = dlg.get_by_role("button", name="Continue to checkout")
+    if not ctx.check(btn.count() == 1, "zero dialog offers 'Continue to checkout'"):
         return
     btn.first.dblclick()  # a double click must create one draft, not two
     if not wait_checkout(page, ctx, "RF4 Add 1 credit"):
@@ -225,7 +254,8 @@ def round_trip_with_reload(page, ctx, org_id):
     ctx.settle(900)
     st = type_state(page)
     ctx.check(st == {"technical": True, "administrative": False}, f"Review setup reopens with exactly Technical checked ({st})")
-    ctx.check(page.locator(".cs-callout").count() == 0, "no low-balance callout after paying")
+    ctx.check(page.locator(LOCK_SEL).count() == 0 and page.locator(".cs-callout").count() == 0,
+              "no lock dialog or callout after paying")
     ctx.shoot("t3-3-back-at-review-setup")
     page.get_by_role("button", name="Start review").first.click()
     ctx.settle(1200)
@@ -328,8 +358,8 @@ def reviewer_checks(page, ctx):
 
 
 def embedded_never_checkout(page, ctx):
-    """Embedded session on a wallet org at 0 credits: the callout shows, Add credits
-    explains with a toast, and nothing ever navigates to checkout."""
+    """Embedded session on a wallet org at 0 credits: Start opens no lock dialog and
+    nothing ever navigates to checkout (spec §5.0: billed through YouConnect)."""
     visited = []
     page.on("framenavigated", lambda f: visited.append(f.url) if f == page.main_frame else None)
     org = current_org(page)
@@ -352,15 +382,15 @@ def embedded_never_checkout(page, ctx):
         pass
     ctx.settle(900)
     ctx.check(page.locator(".run .run-cf").count() == 1, "embedded Review setup opens")
-    add = page.locator(".cs-callout").get_by_role("button", name=re.compile(r"^Add "))
-    if ctx.check(add.count() == 1, "embedded wallet org at 0 shows the Add credits callout (not vacuous)"):
-        add.first.click()
-        page.wait_for_timeout(800)
-        ctx.check("Credits are billed through YouConnect." in page.inner_text("body"), "embedded Add credits explains with a toast")
-        ctx.shoot("t3-3-embedded-toast")
-    # Start is aria-disabled while short (it explains by scrolling to the callout); click anyway.
-    page.locator(".run-cf-footbar").get_by_role("button", name="Start review").first.click(force=True)
-    ctx.settle(1500)
+    ctx.check(page.locator(".cs-callout").count() == 0, "embedded: no callout")
+    start = page.locator(START).first
+    ctx.check(start.get_attribute("aria-disabled") is None, "embedded short run: Start is not aria-disabled")
+    start.click()
+    page.wait_for_timeout(800)
+    ctx.check(page.locator(LOCK_SEL).count() == 0, "embedded: Start opens no lock dialog")
+    ctx.shoot("t3-3-embedded-start")
+    ctx.settle(1200)
+    ctx.check(page.locator(".run .run-cf").count() == 0, "embedded: Start runs in place (left Review setup)")
     ctx.check(not any("/checkout" in u for u in visited), f"embedded run never navigates to checkout ({visited})")
 
 

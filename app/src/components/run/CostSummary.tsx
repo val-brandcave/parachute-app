@@ -2,26 +2,11 @@
 
 import "./cost-summary.css";
 import { useMemo } from "react";
-import { useToast } from "@realwired/ui";
-import { Button, CreditChip, Icon } from "@/components/atoms";
-import { useOrgStore, useUsersStore, useWalletStore, useWalletView } from "@/store";
+import { CreditChip, Icon } from "@/components/atoms";
+import { useOrgStore, useWalletView } from "@/store";
 import { sourcesFor } from "@/store/wallet.store";
-import { useCurrentUser } from "@/lib/current-user";
-import {
-  REVIEW_TYPE_COST,
-  approxValue,
-  costFor,
-  customPriceUsd,
-  formatUsd,
-  packById,
-} from "@/lib/pricing";
-import { initialChoice } from "@/lib/checkout";
+import { REVIEW_TYPE_COST, approxValue, costFor } from "@/lib/pricing";
 import type { ReviewType } from "@/types";
-
-const TYPE_LABEL: Record<ReviewType, string> = {
-  technical: "Technical",
-  administrative: "Administrative",
-};
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
@@ -60,7 +45,12 @@ export function useRunCost(types: readonly ReviewType[], sample: boolean): RunCo
   }, [wallet, invoiced, sample, types]);
 }
 
-/** Left slot of the confirm footbar: what Start will spend. */
+/**
+ * Left slot of the confirm footbar: what Start will spend. Display only: when the
+ * balance is short, Start review opens the credits lock dialog over Review setup
+ * (spec §5.5). The old LowBalanceCallout and its toast-only "Ask your admin" are
+ * gone; a reviewer's ask is the dialog's request body (T4.1).
+ */
 export function CostSummary({ cost }: { cost: RunCost }) {
   if (cost.mode === "sample") {
     return (
@@ -129,94 +119,5 @@ export function TypeCostChip({ type }: { type: ReviewType }) {
       <CreditChip tone="credit">{plural(credits, "credit")}</CreditChip>
       <CreditChip tone="money">{approxValue(credits)}</CreditChip>
     </span>
-  );
-}
-
-/**
- * D3 / D3b — shown above the footbar when the balance can't cover the selected types.
- * org_admin: Add credits (checkout, prefilled with the shortfall) · Run X only.
- * Everyone else: Run X only · Ask your admin (no purchase path).
- * `onAddCredits` (from the run host) keeps the upload as an intake draft first and
- * returns to it after paying; without one, Add credits records a plain intent.
- */
-export function LowBalanceCallout({
-  selected,
-  cost,
-  onRunOnly,
-  onAddCredits,
-}: {
-  selected: readonly ReviewType[];
-  cost: RunCost;
-  onRunOnly: (t: ReviewType) => void;
-  onAddCredits?: (needed: number) => void;
-}) {
-  const toast = useToast();
-  const me = useCurrentUser();
-  const admin = useUsersStore((s) =>
-    s.allUsers.find((u) => u.role === "org_admin" && u.orgId === me.orgId),
-  );
-  const isAdmin = me.role === "org_admin";
-
-  // Only offered when exactly one selected type fits the balance on its own.
-  const fitting = selected.filter((t) => REVIEW_TYPE_COST[t] <= cost.balance);
-  const runOnly = selected.length > 1 && fitting.length >= 1 ? fitting[0] : null;
-
-  // The SHORTFALL (cost − balance), never the full cost (RF2). The label matches what
-  // checkout opens on: exactly the shortfall below the smallest pack, else the
-  // smallest pack that covers it.
-  const shortfall = Math.max(cost.credits - cost.balance, 1);
-  const choice = initialChoice(shortfall);
-  const buy =
-    "credits" in choice
-      ? { credits: choice.credits, priceUsd: customPriceUsd(choice.credits) }
-      : packById(choice.pack);
-  const addCredits = () =>
-    onAddCredits
-      ? onAddCredits(shortfall)
-      : useWalletStore.getState().openTopUp({ reason: "low_balance", needed: shortfall });
-
-  const askAdmin = () =>
-    toast({
-      title: `We emailed ${admin?.name ?? "your organization admin"}`,
-      description: "They can add credits so you can start this review.",
-      tone: "success",
-    });
-
-  return (
-    <div className="cs-callout" role="status">
-      <Icon name="warn" size={17} />
-      <div className="cs-callout-body">
-        <div>
-          <b>
-            You have {plural(cost.balance, "credit")}. This review needs {cost.credits}.
-          </b>
-        </div>
-        <div>Your upload is saved as a draft and nothing has been charged.</div>
-        <div className="cs-callout-actions">
-          {isAdmin && (
-            <Button
-              variant="primary"
-              size="sm"
-              iconLeft="add"
-              onClick={addCredits}
-            >
-              Add {plural(buy.credits, "credit")} · {formatUsd(buy.priceUsd)}
-            </Button>
-          )}
-          {runOnly && (
-            <Button variant="outline" size="sm" onClick={() => onRunOnly(runOnly)}>
-              Run {TYPE_LABEL[runOnly]} only · {plural(REVIEW_TYPE_COST[runOnly], "credit")}
-            </Button>
-          )}
-          {/* The admin is the person who buys, so only others are offered "Ask your admin". */}
-          {!isAdmin && (
-            <button type="button" className="cs-callout-link" onClick={askAdmin}>
-              Ask your admin
-            </button>
-          )}
-          {!isAdmin && admin && <span className="cs-callout-note">We&apos;ll email {admin.name}</span>}
-        </div>
-      </div>
-    </div>
   );
 }

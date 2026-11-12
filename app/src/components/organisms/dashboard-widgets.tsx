@@ -3,15 +3,15 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Icon, Chip, Button, Tooltip } from "@/components/atoms";
-import { useStartGate, START_LOCKED_REASON } from "./home/useStartGate";
-import { useLockStore, useOrgStore, useWalletView } from "@/store";
-import { useToast } from "@realwired/ui";
+import { Icon, Chip, Button } from "@/components/atoms";
+import { useStartGate } from "./home/useStartGate";
+import { useOrgStore, useWalletView } from "@/store";
 import {
   ActionMenu,
   type ActionItem,
   EmptyState,
   EmptyLine,
+  LockedAction,
   GhostStats,
   GhostBars,
 } from "@/components/molecules";
@@ -141,40 +141,20 @@ const FIRST_STEPS = [
  *  block instead of tiles and a chart of zeros. Start respects the approval gate. */
 export function DashboardFirstRun() {
   const router = useRouter();
-  const { locked } = useStartGate();
+  const { locked, reason } = useStartGate();
   const orgName = useOrgStore((s) => s.org?.name);
   const metered = useOrgStore((s) => s.org?.billing === "trial" || s.org?.billing === "payg");
   const { balance: credits, fullReviews: full } = useWalletView();
-  const toast = useToast();
-  const start = (
-    <>
-      <Button
-        iconLeft="rocket"
-        aria-disabled={locked || undefined}
-        aria-describedby={locked ? "db-start-reason" : undefined}
-        onClick={(e) => {
-          if (!locked) {
-            router.push("/launchpad");
-            return;
-          }
-          useLockStore.getState().openLock({ kind: "approval" }, { returnFocus: e.currentTarget });
-          toast({ title: START_LOCKED_REASON, tone: "info" });
-        }}
-      >
+  const start =
+    locked && reason ? (
+      <LockedAction reason={reason} glyph="hourglass">
+        <Button iconLeft="rocket">Start a review</Button>
+      </LockedAction>
+    ) : (
+      <Button iconLeft="rocket" onClick={() => router.push("/launchpad")}>
         Start a review
-        {locked && (
-          <span aria-hidden="true" style={{ display: "inline-flex" }}>
-            <Icon name="hourglass-high" size={14} />
-          </span>
-        )}
       </Button>
-      {locked && (
-        <span id="db-start-reason" className="ui-visually-hidden">
-          {START_LOCKED_REASON}
-        </span>
-      )}
-    </>
-  );
+    );
   const status = locked ? (
     <>
       <b>{orgName ?? "Your organization"} is waiting for approval.</b> Start a review opens once that is done.
@@ -191,11 +171,7 @@ export function DashboardFirstRun() {
       title="Your dashboard fills in after your first review"
       status={status}
       statusTone={locked ? "warn" : "info"}
-      actions={
-        <>
-          {locked ? <Tooltip content={START_LOCKED_REASON}>{start}</Tooltip> : start}
-        </>
-      }
+      actions={start}
       aside={
         <ol className="db-steps">
           {FIRST_STEPS.map((st, i) => (

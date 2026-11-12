@@ -1,0 +1,65 @@
+/* Reviews level-1 upload zone (PC-37). Tokens only; prefix rq-zone. */
+.rq-zone-wrap {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.rq-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  padding: 22px 20px;
+  font: inherit;
+  color: var(--md-on-surface);
+  text-align: center;
+  background: var(--md-surface);
+  border: 1.5px dashed var(--md-outline);
+  border-radius: var(--r);
+  cursor: pointer;
+}
+.rq-zone:hover,
+.rq-zone.is-drag {
+  background: var(--md-surface-1);
+  border-color: var(--md-accent);
+}
+.rq-zone:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-accent);
+}
+.rq-zone-ic {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  margin-bottom: 4px;
+  border-radius: 10px;
+  background: var(--md-accent-c);
+  color: var(--md-accent-d);
+}
+.rq-zone-title {
+  font-weight: 600;
+  font-size: 14px;
+}
+.rq-zone-sub {
+  font-size: 12.5px;
+  color: var(--md-on-surface-v);
+}
+/* Waiting on Realwired: quieter, but still a button that answers a click. */
+.rq-zone.is-locked {
+  background: var(--md-surface-1);
+}
+.rq-zone.is-locked:hover {
+  border-color: var(--md-outline);
+}
+.rq-zone.is-locked .rq-zone-ic {
+  opacity: 0.6;
+}
+.rq-zone .locked-glyph {
+  margin-left: 0;
+  margin-top: 2px;
+  color: var(--md-on-surface-v);
+}
