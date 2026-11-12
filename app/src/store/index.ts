@@ -48,10 +48,10 @@ export {
   earnGrantAt,
 } from "./onboarding.store";
 export type { DerivedStep, SetupSummary, SectionSummary, EarnSummary, EarnedNotice } from "./onboarding.store";
-export { useDemoStore } from "./demo.store";
 export { loadSessionData } from "./session-data";
 export { useRunStore, DEMO_RUN_REVIEW_ID, beginRunInPlace } from "./run.store";
 export type { RunSpoke, RunDisplay, RunSource, RunReviewType } from "./run.store";
 export { useBouncerStore, useOrgInvites } from "./bouncer.store";
 export { useCreditRequestStore } from "./credit-request.store";
 export type { JoinedInfo, InviteInput, InviteResult, InviteResultStatus } from "./bouncer.store";
+export { useTourStore, type TourStopReason } from "./tour.store";

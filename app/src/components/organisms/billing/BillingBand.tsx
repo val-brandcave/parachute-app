@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PageHeader, Tabs, type TabItem } from "@realwired/ui";
 import { Button } from "@/components/atoms";
+import { useTourTarget } from "@/components/organisms/useTourTarget";
 import { LockedAction } from "@/components/molecules";
 import { HOW_CREDITS_HREF } from "@/components/organisms/checkout";
 import "./billing-states.css";
@@ -30,6 +31,8 @@ export function BillingBand({
   const router = useRouter();
   const walletAdmin = b.isAdmin && !b.invoiced;
   const held = b.wallet.held;
+  // Tour target (spec §5.13): the Usage tab trigger lives inside the DS Tabs.
+  useTourTarget("billing-usage", '[role="tab"]', (els) => els.find((e) => /usage/i.test(e.textContent ?? "")));
 
   return (
     <PageHeader
@@ -47,12 +50,12 @@ export function BillingBand({
               </Link>
               {held ? (
                 <LockedAction reason={{ kind: "approval" }} glyph="hourglass">
-                  <Button variant="outline" iconLeft="add">
+                  <Button variant="outline" iconLeft="add" data-tour="billing-add">
                     Add credits
                   </Button>
                 </LockedAction>
               ) : (
-                <Button iconLeft="add" onClick={b.openTopUp}>
+                <Button iconLeft="add" onClick={b.openTopUp} data-tour="billing-add">
                   Add credits
                 </Button>
               )}

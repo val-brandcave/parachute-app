@@ -26,6 +26,7 @@ export function EmptyState({
   status,
   statusTone = "warn",
   preview,
+  media,
   previewLabel = "What you'll see here",
   aside,
   layout = "stack",
@@ -43,6 +44,10 @@ export function EmptyState({
   statusTone?: Tone;
   /** A decorative drawing of the filled page (use the Ghost* parts). Hidden from screen readers. */
   preview?: ReactNode;
+  /** Level-1 media in the preview slot (an EmptyVideo, spec §5.12). Unlike `preview` it is NOT
+   *  aria-hidden — it is playable. Mutually exclusive with `preview` (media wins).
+   *  // DS-candidate: EmptyState media slot — the DS empty state has no playable media slot. */
+  media?: ReactNode;
   previewLabel?: string | null;
   /** Extra content under the actions: a sample card, a short step list. */
   aside?: ReactNode;
@@ -67,7 +72,11 @@ export function EmptyState({
     </div>
   );
 
-  const art = preview ? (
+  const art = media ? (
+    <div className="es-preview es-media">
+      <div className="es-preview-art">{media}</div>
+    </div>
+  ) : preview ? (
     <div className="es-preview" aria-hidden="true">
       {previewLabel && <span className="es-preview-label">{previewLabel}</span>}
       <div className="es-preview-art">{preview}</div>

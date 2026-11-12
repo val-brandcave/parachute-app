@@ -172,6 +172,7 @@ export function WorkbookFindingBlock({
         </span>
         <button
           className="wb-fmeta-cite"
+          data-tour="wb-cite"
           onClick={() => actions.onOpenCite(f.id)}
           title="Open the cited span in Source"
         >
@@ -257,7 +258,7 @@ export function WorkbookFindingBlock({
               </button>
             </div>
           ) : (
-            <div className="wb-fblock-bar">
+            <div className="wb-fblock-bar" data-tour="wb-decision">
               <button
                 className="wb-fbtn wb-fbtn--go"
                 onClick={() => actions.onDisposition(f.id, "accepted")}

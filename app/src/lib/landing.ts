@@ -8,6 +8,8 @@ import {
   useSetupHidden,
   useOrgStage,
 } from "@/store";
+import { useProtoStore } from "@/store/prototype.store";
+import type { Preset } from "@/lib/prototype/presets";
 
 export const GET_STARTED_HREF = "/get-started";
 export const DASHBOARD_HREF = "/dashboard";
@@ -44,4 +46,12 @@ export function useSetupGuideVisible(): boolean {
   const stage = useOrgStage();
   const hidden = useSetupHidden();
   return stage === "new" && !hidden;
+}
+
+/** PROTOTYPE ONLY. Apply a preset (spec §6) and return where it lands: its `entry`
+ *  through `resolveEntryRoute`, AFTER the session data has loaded. `alias` = a legacy
+ *  persona id (`/demo/<id>`, `?persona=`) that keeps that persona's seeded identity. */
+export async function enterPreset(preset: Preset, opts?: { alias?: boolean }): Promise<string> {
+  await useProtoStore.getState().enterPreset(preset, opts);
+  return resolveEntryRoute(preset.entry);
 }

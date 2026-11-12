@@ -40,6 +40,7 @@ function shares(u: DonutUsage): number[] {
   return [t, 100 - t];
 }
 
+// DS-candidate: UsageDonut — DS DonutViz cannot take the --viz-* tokens.
 /**
  * "Credits used in <month>" (PC-28): a two-slice donut by review type, always with its legend.
  * Hand-built SVG (DS DonutViz takes palette indices, not the `--viz-*` tokens). The SVG is one

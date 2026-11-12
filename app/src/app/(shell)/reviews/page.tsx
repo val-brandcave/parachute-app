@@ -11,11 +11,12 @@ import {
   ActiveFilters,
   EmptyState,
   EmptyLine,
-  GhostRows,
 } from "@/components/molecules";
 import { Button } from "@/components/atoms";
 import { useStartGate } from "@/components/organisms/home/useStartGate";
-import { useOrgStore } from "@/store";
+import { EmptyVideo } from "@/components/organisms/EmptyVideo";
+import { useTourTarget } from "@/components/organisms/useTourTarget";
+import { useOrgStore, useUsersStore } from "@/store";
 import { PageBody, PageHeader, SearchInput, Tabs } from "@realwired/ui";
 
 export default function MyReviewsPage() {
@@ -40,6 +41,24 @@ export default function MyReviewsPage() {
 
   const { locked } = useStartGate();
   const orgName = useOrgStore((s) => s.org?.name);
+  const members = useUsersStore((s) => s.users);
+
+  // Tour targets (spec §5.13): the first row's action cell lives inside ReviewTable.
+  useTourTarget("reviews-row-action", ".qrow .qactions");
+
+  // Footnote at level 1: who sees this page until the first review is in.
+  const firstNames = members
+    .filter((m) => m.status !== "deactivated")
+    .map((m) => m.name.split(" ")[0])
+    .filter(Boolean)
+    .slice(0, 3);
+  const seenBy =
+    firstNames.length === 0
+      ? "Your team"
+      : firstNames.length === 1
+        ? firstNames[0]
+        : `${firstNames.slice(0, -1).join(", ")} and ${firstNames[firstNames.length - 1]}`;
+  const shortOrg = orgName?.trim().split(/\s+/)[0];
 
   // Level 1: the org has no reviews of its own yet (the sample never counts). Hide every
   // control that needs rows; the header keeps only the primary action.
@@ -84,15 +103,14 @@ export default function MyReviewsPage() {
         toolbar={
           <>
             {!firstRun && (
+              <div className="rq-tourwrap" data-tour="reviews-tabs">
               <Tabs
                 label="Review queue"
                 value={tab}
                 onValueChange={setTab}
                 tabs={visibleTabs}
               />
-            )}
-            <div style={{ flex: 1 }} />
-            {!firstRun && (
+              <div style={{ flex: 1 }} />
               <>
                 <SearchInput
                   placeholder="Search reviews…"
@@ -109,8 +127,12 @@ export default function MyReviewsPage() {
                   onOpenChange={setFilterOpen}
                 />
               </>
+              </div>
             )}
-            <OrderButton />
+            {firstRun && <div style={{ flex: 1 }} />}
+            <span className="rq-start" data-tour="reviews-start">
+              <OrderButton />
+            </span>
           </>
         }
       />
@@ -128,9 +150,15 @@ export default function MyReviewsPage() {
         {firstRun ? (
           <EmptyState
             layout="stack"
-            title="No reviews yet"
-            preview={<GhostRows rows={3} />}
+            title="Every figure checked against the appraisal"
+            media={<EmptyVideo videoId="how-a-review-works" />}
             actions={<UploadZone />}
+            aside={
+              <p className="rq-foot">
+                {seenBy} {firstNames.length <= 1 ? "sees" : "see"} this until {shortOrg ? `${shortOrg}’s` : "your"}{" "}
+                first review is in.
+              </p>
+            }
             status={
               locked ? (
                 <>
@@ -140,7 +168,8 @@ export default function MyReviewsPage() {
               ) : undefined
             }
           >
-            Every appraisal your team runs lands here, with its findings and due date.
+            Upload a commercial appraisal. Parachute traces each number to its page and drafts the findings for you to
+            concur with or reject.
           </EmptyState>
         ) : (
           <div

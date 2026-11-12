@@ -6,6 +6,8 @@ import { Callout } from "@realwired/ui";
 import { Button, Icon } from "@/components/atoms";
 import { SegmentedControl } from "@/components/molecules";
 import { dist, dur, ease, useMotionMode } from "@/lib/motion";
+import { RoutingNote } from "@/components/organisms/prototype/RoutingNote";
+import { useProtoFill } from "@/components/organisms/prototype/useProtoFill";
 import { cn } from "@/lib/utils";
 import type { OrgKind, TeamBand, VolumeBand } from "@/types";
 
@@ -107,6 +109,21 @@ export function OrgSetupForm({
 
   const label = enterprise ? "Book a call" : "Continue to Parachute";
 
+  // Fill wand: Self-serve answers (2-10 reviewers, under 50 reports). Shift-wand: Enterprise (11+, 200+).
+  // Never submits; the route note and button flip live.
+  useProtoFill("welcome", {
+    valid: () => {
+      if (!name.trim()) onName("Harbor Community Bank");
+      onTeam("2-10");
+      onVolume("lt50");
+    },
+    invalid: () => {
+      if (!name.trim()) onName("Harbor Community Bank");
+      onTeam("11+");
+      onVolume("200+");
+    },
+  });
+
   return (
     <form
       noValidate
@@ -199,6 +216,7 @@ export function OrgSetupForm({
           </motion.span>
         </AnimatePresence>
       </Button>
+      <RoutingNote profile={{ teamBand: team, volumeBand: volume }} />
     </form>
   );
 }

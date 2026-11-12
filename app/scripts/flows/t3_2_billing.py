@@ -222,18 +222,18 @@ def zero_checks(ctx, page):
 
 
 def dock_low(ctx, page):
-    """DemoDock Low balance on a healthy-ish org flips the hero to low."""
-    chip = page.get_by_role("button", name="Demo controls")
+    """Scenario popover wallet axis Low on the trial org flips the hero to low (was DemoDock Low balance)."""
+    chip = page.get_by_role("button", name="Scenario", exact=True)
     if chip.count() == 0:
-        ctx.check(False, "DemoDock chip present")
+        ctx.check(False, "scenario popover trigger present")
         return
     chip.first.click()
     page.wait_for_timeout(300)
-    low = page.get_by_role("button", name="Low balance")
+    low = page.locator(".proto-pop [role=tablist][aria-label=Wallet] [role=tab]", has_text="Low")
     if low.count():
         low.first.click()
-    page.wait_for_timeout(800)
-    chip.first.click()
+    page.wait_for_timeout(1500)
+    page.keyboard.press("Escape")
     visit_tab(ctx)
     ctx.check("Running low" in body(page), "DemoDock Low balance -> Running low")
     ctx.check(page.locator(".bl-offer").count() == 1, "DemoDock low shows AutoReloadOffer")

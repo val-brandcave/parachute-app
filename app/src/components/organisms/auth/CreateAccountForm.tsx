@@ -8,20 +8,27 @@ import { Button, MicrosoftGlyph } from "@/components/atoms";
 import { shakeEl, useKeycloakFrame } from "@/components/templates/KeycloakFrame";
 import { useSessionStore } from "@/store/session.store";
 import { dur, ease, motionModeNow, setHandoff, useMotionMode } from "@/lib/motion";
+import { useProtoFill } from "@/components/organisms/prototype/useProtoFill";
+import { useAuthVariant } from "./useAuthVariant";
 
 const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 /** Keycloak register.ftl, themed. Submit goes to the verify-code step. */
 export function CreateAccountForm() {
   const router = useRouter();
-  const [email, setEmail] = useState("dana.reyes@harborcb.com");
+  const variant = useAuthVariant();
+  const [email, setEmail] = useState(variant === "invalid-email" ? "dana.reyes@" : "dana.reyes@harborcb.com");
   const [name, setName] = useState("Dana Reyes");
-  const [password, setPassword] = useState("harbor-demo-2026");
-  const [error, setError] = useState<string | null>(null);
+  const [password, setPassword] = useState(variant === "weak-password" ? "short" : "harbor-demo-2026");
+  const [error, setError] = useState<string | null>(
+    variant === "invalid-email" ? "Enter a valid work email." : variant === "weak-password" ? "Use 12 characters or more for your password." : null,
+  );
   const [busy, setBusy] = useState(false);
   const frame = useKeycloakFrame();
   const full = useMotionMode() === "full";
-  const [errId, setErrId] = useState<string | null>(null);
+  const [errId, setErrId] = useState<string | null>(
+    variant === "invalid-email" ? "kc-email" : variant === "weak-password" ? "kc-pw" : null,
+  );
   const formRef = useRef<HTMLFormElement>(null);
 
   // T1: busy (mock latency), record the card's height, exit the content, then push.
@@ -55,6 +62,22 @@ export function CreateAccountForm() {
     setErrId(null);
     void goVerify(email.trim(), name.trim());
   };
+
+  // Fill wand: good demo data; Shift = a bad email, no name and a short password. Never submits.
+  useProtoFill("create-account", {
+    valid: () => {
+      setEmail("dana.reyes@harborcb.com");
+      setName("Dana Reyes");
+      setPassword("harbor-demo-2026");
+      setError(null);
+      setErrId(null);
+    },
+    invalid: () => {
+      setEmail("dana.reyes@");
+      setName("");
+      setPassword("short");
+    },
+  });
 
   // Microsoft is a one-click identity: same path, nothing to type.
   const microsoft = () => void goVerify(email.trim() || "dana.reyes@harborcb.com", name.trim() || "Dana Reyes");

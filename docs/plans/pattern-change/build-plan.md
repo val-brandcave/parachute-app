@@ -430,9 +430,9 @@ Return: PASS, or a numbered list of issues each with file:line, the rule or spec
 
 **Consumes:** `TOURS`, `tourForPath`, `useTourStore`, `toursSeen`, `onboarding.complete("tutorial")`, react-joyride v3 API. **Produces:** `TourHost({ scope: "shell" | "run" })`, `TourChip({ tourId: string })`.
 
-- [ ] Flow `t5_1_tours.py::first_review_tooltip_visible` (RF1): own review on spoke `workbook` (motion off), chip in `.run-head` → start → tooltip at z 128 visible over the workbook (`elementFromPoint` at the tooltip centre is inside it); 4 steps target `.wb-fmeta-cite`, `.wb-fblock-bar`, `.run-wb-viewmode`, `Sign & finalize`; "Tour, 2 of 4" in `.run-head`; finishing ticks `tutorial` on Get started; skipping doesn't; opening the Sign modal mid-tour stops the tour first. No chip on `confirm`/`progress`.
-- [ ] Flow: page chips in the header slot on `/reviews` (only with rows), `/configure/checklists`, `/configure/workbook-layouts`, `/configure/billing`; every listed target exists; a removed target is skipped without an error; reduced motion respected; nothing auto-starts.
-- [ ] Implement per spec §5.13 (PC-14, PC-31, PC-38). Flow passes. If Joyride v3 misbehaves, switch to the DS `Popover` fallback behind the same contract and say so in the report.
+- [x] Flow `t5_1_tours.py::first_review_tooltip_visible` (RF1): own review on spoke `workbook` (motion off), chip in `.run-head` → start → tooltip at z 128 visible over the workbook (`elementFromPoint` at the tooltip centre is inside it); 4 steps target `.wb-fmeta-cite`, `.wb-fblock-bar`, `.run-wb-viewmode`, `Sign & finalize`; "Tour, 2 of 4" in `.run-head`; finishing ticks `tutorial` on Get started; skipping doesn't; opening the Sign modal mid-tour stops the tour first. No chip on `confirm`/`progress`.
+- [x] Flow: page chips in the header slot on `/reviews` (only with rows), `/configure/checklists`, `/configure/workbook-layouts`, `/configure/billing`; every listed target exists; a removed target is skipped without an error; reduced motion respected; nothing auto-starts.
+- [x] Implement per spec §5.13 (PC-14, PC-31, PC-38). Flow passes. If Joyride v3 misbehaves, switch to the DS `Popover` fallback behind the same contract and say so in the report.
 
 ### Task 5.2: Trust Center and Learning Center (agent G)
 
@@ -454,8 +454,8 @@ Return: PASS, or a numbered list of issues each with file:line, the rule or spec
 
 **Consumes:** `Scenario`, `normalize`, `buildLedger`, `SCREENS`, `screenForPath`, `activeState`. **Produces:** `useProtoStore`: `scenario`, `apply(patch: Partial<Scenario>, view?: Record<string, string>)`, `reset()`, `hidden`, `toggleHidden()`; `PRESETS` with `legacyPersonaId` for all nine personas.
 
-- [ ] Flow `t5_4_pill.py`: pill at top centre, z 210, on Get started, Billing, Dashboard; each Billing state segment from spec §5.8 renders its state after one click and survives reload; "Custom" after a popover axis change; scenario actions (Approve now, Complete next step, Add 5, Spend 1, Reset org, Reset tours and celebrations, Replay arrival) work; `/demo/trial-admin` and the other eight legacy ids still land correctly (so earlier flows keep passing); `Ctrl+.` hides, `?controls=0` hides without persisting; `NEXT_PUBLIC_PROTOTYPE_CONTROLS=0` removes it.
-- [ ] Implement per spec §6. Flow passes, plus `python app/scripts/smoke.py --all` still green.
+- [x] Flow `t5_4_pill.py`: pill at top centre, z 210, on Get started, Billing, Dashboard; each Billing state segment from spec §5.8 renders its state after one click and survives reload; "Custom" after a popover axis change; scenario actions (Approve now, Complete next step, Add 5, Spend 1, Reset org, Reset tours and celebrations, Replay arrival) work; `/demo/trial-admin` and the other eight legacy ids still land correctly (so earlier flows keep passing); `Ctrl+.` hides, `?controls=0` hides without persisting; `NEXT_PUBLIC_PROTOTYPE_CONTROLS=0` removes it (checked only when `PROTO_KILL_BASE` points at a second server started with that env var; otherwise the flow prints a skip note).
+- [x] Implement per spec §6. Flow passes, plus `python app/scripts/smoke.py --all` still green.
 
 ### Task 5.5: Prototype Index, fill wand, auth states (agent I2)
 
@@ -463,8 +463,8 @@ Return: PASS, or a numbered list of issues each with file:line, the rule or spec
 
 **Produces:** `useProtoFill(screenId: string, fills: { valid(): void; invalid?(): void }): void`; `RoutingNote({ profile })`.
 
-- [ ] Flow `t5_5_index.py`: `/prototype` lists every `page.tsx` route (dev warning count 0), search "billing" filters, counter "N of M screens", state chips deep-link and land in that state; flows tab lists the nine flows; wand on `/welcome` fills Self-serve (2–10 / Under 50) and Shift-wand fills Enterprise (11+ / 200+) without submitting; auth `?variant=wrong-code` shows the error; sign-in has no "Demo accounts" panel; RoutingNote shows "Route: Enterprise · because Reviewers = 11+ (≥ 11)" only while controls are visible.
-- [ ] Implement per spec §6 and `state-system-draft.md` §3.3, §4. Flow passes.
+- [x] Flow `t5_5_index.py`: `/prototype` lists every `page.tsx` route (dev warning count 0), search "billing" filters, counter "N of M screens", state chips deep-link and land in that state; flows tab lists the nine flows; wand on `/welcome` fills Self-serve (2–10 / Under 50) and Shift-wand fills Enterprise (11+ / 200+) without submitting; auth `?variant=wrong-code` shows the error; sign-in has no "Demo accounts" panel; RoutingNote shows "Route: Enterprise · because Reviewers = 11+ (≥ 11)" only while controls are visible.
+- [x] Implement per spec §6 and `state-system-draft.md` §3.3, §4. Flow passes.
 
 ### Task 5.9: Final (coordinator)
 

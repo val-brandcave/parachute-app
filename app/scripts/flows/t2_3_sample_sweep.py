@@ -8,7 +8,7 @@ ROUTES = ["/dashboard", "/reviews", "/configure/billing"]
 # A visible title that proves the empty state / hero rendered (not a blank page).
 EXPECT = {
     "/dashboard": r"Your dashboard fills in after your first review",
-    "/reviews": r"No reviews yet",
+    "/reviews": r"Every figure checked against the appraisal",
     "/configure/billing": r"Your balance and usage show up here|Usage starts with your first review|waiting for approval|Plan|Billing|Credits|Balance",
 }
 REASON = re.compile(r"Opens (after .+ setup call|when your organization is approved|once Realwired confirms)")  # useStartGate().reasonText (phase 4)

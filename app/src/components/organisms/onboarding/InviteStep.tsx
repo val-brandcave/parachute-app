@@ -8,6 +8,7 @@ import { RoleSelect } from "@/components/molecules";
 import { parseInviteList, validateInvite } from "@/lib/invites";
 import { dist, dur, ease, useMotionMode } from "@/lib/motion";
 import { useBouncerStore } from "@/store";
+import { useProtoFill } from "@/components/organisms/prototype/useProtoFill";
 import type { UserRole } from "@/types";
 import { useStepNav } from "./useStepNav";
 import { InviteRow, type InviteRowModel } from "./InviteRow";
@@ -118,6 +119,21 @@ export function InviteStep({
     setRows((rs) => [...rs, row]);
     pendingFocus.current = row.id;
   };
+
+  // Fill wand: two colleagues on the org domain. Shift-wand: one malformed address and one off-domain. Never sends.
+  useProtoFill("welcome-invite", {
+    valid: () => {
+      const d = domain ?? "harborcb.com";
+      setRows((rs) => rs.map((r, i) => (i === 0 ? { ...r, email: `marcus.chen@${d}` } : i === 1 ? { ...r, email: `priya.nair@${d}` } : r)));
+      setErrors({});
+      setSummary(null);
+    },
+    invalid: () => {
+      setRows((rs) => rs.map((r, i) => (i === 0 ? { ...r, email: "marcus.chen@" } : i === 1 ? { ...r, email: "priya.nair@elsewhere.example" } : r)));
+      setErrors({});
+      setSummary(null);
+    },
+  });
 
   /** Fills empty rows first (the pasted-into row before the others), then appends. */
   const addEmails = (list: string[], duplicates: number, startId?: string) => {

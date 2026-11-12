@@ -5,7 +5,8 @@ import { adapter } from "@/data/adapters";
 import { Collections } from "@/data/collections";
 import { readStoredSession, useSessionStore } from "@/store/session.store";
 import { loadSessionData } from "@/store/session-data";
-import { useDemoStore } from "@/store/demo.store";
+import { useProtoStore } from "@/store/prototype.store";
+import { PRESETS } from "@/lib/prototype/presets";
 import {
   DEMO_ENABLED,
   clearPersonaParam,
@@ -48,7 +49,9 @@ export function SeedProvider({ children }: { children: React.ReactNode }) {
             return;
           }
         }
-        if (wanted && persona) await useDemoStore.getState().apply(wanted);
+        // A remembered legacy persona re-enters through its preset alias (keeps its seeded identity).
+        const preset = persona ? PRESETS.find((p) => p.legacyPersonaId === persona.id) : undefined;
+        if (preset) await useProtoStore.getState().enterPreset(preset, { alias: true });
         else await loadSessionData();
       })
       .catch((e) => console.error("seed failed", e))

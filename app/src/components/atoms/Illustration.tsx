@@ -2,6 +2,7 @@ import { ILLUSTRATIONS, type IllustrationName } from "./illustrations";
 
 export type { IllustrationName } from "./illustrations";
 
+// DS-candidate: Illustration atom — a shared art system across products, if Realwired adopts direction C.
 /**
  * Brand illustration (spots 01–15, scenes 20–25). The one sanctioned inline-SVG
  * exception besides BrandGlyph: the markup is generated from our own files in

@@ -44,6 +44,7 @@ const A11Y_TITLE: Record<LockReason["kind"], string> = {
   role: "Only admins can buy credits",
 };
 
+// DS-candidate: Dialog centred-art layout — DS dialog headers are left-aligned with no art slot.
 /**
  * Store-driven lock-then-explain dialog (spec §5.5), driven by `useLockStore`.
  * Mounted once per frame (AppShell, onboarding, checkout). DS `Dialog size="sm"` with

@@ -20,7 +20,6 @@ import { UserMenu } from "@/components/organisms/UserMenu";
 import { SearchTrigger } from "@/components/organisms/SearchTrigger";
 import { CommandPalette } from "@/components/organisms/CommandPalette";
 import { RunModal } from "@/components/run/RunModal";
-import { DemoDock } from "@/components/organisms/DemoDock";
 import { ReceiptDialog } from "@/components/organisms/wallet";
 import { CreditsPill } from "@/components/organisms/CreditsPill";
 import { SidebarResourceLinks } from "@/components/organisms/SidebarResourceLinks";
@@ -233,7 +232,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <RunModal />
       <EarnedToastHost />
       <ReceiptDialog />
-      <DemoDock />
       <LockDialog />
       <CheckoutLauncher />
       <TourHost scope="shell" />

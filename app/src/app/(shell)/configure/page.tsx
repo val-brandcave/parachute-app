@@ -57,12 +57,12 @@ const CARDS: ConfigCard[] = [
     tags: ["Upload & map", "Set active"],
   },
   {
-    href: "/configure/security",
+    href: "/trust",
     icon: "shield",
     tone: "security",
-    title: "Security pack",
+    title: "Trust Center",
     desc: "What your IT team needs to approve us as a vendor.",
-    tags: ["Architecture", "Data handling", "Send to IT"],
+    tags: ["Documents", "At a glance", "Send to IT"],
   },
   {
     href: "/configure/billing",

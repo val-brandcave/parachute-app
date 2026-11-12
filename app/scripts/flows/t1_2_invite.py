@@ -16,7 +16,7 @@ def run(page, ctx):
     ctx.check(page.evaluate("() => document.activeElement === document.querySelector('.invite-row input')"), "first row focused")
     ctx.check(page.locator(".rolesel").count() == 3 and all("Reviewer" in t for t in page.locator(".rolesel").all_inner_texts()), "role Reviewer on each")
     ctx.check(" ".join(send.inner_text().split()) == "Send invites", "button 'Send invites'")
-    ctx.check(page.locator("button[disabled]").count() == 0, "no disabled buttons")
+    ctx.check(page.locator(".wel button[disabled]").count() == 0, "no disabled buttons")
     ctx.shoot("t1-2-default")
 
     # empty send

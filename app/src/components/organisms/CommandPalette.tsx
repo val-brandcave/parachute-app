@@ -11,6 +11,8 @@ import { useSetupGuideVisible } from "@/lib/landing";
 import { useOrgStore, useReviewsStore, useWalletStore } from "@/store";
 import { useCurrentUser } from "@/lib/current-user";
 import { reviewHref } from "./ReviewTable";
+import { DEMO_ENABLED } from "@/lib/demo";
+import { PRESETS } from "@/lib/prototype-registry";
 
 type Cmd = {
   id: string;
@@ -142,7 +144,7 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
               id: "a-add-credits",
               group: "Actions",
               label: "Add credits",
-              icon: "coins" as IconName,
+              icon: "wallet" as IconName,
               // CheckoutLauncher turns the intent into /checkout/credits?pack=…&return=<here>.
               run: () => go(() => useWalletStore.getState().openTopUp({ reason: "manual" })),
             },
@@ -157,7 +159,29 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
       },
     ].filter((a) => !ql || a.label.toLowerCase().includes(ql));
 
-    return [...reviewItems, ...navItems, ...actionItems];
+    // Prototype group (spec §6): the Index and every preset, via the deep-link route.
+    const protoItems: Cmd[] = DEMO_ENABLED
+      ? [
+          {
+            id: "p-index",
+            group: "Prototype",
+            label: "Prototype Index",
+            sub: "Every screen, state and flow",
+            icon: "switch-horizontal" as IconName,
+            run: () => go(() => router.push("/prototype")),
+          },
+          ...PRESETS.filter((p) => p.status !== "planned").map((p) => ({
+            id: "p-" + p.id,
+            group: "Prototype",
+            label: p.label,
+            sub: p.description,
+            icon: "switch-horizontal" as IconName,
+            run: () => go(() => router.push(`/prototype/go?preset=${encodeURIComponent(p.id)}`)),
+          })),
+        ].filter((c) => !ql || `${c.label} ${c.sub ?? ""} prototype`.toLowerCase().includes(ql))
+      : [];
+
+    return [...reviewItems, ...navItems, ...actionItems, ...protoItems];
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q, reviews, gate.locked, gate.reasonText, gate.explain, opener, setupVisible, canBuy]);
 

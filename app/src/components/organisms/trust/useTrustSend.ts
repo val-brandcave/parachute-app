@@ -7,8 +7,8 @@ import { useOnboardingStore, useSetupSummary } from "@/store";
 
 const NO_SENDS: SecuritySend[] = [];
 
-/** State for /configure/security: the send form and this org's sent log. */
-export function useSecurityPack() {
+/** State for the Trust Center send flow: the form and this org's sent log. Completes `security_pack`. */
+export function useTrustSend() {
   const toast = useToast();
   const me = useCurrentUser();
   const sends = useOnboardingStore((s) => s.progress?.securitySends ?? NO_SENDS);
@@ -17,15 +17,27 @@ export function useSecurityPack() {
   const [note, setNote] = useState("");
   const [sending, setSending] = useState(false);
 
-  const send = async () => {
+  const send = async (): Promise<SecuritySend | null> => {
     setSending(true);
     const sent = await useOnboardingStore.getState().sendSecurityPack(email.trim(), note.trim());
     setSending(false);
     if (sent) {
       setNote("");
-      toast({ title: "Security pack sent", description: `Sent to ${sent.to}.`, tone: "success" });
+      toast({ title: "Trust Center sent", description: `Sent to ${sent.to}.`, tone: "success" });
     }
+    return sent;
   };
 
-  return { email, setEmail, note, setNote, sends, canSend: me.role === "org_admin", sending, send, adminFirst };
+  return {
+    email,
+    setEmail,
+    note,
+    setNote,
+    sends,
+    canSend: me.role === "org_admin",
+    sending,
+    send,
+    adminFirst,
+    senderEmail: me.email,
+  };
 }

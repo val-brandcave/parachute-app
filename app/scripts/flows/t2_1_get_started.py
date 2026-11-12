@@ -1,7 +1,7 @@
 """T2.1 Get started v4 (spec §5.2): one column, the exact navy primaries per section per
 persona, every row button visible at rest, earn pill copy, progress line, pending tracker,
 locked clicks reaching the lock store, reviewer "Ask Dana", welcome-line gating, bonus
-ending / closed and invoiced states, the all-done card (DemoDock "Complete next step")
+ending / closed and invoiced states, the all-done card (scenario popover "Complete next step")
 and the section burst (?motion=1, light/1440 only)."""
 
 import re
@@ -204,14 +204,14 @@ def run(page, ctx):
             welcome_cases(page, ctx)
             window_cases(page, ctx)
 
-        # All done via DemoDock; the section burst checked with motion on (light/1440).
+        # All done via the scenario popover; the section burst checked with motion on (light/1440).
         if full:
             land(page, ctx, ROUTE + "?motion=1")
         page.evaluate(
             """() => { window.__bursts = 0; new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => {
                  if (n.tagName === 'CANVAS') window.__bursts++; }))).observe(document.body, { childList: true }); }"""
         )
-        page.get_by_role("button", name="Demo controls").click()
+        page.get_by_role("button", name="Scenario", exact=True).click()
         nxt = page.get_by_role("button", name="Complete next step")
         for i in range(6):
             nxt.click()

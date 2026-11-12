@@ -6,6 +6,7 @@ import { Button, Illustration } from "@/components/atoms";
 import { SelectTile } from "@/components/molecules";
 import { buildSlots, monthRange, slotLabel } from "@/lib/call-slots";
 import { useOrgStore } from "@/store/org.store";
+import { useProtoFill } from "@/components/organisms/prototype/useProtoFill";
 import "./call.css";
 
 type Slot = { at: number; label: string };
@@ -61,6 +62,19 @@ export function CallBooking({
     const t = window.setTimeout(() => finish(booked), BOOKED_HOLD);
     return () => window.clearTimeout(t);
   }, [booked, finish]);
+
+  // Fill wand: the first free slot. Shift-wand clears the pick and shows the "pick a time" error. Never books.
+  useProtoFill("welcome-call", {
+    valid: () => {
+      setDayIdx(0);
+      setPicked(days[0]?.times[0]?.at ?? null);
+      setError(null);
+    },
+    invalid: () => {
+      setPicked(null);
+      setError("Pick a time first.");
+    },
+  });
 
   const book = async () => {
     if (picked === null) {

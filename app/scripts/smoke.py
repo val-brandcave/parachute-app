@@ -33,6 +33,10 @@ IGNORED_CONSOLE = [
     re.compile(r"Download the React DevTools"),
     re.compile(r"\[HMR\]"),
     re.compile(r"\[Fast Refresh\]"),
+    # Next 16 Turbopack dev only: the devtools segment explorer inside OuterLayoutRouter
+    # (layout-router.js, NODE_ENV !== "production") warns on a hard load of a /welcome
+    # step. Identical source is clean under `next dev --webpack` and in production.
+    re.compile(r"Check the render method of `OuterLayoutRouter`"),
 ]
 
 

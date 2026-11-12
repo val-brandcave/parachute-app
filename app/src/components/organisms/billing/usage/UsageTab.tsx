@@ -3,7 +3,8 @@
 import { useMemo, useState } from "react";
 import { Select } from "@realwired/ui";
 import { Button } from "@/components/atoms";
-import { EmptyState, GhostBars } from "@/components/molecules";
+import { EmptyState } from "@/components/molecules";
+import { EmptyVideo } from "@/components/organisms/EmptyVideo";
 import { INVOICED_CREDIT_USD as CREDIT_USD, costFor, formatUsd } from "@/lib/pricing";
 import { FULL_REVIEW_TYPES } from "@/lib/setup-steps";
 import { invoicedSpendEntries, usageByPerson, usageByType, type UsagePeriod as UsageSpan } from "@/lib/wallet-view";
@@ -100,7 +101,7 @@ export function UsageTab({ b, invoiced }: { b: Billing; invoiced: boolean }) {
       <div className="us bl-stack">
         <EmptyState
           title={mine ? "Your usage starts with your first review" : "Usage starts with your first review"}
-          preview={<GhostBars />}
+          media={<EmptyVideo videoId="credits-a-review-uses" />}
           status={
             pending && b.isAdmin ? (
               <>

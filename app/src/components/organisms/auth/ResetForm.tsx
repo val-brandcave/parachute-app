@@ -3,18 +3,35 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Button, Icon } from "@/components/atoms";
+import { useProtoFill } from "@/components/organisms/prototype/useProtoFill";
+import { useAuthVariant } from "./useAuthVariant";
 
 /** Keycloak login-reset-password, themed. Never says whether the address exists. */
 export function ResetForm() {
-  const [email, setEmail] = useState("");
-  const [sent, setSent] = useState(false);
+  const variant = useAuthVariant();
+  const [email, setEmail] = useState(variant === "sent" ? "dana.reyes@harborcb.com" : "");
+  const [sent, setSent] = useState(variant === "sent");
+  const [error, setError] = useState<string | null>(null);
+
+  useProtoFill("reset", {
+    valid: () => {
+      setEmail("dana.reyes@harborcb.com");
+      setError(null);
+    },
+    invalid: () => setEmail("dana.reyes@"),
+  });
 
   return (
     <form
       noValidate
       onSubmit={(e) => {
         e.preventDefault();
-        if (email.trim()) setSent(true);
+        if (!/^\S+@\S+\.\S+$/.test(email.trim())) {
+          setError("Enter a valid work email.");
+          return;
+        }
+        setError(null);
+        setSent(true);
       }}
     >
       <h1 className="kc-title">Reset your password</h1>
@@ -31,7 +48,12 @@ export function ResetForm() {
             <label htmlFor="kc-reset-email">Work email</label>
             <input id="kc-reset-email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
           </div>
-          <Button type="submit" size="lg" block disabled={!email.trim()}>
+          {error && (
+            <p className="kc-err" role="alert">
+              {error}
+            </p>
+          )}
+          <Button type="submit" size="lg" block>
             Send reset link
           </Button>
         </>

@@ -1,7 +1,11 @@
 "use client";
 
-import { Chip } from "@/components/atoms";
-import { EmptyLine, type ActionItem } from "@/components/molecules";
+import { useEffect, useState } from "react";
+import { Button, Chip } from "@/components/atoms";
+import { EmptyState, type ActionItem } from "@/components/molecules";
+import { EmptyVideo } from "@/components/organisms/EmptyVideo";
+import { useTourTarget } from "@/components/organisms/useTourTarget";
+import { useTemplatesStore } from "@/store";
 import {
   FamilyTable,
   type FamilyColumn,
@@ -25,6 +29,23 @@ export default function WorkbookLayoutsPage() {
     setDefaultLayout,
   } = useWorkbookLayouts();
 
+  // Level 1 needs the library to have really loaded.
+  const [fetched, setFetched] = useState(false);
+  useEffect(() => {
+    void useTemplatesStore
+      .getState()
+      .fetchTemplates()
+      .then(() => setFetched(true));
+  }, []);
+
+  // Level 1 (spec §5.12): nothing but the built-in default exists, so there is nothing to manage yet.
+  const defaultOnly = layoutFamilies.length <= 1 && layoutFamilies.every((l) => l.isDefault);
+  const level1 = defaultOnly;
+
+  // Tour targets (spec §5.13): the default FamilyTable row and its open action (the name link).
+  useTourTarget("layouts-default", ".cktable .ckrow:has(.fam-default)");
+  useTourTarget("layouts-open", ".cktable .ckrow:has(.fam-default) .fam-title");
+
   const layoutRows: FamilyRow[] = layoutFamilies.map((l) => {
     const publishedId = l.versions.find((v) => v.status === "published")?.id;
     // Layouts have no "Edit" (authoring happens in the in-review Builder), so the
@@ -45,7 +66,13 @@ export default function WorkbookLayoutsPage() {
     return {
       id: l.family.id,
       name: l.family.name,
-      badges: l.isDefault ? <Chip tone="accent">Default</Chip> : undefined,
+      badges: l.isDefault ? (
+        <>
+          <Chip tone="accent">Default</Chip>
+          {/* Data marker for the tour targets (FamilyTable passes no row props). */}
+          <span className="fam-default" hidden />
+        </>
+      ) : undefined,
       cells: {
         profile: l.profile,
         version: l.versionBadge ? (
@@ -66,18 +93,26 @@ export default function WorkbookLayoutsPage() {
     };
   });
 
+  if (!fetched) return <div className="pagebody" aria-busy="true" />;
+
   return (
     <div className="pagebody">
-      <FamilyTable
-        columns={LAYOUT_COLUMNS}
-        rows={layoutRows}
-        ariaLabel="Workbook layouts"
-        empty={
-          <div className="card">
-            <EmptyLine>Workbook layouts appear here once your organization has one.</EmptyLine>
-          </div>
-        }
-      />
+      {level1 ? (
+        <EmptyState
+          layout="stack"
+          title="Make the workbook yours"
+          media={<EmptyVideo videoId="workbook-layouts" />}
+          actions={
+            <Button onClick={() => viewLayout(layoutFamilies[0]?.family.versions.find((v) => v.status === "published")?.id)}>
+              Start from a built-in layout
+            </Button>
+          }
+        >
+          Every workbook starts from the built-in layout. Add your logo, rename sections and publish your own version.
+        </EmptyState>
+      ) : (
+        <FamilyTable columns={LAYOUT_COLUMNS} rows={layoutRows} ariaLabel="Workbook layouts" />
+      )}
     </div>
   );
 }

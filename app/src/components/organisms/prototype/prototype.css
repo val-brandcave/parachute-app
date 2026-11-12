@@ -1,0 +1,333 @@
+/* Prototype controls (spec §6, PC-13): the state pill, its tip and the scenario popover.
+   Every layer here sits on the prototype tier (--z-proto, 210), above popovers (200). */
+
+/* ---- pill ---- */
+.proto-pill {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--z-proto);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  /* Bottom centre (see ProtoPill). Kept clear of the sidebar footer (Balance, OrgCard) on
+     both sides; more states than fit scroll sideways. */
+  max-width: min(960px, calc(100vw - 496px));
+  padding: 4px;
+  background: var(--md-surface);
+  color: var(--md-on-surface);
+  border: 1px solid var(--md-outline-v);
+  border-radius: 999px;
+  box-shadow: var(--md-elev-3);
+  font-size: 12.5px;
+  line-height: 1;
+  white-space: nowrap;
+}
+.proto-pill[data-busy] {
+  cursor: progress;
+}
+.proto-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px 0 8px;
+  font-weight: 700;
+  color: var(--md-on-surface);
+}
+.proto-tick {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-weight: 600;
+  color: var(--md-success);
+}
+.proto-sep {
+  width: 1px;
+  align-self: stretch;
+  margin: 4px 2px;
+  background: var(--md-outline-v);
+}
+
+/* states: sliding navy-derived thumb, same language as SegmentedControl */
+.proto-segs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  /* More states than fit scroll sideways; the active one is scrolled into view. */
+  mask-image: linear-gradient(to right, transparent 0, #000 8px, #000 calc(100% - 12px), transparent 100%);
+}
+.proto-seg {
+  position: relative;
+  border: 1px solid transparent;
+  background: transparent;
+  font: inherit;
+  font-weight: 600;
+  color: var(--md-on-surface-v);
+  padding: 7px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+.proto-seg:hover {
+  color: var(--md-on-surface);
+}
+.proto-seg.on {
+  color: var(--md-on-selected);
+}
+.proto-seg:focus-visible,
+.proto-btn:focus-visible,
+.proto-act:focus-visible,
+.proto-preset:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-accent);
+}
+.proto-seg.is-planned {
+  border-style: dashed;
+  border-color: var(--md-outline);
+  color: var(--md-on-surface-t);
+}
+.proto-seg-thumb {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: var(--md-selected);
+}
+.proto-seg-lb {
+  position: relative;
+}
+.proto-custom {
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px dashed var(--md-outline);
+  font-weight: 700;
+  color: var(--md-on-surface-v);
+}
+
+/* narrow: the segments collapse to a select ("label ▾") */
+.proto-narrow {
+  display: none;
+}
+.proto-select {
+  font: inherit;
+  font-weight: 600;
+  color: var(--md-on-surface);
+  background-color: var(--md-surface-1);
+  border: 1px solid var(--md-outline-v);
+  border-radius: 999px;
+  padding: 6px 10px;
+  max-width: 42vw;
+}
+:root[data-theme="dark"] .proto-select {
+  color-scheme: dark;
+}
+@media (max-width: 600px) {
+  .proto-label > span:not(.proto-tick) {
+    display: none;
+  }
+}
+@media (max-width: 900px) {
+  .proto-pill {
+    max-width: calc(100vw - 32px);
+  }
+  .proto-segs {
+    display: none;
+  }
+  .proto-narrow {
+    display: block;
+    min-width: 0;
+    flex: 0 1 auto;
+  }
+  .proto-select {
+    max-width: 100%;
+    min-width: 0;
+  }
+  .proto-hide-narrow {
+    display: none;
+  }
+}
+
+.proto-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 30px;
+  min-width: 30px;
+  justify-content: center;
+  padding: 0 8px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--md-on-surface-v);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+.proto-btn:hover,
+.proto-btn[aria-expanded="true"] {
+  background: var(--md-surface-1);
+  color: var(--md-on-surface);
+}
+
+/* compact tip above the pill */
+.proto-tip {
+  position: fixed;
+  z-index: var(--z-proto);
+  transform: translate(-50%, -100%);
+  max-width: 280px;
+  padding: 6px 9px;
+  border-radius: 6px;
+  background: var(--md-on-surface);
+  color: var(--md-surface);
+  font-size: 12px;
+  line-height: 1.35;
+  text-wrap: pretty;
+  pointer-events: none;
+}
+
+/* ---- scenario popover (doubled class beats the DS z utility) ---- */
+.proto-pop.proto-pop {
+  z-index: var(--z-proto);
+  max-width: calc(100vw - 24px);
+}
+.proto-sc {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  font-size: 12.5px;
+  color: var(--md-on-surface);
+}
+.proto-sec {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.proto-h {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--md-on-surface-t);
+}
+.proto-axis {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+.proto-axis-lb {
+  font-weight: 600;
+  color: var(--md-on-surface-v);
+}
+.proto-axis .ui-seg {
+  flex-wrap: wrap;
+}
+.proto-axis .ui-seg button {
+  font-size: 12px;
+  padding: 5px 8px;
+}
+.proto-switches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.proto-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: var(--md-on-surface-v);
+}
+.proto-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+.proto-act {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 9px;
+  border: 1px solid var(--md-outline-v);
+  border-radius: 8px;
+  background: var(--md-surface);
+  color: var(--md-on-surface);
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.proto-act:hover {
+  background: var(--md-surface-1);
+}
+.proto-said {
+  margin: 0;
+  min-height: 1.3em;
+  color: var(--md-on-surface-v);
+  text-wrap: pretty;
+}
+.proto-notes {
+  margin: 0;
+  padding: 8px 10px;
+  list-style: none;
+  border-radius: 8px;
+  background: var(--md-info-c);
+  color: var(--md-on-surface);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.proto-notes li {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+  text-wrap: pretty;
+}
+.proto-presets {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+.proto-preset {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 7px 9px;
+  border: 1px solid var(--md-outline-v);
+  border-radius: 8px;
+  background: var(--md-surface);
+  color: var(--md-on-surface);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.proto-preset:hover {
+  background: var(--md-surface-1);
+}
+.proto-preset.is-planned {
+  border-style: dashed;
+  color: var(--md-on-surface-t);
+}
+.proto-preset-lb {
+  font-weight: 700;
+}
+.proto-preset-sub {
+  font-size: 11.5px;
+  color: var(--md-on-surface-v);
+  text-wrap: pretty;
+}
+.proto-foot {
+  padding-top: 10px;
+  border-top: 1px solid var(--md-outline-v);
+  color: var(--md-on-surface-v);
+  text-wrap: pretty;
+}
+.proto-legacy {
+  color: var(--md-on-surface-t);
+}

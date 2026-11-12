@@ -9,6 +9,8 @@ import { CodeBoxes } from "@/components/molecules";
 import { useKeycloakFrame } from "@/components/templates/KeycloakFrame";
 import { useSessionStore } from "@/store/session.store";
 import { dur, ease, motionModeNow, setHandoff, useMotionMode } from "@/lib/motion";
+import { useProtoFill } from "@/components/organisms/prototype/useProtoFill";
+import { useAuthVariant } from "./useAuthVariant";
 
 const RESEND_SECONDS = 42;
 /** Prototype: any six digits pass except this one, so the wrong-code state can be shown. */
@@ -30,7 +32,14 @@ export function VerifyCodeForm({ email }: { email: string }) {
   const [code, setCode] = useState("");
   const [left, setLeft] = useState(RESEND_SECONDS);
   const [status, setStatus] = useState<"idle" | "checking" | "ok">("idle");
-  const [error, setError] = useState<string | null>(null);
+  const variant = useAuthVariant();
+  const [error, setError] = useState<string | null>(
+    variant === "wrong-code"
+      ? "That code didn't match. Check your email and try again."
+      : variant === "expired"
+        ? "That code has expired. Ask for a new one."
+        : null,
+  );
   const [shakeKey, setShakeKey] = useState(0);
   const [focusKey, setFocusKey] = useState(0);
 
@@ -39,6 +48,15 @@ export function VerifyCodeForm({ email }: { email: string }) {
     const t = setTimeout(() => setLeft((n) => n - 1), 1000);
     return () => clearTimeout(t);
   }, [left]);
+
+  // Fill wand: a code that passes; Shift = 000000, the code that never matches. Never submits.
+  useProtoFill("verify", {
+    valid: () => {
+      setCode("123456");
+      setError(null);
+    },
+    invalid: () => setCode(WRONG_CODE),
+  });
 
   const verify = async (e?: React.FormEvent) => {
     e?.preventDefault();

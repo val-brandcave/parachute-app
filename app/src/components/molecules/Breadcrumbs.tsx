@@ -15,6 +15,8 @@ const TOP_LABELS: Record<string, string> = {
   reviews: "Reviews",
   configure: "Configure",
   profile: "Profile",
+  trust: "Trust Center",
+  learn: "Learning Center",
   components: "Components",
   styleguide: "Style Guide",
 };

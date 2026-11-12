@@ -236,3 +236,10 @@
   .es { animation: es-in 0.28s ease-out both; }
   @keyframes es-in { from { opacity: 0; } to { opacity: 1; } }
 }
+
+/* Level-1 media (T5.0, spec §5.12): a playable video in the preview slot. */
+.es-media .es-preview-art {
+  pointer-events: auto;
+  -webkit-mask-image: none;
+  mask-image: none;
+}

@@ -8,6 +8,7 @@ import { useWalletView } from "@/store";
 import { CreditsPopover } from "./CreditsPopover";
 import "./credits-chrome.css";
 
+// DS-candidate: Popover close-on-scroll — Radix Popover does not close on scroll (AGENTS popover rule).
 /**
  * Header credits pill (spec §5.3, PC-5/PC-30). Sits between SearchTrigger and the bell and opens the
  * credits popover. One unit only: the label is credits, never reviews or dollars (PC-6).

@@ -186,7 +186,7 @@ export const usePrefsStore = create<PrefsState>((set, get) => ({
 /* ---- Build notes (PROTOTYPE ONLY) -------------------------------------------
  * Engineering annotations (Keycloak theme tag, template names, "needs API sample"
  * callouts). OFF by default so a demo shows none; engineers turn them on from the
- * DemoDock. Persisted per browser and readable outside the AppShell (the auth
+ * scenario popover. Persisted per browser and readable outside the AppShell (the auth
  * pages), so it is a tiny external store rather than state in the shell. */
 const BNKEY = "parachute:build-notes";
 const BN_EVENT = "parachute:build-notes-change";

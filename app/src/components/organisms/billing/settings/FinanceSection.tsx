@@ -21,8 +21,8 @@ export function FinanceSection({ b }: { b: Billing }) {
           <a className="ui-btn ui-btn--outline ui-btn--sm" href="/billing/realwired-w9.pdf" download="Realwired-W-9.pdf">
             Realwired W-9
           </a>
-          <Button variant="outline" size="sm" onClick={() => router.push("/configure/security")}>
-            Security pack
+          <Button variant="outline" size="sm" onClick={() => router.push("/trust")}>
+            Trust Center
           </Button>
         </div>
       }

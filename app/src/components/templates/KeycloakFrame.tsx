@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useLayoutEffect, useMemo, useRe
 import { animate, motion } from "framer-motion";
 import { useBuildNotes } from "@/store/prefs.store";
 import { Icon, Logo } from "@/components/atoms";
+import { ProtoPill } from "@/components/organisms/prototype/ProtoPill";
 import {
   cardHeight,
   dist,
@@ -60,11 +61,11 @@ export function KeycloakFrame({
   template?: string;
   /** Content between the secured line and the template chip (e.g. legal text). */
   below?: React.ReactNode;
-  /** Content after the template chip (e.g. the demo-accounts disclosure). */
+  /** Content after the template chip (e.g. a footnote). */
   after?: React.ReactNode;
 }) {
   // Engineering annotations (the corner tag, the template name) show only when
-  // "Show build notes" is on in the DemoDock. Off by default for demos.
+  // "Show build notes" is on in the scenario popover. Off by default for demos.
   const buildNotes = useBuildNotes();
   const mode = useMotionMode();
   const variants = useStepVariants();
@@ -119,6 +120,7 @@ export function KeycloakFrame({
 
   return (
     <div className="kc">
+      <ProtoPill />
       {buildNotes && (
         <div className="kc-tag" role="note">
           <Icon name="info" size={14} />

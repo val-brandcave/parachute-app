@@ -63,7 +63,7 @@ function HeldHero({ b }: { b: Billing }) {
     { label: "Confirmed", date: "Usually same day", state: "todo" },
   ];
   return (
-    <section className="card bl-card ov-hero ov-held" aria-labelledby="ov-held-t">
+    <section className="card bl-card ov-hero ov-held" aria-labelledby="ov-held-t" data-tour="billing-balance">
       <div className="ov-hero-top">
         <div>
           <h2 className="bl-h" id="ov-held-t">
@@ -111,7 +111,7 @@ function BalanceHero({
   const unit = total === 1 ? "credit" : "credits";
 
   return (
-    <section className={`card bl-card ov-hero is-${tone}`}>
+    <section className={`card bl-card ov-hero is-${tone}`} data-tour="billing-balance">
       <div className="ov-hero-top">
         <div>
           <h2 className="bl-h">{b.isAdmin ? "Credit balance" : "Team balance"}</h2>
@@ -159,7 +159,7 @@ function BalanceHero({
         )}
       </div>
 
-      <div className="ov-runway">
+      <div className="ov-runway" data-tour="billing-runway">
         {tone === "zero" ? (
           <div className="ov-run-bar is-zero" role="img" aria-label="No credits left">
             <i style={{ width: "2%" }} />

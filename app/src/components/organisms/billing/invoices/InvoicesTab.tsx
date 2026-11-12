@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useApprovalPending } from "@/store";
 import { Button } from "@/components/atoms";
 import { EmptyLine, EmptyState, GhostRows } from "@/components/molecules";
+import { EmptyVideo } from "@/components/organisms/EmptyVideo";
 import { formatUsd } from "@/lib/pricing";
 import { invoicedStatement, monthKey, monthTitle, walletStatement } from "../billing-data";
 import type { useBilling } from "../useBilling";
@@ -217,7 +218,7 @@ export function InvoicesTab({ b, invoiced }: { b: B; invoiced: boolean }) {
       <div className="bl-stack">
         <EmptyState
           title="Receipts and statements appear after your first top-up"
-          preview={<GhostRows rows={3} />}
+          media={<EmptyVideo videoId="buying-credits" />}
           status={
             pending ? (
               <>

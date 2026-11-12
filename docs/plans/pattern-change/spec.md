@@ -1067,3 +1067,8 @@ Built in the app for this change (audit C §5, option B). Each file carries `// 
 | `SegmentedControl press` | `components/molecules/SegmentedControl.tsx` (T1.0) | local `SegmentedControl` | Press feedback per the motion contract |
 | `UsageDonut` (token-coloured 2-slice donut) | `components/organisms/billing/usage/UsageDonut.tsx` (T3.2) | hand-built SVG | DS `DonutViz` can't take `--viz-*` tokens |
 | `Illustration` atom | `components/atoms/Illustration.tsx` (T0.2) | inline SVG components | Shared art system across products, if Realwired adopts direction C |
+| `TourChip` (chip with an action + dismiss) | `components/molecules/TourChip.tsx` (T5.1) | local `Chip` | No DS chip carries an action and a dismiss (added in the build) |
+| `Chip` leading `icon` + `ref` | `components/organisms/home/EarnPill.tsx` (T2.1) | DS `Chip` | The DS chip takes neither a leading icon nor a ref (added in the build) |
+| `Button` label swap (cross-fade, width held) | `components/organisms/onboarding/OrgSetupForm.tsx` (T1.1) | local `Button` | Motion contract label swap; DS `Button` has no label transition (added in the build) |
+| Pass-through `data-*` on `Tabs` triggers / table rows | `components/organisms/useTourTarget.ts` (T5.3) | DOM stamping hook | Tour targets need a stable attribute the DS parts don't forward (added in the build) |
+| `Tooltip` tier prop | `components/organisms/prototype/ProtoPill.tsx` (T5.4) | DS `Tooltip` | A tooltip over a z-210 surface; the pill itself stays prototype-only (added in the build) |
