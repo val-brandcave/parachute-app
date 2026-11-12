@@ -7,7 +7,8 @@ import { Button, CreditChip, Icon, Illustration, Textarea } from "@/components/a
 import { useCreditRequestStore } from "@/store";
 import { isLive } from "@/lib/credit-requests";
 import type { CreditRequest } from "@/types";
-import { EmptyLine, EmptyState, GhostBars, GhostStats } from "@/components/molecules";
+import { EmptyLine } from "@/components/molecules";
+import { BillingEmptyCard } from "./BillingEmptyCard";
 import { usageByPerson } from "@/lib/wallet-view";
 import { AUTO_RELOAD_DEFAULTS, CREDIT_USD, approxValue, costFor, formatUsd, packById } from "@/lib/pricing";
 import { FULL_REVIEW_TYPES } from "@/lib/setup-steps";
@@ -338,17 +339,19 @@ export function OverviewTab({
   if (b.ledger.length === 0) {
     return (
       <div className="us bl-stack">
-        <EmptyState
+        <BillingEmptyCard
           title="Your balance and usage show up here"
-          preview={
-            <>
-              <GhostStats count={3} />
-              <GhostBars height={90} />
-            </>
+          ill="02b-wallet-top-up"
+          action={
+            b.isAdmin ? (
+              <Button iconLeft="add" onClick={b.openTopUp}>
+                Add credits
+              </Button>
+            ) : undefined
           }
         >
           Once credits are added you will see the balance, how long it lasts, and what each review used.
-        </EmptyState>
+        </BillingEmptyCard>
       </div>
     );
   }
@@ -559,12 +562,9 @@ export function ReviewerBilling({ b, onViewAll }: { b: Billing; onViewAll: () =>
   if (b.ledger.length === 0) {
     return (
       <div className="us bl-stack">
-        <EmptyState
-          title="Your organization has no credits yet"
-          preview={<GhostStats count={3} />}
-        >
+        <BillingEmptyCard title="Your organization has no credits yet" ill="02b-wallet-top-up">
           Only your organization admin can add credits. Once they do, the balance and the reviews you run show up here.
-        </EmptyState>
+        </BillingEmptyCard>
         <RequestAsk b={b} />
       </div>
     );

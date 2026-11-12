@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 90" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" class="pb" role="img"><title>Review defaults: a report page with preset slider controls</title><style>.pb{stroke-width:var(--ill-stroke,2.25)}.pb .p{fill:var(--ill-paper,#FFFFFF)}.pb .a{fill:var(--ill-accent,#2A6F7F)}.pb .t{fill:var(--ill-tint,#DEEBEE)}.pb .s{fill:var(--ill-shadow-strong,#AFC3D4);stroke:none}.pb .bg{fill:var(--ill-panel,none);stroke:none}.pb .m{stroke:var(--ill-muted,#8FA3B3);stroke-width:1.75}.pb .ap{stroke:var(--ill-paper,#FFFFFF)}.pb .af{fill:var(--ill-paper,#FFFFFF);stroke:none}.pb .as{stroke:var(--ill-accent,#2A6F7F)}.pb .ink{fill:currentColor;stroke:none}.pb .ns{stroke:none}</style>
+<ellipse class="bg" cx="60" cy="47" rx="44" ry="38"/>
+<g transform="rotate(-5 42 44)">
+  <path class="s" transform="translate(4 4)" d="M20 12H48L56 20V72H20Z"/>
+  <path class="p" d="M20 12H48L56 20V72H20Z"/>
+  <path d="M48 12V20H56"/>
+  <path class="m" d="M27 28H47M27 34H47M27 40H40"/>
+</g>
+<rect class="s" x="48" y="34" width="56" height="44" rx="6"/>
+<rect class="p" x="44" y="30" width="56" height="44" rx="6"/>
+<path class="m" d="M53 42H91M53 52H91M53 62H91"/>
+<path d="M53 42H64M53 62H84"/>
+<path class="as" d="M53 52H77" stroke-width="2.5"/>
+<circle class="p" cx="66" cy="42" r="4.5"/>
+<circle class="a" cx="78" cy="52" r="7.5"/>
+<circle class="p" cx="84" cy="62" r="4.5"/>
+<path class="m" d="M100 16v5M97.5 18.5h5"/></svg>

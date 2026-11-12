@@ -3,10 +3,9 @@
 import { useMemo, useState } from "react";
 import { Select } from "@realwired/ui";
 import { Button } from "@/components/atoms";
-import { EmptyState } from "@/components/molecules";
-import { EmptyVideo } from "@/components/organisms/EmptyVideo";
-import { INVOICED_CREDIT_USD as CREDIT_USD, costFor, formatUsd } from "@/lib/pricing";
-import { FULL_REVIEW_TYPES } from "@/lib/setup-steps";
+import { BillingEmptyCard } from "../BillingEmptyCard";
+import { StartReviewButton } from "../StartReviewButton";
+import { INVOICED_CREDIT_USD as CREDIT_USD, formatUsd } from "@/lib/pricing";
 import { invoicedSpendEntries, usageByPerson, usageByType, type UsagePeriod as UsageSpan } from "@/lib/wallet-view";
 import { useApprovalPending } from "@/store";
 import type { CreditLedgerEntry } from "@/types";
@@ -97,12 +96,12 @@ export function UsageTab({ b, invoiced }: { b: Billing; invoiced: boolean }) {
 
   // Level 1: nothing has ever moved (for reviewers, nothing of theirs). One block, no controls.
   if (rows.length === 0 && source.length === 0) {
-    const n = costFor(FULL_REVIEW_TYPES);
     return (
       <div className="us bl-stack">
-        <EmptyState
+        <BillingEmptyCard
           title={mine ? "Your usage starts with your first review" : "Usage starts with your first review"}
-          media={<EmptyVideo videoId="credits-a-review-uses" />}
+          ill="01b-credits"
+          action={<StartReviewButton />}
           status={
             pending && b.isAdmin ? (
               <>
@@ -112,11 +111,11 @@ export function UsageTab({ b, invoiced }: { b: Billing; invoiced: boolean }) {
           }
         >
           {mine
-            ? `A full review uses ${n} credits. Here you will see the reviews you ran and the credits each one used.`
+            ? "Here you will see the reviews you ran and the credits each one used."
             : invoiced
               ? "Every review you run is listed here by review type and by person, ready to export."
-              : `A full review uses ${n} credits. You will see credits by review type and by person, plus every top-up, refund and reward, ready to export.`}
-        </EmptyState>
+              : "You will see credits by review type and by person, plus every top-up, refund and reward, ready to export."}
+        </BillingEmptyCard>
       </div>
     );
   }

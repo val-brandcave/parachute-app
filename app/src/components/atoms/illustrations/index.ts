@@ -26,6 +26,8 @@ import { ill_12b_talk_to_sales } from "./12b-talk-to-sales";
 import { ill_13_payment_received } from "./13-payment-received";
 import { ill_14_credits_expiring } from "./14-credits-expiring";
 import { ill_15_request_sent } from "./15-request-sent";
+import { ill_16b_organization } from "./16b-organization";
+import { ill_17b_review_defaults } from "./17b-review-defaults";
 import { ill_20_scene_how_credits_work } from "./20-scene-how-credits-work";
 import { ill_21_scene_trust_center } from "./21-scene-trust-center";
 import { ill_22_scene_learning_center } from "./22-scene-learning-center";
@@ -64,6 +66,8 @@ export const ILLUSTRATIONS = {
   "13-payment-received": ill_13_payment_received,
   "14-credits-expiring": ill_14_credits_expiring,
   "15-request-sent": ill_15_request_sent,
+  "16b-organization": ill_16b_organization,
+  "17b-review-defaults": ill_17b_review_defaults,
   "20-scene-how-credits-work": ill_20_scene_how_credits_work,
   "21-scene-trust-center": ill_21_scene_trust_center,
   "22-scene-learning-center": ill_22_scene_learning_center,

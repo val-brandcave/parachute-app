@@ -4,8 +4,8 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useApprovalPending } from "@/store";
 import { Button } from "@/components/atoms";
-import { EmptyLine, EmptyState, GhostRows } from "@/components/molecules";
-import { EmptyVideo } from "@/components/organisms/EmptyVideo";
+import { EmptyLine } from "@/components/molecules";
+import { BillingEmptyCard } from "../BillingEmptyCard";
 import { formatUsd } from "@/lib/pricing";
 import { invoicedStatement, monthKey, monthTitle, walletStatement } from "../billing-data";
 import type { useBilling } from "../useBilling";
@@ -216,9 +216,9 @@ export function InvoicesTab({ b, invoiced }: { b: B; invoiced: boolean }) {
   if (!invoiced && !hasPurchase && !hasUse) {
     return (
       <div className="bl-stack">
-        <EmptyState
+        <BillingEmptyCard
           title="Receipts and statements appear after your first top-up"
-          media={<EmptyVideo videoId="buying-credits" />}
+          ill="13-payment-received"
           status={
             pending ? (
               <>
@@ -226,23 +226,23 @@ export function InvoicesTab({ b, invoiced }: { b: B; invoiced: boolean }) {
               </>
             ) : undefined
           }
-          actions={
+          action={
             <Button iconLeft="add" onClick={b.openTopUp}>
               Add credits
             </Button>
           }
         >
           Every purchase gets a receipt, and each month gets a statement of the reviews and credits in it.
-        </EmptyState>
+        </BillingEmptyCard>
       </div>
     );
   }
   if (invoiced && b.reviews.length === 0) {
     return (
       <div className="bl-stack">
-        <EmptyState title="Invoices appear after your first month of reviews" preview={<GhostRows rows={3} />}>
+        <BillingEmptyCard title="Invoices appear after your first month of reviews" ill="13-payment-received" help={null}>
           Each month closes into one invoice, net 30, sent to {b.settings?.billingEmail ?? "your billing contact"}.
-        </EmptyState>
+        </BillingEmptyCard>
       </div>
     );
   }

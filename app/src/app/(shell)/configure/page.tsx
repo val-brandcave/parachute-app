@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { Icon, type IconName } from "@/components/atoms";
+import { Illustration, type IllustrationName } from "@/components/atoms";
+
+
 
 type ConfigCard = {
   href: string;
-  icon: IconName;
-  tone: "org" | "defaults" | "templates" | "responses" | "checklists" | "security" | "billing";
+  /** Spot illustration on the right of the card (same tile language as Learning Center and the empty states). */
+  ill: IllustrationName;
   title: string;
   desc: string;
   tags: string[];
@@ -14,60 +16,53 @@ type ConfigCard = {
 
 // The org-setup surfaces. Grouped by what each shapes: identity/inputs, the run
 // defaults, each authoring library (workbook layouts + the response library are
-// now first-class siblings, not one bundled card), and the ingested admin form.
+// first-class siblings), the ingested admin form, then trust and billing.
 const CARDS: ConfigCard[] = [
   {
     href: "/configure/organization",
-    icon: "org",
-    tone: "org",
+    ill: "16b-organization",
     title: "Organization",
-    desc: "Identity, branding, and org-wide inputs.",
-    tags: ["Logo & name", "Branding", "Bank policy"],
+    desc: "Your bank's name, logo, branding and credit policy.",
+    tags: ["Name and logo", "Branding", "Credit policy"],
   },
   {
     href: "/configure/defaults",
-    icon: "filter",
-    tone: "defaults",
+    ill: "17b-review-defaults",
     title: "Review defaults",
-    desc: "The smart defaults that make a run one-click.",
-    tags: ["Profile & SLA", "Quality gate", "Confidence"],
+    desc: "The settings every new review starts with.",
+    tags: ["Profile and SLA", "Quality gate", "Confidence"],
   },
   {
     href: "/configure/workbook-layouts",
-    icon: "templates",
-    tone: "templates",
+    ill: "08b-signed-workbook",
     title: "Workbook layouts",
-    desc: "The Technical deliverable's structure — sections, order, versions.",
-    tags: ["Workbook · Technical", "Versions"],
+    desc: "How the Technical workbook is laid out: sections, order and versions.",
+    tags: ["Technical workbook", "Versions"],
   },
   {
     href: "/configure/responses",
-    icon: "quote",
-    tone: "responses",
+    ill: "07b-finding-citation",
     title: "Response library",
-    desc: "Reusable reply snippets that fill your findings — org & personal.",
-    tags: ["Org & personal", "Merge fields"],
+    desc: "Reusable replies for your findings, shared or just for you.",
+    tags: ["Shared and personal", "Merge fields"],
   },
   {
     href: "/configure/checklists",
-    icon: "checklist",
-    tone: "checklists",
+    ill: "06b-first-upload",
     title: "Compliance checklists",
-    desc: "The bank's admin form — upload, map, version.",
-    tags: ["Upload & map", "Set active"],
+    desc: "Your bank's compliance checklist: upload it, map it, keep it current.",
+    tags: ["Upload and map", "Set active"],
   },
   {
     href: "/trust",
-    icon: "shield",
-    tone: "security",
+    ill: "03b-trust-center",
     title: "Trust Center",
-    desc: "What your IT team needs to approve us as a vendor.",
+    desc: "What your IT team needs to approve Parachute as a vendor.",
     tags: ["Documents", "At a glance", "Send to IT"],
   },
   {
     href: "/configure/billing",
-    icon: "wallet",
-    tone: "billing",
+    ill: "02b-wallet-top-up",
     title: "Billing & credits",
     desc: "Your balance, receipts, payment method and auto-reload.",
     tags: ["Balance", "Activity", "Payment"],
@@ -80,10 +75,7 @@ export default function ConfigureHub() {
       <div className="pagebody">
         <div className="cfg-grid">
           {CARDS.map((c) => (
-            <Link key={c.href} href={c.href} className={`cfg-card cfg-card--${c.tone}`}>
-              <span className="cfg-card-ic">
-                <Icon name={c.icon} size={20} />
-              </span>
+            <Link key={c.href} href={c.href} className="cfg-card">
               <span className="cfg-card-body">
                 <span className="cfg-card-title">{c.title}</span>
                 <span className="cfg-card-desc">{c.desc}</span>
@@ -95,7 +87,7 @@ export default function ConfigureHub() {
                   ))}
                 </span>
               </span>
-              <Icon name="chevron-right" size={18} className="cfg-card-go" />
+              <Illustration name={c.ill} size={104} className="cfg-card-ill" />
             </Link>
           ))}
         </div>

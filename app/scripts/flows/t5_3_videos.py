@@ -5,7 +5,7 @@
   reviews_level1:     empty org /reviews (payg-admin-low): media "How a review works 1:15" is keyboard-playable,
                       the PC-37 upload zone is there, title and footnote follow spec 5.12; no tabs, search,
                       filters or "Showing" totals.
-  billing_never_used: pending-admin has no ledger, so Usage and Invoices are level 1 with their media
+  billing_never_used: pending-admin has no ledger, so Usage and Invoices are level 1 illustrated cards (no video)
                       (no ghost drawing).
   auto_reload_hint:   trial-admin, Settings: the first flip of the auto-reload switch shows the hint once, the
                       switch still flips, a second flip does not add a card, a reload does not bring it back.
@@ -88,13 +88,14 @@ def locked_zone(page, ctx):
 
 def billing_never_used(page, ctx):
     ctx.enter_persona("pending-admin")
+    # Tab-level empties (12 Nov rule): illustrated card + action + "How credits work" link, no video.
     ctx.visit("/configure/billing?tab=usage")
-    media_ok(ctx, page, "Usage", "What credits a review uses", "2:10")
+    ctx.check(page.locator(".bec").count() == 1 and page.locator(".bec .ev").count() == 0, "Usage level 1: one illustrated card, no video")
+    ctx.check(page.locator(".bec a", has_text="How credits work").count() == 1, "Usage card links to How credits work")
     ctx.check(page.locator(".ud-filter, .ud-grid").count() == 0, "Usage level 1: no filter row or cards")
     ctx.shoot("t5-3-usage-empty")
-    keyboard_play(ctx, page, "Usage")
     ctx.visit("/configure/billing?tab=invoices")
-    media_ok(ctx, page, "Invoices", "Buying credits and auto-reload", "3:40")
+    ctx.check(page.locator(".bec").count() == 1 and page.locator(".bec .ev").count() == 0, "Invoices level 1: one illustrated card, no video")
     ctx.check(page.locator(".bl-table, .bl-thead").count() == 0, "Invoices level 1: no table headers")
     ctx.shoot("t5-3-invoices-empty")
 

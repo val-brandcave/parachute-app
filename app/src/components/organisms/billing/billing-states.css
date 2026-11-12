@@ -467,3 +467,60 @@
     display: none;
   }
 }
+
+/* BillingEmptyCard: tab-level empty state — text + action left, spot illustration right. */
+.bl-card.bec {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--d-gap) 32px;
+  padding: 28px;
+}
+.bec-tx {
+  flex: 1;
+  min-width: 0;
+}
+.bec-status {
+  margin: 0 0 8px;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--md-on-surface-v);
+}
+.bec-h {
+  margin: 0;
+  font-size: 18px;
+  line-height: 26px;
+}
+.bec-body {
+  margin-top: 6px;
+  max-width: 60ch;
+  color: var(--md-on-surface-v);
+}
+.bec-acts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+  margin-top: 18px;
+}
+.bec-link {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--md-accent);
+  text-decoration: none;
+}
+.bec-link:hover {
+  text-decoration: underline;
+}
+.bec-link:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-accent);
+  border-radius: 4px;
+}
+.bec-ill {
+  flex: none;
+}
+@media (max-width: 600px) {
+  .bec-ill {
+    display: none;
+  }
+}
