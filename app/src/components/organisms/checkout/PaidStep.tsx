@@ -33,6 +33,7 @@ export function PaidStep({
   paidWith,
   poNumber,
   actions,
+  historical = false,
 }: {
   credits: number;
   amountUsd: number;
@@ -45,6 +46,8 @@ export function PaidStep({
   paidWith: string;
   poNumber?: string;
   actions: NextAction[];
+  /** An older purchase (credits have been spent since): say "was", not "is now". */
+  historical?: boolean;
 }) {
   const to = emails.length > 1 ? `${emails.slice(0, -1).join(", ")} and ${emails[emails.length - 1]}` : emails[0];
   return (
@@ -57,7 +60,8 @@ export function PaidStep({
           {plural(credits, "credit", "credits")} added
         </h1>
         <p className="co-lede tw-pretty">
-          Your balance is now {plural(balanceAfter, "credit", "credits")}
+          {historical ? "After this purchase your balance was" : "Your balance is now"}{" "}
+          {plural(balanceAfter, "credit", "credits")}
           {fullReviewsAfter > 0 ? `, enough for ${plural(fullReviewsAfter, "full review", "full reviews")}` : ""}.
           {to ? ` We emailed receipt ${receiptId} to ${to}.` : ` Your receipt is ${receiptId}.`}
         </p>

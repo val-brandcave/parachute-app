@@ -386,9 +386,12 @@ function Checkout() {
       <PaidStep
         credits={credits}
         amountUsd={e.amountUsd ?? paidLine.priceUsd}
+        // The purchase's own before → after (ledger as it stood then). The live balance can be
+        // lower if reviews ran since (e.g. reopening an older receipt), so it isn't used here.
         balanceBefore={co.paidBefore ?? Math.max(0, after - credits)}
-        balanceAfter={after}
-        fullReviewsAfter={fullReviewsIn(after)}
+        balanceAfter={co.paidBefore != null ? co.paidBefore + credits : after}
+        fullReviewsAfter={fullReviewsIn(co.paidBefore != null ? co.paidBefore + credits : after)}
+        historical={co.paidBefore != null && co.paidBefore + credits !== after}
         receiptId={e.receiptId ?? ""}
         emails={[co.settings?.billingEmail, co.settings?.receiptCc].filter((x): x is string => !!x)}
         validUntil={co.validUntil}
