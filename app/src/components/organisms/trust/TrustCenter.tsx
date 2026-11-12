@@ -2,15 +2,13 @@
 
 import { useState } from "react";
 import { Callout, Dialog, useToast } from "@realwired/ui";
-import { Button, Chip, Icon, Illustration, Input, Label } from "@/components/atoms";
+import { Button, Icon, Illustration, Input, Label } from "@/components/atoms";
 import {
   CONTACT,
-  DOCS_NOTE,
   DOCS_TITLE,
   FACTS,
   GLANCE_TITLE,
   PACK_DOCS,
-  PLACEHOLDER_LABEL,
   REQUEST_DESC,
   REQUEST_TITLE,
   SHARED,
@@ -25,7 +23,6 @@ import "./trust.css";
 
 export type TrustMode = "signed-in" | "public";
 
-const PlaceholderChip = () => <Chip tone="flag">{PLACEHOLDER_LABEL}</Chip>;
 
 /**
  * Trust Center (spec §5.10): hero, documents, "At a glance" facts, contact line.
@@ -76,7 +73,7 @@ export function TrustCenter({ mode = "signed-in", expired = false }: { mode?: Tr
           <Icon name="shield" size={16} /> Shared by {SHARED.by}, {SHARED.org}
         </p>
       )}
-      <section className="tc-hero">
+      <section className="card tc-hero">
         <div className="tc-hero-text">
           <h1 className="tc-h1">{TRUST_TITLE}</h1>
           <p className="tc-lead">{TRUST_INTRO}</p>
@@ -93,7 +90,6 @@ export function TrustCenter({ mode = "signed-in", expired = false }: { mode?: Tr
             <h2 id="tc-docs-h" className="tc-h2">
               {DOCS_TITLE}
             </h2>
-            <span className="tc-muted">{DOCS_NOTE}</span>
           </div>
           <ul className="tc-docs">
             {PACK_DOCS.map((d) => {
@@ -106,7 +102,6 @@ export function TrustCenter({ mode = "signed-in", expired = false }: { mode?: Tr
                   <span className="tc-doc-body">
                     <span className="tc-doc-title">
                       {d.title}
-                      {d.placeholder && <PlaceholderChip />}
                     </span>
                     <span className="tc-doc-desc">
                       {d.desc} · {d.meta}
@@ -137,7 +132,6 @@ export function TrustCenter({ mode = "signed-in", expired = false }: { mode?: Tr
                 <dt>{f.label}</dt>
                 <dd>
                   {f.value && <span>{f.value}</span>}
-                  {f.placeholder && <PlaceholderChip />}
                 </dd>
               </div>
             ))}
@@ -146,7 +140,6 @@ export function TrustCenter({ mode = "signed-in", expired = false }: { mode?: Tr
             <span>
               {CONTACT.lead} <a href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a>.
             </span>
-            {CONTACT.placeholder && <PlaceholderChip />}
           </p>
         </aside>
       </div>

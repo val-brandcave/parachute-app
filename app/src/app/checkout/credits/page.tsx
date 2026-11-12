@@ -17,7 +17,7 @@ import {
 import { autoReloadPitch, type NextAction } from "@/components/organisms/checkout/PaidStep";
 import type { CheckoutBlock, CheckoutStep } from "@/lib/checkout";
 import { useStepVariants, type Dir } from "@/lib/motion";
-import { CREDIT_USD, CUSTOM_CREDITS, formatUsd } from "@/lib/pricing";
+import { CREDIT_USD, CUSTOM_CREDITS, PURCHASED_LIFE_MONTHS, formatUsd } from "@/lib/pricing";
 import { useLockStore, useWalletStore } from "@/store";
 import { FULL_REVIEW_CREDITS, fullReviewsIn, lineFor, useCheckout } from "./hooks/useCheckout";
 
@@ -49,6 +49,7 @@ function Checkout() {
   const co = useCheckout();
   const { draft, step, line, form, wallet } = co;
   const variants = useStepVariants();
+  const ledger = useWalletStore((s) => s.ledger);
 
   // ---- Direction for the step transition (forward leaves left) ----
   const [prev, setPrev] = useState<{ step: CheckoutStep; dir: Dir }>({ step, dir: 1 });
@@ -120,10 +121,7 @@ function Checkout() {
   const [cardError, setCardError] = useState<string | null>(null);
   const cardRef = useRef<HTMLInputElement>(null);
 
-  // ---- Review: terms + pay ----
-  const [agreed, setAgreed] = useState(false);
-  const [termsError, setTermsError] = useState(false);
-  const termsRef = useRef<HTMLInputElement>(null);
+  // ---- Review: pay (paying = agreeing; the terms line sits under Pay) ----
   const [paying, setPaying] = useState(false);
   /** Synchronous in-flight flag: a second click lands before `paying` re-renders. */
   // It holds the epoch of the attempt in flight; leaving Paid (browser Back into this same
@@ -138,9 +136,6 @@ function Checkout() {
       setPaying(false);
     }
   }
-
-  // Paid: the terms were for that order; a new order starts unticked.
-  if (step === "done" && agreed) setAgreed(false);
 
   // A saved card skips Payment. Until the buyer opens it, Payment is reachable, not done.
   const [visitedPayment, setVisitedPayment] = useState(step === "payment");
@@ -175,11 +170,6 @@ function Checkout() {
 
   const onPay = async () => {
     if (payInFlight.current === payEpoch || paying) return;
-    if (!agreed) {
-      setTermsError(true);
-      termsRef.current?.focus();
-      return;
-    }
     if (co.block === "approval" || co.block === "role") {
       const lock = useLockStore.getState();
       if (co.block === "role") lock.openLock({ kind: "role", action: "buy credits", admin: co.admin?.name ?? "your organization admin" });
@@ -307,7 +297,6 @@ function Checkout() {
         cardError={cardError}
         cardRef={cardRef}
         autoReloadOn={!!co.settings?.autoReload}
-        onBack={() => co.go("amount")}
       />
     );
   } else if (step === "review" && form) {
@@ -315,29 +304,20 @@ function Checkout() {
       <ReviewStep
         line={line}
         validUntil={co.validUntil}
-        balance={wallet.balance}
-        fullReviewCredits={FULL_REVIEW_CREDITS}
         payingWith={payingWith}
         receiptTo={emails.join(", ")}
         poNumber={form.poNumber.trim()}
         autoReload={form.autoReload || !!co.settings?.autoReload}
-        orgName={co.org.name}
-        agreed={agreed}
-        termsError={termsError}
-        termsRef={termsRef}
-        onAgree={(v) => {
-          setAgreed(v);
-          if (v) setTermsError(false);
-        }}
         onChangePayment={() => co.go("payment")}
         onTurnOnAutoReload={() => co.setForm({ autoReload: true })}
-        onBack={() => co.go(co.savedCard && form.payWith !== "new" ? "amount" : "payment")}
       />
     );
   } else if (step === "done" && co.paidEntry) {
     const e = co.paidEntry;
     const credits = e.credits;
     const after = wallet.balance;
+    const at = ledger.indexOf(e);
+    const laterPurchase = at >= 0 && ledger.slice(at + 1).some((x) => x.orgId === e.orgId && x.kind === "purchase");
     const paidLine = e.packId ? lineFor({ pack: e.packId }) : lineFor({ credits });
     // Three cards (spec §5.6): the primary (way back when there is a `return`, else Start a
     // review), View receipt, then Set up auto-reload only if it was skipped. Start a review
@@ -391,7 +371,9 @@ function Checkout() {
         balanceBefore={co.paidBefore ?? Math.max(0, after - credits)}
         balanceAfter={co.paidBefore != null ? co.paidBefore + credits : after}
         fullReviewsAfter={fullReviewsIn(co.paidBefore != null ? co.paidBefore + credits : after)}
-        historical={co.paidBefore != null && co.paidBefore + credits !== after}
+        // "was" only when a later purchase exists: the latest pack reads as a fresh purchase
+        // (the prototype's Paid state seeds spends after it; that is staging, not history).
+        historical={laterPurchase}
         receiptId={e.receiptId ?? ""}
         emails={[co.settings?.billingEmail, co.settings?.receiptCc].filter((x): x is string => !!x)}
         validUntil={co.validUntil}
@@ -413,6 +395,17 @@ function Checkout() {
         ctaBusy={step === "review" && paying}
         onCta={summaryCta.run}
         onTalkToUs={talkToUs}
+        terms={
+          step === "review" ? (
+            <>
+              By paying you agree to the{" "}
+              <a href="#" className="co-link" onClick={(ev) => ev.preventDefault()}>
+                credit terms
+              </a>
+              . Purchased credits last {PURCHASED_LIFE_MONTHS} months and are shared across {co.org.name}.
+            </>
+          ) : undefined
+        }
       />
     );
 

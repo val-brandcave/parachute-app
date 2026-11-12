@@ -51,17 +51,15 @@ def trust(page, ctx):
     ctx.check(page.locator(".tc-hero-art svg").count() == 1, "hero has the trust-center scene")
     w = page.evaluate("() => Math.round(document.querySelector('.tc-hero-art svg').getBoundingClientRect().width)")
     ctx.check(w == 420, f"hero scene is 420 px wide ({w})")
-    titles = [t.replace("Placeholder", "").strip() for t in page.locator(".tc-doc-title").all_inner_texts()]
+    titles = [t.strip() for t in page.locator(".tc-doc-title").all_inner_texts()]
     ctx.check(titles[:6] == DOCS, f"six documents first ({titles[:6]})")
     ctx.check(len(titles) == 8, f"eight documents ({len(titles)})")
-    chips = page.locator(".tc-doc .tc-doc-title .ui-chip", has_text="Placeholder").count()
-    ctx.check(chips == 8, f"every document row carries a Placeholder chip ({chips})")
+    ctx.check(page.get_by_text("Placeholder", exact=True).count() == 0, "no Placeholder chips (removed 12 Nov)")
     ctx.check(page.locator("button[disabled]").count() == 0 and page.locator("[disabled]").count() == 0, "no disabled attribute on /trust")
     hosting = page.locator(".tc-fact", has_text="Hosting").locator("dd")
-    ctx.check(" ".join(hosting.inner_text().split()) == "Placeholder", f"Hosting shows only Placeholder ({hosting.inner_text()!r})")
+    ctx.check(" ".join(hosting.inner_text().split()) == "AWS, US data centers", f"Hosting shows the example value ({hosting.inner_text()!r})")
     uptime = page.locator(".tc-fact", has_text="Uptime").inner_text()
-    ctx.check("99.98%" in uptime and "Placeholder" in uptime, "uptime figure carries a Placeholder chip")
-    ctx.check("Placeholder" in page.locator(".tc-contact").inner_text(), "contact line carries a Placeholder chip")
+    ctx.check("99.98%" in uptime, "uptime figure shown")
     enc = page.locator(".tc-fact", has_text="Encryption").inner_text()
     ctx.check("Placeholder" not in enc, "confirmed fact has no chip")
     ctx.check(page.get_by_role("button", name="Send to IT").count() == 1 and page.get_by_role("button", name="Copy link").count() == 1, "Send to IT and Copy link")
@@ -126,7 +124,7 @@ def learn(page, ctx):
     ctx.visit("/learn")
     ctx.check(page.locator(".lc-hero-art svg").count() == 1, "learn hero has the scene")
     heads = [h.strip() for h in page.locator(".lc-h2").all_inner_texts()]
-    expect = list(GROUPS) + ["PDF guides", "Page tours"]
+    expect = list(GROUPS) + ["Guides", "Page tours"]
     ctx.check(heads == expect, f"groups in order ({heads})")
     for g, vids in GROUPS.items():
         sec = page.locator(".lc-sec", has=page.get_by_role("heading", name=g, exact=True))
@@ -134,7 +132,7 @@ def learn(page, ctx):
         # The catalog also carries two videos spec 5.11 omits (How a review works, Mapping a checklist): ignore them here.
         got = [x for x in got if x[0] not in EXTRA]
         ctx.check(got == vids, f"{g}: titles and durations ({got})")
-    guides = [t.strip() for t in page.locator(".lc-sec", has=page.get_by_role("heading", name="PDF guides")).locator(".lc-row-title").all_inner_texts()]
+    guides = [t.strip() for t in page.locator(".lc-sec", has=page.get_by_role("heading", name="Guides", exact=True)).locator(".lc-row-title").all_inner_texts()]
     ctx.check(guides == ["Reviewer quick-start", "Admin guide: setup, credits and billing", "Review checklist reference"], f"PDF guides ({guides})")
     ctx.check(page.get_by_text("Continue where you left off").count() == 0, "no Continue section when nothing is in progress")
     ctx.check(page.locator("[disabled]").count() == 0, "no disabled attribute on /learn")
@@ -201,7 +199,7 @@ def learn(page, ctx):
     ctx.check("Watched" in page.locator('[data-video="signing-exporting"]').first.inner_text(), "watched persists after reload")
 
     # page tours: a link to <route>?tour=<id>; the tour card shows
-    link = page.get_by_role("link", name="Run the Reviews tour")
+    link = page.get_by_role("link", name="Start the Reviews tour")
     ctx.check(link.get_attribute("href") == "/reviews?tour=reviews", f"tour entry is a link ({link.get_attribute('href')})")
     link.click()
     page.wait_for_url("**/reviews**", timeout=15000)
@@ -211,7 +209,7 @@ def learn(page, ctx):
     ctx.check(tip.count() >= 1 and tip.first.is_visible(), "tour card is visible after landing")
     ctx.shoot("t5-2-tour")
     ctx.visit("/learn")
-    fr = page.get_by_role("link", name="Run the Your first review tour")
+    fr = page.get_by_role("link", name="Start the Your first review tour")
     if fr.count():
         ctx.check((fr.get_attribute("href") or "").endswith("?tour=first-review") and "review-sample" not in fr.get_attribute("href"), "first-review tour links to an own review")
 

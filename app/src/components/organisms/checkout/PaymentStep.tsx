@@ -1,7 +1,7 @@
 "use client";
 
 import { Callout } from "@realwired/ui";
-import { Button, Chip, Icon, Input } from "@/components/atoms";
+import { Chip, Icon, Input } from "@/components/atoms";
 import { AUTO_RELOAD_DEFAULTS, formatUsd, packById } from "@/lib/pricing";
 
 export interface PaymentFormValue {
@@ -31,7 +31,6 @@ export function PaymentStep({
   cardError,
   cardRef,
   autoReloadOn,
-  onBack,
 }: {
   form: PaymentFormValue;
   onChange: (patch: Partial<PaymentFormValue>) => void;
@@ -45,7 +44,6 @@ export function PaymentStep({
   cardRef: React.Ref<HTMLInputElement>;
   /** Auto-reload is already on in Billing settings: no opt-in to offer. */
   autoReloadOn: boolean;
-  onBack: () => void;
 }) {
   const reload = packById(AUTO_RELOAD_DEFAULTS.packId);
   const field = (k: keyof PaymentFormValue) => (e: React.ChangeEvent<HTMLInputElement>) => onChange({ [k]: e.target.value });
@@ -148,12 +146,9 @@ export function PaymentStep({
       </section>
 
       <section className="co-card" aria-labelledby="co-contact">
-        <div className="co-card-hd">
-          <h2 id="co-contact" className="co-h3">
-            Billing contact
-          </h2>
-          <span className="text-tertiary co-small">Receipts go to this person</span>
-        </div>
+        <h2 id="co-contact" className="co-h3">
+          Billing contact
+        </h2>
         <div className="co-grid2">
           <div>
             <label className="ui-label" htmlFor="co-name">
@@ -212,12 +207,6 @@ export function PaymentStep({
           </label>
         </section>
       )}
-
-      <div className="co-actions">
-        <Button variant="outline" size="lg" iconLeft="back" onClick={onBack}>
-          Back
-        </Button>
-      </div>
     </div>
   );
 }

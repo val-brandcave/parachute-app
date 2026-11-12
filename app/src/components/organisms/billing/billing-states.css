@@ -448,3 +448,22 @@
 .rq-actions {
   margin-top: 4px;
 }
+
+/* How credits work: rule cards with their illustration on the right. */
+.bl-card.hcw-rule {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--d-gap);
+}
+.hcw-rule-tx {
+  flex: 1;
+  min-width: 0;
+}
+.hcw-rule-ill {
+  flex: none;
+}
+@media (max-width: 600px) {
+  .hcw-rule-ill {
+    display: none;
+  }
+}

@@ -14,7 +14,6 @@ import {
 import { Icon, Logo } from "@/components/atoms";
 import { Breadcrumbs } from "@/components/molecules";
 import { OrgCard } from "@/components/organisms/OrgCard";
-import { BalancePill } from "@/components/organisms/BalancePill";
 import { EarnedToastHost } from "@/components/organisms/EarnedToastHost";
 import { UserMenu } from "@/components/organisms/UserMenu";
 import { SearchTrigger } from "@/components/organisms/SearchTrigger";
@@ -204,7 +203,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         sidebarFooter={(collapsed) => (
           <div className="sb-foot">
             <SidebarResourceLinks collapsed={collapsed} />
-            <BalancePill collapsed={collapsed} />
             <OrgCard collapsed={collapsed} />
           </div>
         )}

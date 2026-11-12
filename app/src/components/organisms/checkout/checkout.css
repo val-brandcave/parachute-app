@@ -93,6 +93,28 @@
   outline-offset: 2px;
   border-radius: 2px;
 }
+/* Quiet row action ("Change", "Turn on"): petrol, medium, underline on hover only. */
+.co-act {
+  border: 0;
+  padding: 2px 4px;
+  margin: -2px -4px;
+  border-radius: 4px;
+  background: none;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--md-accent);
+  cursor: pointer;
+  text-decoration: none;
+  text-underline-offset: 2px;
+}
+.co-act:hover {
+  text-decoration: underline;
+}
+.co-act:focus-visible {
+  outline: 2px solid var(--md-accent);
+  outline-offset: 2px;
+}
 .co-help {
   margin: 6px 0 0;
   font-size: 12px;
@@ -143,91 +165,6 @@
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
-}
-.co-pack.ui-tile {
-  position: relative;
-  display: grid;
-  align-content: start;
-  gap: 2px;
-  min-height: 118px;
-  padding: 16px;
-  border-width: 2px;
-}
-.co-pack-q {
-  font-size: 13px;
-  color: var(--md-on-surface-v);
-}
-.co-pack-q b {
-  font-family: var(--font-display);
-  font-size: 24px;
-  font-weight: 700;
-  color: var(--md-on-surface);
-  margin-right: 2px;
-}
-.ui-tile.is-selected .co-pack-q,
-.ui-tile.is-selected .co-pack-q b {
-  color: var(--md-on-selected);
-}
-.co-pack-p {
-  font-size: 16px;
-  font-weight: 700;
-}
-.co-pack-e {
-  font-size: 12.5px;
-}
-.co-pack-sv {
-  margin-top: 6px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--md-success);
-}
-.co-pack-chk {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  display: grid;
-  place-items: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: var(--md-primary);
-  color: var(--md-on-primary);
-}
-.co-custom {
-  display: grid;
-  max-width: 100%;
-}
-.co-custom-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-.co-custom-input.ui-input {
-  width: 120px;
-}
-.co-custom-price {
-  font-weight: 600;
-}
-.co-outcome {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
-  padding: 14px 16px;
-  border-radius: var(--r);
-  background: var(--md-surface-1);
-}
-.co-outcome-o {
-  display: grid;
-  gap: 2px;
-  font-size: 13px;
-}
-.co-outcome-o b {
-  font-size: 15px;
-}
-.co-outcome-or {
-  font-size: 12px;
 }
 .co-reassure {
   display: flex;
@@ -374,27 +311,6 @@
   font-weight: 700;
   border-top: 1px solid var(--md-outline);
 }
-.co-ba {
-  display: flex;
-  align-items: center;
-  gap: 24px;
-  flex-wrap: wrap;
-}
-.co-ba-col {
-  display: grid;
-  gap: 2px;
-}
-.co-ba-k {
-  font-size: 12px;
-  font-weight: 600;
-}
-.co-ba-v {
-  font-family: var(--font-display);
-  font-size: 22px;
-}
-.co-ba-arrow {
-  color: var(--md-on-surface-t);
-}
 .co-kv {
   display: grid;
   margin: 0;
@@ -417,17 +333,6 @@
   margin: 0;
   min-width: 0;
   overflow-wrap: anywhere;
-}
-.co-terms {
-  display: grid;
-  padding: 12px 14px;
-  border: 1px solid transparent;
-  border-radius: var(--r);
-  font-size: 13.5px;
-}
-.co-terms.is-err {
-  border-color: var(--md-error);
-  background: var(--md-error-c);
 }
 
 /* ---- Paid ---- */
@@ -527,38 +432,51 @@
   margin: 0;
   text-align: right;
 }
-.co-sum-row--lead {
-  font-weight: 700;
-  font-size: 15px;
-}
 .co-sum-sep {
   margin-top: 4px;
   padding-top: 12px;
   border-top: 1px solid var(--md-outline-v);
 }
-.co-sum-after dt,
-.co-sum-after dd > .mono {
-  font-weight: 600;
-  color: var(--md-success);
-}
-.co-sum-after dd {
-  display: grid;
-  gap: 2px;
-}
-.co-sum-ic {
-  display: inline-flex;
-}
-.co-sum-note {
-  font-size: 12px;
-}
 .co-sum-total {
   font-weight: 700;
   font-size: 16px;
+}
+.co-sum-bal {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.co-sum-bal-after {
+  font-weight: 600;
+  color: var(--md-success);
+}
+.co-sum-pay {
+  display: grid;
+  gap: 8px;
+}
+.co-sum-terms {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  text-align: center;
+}
+.co-sum-terms .co-link {
+  font-weight: 500;
 }
 .co-sum-help {
   margin: 0;
   font-size: 12.5px;
   text-align: center;
+}
+
+/* ---- Stepper: done steps go back (buttons), current / later ones are text ---- */
+.co-top button.hstep-btn:hover .hstep-label {
+  color: var(--md-accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.co-top span.hstep-btn {
+  cursor: default;
 }
 
 /* ---- Narrow: stack the body and the summary, one scroll ---- */
@@ -592,11 +510,6 @@
   .co-top-steps {
     justify-content: flex-start;
   }
-  .co-outcome {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 6px;
-  }
   .co-top .hstep-line {
     width: 14px;
     margin: 0 4px;
@@ -621,4 +534,21 @@
   .co-opt {
     transition: none;
   }
+}
+
+/* Order summary: the balance block is a second small table under the total. */
+.co-sum-balance {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: var(--r);
+  background: var(--md-surface-1);
+}
+.co-sum-balance .co-sum-bal-after {
+  font-weight: 650;
+  color: var(--md-success);
+}
+.co-sum-row--note {
+  justify-content: flex-end;
+  margin-top: -4px;
+  font-size: 12.5px;
 }

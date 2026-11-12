@@ -98,7 +98,6 @@ def run(page, ctx):
     page.wait_for_selector("text=Review and pay", timeout=10000)
     page.wait_for_timeout(500)
     ctx.check("request=" in page.url, "request survives to Review")
-    page.locator(".co-terms input[type=checkbox]").check()
     page.locator(".co-sum-cta").click()
     page.wait_for_url(re.compile(r"step=done"), timeout=15000)
     page.wait_for_selector("text=10 credits added", timeout=10000)

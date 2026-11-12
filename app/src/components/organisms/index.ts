@@ -12,7 +12,6 @@ export { SearchTrigger } from "./SearchTrigger";
 export { MembersPanel } from "./MembersPanel";
 export { InviteMemberModal } from "./InviteMemberModal";
 export { BrandingPanel } from "./BrandingPanel";
-export { BalancePill } from "./BalancePill";
 export { EarnedToastHost } from "./EarnedToastHost";
 // Pattern change mount points (T0.6 stubs; owners fill them in later phases)
 export { CreditsPill } from "./CreditsPill";

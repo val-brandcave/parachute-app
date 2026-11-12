@@ -1,7 +1,7 @@
 "use client";
 
 import { Accordion, useToast } from "@realwired/ui";
-import { Button, Icon, Illustration } from "@/components/atoms";
+import { Button, Illustration } from "@/components/atoms";
 import { CostBlock } from "@/components/organisms/checkout";
 import { CUSTOM_CREDITS, LOW_BALANCE_AT, PURCHASED_LIFE_MONTHS } from "@/lib/pricing";
 import { useOrgStore } from "@/store";
@@ -54,22 +54,28 @@ export function CreditsExplainer({ b }: { b: Billing }) {
       <CostBlock title="What a review costs" showLink={false} />
 
       <div className="hcw-two">
-        <section className="card bl-card" aria-labelledby="hcw-zero-t">
-          <h2 className="bl-h hcw-h" id="hcw-zero-t">
-            <Icon name="wallet-off" size={18} /> When you reach zero
-          </h2>
-          <p className="bl-body tw-pretty">
-            Reviews already running finish as normal. New reviews wait until someone adds credits. Admins get an email when {LOW_BALANCE_AT}{" "}
-            credits are left.
-          </p>
+        <section className="card bl-card hcw-rule" aria-labelledby="hcw-zero-t">
+          <div className="hcw-rule-tx">
+            <h2 className="bl-h hcw-h" id="hcw-zero-t">
+              When you reach zero
+            </h2>
+            <p className="bl-body tw-pretty">
+              Reviews already running finish as normal. New reviews wait until someone adds credits. Admins get an email when {LOW_BALANCE_AT}{" "}
+              credits are left.
+            </p>
+          </div>
+          <Illustration name="02b-wallet-top-up" size={112} className="hcw-rule-ill" />
         </section>
-        <section className="card bl-card" aria-labelledby="hcw-exp-t">
-          <h2 className="bl-h hcw-h" id="hcw-exp-t">
-            <Icon name="calendar-event" size={18} /> When credits expire
-          </h2>
-          <p className="bl-body tw-pretty">
-            Purchased credits last {PURCHASED_LIFE_MONTHS} months from the day you buy them. Trial and earned credits don&rsquo;t expire. We use the credits that expire soonest first.
-          </p>
+        <section className="card bl-card hcw-rule" aria-labelledby="hcw-exp-t">
+          <div className="hcw-rule-tx">
+            <h2 className="bl-h hcw-h" id="hcw-exp-t">
+              When credits expire
+            </h2>
+            <p className="bl-body tw-pretty">
+              {`Purchased credits last ${PURCHASED_LIFE_MONTHS} months from the day you buy them. Trial and earned credits don’t expire. We use the credits that expire soonest first.`}
+            </p>
+          </div>
+          <Illustration name="14-credits-expiring" size={112} className="hcw-rule-ill" />
         </section>
       </div>
 

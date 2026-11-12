@@ -14,11 +14,7 @@ import {
   OrderButton,
   FirstRunHero,
 } from "@/components/organisms";
-import {
-  QueueFilters,
-  ActiveFilters,
-  EmptyLine,
-} from "@/components/molecules";
+import { QueueFilters, ActiveFilters, EmptyLine } from "@/components/molecules";
 import { Button } from "@/components/atoms";
 import { useTourTarget } from "@/components/organisms/useTourTarget";
 import { PageBody, PageHeader, SearchInput, Tabs } from "@realwired/ui";
@@ -43,7 +39,6 @@ export default function MyReviewsPage() {
     sort,
     cycleSort,
   } = useReviewQueue();
-
 
   // Tour targets (spec §5.13): the first row's action cell lives inside ReviewTable.
   useTourTarget("reviews-row-action", ".qrow .qactions");
@@ -92,7 +87,26 @@ export default function MyReviewsPage() {
   if (isEmpty) {
     return (
       <PageBody>
-        <FirstRunHero title="Every figure checked against the appraisal">
+        <FirstRunHero
+          title="Every figure checked against the appraisal"
+          tiles={[
+            {
+              title: "Your team's queue",
+              text: "Every review in one place, by stage: needs action, in pipeline, intake and completed.",
+              ill: "05b-empty-reviews",
+            },
+            {
+              title: "Findings at a glance",
+              text: "The most serious finding on each review, with every figure traced to its page.",
+              ill: "07b-finding-citation",
+            },
+            {
+              title: "Signed and ready to send",
+              text: "Due dates, overdue alerts and the signed workbook for the lender.",
+              ill: "08b-signed-workbook",
+            },
+          ]}
+        >
           Parachute traces each number in a commercial appraisal to its page and
           drafts the findings for you to concur with or reject.
         </FirstRunHero>

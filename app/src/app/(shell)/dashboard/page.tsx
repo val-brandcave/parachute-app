@@ -113,7 +113,26 @@ export default function DashboardPage() {
   if (isEmpty) {
     return (
       <div className="pagebody">
-        <FirstRunHero title="Your dashboard fills in after your first review">
+        <FirstRunHero
+          title="Your dashboard fills in after your first review"
+          tiles={[
+            {
+              title: "What needs you",
+              text: "Reviews waiting on your decision or sign-off, and anything past its due date.",
+              ill: "07b-finding-citation",
+            },
+            {
+              title: "Volume and turnaround",
+              text: "How many reviews your team finishes and how fast, by week, month or quarter.",
+              ill: "05b-empty-reviews",
+            },
+            {
+              title: "New from YouConnect",
+              text: "Appraisals delivered from YouConnect, ready to start in one click.",
+              ill: "06b-first-upload",
+            },
+          ]}
+        >
           Review volume, turnaround and what needs your attention show up here
           once Parachute has checked an appraisal for you.
         </FirstRunHero>

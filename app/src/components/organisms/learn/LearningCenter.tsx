@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { Dialog, useToast } from "@realwired/ui";
-import { Button, Chip, Icon, Illustration, Input } from "@/components/atoms";
+import { Dialog, useToast, SearchInput } from "@realwired/ui";
+import { Button, Chip, Icon, Illustration } from "@/components/atoms";
 import { EmptyLine, SegmentedControl } from "@/components/molecules";
 import { GuidePlayer } from "@/components/organisms/home/GuideVideo";
 import { useCurrentUser } from "@/lib/current-user";
@@ -16,6 +16,21 @@ import {
   type LearningVideo,
 } from "@/lib/learning";
 import { TOURS } from "@/lib/tours";
+import type { IllustrationName } from "@/components/atoms";
+
+/** One distinct spot illustration per guide and per tour (the tour's art echoes the page it tours). */
+const GUIDE_ART: Record<string, IllustrationName> = {
+  "reviewer-guide": "04b-learning-center",
+  "admin-guide": "01b-credits",
+  "checklist-reference": "09b-approval-pending",
+};
+const TOUR_ART: Record<string, IllustrationName> = {
+  "first-review": "07b-finding-citation",
+  reviews: "05b-empty-reviews",
+  checklists: "06b-first-upload",
+  "workbook-layouts": "08b-signed-workbook",
+  billing: "02b-wallet-top-up",
+};
 import { usePrefsStore, useReviewsStore } from "@/store";
 import { VideoCard } from "./VideoCard";
 import "./learn.css";
@@ -57,9 +72,8 @@ export function LearningCenter() {
     () => GUIDES.filter((g) => fits(g.audience, filter) && (!q || g.title.toLowerCase().includes(q))),
     [filter, q],
   );
-  const resume = VIDEOS.filter(
-    (v) => (progress[v.id] ?? 0) > 0 && (progress[v.id] ?? 0) < DONE_AT && fits(v.audience, filter) && !q,
-  );
+  // Personal, so never filtered: it sits above the search and filter, which only narrow the library.
+  const resume = VIDEOS.filter((v) => (progress[v.id] ?? 0) > 0 && (progress[v.id] ?? 0) < DONE_AT);
   const nothing = groups.length === 0 && guides.length === 0;
   const clear = () => {
     setQuery("");
@@ -136,30 +150,39 @@ export function LearningCenter() {
 
   return (
     <div className="lc">
-      <section className="lc-hero">
+      <section className="card lc-hero">
         <div className="lc-hero-text">
           <h1 className="lc-h1">Learning Center</h1>
           <p className="lc-lead">
             Short videos and printable guides for every part of Parachute. Watch one when you get stuck, or send a guide to someone new on the team.
           </p>
-          <div className="lc-tools">
-            <div className="lc-search">
-              <Icon name="search" size={16} />
-              <Input
-                type="search"
-                aria-label="Search videos and guides"
-                placeholder={"Search videos and guides, for example “sign a workbook”"}
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-              />
-            </div>
-            <SegmentedControl options={FILTERS} value={filter} onChange={setFilter} label="Show videos for" />
-          </div>
         </div>
         <div className="lc-hero-art">
           <Illustration name="22-scene-learning-center" size={420} />
         </div>
       </section>
+
+      {resume.length > 0 && (
+        <section className="lc-sec" aria-labelledby="lc-resume">
+          <h2 id="lc-resume" className="lc-h2">
+            Continue where you left off
+          </h2>
+          <div className="lc-grid">{resume.map(card)}</div>
+        </section>
+      )}
+
+      {/* Search and filter narrow the library below; Continue stays above, unfiltered. */}
+      <div className="lc-tools">
+        <SearchInput
+          label="Search videos and guides"
+          placeholder={"Search videos and guides, for example “sign a workbook”"}
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onClear={() => setQuery("")}
+          width={420}
+        />
+        <SegmentedControl options={FILTERS} value={filter} onChange={setFilter} label="Show videos for" />
+      </div>
 
       {nothing ? (
         <EmptyLine
@@ -174,14 +197,6 @@ export function LearningCenter() {
         </EmptyLine>
       ) : (
         <>
-          {resume.length > 0 && (
-            <section className="lc-sec" aria-labelledby="lc-resume">
-              <h2 id="lc-resume" className="lc-h2">
-                Continue where you left off
-              </h2>
-              <div className="lc-grid">{resume.map(card)}</div>
-            </section>
-          )}
           {groups.map((g) => (
             <section key={g.id} className="lc-sec" aria-labelledby={`lc-g-${g.id}`}>
               <h2 id={`lc-g-${g.id}`} className="lc-h2">
@@ -193,9 +208,8 @@ export function LearningCenter() {
           {guides.length > 0 && (
             <section className="lc-sec" aria-labelledby="lc-guides">
               <h2 id="lc-guides" className="lc-h2">
-                PDF guides
+                Guides
               </h2>
-              <p className="lc-sub">Print them or pass them on.</p>
               <ul className="lc-list">
                 {guides.map((g) => (
                   <GuideRow key={g.id} guide={g} />
@@ -211,23 +225,25 @@ export function LearningCenter() {
           <h2 id="lc-tours" className="lc-h2">
             Page tours
           </h2>
-          <p className="lc-sub">Run any tour again.</p>
           <ul className="lc-list">
             {TOURS.map((t) => (
               <li key={t.id} className="lc-row">
-                <span className="lc-row-ic" aria-hidden="true">
-                  <Icon name="rocket" size={18} />
-                </span>
-                <span className="lc-row-body">
-                  <span className="lc-row-title">{t.title}</span>
-                  <span className="lc-row-sub">{t.steps.length} steps</span>
-                </span>
+                <div className="lc-row-top">
+                  <div className="lc-row-body">
+                    <Chip>{t.steps.length} steps</Chip>
+                    <span className="lc-row-title">{t.title}</span>
+                  </div>
+                  <Illustration name={TOUR_ART[t.id] ?? "04b-learning-center"} size={84} className="lc-row-ill" />
+                </div>
                 {tourHref(t) ? (
-                  <Link className="ui-btn ui-btn--outline ui-btn--sm" href={tourHref(t) as string} aria-label={`Run the ${t.title} tour`}>
-                    <Icon name="refresh" size={15} /> Run tour
+                  <Link className="ui-btn ui-btn--outline lc-row-cta" href={tourHref(t) as string} aria-label={`Start the ${t.title} tour`}>
+                    <Icon name="play" size={15} /> Start tour
                   </Link>
                 ) : (
-                  <span className="lc-row-sub">Start a review to take this tour.</span>
+                  // Lock-then-explain: the tour runs inside your own review, so point to starting one.
+                  <Link className="ui-btn ui-btn--outline lc-row-cta" href="/launchpad">
+                    <Icon name="rocket" size={15} /> Start a review first
+                  </Link>
                 )}
               </li>
             ))}
@@ -266,19 +282,16 @@ function GuideRow({ guide }: { guide: LearningGuide }) {
   const toast = useToast();
   return (
     <li className="lc-row">
-      <span className="lc-row-ic" aria-hidden="true">
-        <Icon name="pdf" size={18} />
-      </span>
-      <span className="lc-row-body">
-        <span className="lc-row-title">{guide.title}</span>
-        <span className="lc-row-sub">
+      <div className="lc-row-top">
+        <div className="lc-row-body">
           <Chip>{AUDIENCE_LABEL[guide.audience]}</Chip>
-          {guide.placeholder && <Chip tone="flag">Placeholder</Chip>}
-        </span>
-      </span>
+          <span className="lc-row-title">{guide.title}</span>
+        </div>
+        <Illustration name={GUIDE_ART[guide.id] ?? "04b-learning-center"} size={84} className="lc-row-ill" />
+      </div>
       <Button
         variant="outline"
-        size="sm"
+        className="lc-row-cta"
         iconLeft="download"
         aria-disabled={guide.href ? undefined : "true"}
         onClick={() => {
@@ -292,7 +305,7 @@ function GuideRow({ guide }: { guide: LearningGuide }) {
           a.click();
         }}
       >
-        Download
+        Download guide
       </Button>
     </li>
   );

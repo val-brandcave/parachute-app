@@ -22,6 +22,7 @@ import {
   creditRateUsd,
   customPriceUsd,
   packById,
+  savingPct,
 } from "@/lib/pricing";
 import { useCreditRequestStore, useOrgStore, useSessionStore, useUsersStore, useWalletStore, useWalletView } from "@/store";
 
@@ -55,28 +56,23 @@ export interface CheckoutLine {
   rateUsd: number;
   /** Dollars saved against the list price (CREDIT_USD a credit). */
   savingUsd: number;
+  /** Whole-percent saving against the list price (0 at list). */
+  savingPct: number;
   isPack: boolean;
 }
 
-/** The order line for a choice; every number from pricing.ts. */
+/** The order line for a choice; every number from pricing.ts (packs sit on the price curve). */
 export function lineFor(choice: CheckoutChoice): CheckoutLine {
-  if ("pack" in choice) {
-    const p = packById(choice.pack);
-    return {
-      credits: p.credits,
-      priceUsd: p.priceUsd,
-      rateUsd: p.priceUsd / p.credits,
-      savingUsd: p.credits * CREDIT_USD - p.priceUsd,
-      isPack: true,
-    };
-  }
-  const price = customPriceUsd(choice.credits);
+  const isPack = "pack" in choice;
+  const credits = isPack ? packById(choice.pack).credits : choice.credits;
+  const priceUsd = isPack ? packById(choice.pack).priceUsd : customPriceUsd(credits);
   return {
-    credits: choice.credits,
-    priceUsd: price,
-    rateUsd: creditRateUsd(choice.credits),
-    savingUsd: choice.credits * CREDIT_USD - price,
-    isPack: false,
+    credits,
+    priceUsd,
+    rateUsd: creditRateUsd(credits),
+    savingUsd: credits * CREDIT_USD - priceUsd,
+    savingPct: savingPct(credits),
+    isPack,
   };
 }
 

@@ -4,11 +4,13 @@
   flex-direction: column;
   gap: 28px;
 }
+/* Same white hero card as Billing → How credits work (.hcw-hero). */
 .lc-hero {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 32px;
+  gap: 16px 32px;
+  padding: 28px;
 }
 .lc-hero-text {
   display: flex;
@@ -51,28 +53,13 @@
   font-size: 13px;
   color: var(--md-on-surface-t);
 }
+/* Search + audience filter: a toolbar between "Continue where you left off" and the library. */
 .lc-tools {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
-}
-.lc-search {
-  position: relative;
-  flex: 1 1 280px;
-  min-width: 0;
-  color: var(--md-on-surface-t);
-}
-.lc-search > svg {
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  pointer-events: none;
-}
-.lc-search .ui-input {
-  width: 100%;
-  padding-left: 36px;
 }
 .lc-sec {
   display: flex;
@@ -160,53 +147,52 @@
   gap: 4px;
   color: var(--md-success);
 }
+/* Guides and page tours as tiles (same card language as the video grid), not a table. */
 .lc-list {
   list-style: none;
   margin: 0;
   padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+.lc-row {
   display: flex;
   flex-direction: column;
+  gap: 16px;
+  padding: 18px;
   border: 1px solid var(--md-outline);
   border-radius: 12px;
   background: var(--md-surface);
 }
-.lc-row {
+/* Badge above the title on the left, illustration on the right; CTA full width at the bottom. */
+.lc-row-top {
   display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 12px 16px;
-  border-top: 1px solid var(--md-outline-v);
-}
-.lc-row:first-child {
-  border-top: 0;
-}
-.lc-row-ic {
-  display: grid;
-  place-items: center;
-  flex: none;
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  background: var(--md-surface-2);
-  color: var(--md-on-surface-v);
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex: 1;
 }
 .lc-row-body {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  flex: 1;
+  align-items: flex-start;
+  gap: 10px;
   min-width: 0;
 }
 .lc-row-title {
-  font-weight: 600;
+  font-family: var(--font-display, inherit);
+  font-size: 16px;
+  line-height: 22px;
+  font-weight: 700;
   color: var(--md-on-surface);
 }
-.lc-row-sub {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  font-size: 13px;
-  color: var(--md-on-surface-v);
+.lc-row-ill {
+  flex: none;
+}
+.lc-row .lc-row-cta {
+  width: 100%;
+  justify-content: center;
 }
 .lc-player {
   display: grid;

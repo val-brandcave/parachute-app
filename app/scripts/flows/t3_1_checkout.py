@@ -6,7 +6,9 @@ is needed; the flow asserts it instead (Next on Amount goes straight to Review).
 
 Checks: focused chrome (no sidebar/header), stepper "1 Amount · 2 Payment · 3 Review",
 summary stays put while the body scrolls, saved card skips Payment but the stepper still
-opens it, Pay without terms → inline error + focus on the checkbox, Pay → step=done via
+opens it, no Back buttons (the stepper goes back: done steps are buttons, the current one
+isn't), terms are a line under Pay (no checkbox), summary reads subtotal → Total (no
+"Due today"), Pay → step=done via
 replace (Back can't reach Review), balance +10, Custom 101 → sales line, error=card →
 decline callout, Exit with a return lands there, hard reload keeps the draft, no
 button[disabled], no illustration on Amount/Payment/Review.
@@ -36,8 +38,8 @@ def no_art(page, ctx, where):
 
 
 def summary_balance(page):
-    row = page.locator(".co-sum-row", has_text="Current balance").locator("dd")
-    return num(row.first.inner_text()) if row.count() else None
+    now = page.locator(".co-sum-bal-now")
+    return num(now.first.inner_text()) if now.count() else None
 
 
 def reviewer_run(page, ctx):
@@ -51,7 +53,7 @@ def reviewer_run(page, ctx):
     page.wait_for_selector(".co-blocked", timeout=15000)
     ctx.check(page.locator("text=Only an admin can buy credits").count() == 1, "reviewer sees the inline explanation")
     ctx.check(page.locator(".co-blocked button", has_text="Ask").count() == 1, "reviewer gets an Ask action")
-    ctx.check(page.locator(".co-sum-cta, .co-sum, .co-terms").count() == 0, "no Pay, summary or terms for a reviewer")
+    ctx.check(page.locator(".co-sum-cta, .co-sum, .co-sum-terms").count() == 0, "no Pay, summary or terms for a reviewer")
     no_disabled(page, ctx, "reviewer")
     dlg = page.locator(".lock-dlg[role=dialog]")
     try:
@@ -87,7 +89,7 @@ def run(page, ctx):
     nums = [t.strip() for t in page.locator(".hstep-n").all_text_contents()]
     ctx.check(labels == ["Amount", "Payment", "Checkout"], f"stepper labels {labels}")
     ctx.check(nums == ["1", "2", "3"], f"stepper numbers {nums}")
-    ctx.check(page.locator(".co-pack.is-selected", has_text="10").count() == 1, "pack10 preselected")
+    ctx.check(page.locator(".amt-card.is-selected", has_text="10").count() == 1, "pack10 preselected")
     ctx.check("Exit checkout" in page.locator(".co-exit").inner_text(), "Exit checkout in the top bar")
     no_disabled(page, ctx, "amount")
     no_art(page, ctx, "amount")
@@ -125,29 +127,30 @@ def run(page, ctx):
     no_art(page, ctx, "review")
     ctx.check("Visa ending in 4242" in page.inner_text("body"), "saved card on Review")
 
-    # ---- Pay without terms ----
-    page.locator(".co-sum-cta").click()
-    page.wait_for_timeout(300)
-    ctx.check(page.locator("text=Agree to the credit terms to pay").count() == 1, "terms error shows")
-    focused = page.evaluate("() => { const a = document.activeElement; return !!a && a.type === 'checkbox' && !!a.closest('.co-terms') }")
-    ctx.check(focused, "focus moves to the terms checkbox")
+    # ---- Stepper is the only way back; terms are a line under Pay ----
+    ctx.check(page.locator(".co-main button", has_text="Back").count() == 0, "no Back button on Checkout")
+    ctx.check(page.locator(".hstep-item.is-current button").count() == 0, "current step is not a button")
+    ctx.check(page.locator(".hstep-item").nth(0).locator("button").count() == 1, "done Amount step is a button")
+    ctx.check(page.locator(".co-main input[type=checkbox]").count() == 0, "no terms checkbox on Checkout")
+    ctx.check(page.locator(".co-sum-terms", has_text="By paying you agree to the credit terms").count() == 1, "terms line under Pay")
+    ctx.check(page.locator(".co-sum", has_text="Due today").count() == 0, "summary says Total, not Due today")
+    ctx.check(page.locator(".co-sum-total", has_text="Total").count() == 1, "summary Total row")
     pay_disabled = page.evaluate("() => document.querySelector('.co-sum-cta').disabled")
     ctx.check(not pay_disabled, "Pay is never disabled")
     ctx.shoot("t3-1-review-terms")
 
     # ---- Pay (double-click: must buy once) ----
-    page.locator(".co-terms input[type=checkbox]").check()
     page.locator(".co-sum-cta").dblclick()
     page.wait_for_url(re.compile(r"step=done"), timeout=15000)
     page.wait_for_selector("text=10 credits added", timeout=10000)
     ctx.check(page.locator(".co-root .ill").count() == 1, "Paid shows its one scene")
-    ctx.check(page.locator(".co-next button", has_text="Back to billing").count() == 1, "return makes the primary a way back")
+    ctx.check(page.locator(".co-paid-next button", has_text="Back to billing").count() == 1, "return makes the primary a way back")
     no_disabled(page, ctx, "paid")
     page.wait_for_timeout(500)
     ctx.shoot("t3-1-paid")
 
     # ---- View receipt opens the receipt dialog ----
-    page.locator(".co-next button", has_text="View receipt").click()
+    page.locator(".co-paid-next button", has_text="View receipt").click()
     page.wait_for_timeout(600)
     ctx.check(page.locator(".rc-paper").count() == 1, "View receipt opens the receipt dialog")
     page.keyboard.press("Escape")
@@ -165,8 +168,6 @@ def run(page, ctx):
     page.wait_for_url(re.compile(r"step=review"), timeout=10000)
     page.wait_for_selector("text=Review and pay", timeout=10000)
     page.wait_for_timeout(500)
-    ctx.check(not page.locator(".co-terms input[type=checkbox]").is_checked(), "terms start unticked for the new order")
-    page.locator(".co-terms input[type=checkbox]").check()
     page.locator(".co-sum-cta").click()
     page.wait_for_url(re.compile(r"step=done"), timeout=15000)
     page.wait_for_selector("text=10 credits added", timeout=10000)
@@ -189,8 +190,8 @@ def run(page, ctx):
     page.wait_for_selector("#co-custom-n", timeout=15000)
     page.fill("#co-custom-n", "101")
     page.wait_for_timeout(300)
-    ctx.check(page.locator(".co-custom", has_text="Over 100 credits? Talk to sales for volume pricing").count() == 1, "custom 101 → sales line")
-    ctx.check(page.locator(".co-custom button", has_text="Talk to us").count() == 1, "Talk to us next to it")
+    ctx.check(page.locator(".amt-custom", has_text="Over 100 credits? Talk to sales for volume pricing").count() == 1, "custom 101 → sales line")
+    ctx.check(page.locator(".amt-custom button", has_text="Talk to us").count() == 1, "Talk to us next to it")
     no_disabled(page, ctx, "custom 101")
     ctx.shoot("t3-1-custom-101")
 
@@ -206,7 +207,6 @@ def run(page, ctx):
     ctx.visit("/checkout/credits?pack=pack10&step=review&error=card")
     page.wait_for_selector("text=Review and pay", timeout=15000)
     bal_review = summary_balance(page)
-    page.locator(".co-terms input[type=checkbox]").check()
     page.locator(".co-sum-cta").click()
     page.wait_for_url(re.compile(r"step=payment"), timeout=10000)
     page.wait_for_timeout(500)

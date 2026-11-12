@@ -1,57 +1,115 @@
-/* CostBlock (T3.0) — shared by checkout Amount and How credits work. Tokens only. */
+/* CostBlock — "What does a review cost?" comparison table, shared by checkout Amount and
+   Billing → How credits work. Tokens only, both themes. */
 .cost-block {
   display: grid;
-  gap: calc(var(--d-gap) * 0.75);
+  gap: 12px;
 }
+/* Same size as the page's other section titles (.bl-section). */
 .cost-block-title {
   margin: 0;
-  font-family: var(--font-display);
-  font-size: 15px;
-  font-weight: 600;
+  font-family: var(--font-display, inherit);
+  font-size: 18px;
+  line-height: 26px;
+  font-weight: 700;
   color: var(--md-on-surface);
 }
-.cost-block-rows {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.cost-block-wrap {
+  overflow-x: auto;
   border: 1px solid var(--md-outline);
   border-radius: var(--r);
   background: var(--md-surface);
 }
-.cost-block-row {
-  display: grid;
-  grid-template-columns: 1fr auto auto;
-  gap: var(--d-gap);
-  align-items: center;
-  padding: 12px 16px;
+.cost-block-table {
+  width: 100%;
+  min-width: 620px;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 14px;
 }
-.cost-block-row + .cost-block-row {
-  border-top: 1px solid var(--md-outline);
+
+/* ---- Header: one column per review option ---- */
+.cost-block-corner {
+  width: 40%;
+}
+.cost-block-col {
+  padding: 18px 16px 16px;
+  text-align: center;
+  vertical-align: bottom;
+  font-weight: inherit;
+  border-bottom: 1px solid var(--md-outline);
+}
+.cost-block-corner {
+  border-bottom: 1px solid var(--md-outline);
+}
+.cost-block-tag {
+  display: inline-block;
+  margin-bottom: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--md-primary);
+  color: var(--md-on-primary);
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
 }
 .cost-block-name {
-  display: grid;
-  gap: 2px;
-  min-width: 0;
+  display: block;
+  font-family: var(--font-display, inherit);
+  font-size: 16px;
+  line-height: 22px;
+  font-weight: 700;
+  color: var(--md-on-surface);
 }
-.cost-block-label {
+.cost-block-price {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+.cost-block-usd {
+  font-size: 15px;
   font-weight: 600;
   color: var(--md-on-surface);
 }
-.cost-block-desc {
+
+/* ---- Rows: what each option includes ---- */
+.cost-block-feat {
+  padding: 12px 20px;
+  text-align: left;
+  font-weight: 400;
   color: var(--md-on-surface-v);
-  font-size: 13px;
 }
-/* Credit amount is a CreditChip (tone="credit", md) — same as TypeCostChip on Review setup.
-   Right-aligned so "1 credit" / "2 credits" chips line up against the price column. */
-.cost-block-credits {
-  justify-self: end;
+.cost-block-cell {
+  padding: 12px 16px;
+  text-align: center;
 }
-.cost-block-usd {
-  color: var(--md-on-surface-v);
-  white-space: nowrap;
-  min-width: 4.5em;
-  text-align: right;
+.cost-block-table tbody tr + tr > * {
+  border-top: 1px solid var(--md-outline-v);
 }
+.cost-block-yes {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--md-pass-tint, var(--md-surface-1));
+  color: var(--md-success);
+}
+.cost-block-no {
+  display: inline-flex;
+  color: var(--md-on-surface-dis);
+}
+
+/* "Both" column highlighted as the usual choice. */
+.cost-block-col.is-pick,
+.cost-block-cell.is-pick {
+  background: var(--md-selected);
+}
+.cost-block-col.is-pick {
+  border-top-right-radius: var(--r);
+}
+
 .cost-block-foot {
   margin: 0;
   font-size: 13px;
@@ -61,6 +119,10 @@
   text-decoration: underline;
   text-underline-offset: 2px;
 }
-.cost-block--compact .cost-block-row {
-  padding: 8px 12px;
+.cost-block--compact .cost-block-col {
+  border-bottom: 0;
+}
+/* Keep the credit chip visible on the highlighted column. */
+.cost-block-col.is-pick .cchip {
+  background: var(--md-surface);
 }

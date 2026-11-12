@@ -11,16 +11,16 @@ export interface HStep {
 
 /**
  * Horizontal numbered stepper: numbers, `check` when done, connector lines.
- * With `onSelect`, every step up to the current one is a button: done steps show a
- * check, an earlier step that isn't done (skipped) keeps its number. Later steps are
- * plain text. Styles: `hstepper.css`, imported here so it renders styled anywhere.
+ * With `onSelect`, every step before the current one is a button (the way back): done
+ * steps show a check, an earlier step that isn't done (skipped) keeps its number. The
+ * current step and later ones are plain text. Styles: `hstepper.css`, imported here so it renders styled anywhere.
  * // DS-candidate: HStepper — no DS or local horizontal stepper exists (StepRail is vertical).
  */
 export function HStepper(props: {
   steps: HStep[];
   current: string;
   done: string[];
-  /** Click a reachable step (done or current). */
+  /** Click an earlier step (done or skipped) to go back. */
   onSelect?: (id: string) => void;
   "aria-label"?: string;
 }) {
@@ -31,7 +31,7 @@ export function HStepper(props: {
       {steps.map((s, i) => {
         const isDone = done.includes(s.id);
         const isCurrent = s.id === current;
-        const reachable = !!onSelect && (isDone || isCurrent || i < currentAt);
+        const reachable = !!onSelect && !isCurrent && (isDone || i < currentAt);
         const body = (
           <>
             <span className="hstep-n" aria-hidden="true">

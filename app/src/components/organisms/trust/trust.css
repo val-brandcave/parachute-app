@@ -22,11 +22,13 @@
   color: var(--md-on-surface-v);
   font-size: 13px;
 }
+/* Same white hero card as Billing → How credits work (.hcw-hero). */
 .tc-hero {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 32px;
+  gap: 16px 32px;
+  padding: 28px;
 }
 .tc-hero-text {
   display: flex;

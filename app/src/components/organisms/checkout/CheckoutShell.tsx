@@ -10,8 +10,8 @@ import "./checkout.css";
  * then the step body with a persistent order summary on the right. No sidebar, no header.
  *
  * Body frame = DS `TaskFlow presentation="page"` (header + body + `aside`), with no rail
- * and no footer: the step's Back / Continue sit under the form and the summary carries
- * the main CTA, as the boards draw it. TaskFlow scrolls the body and the aside
+ * and no footer: the summary carries the only CTA, and going back is the stepper (done
+ * steps are buttons) — no Back buttons under the form. TaskFlow scrolls the body and the aside
  * separately, so the summary stays put while the form scrolls (the "sticky" summary).
  * Its aside is 340 px (spec allows a 336 px fixed aside); `contentMaxWidth={false}` lets
  * the content column fill the rest. Below 900 px checkout.css stacks the two columns.

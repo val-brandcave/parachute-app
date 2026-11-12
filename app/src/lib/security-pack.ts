@@ -51,7 +51,7 @@ export const DOCS_NOTE = "Placeholder files until Realwired supplies the real do
 
 export const GLANCE_TITLE = "At a glance";
 export const FACTS: TrustFact[] = [
-  { id: "hosting", label: "Hosting", value: null, placeholder: true },
+  { id: "hosting", label: "Hosting", value: "AWS, US data centers", placeholder: true },
   { id: "encryption", label: "Encryption", value: "At rest and in transit" },
   { id: "signin", label: "Sign-in", value: "Realwired ID, SSO" },
   { id: "retention", label: "Data retention", value: "Set by your bank" },

@@ -35,37 +35,81 @@ export const LOW_BALANCE_AT = 3;
 /** Invoiced orgs: indicative billed value of one credit (placeholder for Ed). */
 export const INVOICED_CREDIT_USD = 140;
 
+/**
+ * The price curve (user-approved "smooth curve", 12 Nov 2026). Price per credit is
+ * CREDIT_USD up to the first anchor, then falls linearly between anchors to a floor at the
+ * last one, rounded to whole dollars. Packs sit ON the curve, so a custom amount at a pack
+ * size costs exactly the pack price and never more per credit than a smaller amount.
+ * Anchors are [credits, $ per credit], ascending.
+ */
+export const PRICE_CURVE: readonly (readonly [number, number])[] = [
+  [5, CREDIT_USD],
+  [10, 140],
+  [20, 130],
+  [100, 100],
+];
+
+/** Lowest price per credit on the curve (at the last anchor and above). */
+export const CREDIT_FLOOR_USD = PRICE_CURVE[PRICE_CURVE.length - 1][1];
+
+/** Per-credit rate for any amount, read off PRICE_CURVE (whole dollars). */
+export function creditRateUsd(credits: number): number {
+  const [first] = PRICE_CURVE;
+  if (credits <= first[0]) return first[1];
+  for (let i = 1; i < PRICE_CURVE.length; i++) {
+    const [x1, y1] = PRICE_CURVE[i];
+    if (credits <= x1) {
+      const [x0, y0] = PRICE_CURVE[i - 1];
+      return Math.round(y0 + ((credits - x0) * (y1 - y0)) / (x1 - x0));
+    }
+  }
+  return CREDIT_FLOOR_USD;
+}
+
+/** Total price for an amount: credits × the curve rate (whole dollars). */
+export function customPriceUsd(credits: number): number {
+  return credits * creditRateUsd(credits);
+}
+
+/** Whole-percent saving of an amount against the list price (CREDIT_USD a credit). */
+export function savingPct(credits: number): number {
+  return Math.round((1 - creditRateUsd(credits) / CREDIT_USD) * 100);
+}
+
 export interface CreditPack {
   id: CreditPackId;
   credits: number;
   priceUsd: number;
-  /** Shown as a "Best value" style hint when set. */
+  /** Shown as a "Save N%" hint when set (derived from the curve). */
   note?: string;
 }
 
-/** Top-up packs. Price per credit falls as the pack grows. */
-export const CREDIT_PACKS: CreditPack[] = [
-  { id: "pack5", credits: 5, priceUsd: 750 },
-  { id: "pack10", credits: 10, priceUsd: 1400, note: "Save 7%" },
-  { id: "pack20", credits: 20, priceUsd: 2600, note: "Save 13%" },
-];
+const pack = (id: CreditPackId, credits: number): CreditPack => {
+  const pct = savingPct(credits);
+  return { id, credits, priceUsd: customPriceUsd(credits), ...(pct > 0 ? { note: `Save ${pct}%` } : {}) };
+};
+
+/** Top-up packs, priced off PRICE_CURVE ($750 / $1,400 / $2,600 today). */
+export const CREDIT_PACKS: CreditPack[] = [pack("pack5", 5), pack("pack10", 10), pack("pack20", 20)];
 
 export function packById(id: CreditPackId): CreditPack {
   return CREDIT_PACKS.find((p) => p.id === id) ?? CREDIT_PACKS[0];
 }
 
-/** Custom amounts in the Add credits dialog. Above `max`, buyers are sent to sales. */
+/** Custom amounts in checkout. Above `max`, buyers are sent to sales. */
 export const CUSTOM_CREDITS = { min: 1, max: 100 };
 
-/** Per-credit rate for any amount: the rate of the largest pack it reaches (1–9 list, 10–19 pack10, 20+ pack20),
- *  so a custom amount never costs more per credit than the nearest pack. */
-export function creditRateUsd(credits: number): number {
-  const tier = [...CREDIT_PACKS].reverse().find((p) => credits >= p.credits);
-  return tier ? tier.priceUsd / tier.credits : CREDIT_USD;
-}
-
-export function customPriceUsd(credits: number): number {
-  return Math.round(credits * creditRateUsd(credits));
+/**
+ * The nudge toward a better rate: the smallest amount above `credits` (within
+ * CUSTOM_CREDITS) whose per-credit price is lower, or null once the floor is reached.
+ */
+export function nextRateDrop(credits: number): { credits: number; add: number; rateUsd: number } | null {
+  const now = creditRateUsd(credits);
+  for (let n = Math.max(credits + 1, CUSTOM_CREDITS.min); n <= CUSTOM_CREDITS.max; n++) {
+    const r = creditRateUsd(n);
+    if (r < now) return { credits: n, add: n - credits, rateUsd: r };
+  }
+  return null;
 }
 
 /** Auto-reload defaults offered when an admin switches it on. */

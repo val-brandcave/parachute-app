@@ -106,40 +106,28 @@ def auto_reload_hint(page, ctx):
     if not ctx.check(sw.count() == 1, "settings: auto-reload switch"):
         return
     ctx.check(sw.get_attribute("aria-disabled") != "true" and sw.get_attribute("disabled") is None, "switch is usable (card on file)")
-    ctx.check(page.locator('.svh[data-hint="auto-reload"]').count() == 0, "no hint before the first flip")
+    ctx.check(page.locator('.svh-link[data-hint="auto-reload"]').count() == 0, "no hint before the first flip")
     before = sw.get_attribute("aria-checked")
     sw.click()
     page.wait_for_timeout(600)
     ctx.check(sw.get_attribute("aria-checked") != before, "first flip: the switch really flipped (never blocked)")
-    hint = page.locator('.svh[data-hint="auto-reload"]')
+    hint = page.locator('.svh-link[data-hint="auto-reload"]')
     ctx.check(hint.count() == 1, "first flip: hint shown")
     if hint.count():
         t = hint.first.inner_text()
         ctx.check("Buying credits and auto-reload" in t and "3:40" in t, f"hint carries title and duration ({t!r})")
-        ctx.check(
-            hint.first.get_by_role("button", name="Watch").count() == 1 and hint.first.get_by_role("button", name="Dismiss").count() == 1,
-            "hint has Watch and Dismiss",
-        )
+        ctx.check(hint.first.locator('a[href="/learn"]').count() == 1, "hint links to the Learning Center")
     ctx.shoot("t5-3-auto-reload-hint")
-    # Watch plays inline, keyboard reachable.
-    w = page.locator('.svh[data-hint="auto-reload"]').get_by_role("button", name="Watch")
-    w.focus()
-    page.keyboard.press("Enter")
-    page.wait_for_timeout(500)
-    ctx.check(page.locator(".svh .hc-player").count() == 1, "Watch (keyboard) opens the inline player")
-    page.locator(".svh").get_by_role("button", name="Dismiss").click()
-    page.wait_for_timeout(300)
-    ctx.check(page.locator(".svh").count() == 0, "Dismiss closes the card")
-    # Second flip after dismiss: the switch works and the hint must NOT re-fire.
+    # Second flip: the switch works and the hint must NOT re-fire.
     sw.click()
     page.wait_for_timeout(500)
     ctx.check(sw.get_attribute("aria-checked") == before, "second flip works too")
-    ctx.check(page.locator(".svh").count() == 0, "second flip: hint does not re-fire")
+    ctx.check(page.locator(".svh-link").count() == 1, "second flip: still the one line, no second hint")
     # Once per user per setting: after a reload the next flip shows nothing.
     ctx.visit("/configure/billing?tab=settings")
     page.get_by_role("switch", name="Auto-reload").click()
     page.wait_for_timeout(500)
-    ctx.check(page.locator('.svh[data-hint="auto-reload"]').count() == 0, "after reload: no hint again (seen once per user)")
+    ctx.check(page.locator('.svh-link[data-hint="auto-reload"]').count() == 0, "after reload: no hint again (seen once per user)")
 
 
 def no_card_reason(page, ctx):
@@ -170,14 +158,14 @@ def no_card_reason(page, ctx):
 def other_hints(page, ctx):
     ctx.enter_persona("trial-admin")
     ctx.visit("/configure/defaults")
-    ctx.check(page.locator('.svh[data-hint="review-defaults"]').count() == 0, "defaults: no hint before a change")
+    ctx.check(page.locator('.svh-link[data-hint="review-defaults"]').count() == 0, "defaults: no hint before a change")
     page.get_by_role("switch", name="Enable auto-accept").click()
     page.wait_for_timeout(400)
-    h = page.locator('.svh[data-hint="review-defaults"]')
+    h = page.locator('.svh-link[data-hint="review-defaults"]')
     ctx.check(h.count() == 1 and "Choose review defaults" in h.first.inner_text() and "5:10" in h.first.inner_text(), "defaults: first change shows the 5:10 hint")
     page.get_by_role("switch", name="Enable auto-accept").click()
     page.wait_for_timeout(300)
-    ctx.check(page.locator('.svh[data-hint="review-defaults"]').count() == 1, "defaults: second change: still one card")
+    ctx.check(page.locator('.svh-link[data-hint="review-defaults"]').count() == 1, "defaults: second change: still one card")
 
     ctx.visit("/configure/checklists")
     rows = page.locator(".cktable .ckrow")
@@ -193,7 +181,7 @@ def other_hints(page, ctx):
         page.keyboard.press("Escape")
     ctx.check(done, "checklists: found a row with Set as default")
     page.wait_for_timeout(500)
-    h = page.locator('.svh[data-hint="checklist-default"]')
+    h = page.locator('.svh-link[data-hint="checklist-default"]')
     ctx.check(h.count() == 1 and "Mapping a checklist" in h.first.inner_text(), "checklists: Set as default shows the hint")
 
     ctx.visit("/configure/workbook-layouts/view?v=wv-commercial-1")
@@ -202,7 +190,7 @@ def other_hints(page, ctx):
     if ctx.check(btn.count() == 1, "layout view: archived version offers Promote"):
         btn.click()
         page.wait_for_timeout(700)
-        h = page.locator('.svh[data-hint="layout-publish"]')
+        h = page.locator('.svh-link[data-hint="layout-publish"]')
         ctx.check(h.count() == 1 and "Custom workbook layouts" in h.first.inner_text(), "layout view: Promote shows the hint")
         ctx.check("/workbook-layouts/view" in page.url, "layout view: first time stays on the page")
         ctx.shoot("t5-3-layout-hint")

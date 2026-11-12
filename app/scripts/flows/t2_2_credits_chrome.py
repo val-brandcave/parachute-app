@@ -1,6 +1,6 @@
 """T2.2 header credits pill, popover and sidebar resource links.
 
-numbers_agree (RF3): pill number = sidebar Balance number = /configure/billing hero number.
+numbers_agree (RF3): pill number = popover number = /configure/billing hero number (the sidebar Balance was removed 12 Nov; the header pill is the one balance in the shell).
 numbers_agree_invoiced_reviewer (RF3): an invoiced reviewer's pill = popover headline (org usage),
 the popover carries no "You used" / pace line, and the Billing usage strip = the credits in the
 "Every review you ran" table for this month (the table holds only the reviewer's own runs).
@@ -35,14 +35,10 @@ def numbers_agree(page, ctx):
     pill = pill_text(page)
     low = pill.lower()
     ctx.check("trial" not in low and "review" not in low and "$" not in pill, f"pill text is credits only ({pill!r})")
-    sb = page.locator(".sb-balance")
-    bal = " ".join(sb.first.inner_text().split()) if sb.count() else None
+    ctx.check(page.locator(".sb-balance").count() == 0, "no sidebar Balance (header pill only)")
     pn = num(pill)
     if ctx.persona == "pending-admin":
         ctx.check(pill == "Credits after your call", f"held pill label ({pill!r})")
-        ctx.check(bal is not None and "On hold" in bal, f"held sidebar Balance says On hold ({bal!r})")
-    else:
-        ctx.check(bal is not None and num(bal) == pn, f"pill {pn} = sidebar Balance ({bal!r})")
     # popover big number = pill number (held has no number: its title is the check)
     open_pill(page)
     big = page.locator(".credits-pop .cp-big b")
@@ -117,7 +113,6 @@ def run(page, ctx):
     pill = pill_text(page)
     if ctx.persona in ("returning", "invoiced-reviewer"):
         ctx.check(re.fullmatch(r"\d+ credits? used", pill) is not None, f"invoiced pill is a used state ({pill!r})")
-        ctx.check(page.locator(".sb-balance").count() == 0, "sidebar Balance absent when invoiced")
 
     # open: click, then Esc returns focus
     open_pill(page)
@@ -184,9 +179,6 @@ def run(page, ctx):
             ctx.check(rows.nth(0).get_attribute("href") == "/trust" and rows.nth(1).get_attribute("href") == "/learn", "row hrefs")
             sz = page.evaluate("() => [...document.querySelectorAll('.sb-res a svg')].map(s => Math.round(s.getBoundingClientRect().width))")
             ctx.check(sz == [19, 19], f"19 px icons ({sz})")
-            above = page.evaluate("""() => { const r=document.querySelector('.sb-res'); const b=document.querySelector('.sb-balance');
-              return !b || r.getBoundingClientRect().bottom <= b.getBoundingClientRect().top }""")
-            ctx.check(above, "rows sit above Balance")
             col = page.evaluate("""() => { const a=document.querySelector('.sb-res a svg').getBoundingClientRect().left;
               const n=document.querySelector('nav a[href="/dashboard"] svg'); return n ? Math.abs(a-n.getBoundingClientRect().left) : 0 }""")
             ctx.check(col <= 1.5, f"icons sit in the nav icon column (delta {col})")
