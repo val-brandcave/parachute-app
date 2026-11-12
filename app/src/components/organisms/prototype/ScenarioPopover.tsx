@@ -1,5 +1,6 @@
 "use client";
 
+import { playConfetti } from "@/lib/celebrate";
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Popover } from "@realwired/ui";
@@ -217,6 +218,9 @@ export function ScenarioPopover({ screenId }: { screenId?: string }) {
             </button>
             <button type="button" className="proto-act" onClick={replay}>
               <Icon name="play" size={14} /> Replay arrival
+            </button>
+            <button type="button" className="proto-act" onClick={() => void playConfetti()}>
+              <Icon name="confetti" size={14} /> Play confetti
             </button>
             <button type="button" className="proto-act" onClick={() => window.open("/emails", "_blank", "noopener")}>
               <Icon name="mail" size={14} /> Open e-mails

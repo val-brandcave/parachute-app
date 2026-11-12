@@ -124,7 +124,10 @@ def welcome_cases(page, ctx):
     land(page, ctx)
     line = page.locator(".gs-welcome")
     ctx.check(
-        line.count() == 1 and norm(line.inner_text()) == "You're in. 6 trial credits are ready.",
+        line.count() == 1
+        and norm(line.locator(".gs-welcome-t").inner_text()) == "You're in. Your trial credits are ready to use."
+        and norm(line.locator(".cchip").inner_text()) == "6 credits"
+        and line.locator('a[href="/launchpad"]', has_text="Start a review").count() == 1,
         "self-serve arrival shows the welcome line",
     )
     ctx.shoot("t2-1-welcome")
@@ -167,8 +170,8 @@ def window_cases(page, ctx):
     land(page, ctx)
     ctx.check(page.locator(".gs-sec").count() == 3, "invoiced enterprise org still sees Get started")
     ctx.check(page.locator(".gs-earn").count() == 0, "invoiced: earn pills hidden")
-    h1 = norm(page.locator("h1").inner_text())
-    ctx.check(h1 == "Finish setting up Harbor.", f"invoiced headline (got {h1!r})")
+    lead = norm(page.locator(".gs-hero-lead").inner_text())
+    ctx.check(lead == "Finish setting up Harbor.", f"invoiced lead line (got {lead!r})")
     ctx.shoot("t2-1-invoiced")
 
     restore(page, snap)
@@ -184,12 +187,18 @@ def run(page, ctx):
 
     if p == "trial-admin":
         pill = norm(page.locator(".gs-earn").first.inner_text())
-        ctx.check(pill == "Earn 1 free review · 2 credits", f"earn pill text (got {pill!r})")
+        ctx.check(pill == "Earn 2 credits", f"earn pill text (got {pill!r})")
         ctx.check(page.locator(".gs-earn").count() == 2, "earn pills on both reward sections")
         meta = norm(page.locator(".gs-hero-meta").inner_text())
         ctx.check(meta == "2 of 8 done · 12 days left to earn", f"progress line (got {meta!r})")
         h1 = norm(page.locator("h1").inner_text())
-        ctx.check(h1 == "Your trial includes 3 full reviews. Earn 2 more in your first 14 days.", f"headline (got {h1!r})")
+        ctx.check(re.match(r"^Welcome back, \w+$", h1) is not None, f"hero greeting (got {h1!r})")
+        lead = norm(page.locator(".gs-hero-lead").inner_text())
+        ctx.check(
+            lead == "Your trial includes 3 full reviews. Earn 2 more by finishing setup in your first 14 days.",
+            f"hero lead line (got {lead!r})",
+        )
+        ctx.check(page.locator(".gs-hero.card svg.ill").count() == 1, "hero spot illustration (11b)")
         ctx.check(page.get_by_text("220 Commerce Way").count() >= 1, "done first_review row shows the own review address")
         ctx.check(
             page.locator('.gs-row a[href^="/reviews/review-hcb"]').count() >= 2,
@@ -198,6 +207,7 @@ def run(page, ctx):
         ctx.check(page.locator('a[href*="review-sample"]').count() == 0, "nothing links the walkthrough review")
         ctx.check(page.get_by_text("Recommended", exact=True).count() == 1, "team section 'Recommended'")
         ctx.check(page.locator(".gs-res-card").count() == 3, "three resource cards")
+        ctx.check(page.locator(".gs-res-card a.ui-btn--outline").count() == 3, "each resource card has an outline action")
         ctx.shoot("t2-1-mid", full_page=True)
 
         if ctx.width == 1440:
@@ -218,25 +228,31 @@ def run(page, ctx):
             page.wait_for_timeout(700)
             if i == 1:
                 ctx.check(
-                    page.get_by_text("1 free review earned · 2 credits added").count() >= 1,
+                    page.get_by_text("2 credits earned").count() >= 1,
                     "section toast after first_review section",
                 )
                 earned = page.locator(".gs-earn.is-earned")
                 ctx.check(
-                    earned.count() >= 1 and norm(earned.first.inner_text()) == "1 free review earned",
-                    "pill flips to '1 free review earned'",
+                    earned.count() >= 1 and norm(earned.first.inner_text()) == "Earned 2 credits",
+                    "pill flips to 'Earned 2 credits'",
                 )
                 ctx.shoot("t2-1-earned")
         page.wait_for_timeout(1200)
         if full:
             bursts = page.evaluate("() => window.__bursts")
-            ctx.check(bursts == 2, f"one burst per earned section (got {bursts})")
+            # Two section bursts + the once-per-user "setup-done" confetti on finishing all 8.
+            ctx.check(bursts == 3, f"one burst per earned section + setup-done confetti (got {bursts})")
         ctx.check(page.get_by_text("All 8 done").count() == 1, "'All 8 done' card")
         ctx.check(page.locator(".gs-alldone svg.ill").count() == 1, "all-done spot illustration (08b)")
         ctx.check(page.locator(".gs-alldone .ui-btn--primary").count() == 1, "Go to Dashboard is the one primary")
         h1 = norm(page.locator("h1").inner_text())
-        ctx.check(h1 == "You earned 2 free reviews. Harbor is set up.", f"all-done title (got {h1!r})")
-        ctx.check(page.locator(".gs-folded-row").count() == 3, "three folded section summaries")
+        ctx.check(h1 == "You earned 4 credits. Harbor is set up.", f"all-done title (got {h1!r})")
+        ctx.check(page.locator(".gs-sec").count() == 3, "three section accordions stay under the all-done card")
+        ctx.check(
+            page.locator('.gs-sec .gs-sec-ct[aria-expanded="false"]').count() == 3, "all sections folded by default"
+        )
+        ctx.check(page.locator(".gs-sec .gs-earn.is-earned").count() == 2, "both rewarded sections read 'Earned 2 credits'")
+        ctx.check(page.get_by_text("Recommended", exact=True).count() == 0, "no 'Recommended' once setup is done")
         ctx.shoot("t2-1-all-done", full_page=True)
 
     elif p == "pending-admin":

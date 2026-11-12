@@ -5,7 +5,7 @@ import { useToast } from "@realwired/ui";
 import { useRouter } from "next/navigation";
 import { Avatar, Button, CreditChip, Icon, Illustration, type IconName } from "@/components/atoms";
 import { useCurrentOrg, useCurrentUser } from "@/lib/current-user";
-import { INVOICED_CREDIT_USD, REVIEW_TYPE_COST, TRIAL_GRANT_CREDITS, costFor, formatUsd } from "@/lib/pricing";
+import { INVOICED_CREDIT_USD, REVIEW_TYPE_COST, TRIAL_GRANT_CREDITS, costFor, formatUsd, EARN_CAP_CREDITS } from "@/lib/pricing";
 import { FULL_REVIEW_TYPES } from "@/lib/setup-steps";
 import type { WalletView } from "@/lib/wallet-view";
 import { useCreditRequestStore, useSetupSummary, useUsersStore, useWalletSource, useWalletStore } from "@/store";
@@ -282,8 +282,8 @@ export function CreditsPopover({
         <button type="button" className="cp-note" onClick={() => go("/get-started")}>
           <Icon name="gift" size={15} />
           <span>
-            Earn {earn.reviewsLeftToEarn} more free review{earn.reviewsLeftToEarn === 1 ? "" : "s"} in the next{" "}
-            {daysLeft} day{daysLeft === 1 ? "" : "s"}.
+            Earn {Math.max(0, EARN_CAP_CREDITS - earn.earnedCredits)} more credits in the next {daysLeft} day
+            {daysLeft === 1 ? "" : "s"}.
           </span>
         </button>
       )}

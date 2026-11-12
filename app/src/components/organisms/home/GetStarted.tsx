@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { Callout, useToast } from "@realwired/ui";
-import { Icon, IconButton, ProgressBar } from "@/components/atoms";
+import { CreditChip, Icon, IconButton, Illustration, ProgressBar } from "@/components/atoms";
 import { orgShortName } from "@/components/organisms/onboarding";
 import { GetStartedSkeleton } from "@/components/organisms/Skeletons";
 import { celebrate } from "@/lib/celebrate";
@@ -28,13 +28,15 @@ import {
 import type { Org } from "@/types";
 import "@/app/bouncer/bouncer.css";
 import { AllDone } from "./AllDone";
-import { reviewsPerSection } from "./EarnPill";
 import { PendingTracker, type PendingTrackerStep } from "./PendingTracker";
 import { ResourceCards } from "./ResourceCards";
 import { SetupSection } from "./SetupSection";
 import { useArrivalCelebration } from "./useArrivalCelebration";
 import { useLockProbe } from "./useLockProbe";
+import { useHeroWatch } from "./SetupProgressLine";
+import { useStartGate } from "./useStartGate";
 import "./get-started.css";
+import "./gs-hero.css";
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
@@ -141,9 +143,11 @@ function PendingCard({ org }: { org: Org }) {
   );
 }
 
-/** "You're in. 6 trial credits are ready." — the arrival visit from self-serve onboarding only. */
+/** "You're in." — the arrival visit from self-serve onboarding only. A slim navy-tinted
+ *  strip: the trial grant as a credit chip, a quiet way into a first review, and dismiss. */
 function WelcomeLine({ userId }: { userId: string }) {
   const mode = useMotionMode();
+  const gate = useStartGate();
   const dismiss = () => usePrefsStore.getState().dismissWelcome(userId);
   const enter =
     mode === "full"
@@ -151,12 +155,15 @@ function WelcomeLine({ userId }: { userId: string }) {
       : { initial: { opacity: 0 }, animate: { opacity: 1, transition: { duration: dur.reducedFade } } };
   return (
     <motion.div className="gs-welcome" role="status" {...enter} exit={{ opacity: 0, transition: { duration: dur.quick, ease: ease.exit } }}>
-      <span className="gs-welcome-ic" aria-hidden="true">
-        <Icon name="check-circle" size={18} />
-      </span>
-      <span className="gs-welcome-t">
-        You&apos;re in. {TRIAL_GRANT_CREDITS} trial credits are ready.
-      </span>
+      <CreditChip tone="credit" size="sm" className="gs-welcome-chip">
+        {plural(TRIAL_GRANT_CREDITS, "credit", "credits")}
+      </CreditChip>
+      <span className="gs-welcome-t">You&apos;re in. Your trial credits are ready to use.</span>
+      {!gate.locked && (
+        <Link href="/launchpad" className="gs-welcome-link">
+          Start a review
+        </Link>
+      )}
       <IconButton name="close" size={16} aria-label="Dismiss" onClick={dismiss} className="gs-welcome-x" />
     </motion.div>
   );
@@ -171,18 +178,18 @@ function FocusHeading({ root }: { root: RefObject<HTMLDivElement | null> }) {
   return null;
 }
 
-/** The headline and the progress meta, per state (spec §5.2 States). Pure on the summary. */
-function heroCopy(summary: SetupSummary, org: Org | null): { title: string; meta: string; tone: "normal" | "ending" } {
+/** The hero's lead line (the offer) and the progress meta, per state (spec §5.2 States).
+ *  Pure on the summary. The headline itself is the greeting. */
+function heroCopy(summary: SetupSummary, org: Org | null): { lead: string; meta: string; tone: "normal" | "ending" } {
   const short = orgShortName(org?.name ?? "your organization");
   const full = costFor(FULL_REVIEW_TYPES);
   const count = `${summary.doneCount} of ${summary.total} done`;
   const win = summary.earn.window;
-  const earnedReviews = summary.earn.awardedSections.length * reviewsPerSection();
 
   if (summary.pending) {
     const at = org?.profile?.callBookedAt;
     return {
-      title:
+      lead:
         at !== undefined
           ? `Get ${short} ready before your call on ${weekdayFmt.format(new Date(at))}.`
           : `Get ${short} ready while Realwired confirms it.`,
@@ -191,26 +198,25 @@ function heroCopy(summary: SetupSummary, org: Org | null): { title: string; meta
     };
   }
   if (org?.billing === "invoiced" || !win) {
-    return { title: `Finish setting up ${short}.`, meta: count, tone: "normal" };
+    return { lead: `Finish setting up ${short}.`, meta: count, tone: "normal" };
   }
   if (win.state === "closed") {
     return {
-      title: `Finish setting up ${short}.`,
-      meta: earnedReviews > 0 ? `Bonus window closed · you earned ${plural(earnedReviews, "free review", "free reviews")}` : "Bonus window closed",
+      lead: `Finish setting up ${short}.`,
+      meta: summary.earn.earnedCredits > 0 ? `Bonus window closed · you earned ${plural(summary.earn.earnedCredits, "credit", "credits")}` : "Bonus window closed",
       tone: "normal",
     };
   }
   const trialReviews = Math.floor(TRIAL_GRANT_CREDITS / full);
-  const earnable = Math.floor(EARN_CAP_CREDITS / full);
-  const title =
+  const lead =
     org?.billing === "trial"
-      ? `Your trial includes ${plural(trialReviews, "full review", "full reviews")}.\nEarn ${earnable} more in your first ${EARN_WINDOW_DAYS} days.`
-      : `Earn ${plural(earnable, "free review", "free reviews")} in your first ${EARN_WINDOW_DAYS} days.`;
+      ? `Your trial includes ${TRIAL_GRANT_CREDITS} credits, enough for ${plural(trialReviews, "full review", "full reviews")}. Earn ${EARN_CAP_CREDITS} more by finishing setup in your first ${EARN_WINDOW_DAYS} days.`
+      : `Earn ${EARN_CAP_CREDITS} free credits by finishing setup in your first ${EARN_WINDOW_DAYS} days.`;
   const meta =
     summary.earn.reviewsLeftToEarn === 0
-      ? `you earned ${plural(earnedReviews, "free review", "free reviews")}`
+      ? `you earned ${plural(summary.earn.earnedCredits, "credit", "credits")}`
       : `${plural(win.daysLeft, "day", "days")} left to earn`;
-  return { title, meta, tone: win.state === "ending" ? "ending" : "normal" };
+  return { lead, meta, tone: win.state === "ending" ? "ending" : "normal" };
 }
 
 /** The Get started page body (spec §5.2, PC-1/35/36): one column — bodied hero, sections,
@@ -240,6 +246,8 @@ export function GetStarted() {
   }, []);
   const loading = !summary.ready || !minDone || !org;
   const { arrival, landed } = useArrivalCelebration(!loading && !away);
+  // The header's progress line shows once this hero has scrolled away.
+  const heroRef = useHeroWatch();
 
   // Enterprise confirmed: the approval celebration, once per user (pending Q-C9).
   const confirmed = !!org?.profile?.salesRequested && org.approval === "approved" && !summary.allDone;
@@ -250,6 +258,7 @@ export function GetStarted() {
   if (away) return null;
 
   const hero = heroCopy(summary, org);
+  const greeting = summary.doneCount > 0 ? `Welcome back, ${me.firstName}` : `Welcome, ${me.firstName}`;
   const showWelcome = landed && arrival?.path === "self_serve" && !welcomeDismissed && !summary.pending;
   const fade = mode === "full" ? dur.standard : dur.reducedFade;
 
@@ -282,34 +291,30 @@ export function GetStarted() {
               <AllDone summary={summary} />
             ) : (
               <>
-                <header className="gs-hero">
-                  <div className="gs-hero-top">
+                <header className="card gs-hero" ref={heroRef} aria-labelledby="gs-title">
+                  <div className="gs-hero-text">
                     <h1 id="gs-title" className="gs-hero-h" tabIndex={-1}>
-                      {hero.title.split("\n").map((line, i) => (
-                        <span key={i} className="gs-hero-line">
-                          {i > 0 && " "}
-                          {line}
-                        </span>
-                      ))}
+                      {greeting}
                     </h1>
-                    <Link href={TRUST_HREF} className="gs-hero-link">
-                      <span aria-hidden="true">
-                        <Icon name="shield" size={16} />
-                      </span>
-                      Visit Trust Center
-                    </Link>
+                    <p className="gs-hero-lead">{hero.lead}</p>
+                    <ProgressBar
+                      value={summary.total > 0 ? summary.doneCount / summary.total : 0}
+                      label={`${summary.doneCount} of ${summary.total} setup steps done`}
+                      className="gs-hero-bar"
+                    />
+                    <div className="gs-hero-foot">
+                      <p className={cn("gs-hero-meta", hero.tone === "ending" && "is-ending")}>
+                        <b className="mono">
+                          {summary.doneCount} of {summary.total} done
+                        </b>
+                        {hero.meta !== `${summary.doneCount} of ${summary.total} done` && <> · {hero.meta}</>}
+                      </p>
+                      <Link href={TRUST_HREF} className="gs-hero-link">
+                        Visit Trust Center
+                      </Link>
+                    </div>
                   </div>
-                  <ProgressBar
-                    value={summary.total > 0 ? summary.doneCount / summary.total : 0}
-                    label={`${summary.doneCount} of ${summary.total} setup steps done`}
-                    className="gs-hero-bar"
-                  />
-                  <p className={cn("gs-hero-meta", hero.tone === "ending" && "is-ending")}>
-                    <b className="mono">
-                      {summary.doneCount} of {summary.total} done
-                    </b>
-                    {hero.meta !== `${summary.doneCount} of ${summary.total} done` && <> · {hero.meta}</>}
-                  </p>
+                  <Illustration name="11b-earn-free-report" size={120} className="gs-hero-art" />
                 </header>
 
                 <AnimatePresence>{showWelcome && <WelcomeLine key="welcome" userId={me.id} />}</AnimatePresence>

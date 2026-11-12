@@ -13,90 +13,6 @@
   min-width: 0;
 }
 
-/* ---- hero band (PC-36: h1 in the body, no .pagehead) ---- */
-.gs-hero {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 4px 0 6px;
-}
-.gs-hero-top {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-}
-.gs-hero-h {
-  margin: 0;
-  font-size: 30px;
-  line-height: 1.15;
-  font-weight: 700;
-  color: var(--md-on-surface);
-  text-wrap: pretty;
-}
-.gs-hero-line {
-  display: block;
-}
-/* Focus lands here programmatically on arrival (a landmark for screen readers, not a control). */
-.gs-hero-h:focus {
-  outline: none;
-}
-.gs-hero-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  flex: none;
-  margin-top: 6px;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--md-accent);
-  text-decoration: none;
-  border-radius: 6px;
-}
-.gs-hero-link:hover {
-  text-decoration: underline;
-}
-.gs-hero-link:focus-visible {
-  outline: none;
-  box-shadow: var(--ring-accent);
-}
-.gs-hero-bar {
-  margin-top: 8px;
-}
-.gs-hero-meta {
-  margin: 0;
-  font-size: 13px;
-  color: var(--md-on-surface-v);
-}
-.gs-hero-meta b {
-  color: var(--md-on-surface);
-  font-weight: 600;
-}
-.gs-hero-meta.is-ending {
-  color: var(--md-warn);
-}
-
-/* ---- welcome line (motion-spec §6.4) ---- */
-.gs-welcome {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 10px 10px 14px;
-  border-radius: var(--r);
-  background: var(--md-success-c);
-  color: var(--md-on-surface);
-  font-size: 14px;
-  font-weight: 500;
-}
-.gs-welcome-ic {
-  display: inline-flex;
-  color: var(--md-success);
-}
-.gs-welcome-t {
-  flex: 1;
-  min-width: 0;
-}
-
 /* ---- sections ---- */
 .gs-secs {
   display: flex;
@@ -185,10 +101,6 @@
 .gs-earn-ic,
 .gs-earn-ic-in {
   display: inline-flex;
-}
-.gs-earn-credits {
-  font-weight: 500;
-  opacity: 0.8;
 }
 
 /* ---- rows ---- */
@@ -393,163 +305,15 @@
   font-size: 12px;
 }
 
-/* ---- all done (board 10 right) ---- */
-.gs-alldone {
-  display: flex;
-  align-items: center;
-  gap: 28px;
-  padding: 28px;
-  border: 1px solid var(--md-outline);
-  box-shadow: none;
-}
-.gs-alldone-body {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
-  min-width: 0;
-}
-.gs-alldone-chip {
-  height: 22px;
-  gap: 4px;
-}
-.gs-alldone-h {
-  margin: 0;
-  font-size: 22px;
-  font-weight: 700;
-  line-height: 1.2;
-  color: var(--md-on-surface);
-}
-/* Focus lands here programmatically on arrival (a landmark for screen readers, not a control). */
-.gs-alldone-h:focus {
-  outline: none;
-}
-.gs-alldone-p {
-  margin: 0;
-  font-size: 14px;
-  color: var(--md-on-surface-v);
-}
-.gs-alldone-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 8px;
-}
-.gs-folded {
-  margin: 0;
-  padding: 4px 0;
-  list-style: none;
-  border: 1px solid var(--md-outline);
-  box-shadow: none;
-}
-.gs-folded-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 20px;
-}
-.gs-folded-row + .gs-folded-row {
-  border-top: 1px solid var(--md-outline-v);
-}
-.gs-folded-name {
-  flex: 1;
-  min-width: 0;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--md-on-surface);
-}
-.gs-folded-meta {
-  font-size: 12.5px;
-  color: var(--md-on-surface-t);
-}
-
-/* ---- More resources ---- */
-.gs-res {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-top: 8px;
-}
-.gs-res-title {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 650;
-  color: var(--md-on-surface);
-}
-.gs-res-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 16px;
-}
-.gs-res-card {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  border: 1px solid var(--md-outline);
-  box-shadow: none;
-  color: inherit;
-  text-decoration: none;
-  /* = lib/motion dur.quick + ease.standard. */
-  transition: border-color 0.15s cubic-bezier(0.2, 0, 0, 1);
-}
-.gs-res-card:hover {
-  border-color: var(--md-on-surface-t);
-}
-.gs-res-card:focus-visible {
-  outline: none;
-  box-shadow: var(--ring-accent);
-}
-.gs-res-art {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 12px 0;
-  background: var(--md-surface-1);
-}
-.gs-res-body {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 16px 18px 18px;
-}
-.gs-res-name {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  font-size: 15px;
-  font-weight: 650;
-  color: var(--md-on-surface);
-}
-.gs-res-name > span {
-  display: inline-flex;
-  color: var(--md-on-surface-t);
-}
-.gs-res-desc {
-  font-size: 13.5px;
-  color: var(--md-on-surface-v);
-}
-
 /* ---- reduced motion: state changes snap, no rotation or colour glide ---- */
 @media (prefers-reduced-motion: reduce) {
-  .gs-sec-chev,
-  .gs-res-card {
+  .gs-sec-chev {
     transition: none;
   }
 }
 
 /* ---- narrow ---- */
 @container (max-width: 720px) {
-  .gs-hero-top {
-    flex-direction: column;
-    gap: 8px;
-  }
-  .gs-hero-h {
-    font-size: 24px;
-  }
-  .gs-hero-link {
-    margin-top: 0;
-  }
   .gs-sec-hd {
     padding: 16px 16px 12px;
   }
@@ -568,10 +332,5 @@
   .gs-pending {
     grid-template-columns: minmax(0, 1fr);
     padding: 18px 16px;
-  }
-  .gs-alldone {
-    flex-direction: column;
-    align-items: flex-start;
-    padding: 20px 16px;
   }
 }

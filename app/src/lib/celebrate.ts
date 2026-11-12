@@ -1,6 +1,6 @@
 import type { Options as ConfettiOptions } from "canvas-confetti";
 import { motionModeNow } from "@/lib/motion";
-import { usePrefsStore } from "@/store";
+import { usePrefsStore, type CelebrationKind } from "@/store";
 
 /** Fixed hexes: a canvas can't read var(). Documented exception to "tokens only" (motion-spec §6.2). */
 const COLORS = ["#10344c", "#2a6f7f", "#d6e3ee", "#2e7d4f", "#e0a43a"];
@@ -41,14 +41,23 @@ async function withCanvas(run: (fire: Fire) => Promise<void>): Promise<void> {
   }
 }
 
-/** Big two-sided celebration. Fires at most once per user per kind; returns false when skipped. */
-export async function celebrate(kind: "onboarding" | "approval", userId: string): Promise<boolean> {
+/**
+ * Big two-sided celebration. Fires at most once per user per kind; returns false when skipped.
+ * Kinds: "onboarding" (self-serve arrival), "approval" (enterprise confirmed), "setup-done"
+ * (all 8 Get started steps finished).
+ */
+export async function celebrate(kind: CelebrationKind, userId: string): Promise<boolean> {
   const prefs = usePrefsStore.getState();
   if (prefs.celebratedBy[userId]?.[kind]) return false;
   // Mark even under reduced motion / off, so flipping the setting later doesn't replay an old moment.
   prefs.markCelebrated(userId, kind);
   if (motionModeNow() !== "full") return false;
 
+  return bigBurst();
+}
+
+/** The two-sided burst itself (no once-per-user bookkeeping). */
+async function bigBurst(): Promise<boolean> {
   try {
     await withCanvas(async (fire) => {
       const wave = (count: number) =>
@@ -64,6 +73,13 @@ export async function celebrate(kind: "onboarding" | "approval", userId: string)
     return false; // import or canvas failure: the flag stays marked, no unhandled rejection
   }
   return true;
+}
+
+/** PROTOTYPE ONLY ("Play confetti" in the scenario popover): play the big burst on demand,
+ *  ignoring the once-per-user marks. Still skipped when motion is off or reduced. */
+export async function playConfetti(): Promise<boolean> {
+  if (motionModeNow() !== "full") return false;
+  return bigBurst();
 }
 
 /** Small single burst from an element (the section's earn pill). Not persisted. */

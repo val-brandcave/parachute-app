@@ -16,7 +16,8 @@ export function reviewsPerSection(): number {
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
 /**
- * "Earn 1 free review · 2 credits" (gift) ↔ "1 free review earned" (check). PC-35:
+ * "Earn 2 credits" (gift) ↔ "Earned 2 credits" (check). One reward, one number, from
+ * EARN_REWARD_CREDITS. PC-35:
  * navy-selected surface while it can still earn; success once earned. The text carries
  * the meaning (never a bare number); the glyph is decorative. `ref` is the burst origin
  * for `burstFrom`.
@@ -26,7 +27,7 @@ const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one :
  */
 export function EarnPill({ state, ref }: { state: "earn" | "earned"; ref?: Ref<HTMLSpanElement> }) {
   const mode = useMotionMode();
-  const reviews = reviewsPerSection();
+  const credits = plural(EARN_REWARD_CREDITS, "credit", "credits");
   const earned = state === "earned";
   const swap = mode === "full" ? dur.quick : dur.reducedFade;
   return (
@@ -44,14 +45,7 @@ export function EarnPill({ state, ref }: { state: "earn" | "earned"; ref?: Ref<H
           </motion.span>
         </AnimatePresence>
       </span>
-      {earned ? (
-        <span>{plural(reviews, "free review", "free reviews")} earned</span>
-      ) : (
-        <span>
-          Earn {plural(reviews, "free review", "free reviews")}
-          <span className="gs-earn-credits"> · {plural(EARN_REWARD_CREDITS, "credit", "credits")}</span>
-        </span>
-      )}
+      <span>{earned ? `Earned ${credits}` : `Earn ${credits}`}</span>
     </span>
   );
 }

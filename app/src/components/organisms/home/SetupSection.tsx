@@ -9,10 +9,13 @@ import { useOrgStore, type SectionSummary, type SetupSummary } from "@/store";
 import { EarnPill } from "./EarnPill";
 import { registerEarnPill } from "./earnPillRegistry";
 import { SetupRow } from "./SetupRow";
+import "./gs-cards.css";
 
 /** What the section shows beside its title: the earn pill, the pending hold, "Recommended", or nothing. */
 function useSectionBadge(section: SectionSummary, summary: SetupSummary): "earn" | "earned" | "held" | "recommended" | null {
   const billing = useOrgStore((s) => s.org?.billing);
+  // Setup finished: only what was actually paid out stays on show ("Earned n credits").
+  if (summary.allDone) return section.awarded && billing !== "invoiced" ? "earned" : null;
   if (summary.pending && section.id === "first_review") return "held";
   if (section.reward <= 0) return "recommended";
   // Invoiced orgs never earn; neither does a section once the window closed unpaid.

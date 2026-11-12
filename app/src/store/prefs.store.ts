@@ -36,7 +36,7 @@ const HINTKEY = "parachute:hints-seen";
 const VKEY = "parachute:video-progress";
 const PKEY = "parachute:proto:hidden";
 
-export type CelebrationKind = "onboarding" | "approval";
+export type CelebrationKind = "onboarding" | "approval" | "setup-done";
 type PerUser<T> = Record<string, T>;
 
 function readJson<T>(key: string, fallback: T): T {

@@ -5,8 +5,6 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@realwired/ui";
 import { burstFrom } from "@/lib/celebrate";
 import { stagger } from "@/lib/motion";
-import { costFor } from "@/lib/pricing";
-import { FULL_REVIEW_TYPES } from "@/lib/setup-steps";
 import { useOnboardingStore } from "@/store";
 import { earnPillFor } from "@/components/organisms/home/earnPillRegistry";
 
@@ -25,9 +23,8 @@ export function EarnedToastHost() {
 
   useEffect(() => {
     if (!notice) return;
-    const reviews = Math.max(1, Math.floor(notice.credits / costFor(FULL_REVIEW_TYPES)));
     toast({
-      title: `${plural(reviews, "free review", "free reviews")} earned · ${plural(notice.credits, "credit", "credits")} added`,
+      title: `${plural(notice.credits, "credit", "credits")} earned`,
       description: `${notice.title} is done. The credits are in ${notice.orgName}'s balance and never expire.`,
       tone: "success",
       action: { label: "View", onClick: () => router.push("/get-started") },

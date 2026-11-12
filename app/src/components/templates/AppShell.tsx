@@ -28,6 +28,7 @@ import { HeaderChipSlot } from "@/components/organisms/HeaderChipSlot";
 import { TourHost } from "@/components/organisms/tour/TourHost";
 import { ProtoPill } from "@/components/organisms/prototype/ProtoPill";
 import { useStartGate } from "@/components/organisms/home/useStartGate";
+import { SetupProgressLine } from "@/components/organisms/home/SetupProgressLine";
 import { useSetupGuideVisible } from "@/lib/landing";
 import { usePrefsStore, useSessionStore, useSetupSummary } from "@/store";
 
@@ -219,6 +220,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <CreditsPill />
               <IconButton icon="bell" label="Notifications" />
               <UserMenu />
+              <SetupProgressLine />
             </>
           ),
         }}
