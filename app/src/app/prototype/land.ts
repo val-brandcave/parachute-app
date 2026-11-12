@@ -1,5 +1,5 @@
 import { encodeScenario } from "@/components/organisms/prototype/ProtoKeys";
-import { PRESETS, SCREENS, type PageState, type Preset, type ScreenDef } from "@/lib/prototype-registry";
+import { PRESETS, SCREENS, patchForState, type PageState, type Preset, type ScreenDef } from "@/lib/prototype-registry";
 import { resolveEntryRoute } from "@/lib/landing";
 import { useProtoStore } from "@/store/prototype.store";
 
@@ -32,9 +32,12 @@ export function screenById(id: string | null | undefined): ScreenDef | undefined
   return SCREENS.find((s) => s.id === id);
 }
 
-/** Applies a page state's world patch, then returns where to go. */
+/** Applies the screen's base plus the state's world patch (the same patch as a pill pick), then
+ *  returns where to go. A state with no world of its own (an auth `?variant=`) applies nothing. */
 export async function landState(screen: ScreenDef, state?: PageState): Promise<string> {
-  if (state?.set) await useProtoStore.getState().apply(state.set, state.view);
+  const store = useProtoStore.getState();
+  const patch = state && !state.set && !screen.base ? null : patchForState(store.scenario, screen, state);
+  if (patch) await store.apply(patch, state?.view);
   return hrefForState(screen, state);
 }
 

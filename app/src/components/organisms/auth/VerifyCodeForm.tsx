@@ -23,7 +23,7 @@ function clock(s: number) {
 const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 /** Keycloak verify-email-code, themed. Any six digits pass except 000000 (prototype). */
-export function VerifyCodeForm({ email }: { email: string }) {
+function VerifyCodeFormBody({ email }: { email: string }) {
   const router = useRouter();
   const toast = useToast();
   const frame = useKeycloakFrame();
@@ -195,4 +195,10 @@ export function VerifyCodeForm({ email }: { email: string }) {
       </p>
     </form>
   );
+}
+
+/** Remounts on a state-pill variant change so the form's fields and error reset to that state. */
+export function VerifyCodeForm(props: { email: string }) {
+  const variant = useAuthVariant();
+  return <VerifyCodeFormBody key={variant ?? "default"} {...props} />;
 }

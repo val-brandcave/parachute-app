@@ -33,7 +33,7 @@ async function enterLegacy(personaId: string): Promise<void> {
 const personaById = (id: string) => demoPersonas.find((p) => p.id === id);
 
 /** Keycloak login-username then login-password, themed (identity-first, one card). */
-export function SignInForm() {
+function SignInFormBody() {
   const router = useRouter();
   const variant = useAuthVariant();
   const bad = variant === "bad-credentials";
@@ -179,4 +179,10 @@ export function SignInForm() {
       </p>
     </form>
   );
+}
+
+/** Remounts on a state-pill variant change so the form's fields and error reset to that state. */
+export function SignInForm() {
+  const variant = useAuthVariant();
+  return <SignInFormBody key={variant ?? "default"} />;
 }

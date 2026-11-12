@@ -92,13 +92,6 @@
 .proto-seg-lb {
   position: relative;
 }
-.proto-custom {
-  padding: 6px 10px;
-  border-radius: 999px;
-  border: 1px dashed var(--md-outline);
-  font-weight: 700;
-  color: var(--md-on-surface-v);
-}
 
 /* narrow: the segments collapse to a select ("label ▾") */
 .proto-narrow {
@@ -126,7 +119,8 @@
   .proto-pill {
     max-width: calc(100vw - 32px);
   }
-  .proto-segs {
+  .proto-segs,
+  .proto-more {
     display: none;
   }
   .proto-narrow {
@@ -165,6 +159,114 @@
 .proto-btn[aria-expanded="true"] {
   background: var(--md-surface-1);
   color: var(--md-on-surface);
+}
+
+/* ---- More: every state, grouped, in a menu above the pill (z one over the pill) ---- */
+.proto-more {
+  gap: 4px;
+  padding: 0 8px 0 10px;
+}
+.proto-more-pop {
+  position: fixed;
+  z-index: calc(var(--z-proto) + 1);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 6px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--md-surface);
+  color: var(--md-on-surface);
+  border: 1px solid var(--md-outline-v);
+  border-radius: 12px;
+  box-shadow: var(--md-elev-3);
+  font-size: 12.5px;
+}
+.proto-more-group {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.proto-more-group:not(:first-child) {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid var(--md-outline-v);
+}
+.proto-more-h {
+  padding: 6px 8px 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--md-on-surface-t);
+}
+.proto-more-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  width: 100%;
+  padding: 7px 8px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--md-on-surface);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.proto-more-item:hover {
+  background: var(--md-surface-1);
+}
+.proto-more-item:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-accent);
+}
+.proto-more-item.on {
+  background: var(--md-selected);
+  color: var(--md-on-selected);
+}
+.proto-more-check {
+  display: inline-flex;
+  flex: 0 0 16px;
+  justify-content: center;
+  padding-top: 1px;
+}
+.proto-more-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.proto-more-lb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.proto-more-name {
+  font-weight: 600;
+}
+.proto-more-item.is-planned .proto-more-name {
+  color: var(--md-on-surface-t);
+}
+.proto-more-chip {
+  padding: 2px 6px;
+  border: 1px dashed var(--md-outline);
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--md-on-surface-t);
+}
+.proto-more-desc {
+  font-size: 11.5px;
+  line-height: 1.35;
+  color: var(--md-on-surface-v);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.proto-more-item.on .proto-more-desc {
+  color: inherit;
+  opacity: 0.85;
 }
 
 /* compact tip above the pill */

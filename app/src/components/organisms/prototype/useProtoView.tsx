@@ -2,27 +2,8 @@
 
 import { useCallback, useMemo } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { activeState, screenForPath, type PageState, type ScreenDef } from "@/lib/prototype-registry";
-import { presetFor } from "@/lib/prototype/presets";
-import { normalize } from "@/lib/prototype/scenario-builder";
-import { scenarioMatches, type Scenario } from "@/lib/prototype/scenario";
+import { activeState, patchForState, screenForPath, type PageState, type ScreenDef } from "@/lib/prototype-registry";
 import { useProtoStore } from "@/store/prototype.store";
-
-/** Modifiers a page state switches off unless it sets them, so a state reads as itself
- *  (no "expiring" banner left over on Auto-reload). */
-const MODIFIER_RESET: Partial<Scenario> = { autoReload: false, expiring: false, request: "none" };
-
-/**
- * The patch a page state applies. Normally its `set` over the current scenario (minus
- * leftover modifiers). When leftovers make the state impossible — normalize would undo it,
- * e.g. Invoiced right after Held (pending forces a held wallet) — it starts again from the
- * seed scenario, so one click always lands on the state.
- */
-function statePatch(current: Scenario, set: Partial<Scenario>): Partial<Scenario> {
-  const patch = { ...MODIFIER_RESET, ...set };
-  if (scenarioMatches(normalize({ ...current, ...patch }).scenario, set)) return patch;
-  return { ...presetFor("trial-admin")!.scenario, ...patch };
-}
 
 export interface ProtoView {
   /** The registry screen for this route, if any. */
@@ -45,8 +26,9 @@ export function useProtoView(): ProtoView {
   const edited = useProtoStore((s) => s.edited);
   const apply = useProtoStore((s) => s.apply);
 
-  const screen = useMemo(() => screenForPath(pathname), [pathname]);
   const query = params.toString();
+  // The query picks a tab that is its own screen (How credits work on /configure/billing).
+  const screen = useMemo(() => screenForPath(pathname, query), [pathname, query]);
   const active = useMemo(
     // After Add 5 / Spend 1 / Complete next step the rows no longer match any state: "Custom".
     () => (screen && !edited ? activeState(screen, scenario, new URLSearchParams(query)) : undefined),
@@ -56,7 +38,8 @@ export function useProtoView(): ProtoView {
   const pick = useCallback(
     async (state: PageState) => {
       if (state.status === "planned") return false;
-      await apply(statePatch(scenario, state.set ?? {}), state.view);
+      // Screen base + state: a leftover from the previous screen (a reviewer role) never leaks in.
+      await apply(patchForState(scenario, screen, state) ?? {}, state.view);
       // View params: this state's, minus any key another state of the screen owns.
       const next = new URLSearchParams(query);
       for (const other of screen?.states ?? []) for (const k of Object.keys(other.view ?? {})) next.delete(k);

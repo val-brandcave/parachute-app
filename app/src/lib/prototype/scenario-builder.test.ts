@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { earnWindow } from "@/lib/pricing";
 import type { CreditLedgerEntry } from "@/types";
 import { DEFAULT_SCENARIO, type Scenario } from "./scenario";
-import { PRESETS, SCREENS, activeState, screenForPath } from "@/lib/prototype-registry";
+import { CHECKOUT_PAID_RECEIPT, PRESETS, SCREENS, activeState, patchForState, screenForPath } from "@/lib/prototype-registry";
 import { buildLedger, buildSetupProgress, normalize } from "./scenario-builder";
 
 const NOW = Date.UTC(2026, 10, 12, 12, 0);
@@ -153,6 +153,50 @@ describe("registry", () => {
     expect(screenForPath("/dashboard")?.id).toBe("dashboard");
     expect(screenForPath("/dashboard?x=1")?.id).toBe("dashboard");
     expect(screenForPath("/nope")).toBeUndefined();
+  });
+
+  it("the How credits work tab is its own screen", () => {
+    expect(screenForPath("/configure/billing", "tab=credits")?.id).toBe("billing-credits");
+    expect(screenForPath("/configure/billing?tab=credits")?.id).toBe("billing-credits");
+    expect(screenForPath("/configure/billing", "tab=usage")?.id).toBe("billing");
+  });
+
+  it("every screen has at most 4 key states, and screens over 4 states mark some", () => {
+    for (const s of SCREENS) {
+      const keys = s.states.filter((x) => x.key).length;
+      expect(keys, s.id).toBeLessThanOrEqual(4);
+      if (s.states.length > 4) expect(keys, s.id).toBeGreaterThan(0);
+      for (const x of s.states.filter((y) => !y.key && s.states.length > 4)) expect(x.group, `${s.id}/${x.id}`).toBeTruthy();
+    }
+  });
+
+  it("a checkout state lands as an admin with a card, whatever the previous screen left", () => {
+    const co = SCREENS.find((s) => s.id === "checkout")!;
+    const amount = co.states.find((s) => s.id === "amount")!;
+    const reviewer = sc({ role: "reviewer", wallet: "short", request: "open" });
+    const next = normalize({ ...reviewer, ...patchForState(reviewer, co, amount) }).scenario;
+    expect(next).toMatchObject({ role: "org_admin", lifecycle: "approved", paymentMethod: "card", request: "none" });
+    expect(activeState(co, next, new URLSearchParams("step=amount"))?.id).toBe("amount");
+    // From a pending org the base is impossible over the leftovers: restart from trial-admin.
+    const pending = sc({ audience: "enterprise", lifecycle: "pending", wallet: "held", data: "empty" });
+    expect(normalize({ ...pending, ...patchForState(pending, co, amount) }).scenario).toMatchObject({ lifecycle: "approved", wallet: "low", role: "org_admin" });
+  });
+
+  it("checkout Paid opens a receipt that the checkout base's ledger holds", () => {
+    const co = SCREENS.find((s) => s.id === "checkout")!;
+    const paid = co.states.find((s) => s.id === "paid")!;
+    expect(paid.view?.receipt).toBe(CHECKOUT_PAID_RECEIPT);
+    const world = normalize({ ...DEFAULT_SCENARIO, autoReload: false, expiring: false, ...co.base }).scenario;
+    const entry = buildLedger(world, NOW, ORG).find((e) => e.receiptId === CHECKOUT_PAID_RECEIPT);
+    expect(entry?.kind).toBe("purchase");
+  });
+
+  it("a plain screen landing applies the base only when the scenario is off it", () => {
+    const co = SCREENS.find((s) => s.id === "checkout")!;
+    const on = normalize({ ...DEFAULT_SCENARIO, ...co.base }).scenario;
+    expect(patchForState(on, co)).toBeNull();
+    expect(patchForState(sc({ role: "reviewer" }), co)).toMatchObject({ role: "org_admin" });
+    expect(patchForState(DEFAULT_SCENARIO, SCREENS.find((s) => s.id === "reviews"))).toBeNull();
   });
 
   it("the default scenario highlights Self-serve Mid-setup on Get started", () => {

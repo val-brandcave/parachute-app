@@ -3,8 +3,8 @@
 Persona trial-admin (Dana, Harbor Community Bank = the stage org).
 - pill at bottom centre (coordinator note: top centre covered the header / page bands;
   checked: overlaps no header control), z-index 210, on Get started, Billing and Dashboard (every theme/width)
-- each Billing state segment renders its state after one click and survives a reload
-- "Custom" after a popover axis change
+- each Billing state (inline segment, or a row in the More menu) renders its state after one pick and survives a reload
+- no segment selected after a popover axis change (no "Custom" label)
 - scenario actions: Approve now, Complete next step, Add 5, Spend 1, Reset org,
   Reset tours and celebrations, Replay arrival
 - /demo/<id> for the nine legacy persona ids still lands where it did
@@ -99,6 +99,49 @@ def seg(page, sid):
     return page.locator(f'{PILL} .proto-seg[data-state="{sid}"]')
 
 
+MORE_POP = ".proto-more-pop"
+
+
+def open_more(page):
+    if page.locator(MORE_POP).count() == 0:
+        page.locator(f"{PILL} .proto-more").click()
+        page.wait_for_selector(MORE_POP, timeout=5000)
+
+
+def all_state_ids(page):
+    """Inline segments show only the key states; the More menu lists every state."""
+    if page.locator(f"{PILL} .proto-more").count() == 0:
+        segs = page.locator(f"{PILL} .proto-seg")
+        return [segs.nth(i).get_attribute("data-state") for i in range(segs.count())]
+    open_more(page)
+    items = page.locator(f"{MORE_POP} .proto-more-item")
+    ids = [items.nth(i).get_attribute("data-state") for i in range(items.count())]
+    page.keyboard.press("Escape")
+    page.wait_for_timeout(250)
+    return ids
+
+
+def is_planned(page, sid):
+    s = seg(page, sid)
+    if s.count():
+        return "is-planned" in (s.get_attribute("class") or "")
+    open_more(page)
+    planned = "is-planned" in (page.locator(f'{MORE_POP} .proto-more-item[data-state="{sid}"]').get_attribute("class") or "")
+    page.keyboard.press("Escape")
+    page.wait_for_timeout(250)
+    return planned
+
+
+def pick_state(page, sid):
+    """One click on the inline segment, or More -> the row when the state isn't inline."""
+    s = seg(page, sid)
+    if s.count():
+        s.click()
+        return
+    open_more(page)
+    page.locator(f'{MORE_POP} .proto-more-item[data-state="{sid}"]').click()
+
+
 def wait_pressed(page, sid, timeout=15000):
     try:
         page.wait_for_selector(f'{PILL} .proto-seg[data-state="{sid}"][aria-pressed="true"]', timeout=timeout)
@@ -146,15 +189,13 @@ def done_count(page):
 
 def billing_states(ctx, page):
     ctx.visit("/configure/billing")
-    segs = page.locator(f"{PILL} .proto-seg")
-    ids = [segs.nth(i).get_attribute("data-state") for i in range(segs.count())]
+    ids = all_state_ids(page)
     missing = BILLING_REQUIRED - set(ids)
     ctx.check(not missing, f"billing pill reaches every spec §5.8 row (missing {sorted(missing)})")
     for sid in ids:
-        s = seg(page, sid)
-        if "is-planned" in (s.get_attribute("class") or ""):
+        if is_planned(page, sid):
             continue
-        s.click()  # one click
+        pick_state(page, sid)  # one click (inline) or More -> row
         ok = wait_pressed(page, sid)
         ctx.check(ok, f"billing {sid}: segment selected after one click")
         page.wait_for_timeout(600)
@@ -173,13 +214,12 @@ def billing_states(ctx, page):
 
 def custom(ctx, page):
     ctx.visit("/configure/billing")
-    seg(page, "low").click()
+    pick_state(page, "low")
     wait_pressed(page, "low")
     ctx.check(page.locator(f"{PILL} .proto-custom").count() == 0, "no Custom while a state matches")
     open_scenario(page)
     axis(page, "Audience", "Enterprise")
     close_scenario(page)
-    ctx.check(page.locator(f"{PILL} .proto-custom", has_text="Custom").count() == 1, "Custom after a popover axis change")
     ctx.check(page.locator(f'{PILL} .proto-seg[aria-pressed="true"]').count() == 0, "no segment selected under Custom")
     ctx.shoot("t5-4-custom")
 
@@ -187,7 +227,7 @@ def custom(ctx, page):
 def actions(ctx, page):
     # Back to the Mid-setup trial state on Get started.
     ctx.visit("/get-started")
-    seg(page, "mid").click()
+    pick_state(page, "mid")
     wait_pressed(page, "mid")
     ctx.settle(600)
 
@@ -201,7 +241,7 @@ def actions(ctx, page):
     said = action(page, "Add 5 credits")
     c1 = credits(page)
     ctx.check(c0 is not None and c1 == c0 + 5, f"Add 5: {c0} -> {c1} ({said!r})")
-    ctx.check(page.locator(f"{PILL} .proto-custom").count() == 1, "after Add 5 the pill shows Custom (rows edited)")
+    ctx.check(page.locator(f'{PILL} .proto-seg[aria-pressed="true"]').count() == 0, "after Add 5 no state is selected (rows edited)")
     said = action(page, "Spend 1 credit")
     c2 = credits(page)
     ctx.check(c1 is not None and c2 == c1 - 1, f"Spend 1: {c1} -> {c2} ({said!r})")

@@ -4,6 +4,8 @@
  */
 import type { UserRole } from "@/types";
 import { LOW_BALANCE_AT, TRIAL_GRANT_CREDITS } from "@/lib/pricing";
+import { presetFor } from "@/lib/prototype/presets";
+import { normalize } from "@/lib/prototype/scenario-builder";
 import { scenarioMatches, type Audience, type Scenario } from "@/lib/prototype/scenario";
 
 export type {
@@ -40,6 +42,10 @@ export interface PageState {
   /** Page-local view params: tab, variant, step, id. */
   view?: Record<string, string>;
   status: BuildStatus;
+  /** Shown inline in the pill. The rest sit under "More" (no key states: the first 4 inline). */
+  key?: boolean;
+  /** Heading for this state in the pill's More list ("Self-serve", "Enterprise", "Reviewer view", "Edge cases"). */
+  group?: string;
 }
 
 export interface ScreenDef {
@@ -56,6 +62,17 @@ export interface ScreenDef {
   audiences?: Audience[];
   tags?: string[];
   thumb?: string;
+  /**
+   * The world this screen needs, applied under every state's `set` (and on a plain screen
+   * landing), so a state lands showing what its label says whatever the previous screen left
+   * behind (a reviewer role from Billing must not lock Checkout).
+   */
+  base?: Partial<Scenario>;
+  /**
+   * Where this screen renders besides `route`: a path plus query params that must match. A
+   * tab of another route's page (How credits work is `/configure/billing?tab=credits`).
+   */
+  alsoAt?: { path: string; query: Record<string, string> };
 }
 
 export interface FlowDef {
@@ -92,7 +109,59 @@ const variant = (id: string, label: string, description: string): PageState => (
   status: built,
 });
 
+/** Pill placement: `key` shows the state inline; `grouped` files it under a More heading. */
+const key = (s: PageState): PageState => ({ ...s, key: true });
+const grouped = (group: string, s: PageState): PageState => ({ ...s, group });
+const SELF_SERVE = "Self-serve";
+const ENTERPRISE = "Enterprise";
+const REVIEWER_VIEW = "Reviewer view";
+const EDGE = "Edge cases";
+
 const SELF = { audience: "self_serve", lifecycle: "approved" } as const satisfies Partial<Scenario>;
+const ADMIN = { role: "org_admin" } as const satisfies Partial<Scenario>;
+
+/**
+ * Billing & credits states, every spec §5.8 row (T5.4 fix round 1). Admin states pin
+ * `role: org_admin` so they read as themselves after a reviewer state. Shared by the
+ * Overview (`billing`) and the How credits work tab (`billing-credits`, a subset).
+ */
+const BILLING_STATES: PageState[] = [
+  key(st("healthy", "Healthy", { ...SS_ADMIN, wallet: "healthy" }, "Plenty of credits.")),
+  key(st("low", "Low", { ...SS_ADMIN, wallet: "low" }, `At or under ${LOW_BALANCE_AT} credits.`)),
+  key(st("zero", "Zero", { ...SS_ADMIN, wallet: "zero" }, "No credits left.")),
+  // Spec §5.8: a self-serve org that moved to monthly invoicing after a call (not a sales-led
+  // enterprise org, which would still be on Get started and show the never-used Usage page).
+  key(st("invoiced", "Invoiced", { ...SS_ADMIN, wallet: "invoiced" }, "Billed monthly; no wallet.")),
+  grouped(SELF_SERVE, st("fresh", "Never used", { ...SS_ADMIN, wallet: "fresh", bonus: "open", data: "empty" }, `${TRIAL_GRANT_CREDITS} trial credits, nothing spent.`)),
+  grouped(SELF_SERVE, st("trial", "Trial", { ...SS_ADMIN, wallet: "trial" }, "Part of the trial credits spent.")),
+  grouped(SELF_SERVE, st("short", "Short", { ...SS_ADMIN, wallet: "short" }, "Not enough for a full review.")),
+  // Overview-only modifiers: the expiry alert, the auto-reload chip (vs the offer), BonusNotice.
+  grouped(EDGE, st("expiring", "Expiring", { ...SS_ADMIN, wallet: "healthy", expiring: true }, "A purchased pack lapses soon.")),
+  grouped(EDGE, st("auto-reload", "Auto-reload", { ...SS_ADMIN, wallet: "low", autoReload: true, paymentMethod: "card" }, "Auto-reload is on and has fired.")),
+  grouped(EDGE, st("bonus-ending", "Bonus ending", { ...SS_ADMIN, wallet: "trial", bonus: "ending" }, "The setup bonus window is about to close.")),
+  grouped(EDGE, st("bonus-closed", "Bonus closed", { ...SS_ADMIN, wallet: "trial", bonus: "closed" }, "The setup bonus window has closed.")),
+  grouped(ENTERPRISE, st("held", "Held", { audience: "enterprise", lifecycle: "pending", wallet: "held", role: "org_admin" }, "Credits open after the setup call.")),
+  grouped(REVIEWER_VIEW, st("reviewer-healthy", "Reviewer healthy", { ...SS_REVIEWER, wallet: "healthy" }, "A reviewer's view of a healthy team balance.")),
+  grouped(REVIEWER_VIEW, st("reviewer-low", "Reviewer low", { ...SS_REVIEWER, wallet: "low" }, "A reviewer's view of a low team balance.")),
+  grouped(REVIEWER_VIEW, st("reviewer-zero", "Reviewer zero", { ...SS_REVIEWER, wallet: "zero" }, "A reviewer's view at zero.")),
+  grouped(REVIEWER_VIEW, st("reviewer-requested", "Reviewer asked", { ...SS_REVIEWER, wallet: "short", request: "open" }, "The reviewer asked the admin for more credits.")),
+];
+
+/**
+ * How credits work reads only the role, invoiced and held (CreditsExplainer, BillingBand);
+ * the header pill adds the balance. Expiring, Auto-reload and Bonus ending / closed render
+ * exactly like Healthy, Low and Trial there, and the reviewer balances differ only in the
+ * header number, so one Reviewer state stands for them.
+ */
+const CREDITS_TAB_IDS = ["healthy", "low", "zero", "invoiced", "fresh", "trial", "short", "held"];
+const CREDITS_TAB_STATES: PageState[] = [
+  ...BILLING_STATES.filter((s) => CREDITS_TAB_IDS.includes(s.id)),
+  { ...BILLING_STATES.find((s) => s.id === "reviewer-healthy")!, label: "Reviewer", description: "A reviewer's view: no sales panel, no Add credits." },
+];
+
+/** The checkout recipe's latest pack (wallet low: the pack5 bought after the pack10). `step=done`
+ *  only renders with a receipt that exists; scenario-builder.test pins this id. */
+export const CHECKOUT_PAID_RECEIPT = "RCT-41008";
 const ENT_PENDING = { audience: "enterprise", lifecycle: "pending", wallet: "held", setup: "fresh", data: "empty" } as const satisfies Partial<Scenario>;
 
 export const SCREENS: ScreenDef[] = [
@@ -184,7 +253,9 @@ export const SCREENS: ScreenDef[] = [
     title: "Choose a path",
     route: "/welcome/path",
     group: "onboarding",
-    status: built,
+    // Retired step: page.tsx is an unconditional server redirect to /get-started, so no
+    // scenario reaches it and it has no states of its own.
+    status: "retired",
     pillLabel: "Path",
     tags: ["onboarding"],
     states: [],
@@ -217,18 +288,22 @@ export const SCREENS: ScreenDef[] = [
     title: "Waiting for approval",
     route: "/welcome/pending",
     group: "onboarding",
-    status: built,
+    // Retired step: page.tsx is an unconditional server redirect to /get-started, so no
+    // scenario reaches it and it has no states of its own.
+    status: "retired",
     pillLabel: "Pending",
     audiences: ["enterprise"],
     tags: ["onboarding", "approval"],
-    states: [st("pending", "Pending", ENT_PENDING, "Enterprise, waiting for approval.")],
+    states: [],
   },
   {
     id: "welcome-ready",
     title: "You are in",
     route: "/welcome/ready",
     group: "onboarding",
-    status: built,
+    // Retired step: page.tsx is an unconditional server redirect to /get-started, so no
+    // scenario reaches it and it has no states of its own.
+    status: "retired",
     pillLabel: "Ready",
     tags: ["onboarding", "interstitial"],
     states: [],
@@ -243,6 +318,8 @@ export const SCREENS: ScreenDef[] = [
     status: built,
     pillLabel: "Get started",
     tags: ["setup", "checklist", "credits"],
+    // Every state as the admin: a reviewer state left over from Billing must not leak in.
+    base: ADMIN,
     states: [
       {
         id: "new",
@@ -250,6 +327,7 @@ export const SCREENS: ScreenDef[] = [
         description: `Self-serve, nothing done yet, ${TRIAL_GRANT_CREDITS} trial credits.`,
         set: { audience: "self_serve", lifecycle: "approved", wallet: "fresh", setup: "fresh", bonus: "open", data: "empty" },
         status: built,
+        key: true,
       },
       {
         id: "mid",
@@ -257,6 +335,7 @@ export const SCREENS: ScreenDef[] = [
         description: "First review run and a teammate invited.",
         set: { audience: "self_serve", lifecycle: "approved", wallet: "trial", setup: "mid", bonus: "open" },
         status: built,
+        key: true,
       },
       {
         id: "almost",
@@ -264,13 +343,15 @@ export const SCREENS: ScreenDef[] = [
         description: "One step left.",
         set: { audience: "self_serve", lifecycle: "approved", setup: "almost" },
         status: built,
+        group: "Self-serve",
       },
       {
         id: "done",
         label: "All done",
         description: "Setup is finished.",
-        set: { setup: "done" },
+        set: { audience: "self_serve", lifecycle: "approved", setup: "done" },
         status: built,
+        key: true,
       },
       {
         id: "call-booked",
@@ -278,6 +359,7 @@ export const SCREENS: ScreenDef[] = [
         description: "Enterprise team waiting for approval; credits are held.",
         set: { audience: "enterprise", lifecycle: "pending", wallet: "held", setup: "fresh", data: "empty" },
         status: built,
+        key: true,
       },
       {
         // The scenario has no axis for "call not booked yet"; it is a view param only.
@@ -287,6 +369,7 @@ export const SCREENS: ScreenDef[] = [
         set: { audience: "enterprise", lifecycle: "pending", wallet: "held", setup: "fresh", data: "empty" },
         view: { call: "later" },
         status: built,
+        group: "Enterprise",
       },
       {
         id: "confirmed",
@@ -294,6 +377,7 @@ export const SCREENS: ScreenDef[] = [
         description: "Confirmed; trial credits ready, prepaid by default.",
         set: { audience: "enterprise", lifecycle: "approved", wallet: "fresh", setup: "fresh" },
         status: built,
+        group: "Enterprise",
       },
       {
         id: "confirmed-invoiced",
@@ -301,6 +385,7 @@ export const SCREENS: ScreenDef[] = [
         description: "Confirmed and invoiced: earn pills are hidden.",
         set: { audience: "enterprise", lifecycle: "approved", wallet: "invoiced", setup: "fresh" },
         status: built,
+        group: "Enterprise",
       },
       {
         id: "bonus-ending",
@@ -308,6 +393,7 @@ export const SCREENS: ScreenDef[] = [
         description: "The setup bonus window is about to close.",
         set: { audience: "self_serve", lifecycle: "approved", setup: "mid", bonus: "ending" },
         status: built,
+        group: "Edge cases",
       },
       {
         id: "bonus-closed",
@@ -315,6 +401,7 @@ export const SCREENS: ScreenDef[] = [
         description: "The setup bonus window has closed.",
         set: { audience: "self_serve", lifecycle: "approved", setup: "mid", bonus: "closed" },
         status: built,
+        group: "Edge cases",
       },
     ],
   },
@@ -329,11 +416,12 @@ export const SCREENS: ScreenDef[] = [
     pillLabel: "Dashboard",
     tags: ["home", "stats"],
     states: [
-      { id: "empty", label: "Empty", description: "No reviews yet.", set: { data: "empty" }, status: built },
-      { id: "populated", label: "Populated", description: "A typical week.", set: { data: "populated" }, status: built },
-      { id: "busy", label: "Busy", description: "A full pipeline.", set: { data: "busy" }, status: built },
-      { id: "low-credits", label: "Low credits", description: "Dashboard with a low wallet.", set: { wallet: "low", data: "populated" }, status: built },
-      { id: "request", label: "Request waiting", description: "A reviewer asked for credits.", set: { request: "open" }, status: built },
+      key(st("empty", "Empty", { data: "empty" }, "No reviews yet.")),
+      key(st("populated", "Populated", { data: "populated" }, "A typical week.")),
+      key(st("busy", "Busy", { data: "busy" }, "A full pipeline.")),
+      key(st("low-credits", "Low credits", { wallet: "low", data: "populated" }, "Dashboard with a low wallet.")),
+      // The request shows in the admin's header credits popover: pin the admin.
+      grouped("Credits", st("request", "Request waiting", { ...ADMIN, request: "open" }, "A reviewer asked for credits; the admin sees it in the credits pill.")),
     ],
   },
   {
@@ -344,12 +432,14 @@ export const SCREENS: ScreenDef[] = [
     status: built,
     pillLabel: "Start",
     tags: ["order", "upload", "start", "lock"],
+    // The admin, unless the state says reviewer (Start's lock reason depends on the role).
+    base: ADMIN,
     states: [
-      st("ready", "Ready", { ...SELF, wallet: "healthy" }, "Enough credits to start."),
-      st("short", "Short", { ...SELF, wallet: "short" }, "Not enough for a full review: Start explains."),
-      st("zero", "Zero", { ...SELF, wallet: "zero" }, "No credits left: Start explains."),
-      st("pending", "Pending", ENT_PENDING, "Waiting on Realwired: Start explains."),
-      st("reviewer-short", "Reviewer · Short", { ...SELF, wallet: "short", role: "reviewer" }, "A reviewer can ask an admin for credits."),
+      key(st("ready", "Ready", { ...SELF, wallet: "healthy" }, "Enough credits to start.")),
+      key(st("short", "Short", { ...SELF, wallet: "short" }, "Not enough for a full review: Start explains.")),
+      key(st("zero", "Zero", { ...SELF, wallet: "zero" }, "No credits left: Start explains.")),
+      key(st("pending", "Pending", ENT_PENDING, "Waiting on Realwired: Start explains.")),
+      grouped(REVIEWER_VIEW, st("reviewer-short", "Reviewer · Short", { ...SELF, wallet: "short", role: "reviewer" }, "A reviewer can ask an admin for credits.")),
     ],
   },
   {
@@ -386,39 +476,21 @@ export const SCREENS: ScreenDef[] = [
     status: built,
     pillLabel: "Billing",
     tags: ["wallet", "credits", "invoices"],
-    // Every spec §5.8 row, one click each (T5.4 fix round 1). Admin states pin `role:
-    // org_admin` so they read as themselves after a reviewer state.
-    states: [
-      { id: "fresh", label: "Never used", description: `${TRIAL_GRANT_CREDITS} trial credits, nothing spent.`, set: { ...SS_ADMIN, wallet: "fresh", bonus: "open", data: "empty" }, status: built },
-      { id: "trial", label: "Trial", description: "Part of the trial credits spent.", set: { ...SS_ADMIN, wallet: "trial" }, status: built },
-      { id: "healthy", label: "Healthy", description: "Plenty of credits.", set: { ...SS_ADMIN, wallet: "healthy" }, status: built },
-      { id: "low", label: "Low", description: `At or under ${LOW_BALANCE_AT} credits.`, set: { ...SS_ADMIN, wallet: "low" }, status: built },
-      { id: "short", label: "Short", description: "Not enough for a full review.", set: { ...SS_ADMIN, wallet: "short" }, status: built },
-      { id: "zero", label: "Zero", description: "No credits left.", set: { ...SS_ADMIN, wallet: "zero" }, status: built },
-      { id: "expiring", label: "Expiring", description: "A purchased pack lapses soon.", set: { ...SS_ADMIN, wallet: "healthy", expiring: true }, status: built },
-      { id: "auto-reload", label: "Auto-reload", description: "Auto-reload is on and has fired.", set: { ...SS_ADMIN, wallet: "low", autoReload: true, paymentMethod: "card" }, status: built },
-      { id: "bonus-ending", label: "Bonus ending", description: "The setup bonus window is about to close.", set: { ...SS_ADMIN, wallet: "trial", bonus: "ending" }, status: built },
-      { id: "bonus-closed", label: "Bonus closed", description: "The setup bonus window has closed.", set: { ...SS_ADMIN, wallet: "trial", bonus: "closed" }, status: built },
-      { id: "held", label: "Held", description: "Credits open after the setup call.", set: { audience: "enterprise", lifecycle: "pending", wallet: "held", role: "org_admin" }, status: built },
-      // Spec §5.8: a self-serve org that moved to monthly invoicing after a call (not a sales-led
-      // enterprise org, which would still be on Get started and show the never-used Usage page).
-      { id: "invoiced", label: "Invoiced", description: "Billed monthly; no wallet.", set: { ...SS_ADMIN, wallet: "invoiced" }, status: built },
-      { id: "reviewer-healthy", label: "Reviewer healthy", description: "A reviewer's view of a healthy team balance.", set: { ...SS_REVIEWER, wallet: "healthy" }, status: built },
-      { id: "reviewer-low", label: "Reviewer low", description: "A reviewer's view of a low team balance.", set: { ...SS_REVIEWER, wallet: "low" }, status: built },
-      { id: "reviewer-zero", label: "Reviewer zero", description: "A reviewer's view at zero.", set: { ...SS_REVIEWER, wallet: "zero" }, status: built },
-      { id: "reviewer-requested", label: "Reviewer asked", description: "The reviewer asked the admin for more credits.", set: { ...SS_REVIEWER, wallet: "short", request: "open" }, status: built },
-    ],
+    // The Overview tab (and Usage, Invoices, Settings): every spec §5.8 row, one click each.
+    states: BILLING_STATES,
   },
   {
+    // `/configure/billing/credits` redirects to the How credits work tab; the pill shows this
+    // screen's states there (alsoAt), not the Overview's.
     id: "billing-credits",
-    title: "Credit history",
+    title: "How credits work",
     route: "/configure/billing/credits",
+    alsoAt: { path: "/configure/billing", query: { tab: "credits" } },
     group: "billing",
     status: built,
-    pillLabel: "Credit history",
-    roles: ["org_admin"],
-    tags: ["ledger", "credits"],
-    states: [],
+    pillLabel: "How credits work",
+    tags: ["explainer", "credits", "faq"],
+    states: CREDITS_TAB_STATES,
   },
   {
     id: "billing-statement",
@@ -440,12 +512,17 @@ export const SCREENS: ScreenDef[] = [
     pillLabel: "Checkout",
     roles: ["org_admin"],
     tags: ["credits", "buy", "pay"],
+    // An admin of an approved, metered (pay-as-you-go) org with a saved card: anything else
+    // locks the page (role, approval) or has no checkout at all (invoiced).
+    base: { ...SS_ADMIN, wallet: "low", paymentMethod: "card" },
     states: [
-      { id: "amount", label: "Amount", view: { step: "amount" }, status: built },
-      { id: "payment", label: "Payment", view: { step: "payment" }, status: built },
-      { id: "review", label: "Review", view: { step: "review" }, status: built },
-      { id: "paid", label: "Paid", view: { step: "done" }, status: built },
-      { id: "declined", label: "Card declined", view: { step: "payment", error: "card" }, status: built },
+      key({ id: "amount", label: "Amount", description: "Pick a pack or a custom amount.", view: { step: "amount" }, status: built }),
+      key({ id: "payment", label: "Payment", description: "The saved card, or a new one.", view: { step: "payment" }, status: built }),
+      // id kept as "review" (deep links, flows); the step is called Checkout in the UI.
+      key({ id: "review", label: "Checkout", description: "Review and pay.", view: { step: "review" }, status: built }),
+      // step=done renders only with a receipt that exists in the ledger.
+      key({ id: "paid", label: "Paid", description: "The receipt for the latest pack.", view: { step: "done", receipt: CHECKOUT_PAID_RECEIPT }, status: built }),
+      grouped(EDGE, { id: "declined", label: "Card declined", description: "Payment with the card-declined error.", view: { step: "payment", error: "card" }, status: built }),
     ],
   },
 
@@ -789,16 +866,47 @@ function matchRoute(pattern: string, pathname: string): boolean {
   return a.every((seg, i) => (seg.startsWith("[") && seg.endsWith("]") ? true : seg === b[i]));
 }
 
-export function screenForPath(pathname: string): ScreenDef | undefined {
-  const path = pathname.split(/[?#]/)[0];
+export function screenForPath(pathname: string, query?: URLSearchParams | string): ScreenDef | undefined {
+  const [path, inline = ""] = pathname.split("#")[0].split("?");
+  const params = new URLSearchParams(query ?? inline);
+  // A tab that is its own screen (How credits work) wins over the page that hosts it.
+  const tab = SCREENS.find(
+    (s) => s.alsoAt && matchRoute(s.alsoAt.path, path) && Object.entries(s.alsoAt.query).every(([k, v]) => params.get(k) === v),
+  );
+  if (tab) return tab;
   const exact = SCREENS.find((s) => !s.route.includes("[") && matchRoute(s.route, path));
   return exact ?? SCREENS.find((s) => s.route.includes("[") && matchRoute(s.route, path));
 }
 
+/** The world a state stands for: the screen's base under the state's own `set`. */
+export function stateWorld(screen: ScreenDef | undefined, state?: PageState): Partial<Scenario> {
+  return { ...screen?.base, ...state?.set };
+}
+
+/** Modifiers a page state switches off unless it sets them, so a state reads as itself
+ *  (no "expiring" banner left over on Auto-reload). */
+const MODIFIER_RESET: Partial<Scenario> = { autoReload: false, expiring: false, request: "none" };
+
 /**
- * The state the pill highlights: every `set` key equals the scenario and every `view` key
- * equals its URL param. The most specific match wins; a state with neither `set` nor `view`
- * never matches. No match means "Custom".
+ * The scenario patch that lands a page state (the pill, Alt+digit, /prototype/go): the
+ * screen's `base` plus the state's `set`, over the current scenario minus leftover modifiers.
+ * When leftovers make it impossible — normalize would undo it, e.g. Invoiced right after Held
+ * (pending forces a held wallet) — it starts again from the trial-admin preset, so one click
+ * always lands on the state. Without a state (a plain screen landing) only the base applies,
+ * and only when the current scenario is not already on it: returns null for "apply nothing".
+ */
+export function patchForState(current: Scenario, screen: ScreenDef | undefined, state?: PageState): Partial<Scenario> | null {
+  const want = stateWorld(screen, state);
+  if (!state && (!Object.keys(want).length || scenarioMatches(current, want))) return null;
+  const patch = state ? { ...MODIFIER_RESET, ...want } : want;
+  if (scenarioMatches(normalize({ ...current, ...patch }).scenario, want)) return patch;
+  return { ...presetFor("trial-admin")!.scenario, ...patch };
+}
+
+/**
+ * The state the pill highlights: every key of its world (screen base + `set`) equals the
+ * scenario and every `view` key equals its URL param. The most specific match wins; a state
+ * with neither `set` nor `view` never matches. No match means "Custom".
  */
 export function activeState(screen: ScreenDef, sc: Scenario, view: URLSearchParams): PageState | undefined {
   let best: PageState | undefined;
@@ -808,7 +916,7 @@ export function activeState(screen: ScreenDef, sc: Scenario, view: URLSearchPara
     const viewEntries = Object.entries(st.view ?? {});
     const score = setKeys + viewEntries.length;
     if (score === 0) continue;
-    if (st.set && !scenarioMatches(sc, st.set)) continue;
+    if (!scenarioMatches(sc, stateWorld(screen, st))) continue;
     if (!viewEntries.every(([k, v]) => view.get(k) === v)) continue;
     if (score > bestScore) {
       best = st;

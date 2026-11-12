@@ -8,6 +8,7 @@ import { SegmentedControl } from "@/components/molecules";
 import { dist, dur, ease, useMotionMode } from "@/lib/motion";
 import { RoutingNote } from "@/components/organisms/prototype/RoutingNote";
 import { useProtoFill } from "@/components/organisms/prototype/useProtoFill";
+import { useProtoStore } from "@/store/prototype.store";
 import { cn } from "@/lib/utils";
 import type { OrgKind, TeamBand, VolumeBand } from "@/types";
 
@@ -123,6 +124,23 @@ export function OrgSetupForm({
       onVolume("200+");
     },
   });
+
+  // State pill: picking Self-serve / Enterprise sets the answers that drive the route, so the
+  // form, route note and button visibly change (the audience axis alone changes nothing here).
+  const audience = useProtoStore((st) => st.scenario.audience);
+  const seenAudience = useRef(audience);
+  useEffect(() => {
+    if (seenAudience.current === audience) return;
+    seenAudience.current = audience;
+    if (!name.trim()) onName("Harbor Community Bank");
+    if (audience === "enterprise") {
+      onTeam("11+");
+      onVolume("200+");
+    } else {
+      onTeam("2-10");
+      onVolume("lt50");
+    }
+  }, [audience, name, onName, onTeam, onVolume]);
 
   return (
     <form

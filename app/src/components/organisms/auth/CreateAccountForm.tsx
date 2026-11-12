@@ -14,7 +14,7 @@ import { useAuthVariant } from "./useAuthVariant";
 const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 /** Keycloak register.ftl, themed. Submit goes to the verify-code step. */
-export function CreateAccountForm() {
+function CreateAccountFormBody() {
   const router = useRouter();
   const variant = useAuthVariant();
   const [email, setEmail] = useState(variant === "invalid-email" ? "dana.reyes@" : "dana.reyes@harborcb.com");
@@ -140,4 +140,10 @@ export function CreateAccountLegal() {
       By continuing you agree to the <b>Terms</b> and the <b>Privacy policy</b>.
     </p>
   );
+}
+
+/** Remounts on a state-pill variant change so the form's fields and error reset to that state. */
+export function CreateAccountForm() {
+  const variant = useAuthVariant();
+  return <CreateAccountFormBody key={variant ?? "default"} />;
 }

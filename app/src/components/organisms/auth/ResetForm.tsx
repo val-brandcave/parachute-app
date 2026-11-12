@@ -7,7 +7,7 @@ import { useProtoFill } from "@/components/organisms/prototype/useProtoFill";
 import { useAuthVariant } from "./useAuthVariant";
 
 /** Keycloak login-reset-password, themed. Never says whether the address exists. */
-export function ResetForm() {
+function ResetFormBody() {
   const variant = useAuthVariant();
   const [email, setEmail] = useState(variant === "sent" ? "dana.reyes@harborcb.com" : "");
   const [sent, setSent] = useState(variant === "sent");
@@ -65,4 +65,10 @@ export function ResetForm() {
       </p>
     </form>
   );
+}
+
+/** Remounts on a state-pill variant change so the form's fields and error reset to that state. */
+export function ResetForm() {
+  const variant = useAuthVariant();
+  return <ResetFormBody key={variant ?? "default"} />;
 }

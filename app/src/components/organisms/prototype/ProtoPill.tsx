@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { useProtoStore } from "@/store/prototype.store";
 import { useProtoFillStore } from "@/store/proto-fill.store";
 import { ProtoKeys, plannedToast, useHideToast } from "./ProtoKeys";
+import { ProtoStateMenu, splitStates } from "./ProtoStateMenu";
 import { ScenarioPopover } from "./ScenarioPopover";
 import { useProtoView } from "./useProtoView";
 import "./prototype.css";
@@ -23,8 +24,8 @@ import "./prototype.css";
  * top centre: at the top it covered the header (tour chip, search, credits) or, under the
  * header, each page's own band (Reviews tabs, Billing tabs) — page content scrolls past the
  * bottom edge, the header and bands don't.
- * `[Page label] │ states │ wand │ scenario ▾ │ index │ hide`. The selection is derived
- * (`activeState`); no match shows "Custom". Mounted once in AppShell, the onboarding layout
+ * `[Page label] │ key states · More ▾ │ wand │ scenario ▾ │ index │ hide`. The selection is derived
+ * (`activeState`); no match selects nothing. Mounted once in AppShell, the onboarding layout
  * and the checkout layout. `NEXT_PUBLIC_PROTOTYPE_CONTROLS=0` removes it entirely.
  */
 export function ProtoPill() {
@@ -45,9 +46,12 @@ function Pill() {
   const toast = useToast();
   const [tip, setTip] = useState<{ text: string; x: number; y: number } | null>(null);
   const segsRef = useRef<HTMLDivElement>(null);
+  const pillRef = useRef<HTMLDivElement>(null);
 
   const { screen, active } = view;
   const states = screen?.states ?? [];
+  // Main states inline; the rest (and the full grouped list) behind More.
+  const { inline, extraId, hiddenCount } = splitStates(states, active?.id);
 
   // Keep the selected state in view when the segments scroll sideways.
   useEffect(() => {
@@ -71,7 +75,7 @@ function Pill() {
     <>
       <ProtoKeys view={view} />
       {createPortal(
-        <div className="proto-pill" role="toolbar" aria-label="Prototype controls" data-busy={busy || undefined}>
+        <div ref={pillRef} className="proto-pill" role="toolbar" aria-label="Prototype controls" data-busy={busy || undefined}>
           <span className="proto-label">
             <Icon name="switch-horizontal" size={14} />
             <span>{screen?.pillLabel ?? screen?.title ?? "Prototype"}</span>
@@ -81,13 +85,13 @@ function Pill() {
             <>
               <span className="proto-sep" aria-hidden="true" />
               <div className="proto-segs" ref={segsRef} role="group" aria-label={`${screen?.title} states`}>
-                {states.map((st) => {
+                {inline.map((st) => {
                   const on = active?.id === st.id;
                   return (
                     <button
                       key={st.id}
                       type="button"
-                      className={cn("proto-seg", on && "on", st.status === "planned" && "is-planned")}
+                      className={cn("proto-seg", on && "on", st.status === "planned" && "is-planned", st.id === extraId && "is-extra")}
                       aria-pressed={on}
                       data-state={st.id}
                       onClick={() => pick(st)}
@@ -101,12 +105,16 @@ function Pill() {
                     </button>
                   );
                 })}
-                {!active && (
-                  <span className="proto-custom" aria-live="polite">
-                    Custom
-                  </span>
-                )}
               </div>
+              {hiddenCount > 0 && (
+                <ProtoStateMenu
+                  states={states}
+                  activeId={active?.id}
+                  hiddenCount={hiddenCount}
+                  onPick={(st) => void pick(st)}
+                  anchorRef={pillRef}
+                />
+              )}
               <label className="proto-narrow">
                 <span className="ui-visually-hidden">{screen?.title} state</span>
                 <select
@@ -117,7 +125,7 @@ function Pill() {
                     if (st) void pick(st);
                   }}
                 >
-                  {!active && <option value="">Custom</option>}
+                  {!active && <option value="">Choose a state</option>}
                   {states.map((st) => (
                     <option key={st.id} value={st.id}>
                       {st.label}

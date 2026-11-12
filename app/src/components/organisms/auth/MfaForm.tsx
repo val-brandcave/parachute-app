@@ -9,7 +9,7 @@ import { useProtoFill } from "@/components/organisms/prototype/useProtoFill";
 import { useAuthVariant } from "./useAuthVariant";
 
 /** Keycloak login-otp, themed. Any six digits pass (prototype). */
-export function MfaForm({ next }: { next: string }) {
+function MfaFormBody({ next }: { next: string }) {
   const router = useRouter();
   const variant = useAuthVariant();
   const [code, setCode] = useState("");
@@ -61,4 +61,10 @@ export function MfaForm({ next }: { next: string }) {
       </p>
     </form>
   );
+}
+
+/** Remounts on a state-pill variant change so the form's fields and error reset to that state. */
+export function MfaForm(props: { next: string }) {
+  const variant = useAuthVariant();
+  return <MfaFormBody key={variant ?? "default"} {...props} />;
 }
