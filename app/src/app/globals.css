@@ -17131,6 +17131,12 @@ h1, h2, h3, h4, p, li, .ui-chip, .ui-callout {
 .ui-progress-seg.is-filled {
   background: var(--md-primary);
 }
+/* AppShell's scroll pane (contentClassName): a containing block for absolute children, so a
+   visually-hidden label can't escape it and make the whole page scroll. */
+.shell-content {
+  position: relative;
+}
+
 .ui-visually-hidden {
   position: absolute;
   width: 1px;
