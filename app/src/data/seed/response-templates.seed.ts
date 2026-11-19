@@ -4,7 +4,9 @@ import type { ResponseTemplate } from "@/types";
 // = the signed-in reviewer's personal canned language. Bodies use {{merge}}
 // tokens that fill from the finding at apply time: {{topic}} {{page}} {{detail}}
 // {{action}} {{condition}} {{property}}.
-const NOW = 1781827200000;
+import { SEED_NOW } from "./seed-clock";
+
+const NOW = SEED_NOW;
 
 export const seedResponseTemplates: ResponseTemplate[] = [
   /* ---- Org library ---- */

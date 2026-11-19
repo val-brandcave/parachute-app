@@ -349,7 +349,9 @@ export const SCREENS: ScreenDef[] = [
         id: "done",
         label: "All done",
         description: "Setup is finished.",
-        set: { audience: "self_serve", lifecycle: "approved", setup: "done" },
+        // Wallet + bonus pinned (like Mid-setup), so the 4 earned credits land on top of the
+        // trial's 4 and the header agrees with "You earned 4 credits".
+        set: { audience: "self_serve", lifecycle: "approved", wallet: "trial", setup: "done", bonus: "open" },
         status: built,
         key: true,
       },

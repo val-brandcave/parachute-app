@@ -3,8 +3,20 @@
  * index, so the same `now` always yields the same rows (spec §6 recipes).
  * No store or adapter imports.
  */
-import type { CreditLedgerEntry, CreditSource, ReviewType, SetupProgress, SetupStepId } from "@/types";
-import { CREDIT_USD, EARN_ENDING_DAYS, EARN_WINDOW_DAYS, TRIAL_GRANT_CREDITS, costFor, packById } from "@/lib/pricing";
+import type { CreditLedgerEntry, CreditSource, ReviewType, SetupProgress, SetupSectionId, SetupStepId } from "@/types";
+import {
+  CREDIT_USD,
+  EARN_CAP_CREDITS,
+  EARN_ENDING_DAYS,
+  EARN_REWARD_CREDITS,
+  EARN_WINDOW_DAYS,
+  SETUP_REWARD_SECTIONS,
+  TRIAL_GRANT_CREDITS,
+  costFor,
+  earnWindow,
+  packById,
+} from "@/lib/pricing";
+import { sectionDef, stepsIn } from "@/lib/setup-steps";
 import type { Scenario } from "./scenario";
 
 const HOUR = 3_600_000;
@@ -101,6 +113,19 @@ class Rows {
       createdAt: at,
     });
   }
+  /** A setup section's reward, paid when its last step was done. */
+  earned(section: SetupSectionId, credits: number, at: number) {
+    this.rows.push({
+      id: this.id(),
+      orgId: this.orgId,
+      kind: "earned",
+      credits,
+      setupSectionId: section,
+      actorId: ADMIN,
+      note: `Setup reward · ${sectionDef(section).title("bank")}`,
+      createdAt: at,
+    });
+  }
   /** `count` full reviews (2 credits each) paid from `from`. */
   debits(count: number, from: CreditSource, start: number, step: number) {
     for (let i = 0; i < count; i++) {
@@ -177,12 +202,40 @@ export function buildLedger(sc: Scenario, now: number, orgId: string): CreditLed
       break;
   }
 
+  // Setup rewards: every reward section the scenario's setup finished inside the earn
+  // window gets its `earned` row, as onboarding.complete() would have paid it. Without
+  // these, "All done" shows no Earned badges. Wallets whose balance is the story (low,
+  // short, zero) spend the earned credits again, so their numbers don't move.
+  if (earnWindow(grantAt, now).state !== "closed") {
+    const at = setupCompletionTimes(s, now);
+    let earned = 0;
+    for (const section of SETUP_REWARD_SECTIONS) {
+      const steps = stepsIn(section).map((st) => st.id);
+      if (!steps.every((id) => at[id] !== undefined)) continue;
+      const credits = Math.min(EARN_REWARD_CREDITS, EARN_CAP_CREDITS - earned);
+      if (credits <= 0) break;
+      earned += credits;
+      r.earned(section, credits, Math.max(...steps.map((id) => at[id]!)));
+    }
+    if (earned > 0 && (w === "low" || w === "short" || w === "zero")) {
+      r.debits(Math.ceil(earned / costFor(FULL)), "earned", now - 2 * DAY + 10 * HOUR, HOUR);
+    }
+  }
+
   if (s.expiring) {
     // A pack bought 359 days ago with 3 of its 5 credits left: it lapses in a few days.
     r.pack("pack5", now - 359 * DAY);
     r.debits(1, "purchased", now - 350 * DAY, DAY);
   }
   return r.rows.sort((a, b) => a.createdAt - b.createdAt);
+}
+
+/** When each counted step was done, on the same clock as `buildSetupProgress`. */
+function setupCompletionTimes(s: Scenario, now: number): Partial<Record<SetupStepId, number>> {
+  const created = now - 2 * DAY;
+  const at: Partial<Record<SetupStepId, number>> = {};
+  DONE_IDS[s.setup].forEach((id, i) => (at[id] = created + (i + 1) * HOUR));
+  return at;
 }
 
 /* ------------------------------------------------------------- setup progress */

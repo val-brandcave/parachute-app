@@ -54,7 +54,9 @@ const SEEDED_KEY = `${STORAGE_PREFIX}:__seeded__`;
 //      v24: pattern change phase 3 - saved cards carry an expiry (cardExpiry "08/28").
 //      Release note: "This update resets demo data in your browser. Use the state pill or the
 //      Prototype Index to get back to any state in one click."
-const SEED_VERSION = "v24";
+//      v25: seeds anchor to today (data/seed/seed-clock.ts) instead of 19 Jun 2026, so seeded
+//      due dates read "Due in 2d", not "Overdue 141d". Same release note.
+const SEED_VERSION = "v25";
 
 export const mockAdapter: DataAdapter = {
   async getAll<T>(collection: string): Promise<T[]> {

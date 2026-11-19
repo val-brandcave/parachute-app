@@ -399,7 +399,8 @@ function Checkout() {
           step === "review" ? (
             <>
               By paying you agree to the{" "}
-              <a href="#" className="co-link" onClick={(ev) => ev.preventDefault()}>
+              {/* New tab: the checkout draft stays put. The terms live in How credits work. */}
+              <a href="/configure/billing?tab=credits" target="_blank" rel="noopener" className="co-link">
                 credit terms
               </a>
               . Purchased credits last {PURCHASED_LIFE_MONTHS} months and are shared across {co.org.name}.
