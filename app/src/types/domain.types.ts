@@ -167,6 +167,8 @@ export interface CreditRequest {
   orgId: UUID;
   requesterId: UUID;
   note?: string;
+  /** How many credits the reviewer asked for. Absent on older and one-click asks. */
+  credits?: number;
   createdAt: Timestamp;
   status: CreditRequestStatus;
   openedAt?: Timestamp;

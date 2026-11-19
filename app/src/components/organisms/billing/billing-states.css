@@ -26,9 +26,6 @@
   font-size: 13px;
   color: var(--md-on-surface-v);
 }
-.bl-band-link {
-  white-space: nowrap;
-}
 .bl-band-spacer {
   flex: 1;
 }
@@ -74,14 +71,33 @@
 }
 
 /* ---- AutoReloadOffer ---- */
+/* Two-column head: heading + description stacked on the left, spot illustration
+   top-aligned on the right. The option box and buttons run full width below.
+   The card sits in a grid beside the hero, so it is its own size container:
+   when it gets too narrow for both columns the illustration drops. */
 .bl-offer {
   gap: 12px;
+  container-type: inline-size;
 }
 .bl-offer-head {
   display: flex;
   align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
+  gap: var(--d-gap);
+}
+.bl-offer-tx {
+  flex: 1;
+  min-width: 0;
+}
+.bl-offer-tx .bl-body {
+  margin-top: 8px;
+}
+.bl-offer-ill {
+  flex: none;
+}
+@container (max-width: 300px) {
+  .bl-offer-ill {
+    display: none;
+  }
 }
 .bl-offer-opt {
   display: grid;
@@ -223,9 +239,6 @@
 .ud-filter .ud-period {
   width: 220px;
   max-width: 100%;
-}
-.ud-filter-sp {
-  flex: 1;
 }
 .ud-grid {
   display: grid;
