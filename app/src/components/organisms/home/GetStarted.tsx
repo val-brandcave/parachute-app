@@ -13,7 +13,7 @@ import { useCurrentUser } from "@/lib/current-user";
 import { ROLE_META } from "@/lib/member-roles";
 import { dist, dur, ease, useMotionMode } from "@/lib/motion";
 import { EARN_CAP_CREDITS, EARN_WINDOW_DAYS, TRIAL_GRANT_CREDITS, costFor } from "@/lib/pricing";
-import { FULL_REVIEW_TYPES, TRUST_HREF } from "@/lib/setup-steps";
+import { FULL_REVIEW_TYPES } from "@/lib/setup-steps";
 import { cn, formatShortDate } from "@/lib/utils";
 import {
   setupEligible,
@@ -309,9 +309,6 @@ export function GetStarted() {
                         </b>
                         {hero.meta !== `${summary.doneCount} of ${summary.total} done` && <> · {hero.meta}</>}
                       </p>
-                      <Link href={TRUST_HREF} className="gs-hero-link">
-                        Visit Trust Center
-                      </Link>
                     </div>
                   </div>
                   <Illustration name="11b-earn-free-report" size={120} className="gs-hero-art" />
