@@ -6,6 +6,7 @@ import { canRequest, isLive } from "@/lib/credit-requests";
 import { useCurrentUser } from "@/lib/current-user";
 import { formatShortDate } from "@/lib/utils";
 import { useCreditRequestStore } from "@/store/credit-request.store";
+import { useLockStore } from "@/store/lock.store";
 import type { LockCtx } from "../LockDialog";
 
 /**
@@ -18,6 +19,8 @@ export function ReviewerRequestBody({ ctx, title }: { ctx: LockCtx; title: strin
   const me = useCurrentUser();
   const requests = useCreditRequestStore((s) => s.requests);
   const loaded = useCreditRequestStore((s) => s.loaded);
+  // The shortfall the lock names ("You need 2 more credits") rides along as the asked amount.
+  const needed = useLockStore((s) => (s.reason?.kind === "credits" ? s.reason.needed : undefined));
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
@@ -74,7 +77,7 @@ export function ReviewerRequestBody({ ctx, title }: { ctx: LockCtx; title: strin
   const ask = async () => {
     if (busy) return;
     setBusy(true);
-    const row = await useCreditRequestStore.getState().request(note);
+    const row = await useCreditRequestStore.getState().request({ note, credits: needed });
     setBusy(false);
     // null = a live request turned up meanwhile; the "already asked" view takes over.
     if (row) setSent(true);

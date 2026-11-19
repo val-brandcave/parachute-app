@@ -111,26 +111,28 @@ export function LedgerSection({
             options={OPTIONS.filter((o) => filters.includes(o.value))}
           />
         )}
-        {people && people.length > 1 && (
-          <div className="field us-who">
-            <select aria-label="Person" value={who} onChange={(e) => reset(setWho)(e.target.value)}>
-              <option value="">Everyone</option>
-              {people.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
+        <div className="us-ctrls">
+          <div className="field us-search">
+            <input
+              type="search"
+              aria-label="Search by address or loan number"
+              placeholder="Search address or loan"
+              value={query}
+              onChange={(e) => reset(setQuery)(e.target.value)}
+            />
           </div>
-        )}
-        <div className="field us-search">
-          <input
-            type="search"
-            aria-label="Search by address or loan number"
-            placeholder="Search address or loan"
-            value={query}
-            onChange={(e) => reset(setQuery)(e.target.value)}
-          />
+          {people && people.length > 1 && (
+            <div className="field us-who">
+              <select aria-label="Person" value={who} onChange={(e) => reset(setWho)(e.target.value)}>
+                <option value="">Everyone</option>
+                {people.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
       </div>
       {filtered.length === 0 ? (

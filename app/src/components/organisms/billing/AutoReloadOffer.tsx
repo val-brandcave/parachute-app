@@ -36,15 +36,17 @@ export function AutoReloadOffer({ b, onSettings }: { b: Billing; onSettings: () 
   return (
     <section className="card bl-card bl-offer" aria-labelledby="bl-offer-t">
       <div className="bl-offer-head">
-        <h2 className="bl-h" id="bl-offer-t">
-          Never stop at Start
-        </h2>
-        <Illustration name="14-credits-expiring" size={96} />
+        <div className="bl-offer-tx">
+          <h2 className="bl-h" id="bl-offer-t">
+            Never stop at Start
+          </h2>
+          <p className="bl-body tw-pretty">
+            Auto-reload adds credits to {card ?? "your card"}{" "}
+            before you run out, so reviewers aren&rsquo;t blocked mid-week.
+          </p>
+        </div>
+        <Illustration name="14-credits-expiring" size={96} className="bl-offer-ill" />
       </div>
-      <p className="bl-body tw-pretty">
-        Auto-reload adds credits to {card ?? "your card"}{" "}
-        before you run out, so reviewers aren&rsquo;t blocked mid-week.
-      </p>
       <div className="bl-offer-opt">
         <b>
           {pack.credits} credits when below {AUTO_RELOAD_DEFAULTS.below}

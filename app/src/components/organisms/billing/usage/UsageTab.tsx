@@ -124,20 +124,21 @@ export function UsageTab({ b, invoiced }: { b: Billing; invoiced: boolean }) {
     <div className="us bl-stack">
       {invoiced && <InvoicedStrip b={b} source={source} mine={mine} showAmounts={b.isAdmin} />}
       <div className="ud-filter">
-        <label className="ud-filter-l" htmlFor="ud-period">
-          Period
-        </label>
-        <Select id="ud-period" size="sm" className="ud-period" value={String(month)} onChange={(e) => setPicked(Number(e.target.value))}>
-          {months.map((m) => (
-            <option key={m} value={String(m)}>
-              {fmtMonth(m, { month: "long", year: "numeric" })}
-            </option>
-          ))}
-        </Select>
-        <span className="ud-filter-sp" />
-        <Button variant="outline" size="sm" iconLeft="download" onClick={exportCsv}>
-          Export CSV
-        </Button>
+        <div className="us-ctrls">
+          <label className="ud-filter-l" htmlFor="ud-period">
+            Period
+          </label>
+          <Select id="ud-period" size="sm" className="ud-period" value={String(month)} onChange={(e) => setPicked(Number(e.target.value))}>
+            {months.map((m) => (
+              <option key={m} value={String(m)}>
+                {fmtMonth(m, { month: "long", year: "numeric" })}
+              </option>
+            ))}
+          </Select>
+          <Button variant="outline" size="sm" iconLeft="download" onClick={exportCsv}>
+            Export CSV
+          </Button>
+        </div>
       </div>
       <div className={mine ? "ud-grid ud-grid--one" : "ud-grid"}>
         <UsageDonut usage={usage} monthName={monthName} rangeLabel={range} />

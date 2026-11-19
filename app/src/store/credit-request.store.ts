@@ -20,8 +20,8 @@ interface CreditRequestState {
   requests: CreditRequest[];
   loaded: boolean;
   fetchRequests: () => Promise<void>;
-  /** Reviewer asks for more credits. Null when they already have a live request. */
-  request: (note?: string) => Promise<CreditRequest | null>;
+  /** Reviewer asks for more credits (optionally how many). Null when they already have a live request. */
+  request: (opts?: { note?: string; credits?: number }) => Promise<CreditRequest | null>;
   remind: (id: string) => Promise<void>;
   cancel: (id: string) => Promise<void>;
   /** An admin saw it (popover opened). */
@@ -63,7 +63,7 @@ export const useCreditRequestStore = create<CreditRequestState>((set, get) => {
       set({ requests: all, loaded: true });
     },
 
-    request: (note) => {
+    request: (opts) => {
       if (asking) return asking;
       asking = (async () => {
         if (!get().loaded) await get().fetchRequests();
@@ -75,7 +75,8 @@ export const useCreditRequestStore = create<CreditRequestState>((set, get) => {
           id: generateId(),
           orgId: org,
           requesterId: me,
-          note: note?.trim() || undefined,
+          note: opts?.note?.trim() || undefined,
+          credits: opts?.credits && opts.credits > 0 ? Math.round(opts.credits) : undefined,
           createdAt: Date.now(),
           status: "open",
         };

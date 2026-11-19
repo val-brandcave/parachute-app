@@ -437,7 +437,35 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px 12px;
+}
+/* Right-aligned control group, shared by the Period row and the ledger
+   filters so both rows line up on one edge with one gap. margin-left:auto
+   pushes it right; when the row wraps it drops below and stays right. */
+.us-ctrls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-left: auto;
+  min-width: 0;
+  max-width: 100%;
+}
+.us-ctrls .ud-filter-l {
+  margin-right: 4px;
+}
+/* .ud-filter itself lives in billing-states.css (not ours to edit): pin the
+   group right even when it is the row's only child. */
+.us .ud-filter {
+  justify-content: flex-end;
+}
+/* One control height for both right groups: the sm button's 32px. The DS
+   Select's sm size is 28px, so it is lifted to match the Export button. */
+.us .ud-filter .ud-period {
+  width: 200px;
+  height: 32px;
+  font-size: 13px;
 }
 .us-search.field {
   margin: 0;
@@ -445,8 +473,13 @@
 }
 .us-search.field input,
 .us-who.field select {
-  padding: 7px 12px;
+  height: 32px;
+  padding: 0 12px;
   font-size: 13px;
+}
+.us-who.field select {
+  padding-right: 36px;
+  background-position: right 10px center;
 }
 .us-who.field {
   margin: 0;
