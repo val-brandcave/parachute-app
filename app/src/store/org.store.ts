@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { adapter } from "@/data/adapters";
 import { Collections } from "@/data/collections";
 import { DEFAULT_ORG_ID } from "@/lib/identity-defaults";
-import { generateId, type Org, type OrgFlags, type OrgProfile } from "@/types";
+import { generateId, type BankPolicyDoc, type Org, type OrgFlags, type OrgProfile } from "@/types";
 import { useSessionStore } from "./session.store";
 
 /**
@@ -11,17 +11,11 @@ import { useSessionStore } from "./session.store";
  * Bank policy (F-123): the short policy document whose rules are applied on the
  * pipeline's final pass. It is ORG CONFIG — uploaded once in Settings →
  * Compliance — never asked for per run; the run confirm gate only *references*
- * it (read-only inherited row, like the workbook layout).
+ * it (read-only inherited row, like the workbook layout). Persisted through the
+ * adapter (`getBankPolicy` / `setBankPolicy`).
  */
-export interface BankPolicyDoc {
-  name: string;
-  /** Display size — mock layer keeps a formatted label, not bytes. */
-  sizeLabel: string;
-  /** Display date the doc was last replaced (e.g. "Jun 12, 2026"). */
-  updatedAt: string;
-}
+export type { BankPolicyDoc } from "@/types";
 
-const KEY = "parachute:org:bank-policy";
 /** The stage org every /welcome run and scenario rebuilds (PC-19). */
 export const STAGE_ORG_ID = "org-hcb";
 
@@ -32,23 +26,9 @@ const DEFAULT_POLICY: BankPolicyDoc = {
   updatedAt: "Jun 12, 2026",
 };
 
-function initialPolicy(): BankPolicyDoc | null {
-  if (typeof window === "undefined") return DEFAULT_POLICY;
-  const raw = window.localStorage.getItem(KEY);
-  if (raw === "none") return null;
-  if (raw) {
-    try {
-      return JSON.parse(raw) as BankPolicyDoc;
-    } catch {
-      /* fall through to the seed */
-    }
-  }
-  return DEFAULT_POLICY;
-}
-
+/** Write-through to the adapter; the in-memory value is already set. */
 function persist(doc: BankPolicyDoc | null) {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(KEY, doc ? JSON.stringify(doc) : "none");
+  adapter.setBankPolicy(doc).catch((e) => console.error("bank policy save failed", e));
 }
 
 /** What `/welcome` collects to create a workspace. */
@@ -65,7 +45,7 @@ interface OrgState {
   bankPolicy: BankPolicyDoc | null;
   setBankPolicy: (doc: BankPolicyDoc) => void;
   removeBankPolicy: () => void;
-  /** Align the (single, localStorage-backed) policy with the session's org: a
+  /** Align the (single, adapter-backed) policy with the session's org: a
    *  trial / pay-as-you-go org has one only once it has uploaded it. */
   syncBankPolicy: (hasPolicy: boolean) => void;
 
@@ -92,7 +72,8 @@ interface OrgState {
 }
 
 export const useOrgStore = create<OrgState>((set, get) => ({
-  bankPolicy: initialPolicy(),
+  // Seeded default until the adapter answers (hydrateBankPolicy, below, runs at load).
+  bankPolicy: DEFAULT_POLICY,
   setBankPolicy: (doc) => {
     persist(doc);
     set({ bankPolicy: doc });
@@ -207,3 +188,20 @@ export const useOrgStore = create<OrgState>((set, get) => ({
     await get().patchOrg({ flags: { ...current.flags, [flag]: value } });
   },
 }));
+
+/** Load the stored policy once at startup. The mock adapter answers on the next
+ *  microtask, before first render, so this matches the old synchronous read. A
+ *  value set in the meantime (setBankPolicy / syncBankPolicy) wins. */
+let policyTouched = false;
+useOrgStore.subscribe((s, prev) => {
+  if (s.bankPolicy !== prev.bankPolicy) policyTouched = true;
+});
+adapter
+  .getBankPolicy()
+  .then((doc) => {
+    if (policyTouched || doc === undefined) return;
+    useOrgStore.setState({ bankPolicy: doc });
+  })
+  .catch(() => {
+    /* API adapter not wired yet: keep the seeded default */
+  });

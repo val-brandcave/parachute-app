@@ -267,7 +267,7 @@ export function useCheckout() {
       ];
       const digits = form.cardNumber.replace(/\D/g, "");
       if (form.payWith === "new" && digits.length >= 4) {
-        writes.push(ws.setPaymentMethod({ paymentMethod: "card", cardLast4: digits.slice(-4) }));
+        writes.push(ws.setPaymentMethod({ paymentMethod: "card", cardLast4: digits.slice(-4), cardExpiry: form.cardExpiry.trim() || undefined }));
       }
       if (form.autoReload && !settings?.autoReload) {
         writes.push(

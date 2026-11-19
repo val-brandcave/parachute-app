@@ -15,7 +15,14 @@ import { buildLedger, buildSetupProgress, normalize } from "@/lib/prototype/scen
 import type { Scenario } from "@/lib/prototype/scenario";
 import type { Org, SetupProgress, UserRole, WalletSettings } from "@/types";
 
-/* PROTOTYPE ONLY: scenario + legacy persona helpers. */
+/* PROTOTYPE ONLY: scenario + legacy persona helpers.
+ *
+ * PROTOTYPE ONLY: adapter access outside stores is allowed here because this file is
+ * demo plumbing, not domain logic: it rewrites whole seeded rows (persona / scenario
+ * resets for the state pill and Prototype Index) beneath every store, and its callers
+ * (prototype.store, SeedProvider) re-load the stores afterwards. It goes away with the
+ * prototype controls (PROTO_ENABLED) and is never part of the API hand-off. Listed as an
+ * allowed exception in src/data/adapters/boundary.test.ts. */
 
 /** Kill switch (spec §6): `NEXT_PUBLIC_PROTOTYPE_CONTROLS=0`, or the old name
  *  `NEXT_PUBLIC_DEMO_PERSONAS=0`, removes every prototype control. Literal reads so

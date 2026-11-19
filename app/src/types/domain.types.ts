@@ -116,6 +116,18 @@ export interface CreditLedgerEntry extends BaseEntity {
   note?: string;
 }
 
+/**
+ * The bank's credit-policy document (F-123): org config uploaded once in
+ * Settings → Compliance, applied on the pipeline's final pass.
+ */
+export interface BankPolicyDoc {
+  name: string;
+  /** Display size — mock layer keeps a formatted label, not bytes. */
+  sizeLabel: string;
+  /** Display date the doc was last replaced (e.g. "Jun 12, 2026"). */
+  updatedAt: string;
+}
+
 /** One row per org; `id` === `orgId` so the adapter can address it. */
 export interface WalletSettings {
   id: UUID;

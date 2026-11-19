@@ -121,7 +121,7 @@ interface WalletState {
     patch: Partial<Pick<WalletSettings, "autoReload" | "reloadPackId" | "reloadBelow" | "monthlyCap">>,
   ) => Promise<void>;
   setPaymentMethod: (
-    patch: Partial<Pick<WalletSettings, "paymentMethod" | "cardLast4" | "billingEmail">>,
+    patch: Partial<Pick<WalletSettings, "paymentMethod" | "cardLast4" | "cardExpiry" | "billingEmail">>,
   ) => Promise<void>;
 
   /** Finance details and alert preferences (Billing > Settings). */

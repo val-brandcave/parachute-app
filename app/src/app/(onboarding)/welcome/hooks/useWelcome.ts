@@ -1,8 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { adapter } from "@/data/adapters";
-import { Collections } from "@/data/collections";
 import { routeForProfile, VOLUME_BAND_LABEL } from "@/lib/pricing";
 import { useOnboardingFrame, useStepNav, type InterstitialPath } from "@/components/organisms/onboarding";
 import { loadSessionData } from "@/store/session-data";
@@ -10,7 +8,7 @@ import { STAGE_ORG_ID, useOrgStore } from "@/store/org.store";
 import { useSessionStore } from "@/store/session.store";
 import { useUsersStore } from "@/store/users.store";
 import { useWalletStore } from "@/store/wallet.store";
-import type { OrgKind, OrgProfile, TeamBand, User, VolumeBand } from "@/types";
+import type { OrgKind, OrgProfile, TeamBand, VolumeBand } from "@/types";
 
 /* ------------------------------------------------------------------ copy */
 
@@ -63,22 +61,19 @@ async function setUpStageOrg(name: string, profile: OrgProfile, route: "self_ser
     approvalGate: route === "enterprise",
   });
   // The seeded admin normally exists; recreate it if a reset removed it.
-  const admin = await adapter.getById<User>(Collections.USERS, STAGE_ADMIN_ID);
-  if (!admin) {
-    const fullName = session.name || DEMO_NAME;
-    await adapter.create<User>(Collections.USERS, {
-      id: STAGE_ADMIN_ID,
-      name: fullName,
-      initials: initialsOf(fullName),
-      designation: "Organization admin",
-      signatureName: fullName,
-      email: session.email ?? DEMO_EMAIL,
-      role: "org_admin",
-      orgId: STAGE_ORG_ID,
-      status: "active",
-      createdAt: Date.now(),
-    });
-  }
+  const fullName = session.name || DEMO_NAME;
+  await useUsersStore.getState().ensureUser({
+    id: STAGE_ADMIN_ID,
+    name: fullName,
+    initials: initialsOf(fullName),
+    designation: "Organization admin",
+    signatureName: fullName,
+    email: session.email ?? DEMO_EMAIL,
+    role: "org_admin",
+    orgId: STAGE_ORG_ID,
+    status: "active",
+    createdAt: Date.now(),
+  });
   useSessionStore.getState().signIn({ userId: STAGE_ADMIN_ID, orgId: STAGE_ORG_ID, role: "org_admin" });
   await loadSessionData();
   if (route === "self_serve") await useWalletStore.getState().grantTrial();

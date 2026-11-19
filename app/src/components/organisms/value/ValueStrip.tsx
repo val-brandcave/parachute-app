@@ -5,33 +5,10 @@ import Link from "next/link";
 import { Callout } from "@realwired/ui";
 import { Icon, Tooltip } from "@/components/atoms";
 import { formatUsd } from "@/lib/pricing";
-import { useBuildNotes, useOrgStore, useSessionStore, useWalletStore } from "@/store";
+import { useBuildNotes, useOrgStore, usePrefsStore, useSessionStore, useWalletStore } from "@/store";
 import type { Review } from "@/types";
 import { deriveValue, methodLine } from "./value-model";
 import "./value.css";
-
-const BANNER_KEY = "parachute:value-banner-dismissed";
-
-function readDismissed(userId: string | null): boolean {
-  try {
-    const raw = window.localStorage.getItem(BANNER_KEY);
-    const ids: string[] = raw ? JSON.parse(raw) : [];
-    return ids.includes(userId ?? "anon");
-  } catch {
-    return false;
-  }
-}
-
-function writeDismissed(userId: string | null) {
-  try {
-    const raw = window.localStorage.getItem(BANNER_KEY);
-    const ids: string[] = raw ? JSON.parse(raw) : [];
-    const id = userId ?? "anon";
-    if (!ids.includes(id)) window.localStorage.setItem(BANNER_KEY, JSON.stringify([...ids, id]));
-  } catch {
-    /* storage unavailable: the banner just returns next visit */
-  }
-}
 
 const num = (n: number) => n.toLocaleString("en-US");
 const hours = (n: number) => (Math.round(n * 10) / 10).toLocaleString("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
@@ -53,7 +30,7 @@ export function ValueStrip({ reviews }: { reviews: readonly Review[] }) {
   const userId = useSessionStore((s) => s.userId);
   const buildNotes = useBuildNotes();
   const [now] = useState(() => Date.now());
-  const [dismissed, setDismissed] = useState(() => readDismissed(userId));
+  const dismissed = usePrefsStore((s) => s.valueBannerDismissed.includes(userId ?? "anon"));
 
   const invoiced = billing === "invoiced";
   const v = useMemo(() => deriveValue(reviews, ledger, invoiced, now), [reviews, ledger, invoiced, now]);
@@ -64,10 +41,7 @@ export function ValueStrip({ reviews }: { reviews: readonly Review[] }) {
         <div className="vl-banner">
           <Callout
             tone="info"
-            onDismiss={() => {
-              writeDismissed(userId);
-              setDismissed(true);
-            }}
+            onDismiss={() => usePrefsStore.getState().dismissValueBanner(userId)}
           >
             Needs engine v2 API sample — figures are layout placeholders.
           </Callout>

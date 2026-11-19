@@ -16,6 +16,12 @@ import {
 } from "@/lib/demo";
 
 /**
+ * ALLOWED EXCEPTION to "components never touch the adapter" (see
+ * docs/plans/data-adapter-pattern-guide.md and src/data/adapters/boundary.test.ts):
+ * this is bootstrap infrastructure, not a page. It runs `adapter.seed()` before any
+ * store loads and checks that a remembered session's user/org rows still exist
+ * before signing it back in. Domain reads/writes still go through the stores.
+ *
  * Seeds the mock data store (localStorage) once on the client before rendering
  * the app. On repeat loads the seed check is instant. With the API adapter this
  * is a no-op. localStorage is browser-only, so seeding happens client-side.

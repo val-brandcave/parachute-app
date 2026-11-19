@@ -1,7 +1,7 @@
 import { CREDIT_USD, INVOICED_CREDIT_USD, formatUsd, usd } from "@/lib/pricing";
 import { nextExpiring, type BalanceGrant } from "@/lib/wallet-breakdown";
 import { spendOrderSentence as spendOrder } from "@/lib/wallet-view";
-import type { CreditLedgerEntry, CreditSource, Review, ReviewType } from "@/types";
+import type { CreditLedgerEntry, CreditSource, Review, ReviewType, WalletSettings } from "@/types";
 
 /** The demo's "today" (6 Nov 2026). Prototype-only: keeps the statements and invoice copy on one month. */
 export const DEMO_TODAY = new Date(2026, 10, 6, 12, 0).getTime();
@@ -26,30 +26,13 @@ export function sourceLabel(s: CreditSource): string {
   return s === "trial" ? "Trial" : s === "earned" ? "Earned" : "Purchased";
 }
 
-/* ---------------- Card metadata the settings row does not carry ---------------- */
+/* ---------------- Card on file ---------------- */
 
-const CARD_EXP_KEY = (orgId: string) => `parachute:billing:card-exp:${orgId}`;
-
-/** Expiry of the card on file. The settings row stores only the last four digits. */
-export function cardExpFor(orgId: string | null | undefined, last4?: string): string | null {
-  if (typeof window !== "undefined" && orgId) {
-    try {
-      const v = window.localStorage.getItem(CARD_EXP_KEY(orgId));
-      if (v) return v;
-    } catch {
-      /* private mode: fall through */
-    }
-  }
-  return last4 === "4242" ? "08/28" : null;
-}
-
-export function rememberCardExp(orgId: string | null | undefined, exp: string) {
-  if (!orgId || typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(CARD_EXP_KEY(orgId), exp);
-  } catch {
-    /* ignore */
-  }
+/** Expiry of the card on file ("MM/YY"), from the wallet settings row. Falls back to
+ *  the seeded test card's expiry for rows saved before the field existed. */
+export function cardExpFor(settings: Pick<WalletSettings, "cardExpiry"> | null | undefined, last4?: string): string | null {
+  if (!last4) return null;
+  return settings?.cardExpiry ?? (last4 === "4242" ? "08/28" : null);
 }
 
 /* ---------------- Activity ---------------- */
