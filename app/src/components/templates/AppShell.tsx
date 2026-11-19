@@ -143,6 +143,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         chromeless={embedded}
         collapsed={navCollapsed}
         onCollapsedChange={toggleNav}
+        // The scroll pane must be a containing block: visually-hidden labels are
+        // position:absolute, and without one they escape the pane and stretch the page,
+        // which gives the window a second scrollbar and slides the sidebar up.
+        contentClassName="shell-content"
         brand={(collapsed) =>
           collapsed ? (
             <Logo themeAware full={false} height={26} />
