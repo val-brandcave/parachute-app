@@ -65,20 +65,6 @@
 .gs-hero-meta.is-ending {
   color: var(--md-warn);
 }
-.gs-hero-link {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--md-accent);
-  text-decoration: none;
-  border-radius: 4px;
-}
-.gs-hero-link:hover {
-  text-decoration: underline;
-}
-.gs-hero-link:focus-visible {
-  outline: none;
-  box-shadow: var(--ring-accent);
-}
 .gs-hero-art {
   flex: none;
   height: auto;
