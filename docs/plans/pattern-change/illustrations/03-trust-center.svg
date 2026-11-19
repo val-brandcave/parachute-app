@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 90" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" class="pi" role="img"><title>Trust Center: shield and lock over a security document</title><style>.pi{stroke-width:var(--ill-stroke,2.25)}.pi .p{fill:var(--ill-paper,#FFFFFF)}.pi .a{fill:var(--ill-accent,#2A6F7F)}.pi .t{fill:var(--ill-tint,#DEEBEE)}.pi .s{fill:var(--ill-shadow,#C9D7E3);stroke:none}.pi .m{stroke:var(--ill-muted,#8FA3B3);stroke-width:1.75}.pi .ap{stroke:var(--ill-paper,#FFFFFF)}.pi .af{fill:var(--ill-paper,#FFFFFF);stroke:none}.pi .as{stroke:var(--ill-accent,#2A6F7F)}.pi .ink{fill:currentColor;stroke:none}.pi .ns{stroke:none}</style><g transform="rotate(8 84 40)">
+  <path class="p" d="M68 18H92L100 26V62H68Z"/>
+  <path d="M92 18V26H100"/>
+  <path class="m" d="M80 34H93M80 40H93M80 46H88"/>
+</g>
+<path class="s" d="M57 17C66 23 74 24 81 23V46C81 62 70 71 57 77C44 71 33 62 33 46V23C40 24 48 23 57 17Z"/>
+<path class="p" d="M54 14C63 20 71 21 78 20V43C78 59 67 68 54 74C41 68 30 59 30 43V20C37 21 45 20 54 14Z"/>
+<path d="M48 42V37.5a6 6 0 0 1 12 0V42"/>
+<rect class="a" x="44" y="42" width="20" height="16" rx="3"/>
+<path class="ap" d="M54 47.5v4.5"/>
+<path class="m" d="M20 26v5M17.5 28.5h5"/></svg>

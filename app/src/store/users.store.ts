@@ -31,6 +31,9 @@ interface UsersState {
   /** Load (once) and scope to the current org. `force` re-reads from the adapter. */
   fetchUsers: (force?: boolean) => Promise<void>;
   byId: (id: string) => User | undefined;
+  /** Persist `user` unless a row with its id already exists (e.g. the stage org's
+   *  seeded admin after a reset). Returns the stored row. Callers re-fetch after. */
+  ensureUser: (user: User) => Promise<User>;
   // --- Member management (Organization → Members) ---
   inviteMember: (email: string, role: UserRole) => void;
   changeRole: (id: string, role: UserRole) => void;
@@ -61,6 +64,10 @@ export const useUsersStore = create<UsersState>((set, get) => {
       set({ allUsers: all, users: scope(all) });
     },
     byId: (id) => get().allUsers.find((u) => u.id === id),
+    ensureUser: async (user) => {
+      const existing = await adapter.getById<User>(Collections.USERS, user.id);
+      return existing ?? adapter.create<User>(Collections.USERS, user);
+    },
 
     inviteMember: (email, role) => {
       const { name, initials } = deriveIdentity(email);

@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="ps" role="img"><title>First review: a magnifier on a figure in the appraisal, traced to its highlighted source line, with a check</title><style>.ps{stroke-width:var(--ill-stroke-scene,2.5)}.ps .p{fill:var(--ill-paper,#FFFFFF)}.ps .a{fill:var(--ill-accent,#2A6F7F)}.ps .t{fill:var(--ill-tint,#DEEBEE)}.ps .bg{fill:var(--ill-panel,var(--ill-tint,#DEEBEE));stroke:none}.ps .s{fill:var(--ill-shadow-strong,#AFC3D4);stroke:none}.ps .m{stroke:var(--ill-muted,#8FA3B3);stroke-width:2}.ps .ap{stroke:var(--ill-paper,#FFFFFF)}.ps .af{fill:var(--ill-paper,#FFFFFF);stroke:none}.ps .ink{fill:currentColor;stroke:none}.ps .ns{stroke:none}</style>
+<rect class="bg" x="12" y="30" width="296" height="150" rx="26"/>
+<path class="s" transform="translate(5 5)" d="M38 26H118L134 42V172H38Z"/>
+<path class="p" d="M38 26H118L134 42V172H38Z"/>
+<path d="M118 26V42H134"/>
+<rect class="t ns" x="46" y="36" width="44" height="10" rx="2"/>
+<path class="m" d="M46 58H120M46 66H108"/>
+<rect class="m" x="46" y="78" width="80" height="60" rx="2"/>
+<path class="m" d="M46 93H126M46 108H126M46 123H126M80 78V138M103 78V138"/>
+<path d="M53 85.5H72M53 100.5H68M53 115.5H74M53 130.5H66M109 85.5H120M109 100.5H118M86 85.5H96M86 100.5H97M86 130.5H95" stroke-width="2"/>
+<path class="m" d="M46 152H126M46 160H100"/>
+<g transform="rotate(4 239 105)">
+  <path class="s" transform="translate(5 5)" d="M196 44H270L282 56V166H196Z"/>
+  <path class="p" d="M196 44H270L282 56V166H196Z"/>
+  <path d="M270 44V56H282"/>
+  <path class="m" d="M206 66H262M206 76H256M206 86H264"/>
+  <rect class="t ns" x="202" y="99" width="74" height="15" rx="3"/>
+  <path d="M208 106.5H262" stroke-width="2.5"/>
+  <path class="m" d="M206 128H264M206 138H248M206 148H260"/>
+</g>
+<path class="m" d="M136 104C160 86 176 116 198 107" stroke-dasharray="3 5"/>
+<circle class="ink" cx="201" cy="106.5" r="3.2"/>
+<rect class="a" x="-5.5" y="0" width="11" height="28" rx="5.5" transform="translate(129 129) rotate(-45)"/>
+<circle class="s" cx="119" cy="120" r="21"/>
+<circle class="t" cx="114" cy="115" r="21" stroke-width="3"/>
+<path d="M102 115H126" stroke-width="4.5"/>
+<path class="ap" d="M100 108a15 15 0 0 1 6.5-6.5" stroke-width="2.5"/>
+<circle class="a" cx="283" cy="110" r="13"/>
+<path class="ap" d="M277 110.5l4.5 4.5 8-8.5" stroke-width="3"/></svg>

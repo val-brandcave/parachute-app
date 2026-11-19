@@ -256,7 +256,8 @@ export function nextActionView(r: Review): NextActionView {
         tone: "primary",
         icon: "gavel",
         kind: "route",
-        href: `/reviews/${r.id}/triage`,
+        // B3: no /triage sub-route exists; runEntry maps autorejected → the triage gate on /reviews/[id].
+        href: `/reviews/${r.id}`,
         iconOnly: true,
       };
     case "running":

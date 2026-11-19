@@ -1,5 +1,6 @@
 import { STORAGE_PREFIX } from "../collections";
 import { seedAll } from "../seed";
+import type { BankPolicyDoc } from "@/types";
 import type { DataAdapter } from "./types";
 
 function storageKey(collection: string): string {
@@ -16,6 +17,10 @@ function writeCollection<T>(collection: string, items: T[]): void {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(storageKey(collection), JSON.stringify(items));
 }
+
+/** Bank policy doc. Same key the org store used before it went through the adapter,
+ *  so existing browsers keep their upload. JSON doc, or "none" once removed. */
+const BANK_POLICY_KEY = `${STORAGE_PREFIX}:org:bank-policy`;
 
 const SEEDED_KEY = `${STORAGE_PREFIX}:__seeded__`;
 // Bump this whenever seed data changes so existing browsers re-seed on next
@@ -42,7 +47,16 @@ const SEEDED_KEY = `${STORAGE_PREFIX}:__seeded__`;
 //      v20: self-serve Phase 4 - invites collection (Harbor has one pending), the
 //      "invite" setup step (done for Cedar Ridge and Meridian, open for Harbor).
 //      v21: self-serve v2 - Lakeside Valuation is a 11+ team (sales-flagged), pending, no trial.
-const SEED_VERSION = "v22";
+//      v23: pattern change phase 2 - Harbor is a pure trial (grant 6, one full review on 220 Commerce
+//      Way → 4 credits, grant dated two days before load), setup 2 of 8 (first review + invite),
+//      sample_review out of the step list. Release note: "This update resets demo data in your
+//      browser. Use the state pill or the Prototype Index to get back to any state in one click."
+//      v24: pattern change phase 3 - saved cards carry an expiry (cardExpiry "08/28").
+//      Release note: "This update resets demo data in your browser. Use the state pill or the
+//      Prototype Index to get back to any state in one click."
+//      v25: seeds anchor to today (data/seed/seed-clock.ts) instead of 19 Jun 2026, so seeded
+//      due dates read "Due in 2d", not "Overdue 141d". Same release note.
+const SEED_VERSION = "v25";
 
 export const mockAdapter: DataAdapter = {
   async getAll<T>(collection: string): Promise<T[]> {
@@ -102,6 +116,23 @@ export const mockAdapter: DataAdapter = {
       collection,
       items.filter((i) => i.id !== id),
     );
+  },
+
+  async getBankPolicy(): Promise<BankPolicyDoc | null | undefined> {
+    if (typeof window === "undefined") return undefined;
+    const raw = window.localStorage.getItem(BANK_POLICY_KEY);
+    if (raw === "none") return null;
+    if (!raw) return undefined;
+    try {
+      return JSON.parse(raw) as BankPolicyDoc;
+    } catch {
+      return undefined;
+    }
+  },
+
+  async setBankPolicy(doc: BankPolicyDoc | null): Promise<void> {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(BANK_POLICY_KEY, doc ? JSON.stringify(doc) : "none");
   },
 
   async seed(force = false): Promise<void> {

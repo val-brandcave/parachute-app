@@ -5,7 +5,8 @@ import { adapter } from "@/data/adapters";
 import { Collections } from "@/data/collections";
 import { readStoredSession, useSessionStore } from "@/store/session.store";
 import { loadSessionData } from "@/store/session-data";
-import { useDemoStore } from "@/store/demo.store";
+import { useProtoStore } from "@/store/prototype.store";
+import { PRESETS } from "@/lib/prototype/presets";
 import {
   DEMO_ENABLED,
   clearPersonaParam,
@@ -15,6 +16,12 @@ import {
 } from "@/lib/demo";
 
 /**
+ * ALLOWED EXCEPTION to "components never touch the adapter" (see
+ * docs/plans/data-adapter-pattern-guide.md and src/data/adapters/boundary.test.ts):
+ * this is bootstrap infrastructure, not a page. It runs `adapter.seed()` before any
+ * store loads and checks that a remembered session's user/org rows still exist
+ * before signing it back in. Domain reads/writes still go through the stores.
+ *
  * Seeds the mock data store (localStorage) once on the client before rendering
  * the app. On repeat loads the seed check is instant. With the API adapter this
  * is a no-op. localStorage is browser-only, so seeding happens client-side.
@@ -48,7 +55,9 @@ export function SeedProvider({ children }: { children: React.ReactNode }) {
             return;
           }
         }
-        if (wanted && persona) await useDemoStore.getState().apply(wanted);
+        // A remembered legacy persona re-enters through its preset alias (keeps its seeded identity).
+        const preset = persona ? PRESETS.find((p) => p.legacyPersonaId === persona.id) : undefined;
+        if (preset) await useProtoStore.getState().enterPreset(preset, { alias: true });
         else await loadSessionData();
       })
       .catch((e) => console.error("seed failed", e))

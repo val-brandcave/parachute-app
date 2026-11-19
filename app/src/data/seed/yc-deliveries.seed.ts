@@ -1,7 +1,9 @@
 import type { YcDelivery } from "@/types";
 
 // Reference "now" — kept in step with reviews.seed so SLA/delivered dates line up.
-const NOW = 1781827200000;
+import { SEED_NOW } from "./seed-clock";
+
+const NOW = SEED_NOW;
 const DAY = 86400000;
 
 // The YouConnect inbox shown on the Order stepper's "From YouConnect" source step.

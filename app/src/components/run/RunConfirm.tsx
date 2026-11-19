@@ -1,12 +1,18 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { createContext, useContext, useId, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button, Icon, YouConnectGlyph } from "@/components/atoms";
-import { useTemplatesStore } from "@/store";
+import { useOrgStore, useSessionStore, useTemplatesStore } from "@/store";
+import { useLockStore, type LockReason } from "@/store/lock.store";
+import { lockReasonForStart } from "@/lib/lock-reasons";
+import { getCurrentUser, useCurrentUser } from "@/lib/current-user";
+import { REVIEW_TYPE_COST } from "@/lib/pricing";
+import type { CheckoutChoice } from "@/lib/checkout";
+import { useStartGate } from "@/components/organisms/home/useStartGate";
 import { inheritedLayout, profileFor } from "@/lib/workbook";
 import { InheritedTemplateField } from "./InheritedTemplateField";
-import { CostSummary, LowBalanceCallout, TypeCostChip, useRunCost } from "./CostSummary";
+import { CostSummary, TypeCostChip, useRunCost } from "./CostSummary";
 import type { Review, ReviewType } from "@/types";
 import type { RunDisplay, RunReviewType, RunSource } from "@/store";
 
@@ -83,6 +89,84 @@ const REVIEW_TYPES: ReviewTypeSpec[] = [
   },
 ];
 
+/**
+ * Add credits from Review setup (spec §5.6 "Draft before checkout"). Provided by the
+ * run host around `RunExperience`: the overlay creates an `intake` draft and the
+ * routed review reuses its id, then both leave for checkout with
+ * `return=/reviews/<id>&types=…`. `needed` is the shortfall (RF2). `choice` is what
+ * the credits lock dialog picked (a custom amount or a pack); without one, checkout
+ * opens on `initialChoice(needed)`.
+ */
+export type RunAddCreditsHandler = (draft: {
+  display: RunDisplay;
+  types: RunReviewType[];
+  needed: number;
+  choice?: CheckoutChoice;
+}) => void;
+export const RunAddCreditsContext = createContext<RunAddCreditsHandler | null>(null);
+
+/** PC-32: the one selected type the balance covers on its own (the dialog's
+ *  "Run Technical only"), or null when none fits or only one type is selected. */
+export function runOnlyType(types: readonly RunReviewType[], balance: number): RunReviewType | null {
+  if (types.length < 2) return null;
+  return types.find((t) => REVIEW_TYPE_COST[t as ReviewType] <= balance) ?? null;
+}
+
+/**
+ * The `onStart` backstop shared by both run hosts (`RunModal`, `/reviews/[id]`):
+ * Review setup already explains every lock, but if state changed underneath
+ * (approval revoked, balance spent elsewhere) the host opens the same lock dialog
+ * instead of starting. Reads the stores at call time. Null = start.
+ */
+export function startLock(
+  display: RunDisplay,
+  types: RunReviewType[],
+  balance: number,
+  onRunOnly: (t: RunReviewType) => void,
+  onAddCredits: RunAddCreditsHandler,
+): LockReason | null {
+  const org = useOrgStore.getState().org;
+  const reason = lockReasonForStart({
+    approval: org?.approval,
+    balance,
+    types: types as ReviewType[],
+    role: getCurrentUser().role,
+    embedded: useSessionStore.getState().mode === "embedded",
+    billing: org?.billing,
+  });
+  if (reason?.kind !== "credits") return reason;
+  const only = runOnlyType(types, balance);
+  return {
+    ...reason,
+    onRunOnly: only
+      ? (t) => {
+          onRunOnly(t as RunReviewType);
+        }
+      : undefined,
+    onAdd: (choice) => {
+      onAddCredits({ display, types, needed: reason.needed, choice });
+    },
+  };
+}
+
+const LIVE_TYPES = REVIEW_TYPES.filter((s) => s.status === "live").map((s) => s.id);
+
+/** Initial selection: `?types=` (back from checkout) → an intake draft's own
+ *  `reviewTypes` → the defaults (both, per Ed). Client-only (the run never SSRs). */
+function initialTypes(review: Review): RunReviewType[] {
+  const raw = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("types") : null;
+  const fromQuery = (raw ?? "")
+    .split(",")
+    .map((t) => t.trim())
+    .filter((t): t is RunReviewType => LIVE_TYPES.includes(t as RunReviewType));
+  if (fromQuery.length) return [...new Set(fromQuery)];
+  if (review.status === "intake" && review.reviewTypes?.length) {
+    const own = review.reviewTypes.filter((t) => LIVE_TYPES.includes(t as RunReviewType)) as RunReviewType[];
+    if (own.length) return own;
+  }
+  return REVIEW_TYPES.filter((s) => s.status === "live" && s.defaultOn).map((s) => s.id);
+}
+
 const WRAP_V = {
   hidden: {},
   show: { transition: { staggerChildren: 0.06, delayChildren: 0.04 } },
@@ -136,9 +220,8 @@ export function RunConfirm({
 
   // Selected *live* types — both pre-checked (the 80% case); every type can be
   // unticked, and Start gates on at least one remaining.
-  const [selected, setSelected] = useState<RunReviewType[]>(
-    REVIEW_TYPES.filter((s) => s.status === "live" && s.defaultOn).map((s) => s.id),
-  );
+  const [selected, setSelected] = useState<RunReviewType[]>(() => initialTypes(review));
+  const addCreditsHost = useContext(RunAddCreditsContext);
 
   // Per-review template overrides. Both default to the org-inherited template
   // (null) and can be overridden *for this review only* via the shared
@@ -176,44 +259,107 @@ export function RunConfirm({
   const profile = profileFor(propertyType);
   const defaultLayout = inheritedLayout(layouts, profile);
 
-  // Start gates on ≥1 review type; identity only matters if a selected type asks for it.
+  // Start is never `disabled` (B12, RF5): every gap explains on click instead.
+  // Form gaps (zero types, empty address) → the inline note + focus the first gap;
+  // a pending org → the approval dialog (B5); short / zero → the credits dialog over
+  // this page. Embedded YouConnect runs never lock (lockReasonForStart → null).
   const cost = useRunCost(selected as ReviewType[], !!review.sample);
-  const short = cost.mode === "wallet" && !cost.affordable && selected.length > 0;
-  const canStart =
-    selected.length > 0 && (!showIdentity || address.trim().length > 0) && cost.affordable;
+  const gate = useStartGate();
+  const embedded = useSessionStore((s) => s.mode) === "embedded";
+  const billing = useOrgStore((s) => s.org?.billing);
+  const me = useCurrentUser();
+  const missingAddress = showIdentity && address.trim().length === 0;
+  const formReady = selected.length > 0 && !missingAddress;
+  const approvalLocked = gate.locked && !embedded && !review.sample;
+  // Embedded YouConnect is billed outside the wallet: never "short" there.
+  const short = cost.mode === "wallet" && !cost.affordable && selected.length > 0 && !embedded;
+  const canStart = formReady && !approvalLocked && (cost.affordable || embedded);
 
-  // Low-balance callout lives at the end of the form; bring it into view when the
-  // gate first renders short, and again if Start is pressed while short.
-  const calloutRef = useRef<HTMLDivElement>(null);
-  const showCallout = (focus: boolean) => {
-    const el = calloutRef.current;
-    if (!el) return;
-    el.scrollIntoView({ behavior: "smooth", block: "center" });
-    if (focus) el.focus({ preventScroll: true });
+  // The address note shows after a Start click, not on first paint (the zero-types
+  // note already shows whenever nothing is picked).
+  const [triedAddress, setTriedAddress] = useState(false);
+  const typesRef = useRef<HTMLDivElement>(null);
+  const addressRef = useRef<HTMLInputElement>(null);
+  const noteId = useId();
+
+  const currentDisplay = (): RunDisplay => ({
+    address: address.trim(),
+    propertyType,
+    bank: bank.trim(),
+    loanNo: loanNo.trim(),
+    firm: firm.trim(),
+  });
+
+  // One-shot: the lock dialog's body stays clickable through its exit animation, so a
+  // double click on "Run Technical only" (or Start) must not start twice (two reviews,
+  // two debits; PC-32 = one type, one debit). Re-armed when the host's backstop opened
+  // a lock instead of starting (state changed underneath).
+  const startedRef = useRef(false);
+  const commit = (
+    display: RunDisplay,
+    types: RunReviewType[],
+    opts: { checklistId: string | null; layoutId: string | null },
+  ) => {
+    if (startedRef.current) return;
+    startedRef.current = true;
+    onStart(display, types, opts);
+    if (useLockStore.getState().reason) startedRef.current = false;
   };
-  useEffect(() => {
-    if (!short) return;
-    const t = setTimeout(() => showCallout(false), 500); // after the staggered entrance
-    return () => clearTimeout(t);
-  }, [short]);
 
-  const start = () => {
-    if (short) return showCallout(true);
-    if (!canStart) return;
-    onStart(
-      {
-        address: address.trim(),
-        propertyType,
-        bank: bank.trim(),
-        loanNo: loanNo.trim(),
-        firm: firm.trim(),
-      },
-      selected,
-      {
-        checklistId: showAdmin ? effectiveChecklistId : null,
-        layoutId: showTechnical ? layoutId : null,
-      },
-    );
+  const start = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const trigger = e.currentTarget;
+    if (selected.length === 0) {
+      typesRef.current?.querySelector<HTMLElement>('[role="checkbox"]')?.focus();
+      return;
+    }
+    if (missingAddress) {
+      setTriedAddress(true);
+      addressRef.current?.focus();
+      return;
+    }
+    if (approvalLocked) return gate.explain(trigger);
+    const display = currentDisplay();
+    const reason =
+      cost.mode === "wallet"
+        ? lockReasonForStart({
+            approval: undefined, // the approval gate is handled above (sample exempt)
+            balance: cost.balance,
+            types: selected as ReviewType[],
+            role: me.role,
+            embedded,
+            billing,
+          })
+        : null;
+    if (reason?.kind === "credits") {
+      const only = runOnlyType(selected, cost.balance);
+      useLockStore.getState().openLock(
+        {
+          ...reason,
+          // PC-32: start NOW with the one type the balance covers.
+          onRunOnly: only
+            ? (t) => {
+                commit(display, [t as RunReviewType], {
+                  checklistId: t === "administrative" ? effectiveChecklistId : null,
+                  layoutId: t === "technical" ? layoutId : null,
+                });
+              }
+            : undefined,
+          // Draft before checkout (§5.6): the host keeps the upload + types and returns here.
+          onAdd: addCreditsHost
+            ? (choice) => {
+                addCreditsHost({ display, types: selected, needed: reason.needed, choice });
+              }
+            : undefined,
+        },
+        { returnFocus: trigger },
+      );
+      return;
+    }
+    if (reason) return useLockStore.getState().openLock(reason, { returnFocus: trigger });
+    commit(display, selected, {
+      checklistId: showAdmin ? effectiveChecklistId : null,
+      layoutId: showTechnical ? layoutId : null,
+    });
   };
 
   return (
@@ -253,7 +399,7 @@ export function RunConfirm({
         <motion.div className="run-cf-card" variants={ITEM_V}>
           <span className="run-cf-card-head">Review type</span>
           <p className="run-cf-card-sub">Select one or more — each adds its own setup below.</p>
-          <div className="run-cf-opts">
+          <div className="run-cf-opts" ref={typesRef}>
             {REVIEW_TYPES.map((spec) => {
               const soon = spec.status === "soon";
               const on = !soon && isSel(spec.id);
@@ -292,7 +438,7 @@ export function RunConfirm({
             })}
           </div>
           {selected.length === 0 && (
-            <p className="run-cf-opt-note" role="status">
+            <p className="run-cf-opt-note" role="status" id={`${noteId}-types`}>
               Select at least one review type to start.
             </p>
           )}
@@ -305,7 +451,18 @@ export function RunConfirm({
             <div className="run-cf-form">
               <label className="field run-cf-wide">
                 <span>Property address</span>
-                <input value={address} onChange={(e) => setAddress(e.target.value)} />
+                <input
+                  ref={addressRef}
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  aria-invalid={triedAddress && missingAddress ? true : undefined}
+                  aria-describedby={triedAddress && missingAddress ? `${noteId}-address` : undefined}
+                />
+                {triedAddress && missingAddress && (
+                  <small className="run-cf-opt-note" role="status" id={`${noteId}-address`}>
+                    Add the property address to start.
+                  </small>
+                )}
               </label>
               <label className="field">
                 <span>Property type</span>
@@ -401,15 +558,6 @@ export function RunConfirm({
             </motion.div>
           )}
 
-          {short && (
-            <div className="cs-callout-slot" ref={calloutRef} tabIndex={-1}>
-              <LowBalanceCallout
-                selected={selected as ReviewType[]}
-                cost={cost}
-                onRunOnly={(t) => setSelected([t])}
-              />
-            </div>
-          )}
         </motion.div>
       </div>
 
@@ -425,13 +573,24 @@ export function RunConfirm({
             variant="primary"
             size="sm"
             iconLeft="parachute"
-            disabled={!canStart && !short}
-            aria-disabled={!canStart}
-            className={short ? "cs-start-short" : undefined}
+            iconRight={approvalLocked ? "hourglass-high" : short ? "lock" : undefined}
+            aria-disabled={canStart ? undefined : "true"}
+            aria-describedby={canStart ? undefined : `${noteId}-start`}
             onClick={start}
           >
             Start review
           </Button>
+          {!canStart && (
+            <span id={`${noteId}-start`} className="ui-visually-hidden">
+              {selected.length === 0
+                ? "Select at least one review type to start."
+                : missingAddress
+                  ? "Add the property address to start."
+                  : approvalLocked
+                    ? gate.reasonText
+                    : "Not enough credits for this review."}
+            </span>
+          )}
         </div>
       </div>
     </div>

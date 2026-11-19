@@ -1,0 +1,167 @@
+/* Get started hero card, welcome strip and the header progress line (pattern change,
+   12 Nov 2026). The hero is the same white card family as Billing → How credits work
+   (.hcw-hero) and the all-done card (.gs-alldone). Tokens only; light and dark both read
+   from --md-*. */
+
+/* ---- hero card ---- */
+.gs-hero {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  padding: 28px;
+  border: 1px solid var(--md-outline);
+  box-shadow: none;
+}
+.gs-hero-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.gs-hero-h {
+  margin: 0;
+  font-family: var(--font-display, inherit);
+  font-size: 28px;
+  line-height: 34px;
+  font-weight: 700;
+  color: var(--md-on-surface);
+}
+/* Focus lands here programmatically on arrival (a landmark for screen readers, not a control). */
+.gs-hero-h:focus {
+  outline: none;
+}
+.gs-hero-lead {
+  margin: 8px 0 0;
+  max-width: 64ch;
+  font-size: 15px;
+  line-height: 24px;
+  color: var(--md-on-surface-v);
+  text-wrap: pretty;
+}
+.gs-hero-bar {
+  margin-top: 20px;
+}
+.gs-hero-bar .ui-progress-track {
+  height: 6px;
+  background: var(--md-surface-2);
+}
+.gs-hero-foot {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin-top: 10px;
+}
+.gs-hero-meta {
+  margin: 0;
+  font-size: 13px;
+  color: var(--md-on-surface-v);
+}
+.gs-hero-meta b {
+  color: var(--md-on-surface);
+  font-weight: 600;
+}
+.gs-hero-meta.is-ending {
+  color: var(--md-warn);
+}
+.gs-hero-link {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--md-accent);
+  text-decoration: none;
+  border-radius: 4px;
+}
+.gs-hero-link:hover {
+  text-decoration: underline;
+}
+.gs-hero-link:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-accent);
+}
+.gs-hero-art {
+  flex: none;
+  height: auto;
+}
+
+/* ---- welcome strip (motion-spec §6.4): slim, navy-tinted, dismissible ---- */
+.gs-welcome {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 4px 4px 4px 10px;
+  border-radius: var(--r);
+  background: var(--md-selected);
+  color: var(--md-on-selected);
+  font-size: 14px;
+  font-weight: 500;
+}
+/* The chip's own navy tint would vanish on the navy-tinted strip; lift it onto the surface. */
+.gs-welcome .gs-welcome-chip {
+  flex: none;
+  background: var(--md-surface);
+}
+.gs-welcome-t {
+  flex: 1;
+  min-width: 0;
+}
+.gs-welcome-link {
+  flex: none;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--md-accent);
+  text-decoration: none;
+  border-radius: 4px;
+}
+.gs-welcome-link:hover {
+  text-decoration: underline;
+}
+.gs-welcome-link:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-accent);
+}
+.gs-welcome-x {
+  flex: none;
+  color: inherit;
+}
+
+/* ---- header progress line: flush on the app header's bottom hairline ----
+   The line mounts in the header's end slot; the library header is static, so anchor it
+   only while the line is there (positioning a static flex row changes nothing else). */
+header:has(> * .gs-hline),
+header:has(> .gs-hline) {
+  position: relative;
+}
+.gs-hline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 3px;
+  pointer-events: none;
+  z-index: 1;
+}
+.gs-hline-fill {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--md-primary);
+  transform-origin: left center;
+}
+
+/* ---- narrow ---- */
+@container (max-width: 720px) {
+  .gs-hero {
+    padding: 20px 16px;
+  }
+  .gs-hero-h {
+    font-size: 24px;
+    line-height: 30px;
+  }
+}
+@container (max-width: 600px) {
+  .gs-hero-art {
+    display: none;
+  }
+}

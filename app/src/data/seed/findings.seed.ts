@@ -1,6 +1,8 @@
 import type { Finding } from "@/types";
 
-const NOW = 1781827200000;
+import { SEED_NOW } from "./seed-clock";
+
+const NOW = SEED_NOW;
 
 export const seedFindings: Finding[] = [
   {

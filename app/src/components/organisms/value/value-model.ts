@@ -52,7 +52,9 @@ export function deriveValue(
   invoiced: boolean,
   now: number,
 ): ValueFigures {
-  const done = reviews.filter(isProcessed);
+  // "This month" (the strip's label): processed reviews ordered this calendar month, the
+  // same date the dashboard's Completed tile buckets on.
+  const done = reviews.filter((r) => isProcessed(r) && inMonth(r.orderedAt, now));
   const hoursSaved = done.reduce(
     (sum, r) => sum + r.reviewTypes.reduce((s, t) => s + (HOURS_SAVED_PER_REVIEW[t] ?? 0), 0),
     0,

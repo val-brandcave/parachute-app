@@ -149,7 +149,6 @@ function ReceiptBody({ receiptId }: { receiptId: string }) {
         </dl>
         {note && <p className="rc-note">{note}</p>}
       </article>
-      <p className="rc-also">Also on the monthly statement.</p>
     </Dialog>
   );
 }

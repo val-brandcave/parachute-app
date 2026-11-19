@@ -37,6 +37,8 @@ import { PIPELINE_STAGES } from "@/lib/utils";
 import { RunConfirm } from "./RunConfirm";
 import { RunTriage } from "./RunTriage";
 import { RunWorkbook } from "./RunWorkbook";
+import { TourChip } from "@/components/molecules/TourChip";
+import { TourHost } from "@/components/organisms/tour/TourHost";
 import { SourceDoc } from "./SourceDoc";
 import { RunSignModal } from "./RunSign";
 import { RunAttestationPreview } from "./RunAttestationPreview";
@@ -562,10 +564,15 @@ export function RunExperience({
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      // B2: a dialog that handled this Esc (Radix calls preventDefault) has already closed
+      // itself by the time this runs, so the query below can't see it — trust the flag.
+      if (e.defaultPrevented) return;
       const el = e.target as HTMLElement;
       if (el?.tagName === "INPUT" || el?.tagName === "TEXTAREA" || el?.isContentEditable)
         return;
       if (document.querySelector(".ui-menu-pop")) return;
+      // B2: a dialog over the takeover (LockDialog, ReceiptDialog, the Sign modal) owns Esc.
+      if (document.querySelector('[role="dialog"]:not(.run), [role="alertdialog"], .ui-modal')) return;
       if (e.key === "Escape" && spoke !== "progress") onClose();
     };
     document.addEventListener("keydown", onKey);
@@ -591,8 +598,12 @@ export function RunExperience({
           <div className="run-head-title">{title}</div>
           {sub && <div className="run-head-sub">{sub}</div>}
         </div>
+        {/* Review tour chip + "Tour, n of 4" (spec §5.13, PC-38): only on the workbook spoke. */}
+        <div className="run-head-chip">{spoke === "workbook" && <TourChip tourId="first-review" />}</div>
         <IconButton name="close" onClick={onClose} aria-label="Close" />
       </header>
+      {/* In-run tour host: .run covers the shell's stacking context, so the run tour mounts here. */}
+      <TourHost scope="run" />
 
       <AnimatePresence mode="wait" initial={false}>
         <motion.div

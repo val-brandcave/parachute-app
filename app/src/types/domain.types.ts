@@ -24,7 +24,8 @@ export interface User extends BaseEntity {
 /* ---- Self-serve onboarding: org profile, billing, wallet, setup ---- */
 export type OrgKind = "bank" | "appraisal_firm";
 export type TeamBand = "1" | "2-10" | "11+";
-export type VolumeBand = "lt50" | "50-200" | "200+";
+/** "unsure" = "I'm not sure yet" (routes self-serve). Key "50-200" stays for stored data; its label is "50–199". */
+export type VolumeBand = "lt50" | "50-200" | "200+" | "unsure";
 /** invoiced = YouConnect / enterprise — billed monthly, no wallet. */
 export type BillingModel = "trial" | "payg" | "invoiced";
 /** "none" when the approval gate is off. */
@@ -36,6 +37,9 @@ export interface OrgProfile {
   volumeBand: VolumeBand;
   salesRequested?: boolean;
   salesNote?: string;
+  /** Enterprise: when the setup call was booked (epoch ms) and the slot label shown back. */
+  callBookedAt?: Timestamp;
+  callSlot?: string;
 }
 
 export interface OrgFlags {
@@ -73,6 +77,9 @@ export type SetupStepId =
   | "first_review"
   | "tutorial";
 
+/** Get started v4 sections. Only first_review and own_rules pay a reward (SETUP_REWARD_SECTIONS). */
+export type SetupSectionId = "first_review" | "own_rules" | "team";
+
 export type CreditPackId = "pack5" | "pack10" | "pack20";
 
 export type CreditSource = "trial" | "earned" | "purchased";
@@ -97,14 +104,28 @@ export interface CreditLedgerEntry extends BaseEntity {
   loanNo?: string;
   reviewTypes?: ReviewType[];
   setupStepId?: SetupStepId;
+  /** Earned rows: the setup section whose completion paid this reward. */
+  setupSectionId?: SetupSectionId;
   packId?: CreditPackId;
   receiptId?: string;
-  /** Debits: which bucket(s) the credits came from (spend order trial > earned > purchased). */
+  /** Debits: which bucket(s) the credits came from (PC-16 spend order: purchased oldest first > earned > trial). */
   paidFrom?: CreditSource[];
   /** Purchases: true when auto-reload bought it. */
   auto?: boolean;
   actorId: UUID;
   note?: string;
+}
+
+/**
+ * The bank's credit-policy document (F-123): org config uploaded once in
+ * Settings → Compliance, applied on the pipeline's final pass.
+ */
+export interface BankPolicyDoc {
+  name: string;
+  /** Display size — mock layer keeps a formatted label, not bytes. */
+  sizeLabel: string;
+  /** Display date the doc was last replaced (e.g. "Jun 12, 2026"). */
+  updatedAt: string;
 }
 
 /** One row per org; `id` === `orgId` so the adapter can address it. */
@@ -118,6 +139,8 @@ export interface WalletSettings {
   monthlyCap?: number;
   paymentMethod: "card" | "invoice" | "ach" | null;
   cardLast4?: string;
+  /** Saved card expiry, "MM/YY" (checkout "Expires 08/28"). */
+  cardExpiry?: string;
   billingEmail?: string;
   /** Finance details printed on receipts and statements. */
   poNumber?: string;
@@ -132,6 +155,23 @@ export interface WalletSettings {
   alertSpendUsd?: number;
   /** Comma-separated; empty means the billing email. */
   alertEmails?: string;
+  /** Checkout "Also send receipts to". */
+  receiptCc?: string;
+}
+
+export type CreditRequestStatus = "open" | "opened" | "fulfilled" | "dismissed" | "cancelled";
+
+/** A reviewer's ask for more credits, sent to the org's admins (spec §5.9). */
+export interface CreditRequest {
+  id: UUID;
+  orgId: UUID;
+  requesterId: UUID;
+  note?: string;
+  createdAt: Timestamp;
+  status: CreditRequestStatus;
+  openedAt?: Timestamp;
+  resolvedAt?: Timestamp;
+  remindedAt?: Timestamp;
 }
 
 /** One row per org; `id` === `orgId`. */

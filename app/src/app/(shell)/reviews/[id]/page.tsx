@@ -12,10 +12,17 @@ import {
   useWalletStore,
   beginRunInPlace,
 } from "@/store";
-import { costFor } from "@/lib/pricing";
+import { useLockStore } from "@/store/lock.store";
+import { checkoutHref } from "@/lib/checkout";
 import { runEntry } from "@/lib/review-lifecycle";
 import type { ReviewType } from "@/types";
 import { RunExperience, type RunStartHandler } from "@/components/run/RunExperience";
+import {
+  RunAddCreditsContext,
+  startLock,
+  type RunAddCreditsHandler,
+} from "@/components/run/RunConfirm";
+import { currentCheckoutBlock, useLaunchCheckout } from "@/components/organisms/CheckoutLauncher";
 
 /**
  * The review details page IS the run wizard. It seeds the run store for this
@@ -32,6 +39,7 @@ export default function ReviewDetailPage() {
   const enterReview = useRunStore((s) => s.enterReview);
   const storeReviewId = useRunStore((s) => s.reviewId);
   const updateReview = useReviewsStore((s) => s.updateReview);
+  const launchCheckout = useLaunchCheckout();
 
   // Seed the run store once per review id (not on every review-object change, so
   // an in-run status flip can't reset the spoke mid-flight).
@@ -61,11 +69,19 @@ export default function ReviewDetailPage() {
   // Route Start: the review already exists — flip it to running + commit the
   // chosen types, then advance to the pipeline in place.
   const onStart: RunStartHandler = (display, types, opts) => {
-    // Balance is checked at Start only (backstop; the confirm gate already disables Start).
+    // Approval + balance are checked at Start only. Review setup already opens the lock
+    // dialog; this is the backstop (state changed underneath). The sample never locks.
     const wallet = useWalletStore.getState();
-    const need = review?.sample ? 0 : costFor(types as ReviewType[]);
-    if (!wallet.canAfford(need)) {
-      wallet.openTopUp({ reason: "low_balance", needed: need });
+    const lock = review?.sample
+      ? null
+      : startLock(display, types, wallet.balance(), (t) =>
+            // Run-only: keep only the chosen type's template override (as RunConfirm does).
+            onStart(display, [t], {
+              checklistId: t === "administrative" ? (opts?.checklistId ?? null) : null,
+              layoutId: t === "technical" ? (opts?.layoutId ?? null) : null,
+            }), onAddCredits);
+    if (lock) {
+      useLockStore.getState().openLock(lock);
       return;
     }
     if (review)
@@ -86,6 +102,31 @@ export default function ReviewDetailPage() {
       });
     }
     beginRunInPlace(display, types, opts);
+  };
+
+  // Draft before checkout (spec §5.6): the review already exists, so keep its id —
+  // commit the chosen types (an intake review is the draft), then leave for checkout
+  // with `return=/reviews/<id>&types=…`. On return, intake → Review setup reads them.
+  const onAddCredits: RunAddCreditsHandler = ({ display, types, needed, choice }) => {
+    if (!review) return;
+    if (currentCheckoutBlock()) {
+      launchCheckout({ needed });
+      return;
+    }
+    // Save the selection on any review that reopens at setup (confirm or triage spoke),
+    // and only leave once it is stored, so a reload on checkout still has it.
+    const { spoke } = runEntry(review);
+    void (async () => {
+      if (spoke === "confirm" || spoke === "triage")
+        await updateReview(review.id, {
+          loanNo: display.loanNo || review.loanNo,
+          reviewTypes: types as ReviewType[],
+        });
+      const returnTo = `/reviews/${review.id}`;
+      // The lock dialog's pick (custom amount or pack) wins; else checkout opens on the shortfall.
+      if (choice) router.push(checkoutHref({ ...choice, returnTo, types: types as ReviewType[] }));
+      else launchCheckout({ needed, returnTo, types: types as ReviewType[] });
+    })();
   };
 
   // Opening the sample review completes "Open the sample review".
@@ -114,12 +155,14 @@ export default function ReviewDetailPage() {
       aria-label="Review"
     >
       {ready ? (
-        <RunExperience
-          reviewId={review!.id}
-          onExit={backToQueue}
-          onStart={onStart}
-          onTriageReject={backToQueue}
-        />
+        <RunAddCreditsContext.Provider value={onAddCredits}>
+          <RunExperience
+            reviewId={review!.id}
+            onExit={backToQueue}
+            onStart={onStart}
+            onTriageReject={backToQueue}
+          />
+        </RunAddCreditsContext.Provider>
       ) : (
         <div className="run-loading text-secondary">
           <span className="ui-spinner" aria-hidden="true" /> Loading review…

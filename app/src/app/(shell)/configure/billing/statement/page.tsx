@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/atoms";
 import { PageHeader } from "@/components/templates/PageHeader";
 import {
-  DEMO_TODAY,
   StatementPaper,
   downloadText,
   invoicedStatement,
@@ -29,16 +28,16 @@ function StatementPage() {
   const months = useMemo(() => {
     const keys = new Set<string>();
     if (!b.invoiced) b.ledger.filter((e) => e.kind === "debit" || e.kind === "rescan").forEach((e) => keys.add(monthKey(e.createdAt)));
-    if (keys.size === 0) keys.add(monthKey(DEMO_TODAY));
+    if (keys.size === 0) keys.add(monthKey(b.now));
     return [...keys].sort().reverse();
-  }, [b.ledger, b.invoiced]);
+  }, [b.ledger, b.invoiced, b.now]);
   const asked = params.get("month");
   const key = asked && months.includes(asked) ? asked : months[0];
 
   const s = useMemo(
-    () => (b.invoiced ? invoicedStatement(b.reviews, b.userName, key) : walletStatement(b.ledger, b.reviews, b.userName, key)),
+    () => (b.invoiced ? invoicedStatement(b.reviews, b.userName, key, b.now) : walletStatement(b.ledger, b.reviews, b.userName, key)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [b.invoiced, b.reviews, b.ledger, b.users, key],
+    [b.invoiced, b.reviews, b.ledger, b.users, b.now, key],
   );
 
   if (!b.isAdmin) {

@@ -10,7 +10,9 @@ import type { Attestation } from "@/types";
 // "Needs attention" (AI answered NO, or confidence < 0.85) is intentionally
 // spread across a handful of items so the focus-mode filter and coverage panel
 // have something to surface: ci-06, ci-07, ci-09, ci-14, ci-16, ci-20.
-const NOW = 1781827200000;
+import { SEED_NOW } from "./seed-clock";
+
+const NOW = SEED_NOW;
 
 type Row = Omit<Attestation, "reviewId" | "createdAt">;
 

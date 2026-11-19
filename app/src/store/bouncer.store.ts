@@ -32,6 +32,19 @@ function deriveIdentity(email: string): { name: string; initials: string } {
   return { name: name || email, initials };
 }
 
+export type InviteResultStatus = "sent" | "already_member" | "already_invited" | "invalid" | "wrong_domain";
+export interface InviteResult {
+  email: string;
+  status: InviteResultStatus;
+}
+/** One person to invite. Each row carries its own role (PC-29). */
+export interface InviteInput {
+  email: string;
+  role: UserRole;
+}
+
+const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+
 export interface JoinedInfo {
   inviteId: string;
   name: string;
@@ -49,7 +62,12 @@ interface BouncerState {
   fetchInvites: (force?: boolean) => Promise<void>;
   pending: () => Invite[];
   byId: (id: string) => Invite | undefined;
-  sendInvites: (emails: string[], role: UserRole, message?: string) => Promise<Invite[]>;
+  /**
+   * Send invites in one call, each with its own role. Returns one result per input
+   * row, in order. Rows that aren't sent (invalid, already a member or invited,
+   * outside `opts.domain` when one is given) create nothing.
+   */
+  sendInvites: (invites: InviteInput[], message?: string, opts?: { domain?: string }) => Promise<InviteResult[]>;
   resend: (id: string) => Promise<void>;
   revoke: (id: string) => Promise<void>;
   /** Prototype only: the invitee accepts. Creates the user and marks the invite accepted. */
@@ -77,17 +95,40 @@ export const useBouncerStore = create<BouncerState>((set, get) => {
     pending: () => get().invites.filter((i) => i.status === "pending"),
     byId: (id) => get().allInvites.find((i) => i.id === id),
 
-    sendInvites: async (emails, role, message) => {
+    sendInvites: async (rows, message, opts) => {
       const now = Date.now();
       const by = getCurrentUser().id;
+      const orgId = currentOrgId();
+      const domain = opts?.domain?.toLowerCase();
+      const members = new Set(
+        useUsersStore
+          .getState()
+          .allUsers.filter((u) => u.orgId === orgId && u.email)
+          .map((u) => u.email!.toLowerCase()),
+      );
+      const invited = new Set(
+        get()
+          .allInvites.filter((i) => i.orgId === orgId && i.status === "pending")
+          .map((i) => i.email.toLowerCase()),
+      );
       const made: Invite[] = [];
-      for (const raw of emails) {
+      const results: InviteResult[] = [];
+      for (const row of rows) {
+        const email = row.email.trim().toLowerCase();
+        let status: InviteResultStatus = "sent";
+        if (!EMAIL_RE.test(email)) status = "invalid";
+        else if (domain && email.split("@")[1] !== domain) status = "wrong_domain";
+        else if (members.has(email)) status = "already_member";
+        else if (invited.has(email)) status = "already_invited";
+        results.push({ email, status });
+        if (status !== "sent") continue;
+        invited.add(email); // a duplicate later in the same batch reads as already invited
         const invite: Invite = {
           id: generateId(),
           createdAt: now,
-          orgId: currentOrgId(),
-          email: raw.trim().toLowerCase(),
-          role,
+          orgId,
+          email,
+          role: row.role,
           status: "pending",
           invitedById: by,
           sentAt: now,
@@ -97,8 +138,8 @@ export const useBouncerStore = create<BouncerState>((set, get) => {
         await adapter.create<Invite>(Collections.INVITES, invite);
         made.push(invite);
       }
-      commit([...get().allInvites, ...made]);
-      return made;
+      if (made.length) commit([...get().allInvites, ...made]);
+      return results;
     },
 
     resend: async (id) => {

@@ -1,40 +1,45 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import { Callout } from "@realwired/ui";
-import { Button, CreditChip } from "@/components/atoms";
-import { EmptyLine, EmptyState, GhostBars, GhostStats } from "@/components/molecules";
-import { useApprovalPending } from "@/store";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { Callout, useToast } from "@realwired/ui";
+import { Button, CreditChip, Icon, Illustration, Textarea } from "@/components/atoms";
+import { useCreditRequestStore, usePrefsStore } from "@/store";
+import { isLive } from "@/lib/credit-requests";
+import { EmptyLine } from "@/components/molecules";
+import { BillingEmptyCard } from "./BillingEmptyCard";
+import { usageByPerson } from "@/lib/wallet-view";
+import { AUTO_RELOAD_DEFAULTS, CREDIT_USD, approxValue, costFor, formatUsd, packById } from "@/lib/pricing";
 import { FULL_REVIEW_TYPES } from "@/lib/setup-steps";
-import { CREDIT_USD, approxValue, costFor, formatUsd, packById } from "@/lib/pricing";
-import { balanceGrants, nextExpiring } from "@/lib/wallet-breakdown";
+import { nextExpiring } from "@/lib/wallet-breakdown";
 import { ActivityTable } from "./ActivityTable";
+import { AutoReloadOffer } from "./AutoReloadOffer";
 import { BalanceCard } from "./BalanceCard";
+import { BonusNotice } from "./BonusNotice";
+import { PendingTracker, type PendingTrackerStep } from "@/components/organisms/home/PendingTracker";
 import {
   DAY,
   UsageCard,
   deltaOf,
   factsFor,
   runwayFill,
-  runwayFor,
   runwayText,
-  runwayWarn,
   useUsage,
   type Delta,
   type UsagePeriod,
 } from "./usage";
-import { DEMO_TODAY, daysUntil } from "./billing-data";
+import { daysUntil } from "./billing-data";
+import "./billing-states.css";
 import type { Billing } from "./useBilling";
 
 const EXPIRY_ALERT_DAYS = 30;
-const longDate = (ts: number) =>
-  new Date(ts).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-const shortDate = (ts: number) => new Date(ts).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+const FULL_COST = costFor(FULL_REVIEW_TYPES);
+const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+const dayLong = (ts: number) => new Date(ts).toLocaleDateString("en-US", { weekday: "long" });
+const dayShort = (ts: number) => new Date(ts).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+const monthDay = (ts: number) => new Date(ts).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+const monthDayYear = (ts: number) => new Date(ts).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+const timeOf = (ts: number) => new Date(ts).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 
 function DeltaLine({ d }: { d: Delta }) {
   if (d.pct === null) return <>&nbsp;</>;
@@ -47,42 +52,96 @@ function DeltaLine({ d }: { d: Delta }) {
   );
 }
 
-/** The balance, how long it lasts, and the auto-reload state. */
+/** Pending approval: the credits are held, so the hero is the tracker, not a number. Add credits is locked in the band. */
+function HeldHero({ b }: { b: Billing }) {
+  const at = b.org?.profile?.callBookedAt;
+  const steps: PendingTrackerStep[] = [
+    { label: "Signed up", date: b.org?.createdAt ? monthDay(b.org.createdAt) : undefined, state: "done" },
+    at !== undefined
+      ? { label: "Call booked", date: `${monthDay(at)}, ${timeOf(at)}`, state: "current" }
+      : { label: "Book your setup call", state: "current" },
+    { label: "Confirmed", date: "Usually same day", state: "todo" },
+  ];
+  return (
+    <section className="card bl-card ov-hero ov-held" aria-labelledby="ov-held-t" data-tour="billing-balance">
+      <div className="ov-hero-top">
+        <div>
+          <h2 className="bl-h" id="ov-held-t">
+            On hold
+          </h2>
+          <p className="bl-body tw-pretty ov-lead">
+            <b>{b.org?.name ?? "Your organization"} is waiting for approval.</b> Your trial credits are held until Realwired confirms your account.
+            Reviews that are already uploaded wait with them.
+          </p>
+        </div>
+        <Illustration name="09b-approval-pending" size={120} />
+      </div>
+      <div className="ov-runway">
+        <PendingTracker steps={steps} />
+      </div>
+    </section>
+  );
+}
+
+/** The balance, how long it lasts, and the auto-reload state. Amber only when low, red only at zero. */
 function BalanceHero({
   b,
   showValue,
   onSettings,
   aside,
+  offerBeside,
 }: {
   b: Billing;
   showValue: boolean;
   onSettings?: () => void;
   aside?: React.ReactNode;
+  /** The AutoReloadOffer card sits beside the hero, so the hero drops its own auto-reload chip. */
+  offerBeside?: boolean;
 }) {
-  const { all, anchor } = useUsage(b, false);
-  const total = b.remaining.total;
-  const full = Math.floor(total / costFor(FULL_REVIEW_TYPES));
-  const run = useMemo(() => runwayFor(total, all, anchor), [total, all, anchor]);
+  const w = b.wallet;
+  const total = w.balance;
+  const full = w.fullReviews;
+  const tone = w.lowTone;
+  const days = w.runwayDays;
   const s = b.settings;
-  const pack = packById(s?.reloadPackId ?? "pack10");
-  const low = run.days !== null && runwayWarn(run.days);
-  const fill = run.days === null ? 0 : runwayFill(run.days);
+  const pack = packById(s?.reloadPackId ?? AUTO_RELOAD_DEFAULTS.packId);
+  const fill = tone === "zero" ? 0 : days === null ? 0 : runwayFill(days);
+  const weekly = days !== null && days > 0 ? Math.round(w.pacePerWeek) : null;
+  const onlyTrial = total > 0 && w.bySource.trial === total;
+  const unit = total === 1 ? "credit" : "credits";
 
   return (
-    <section className="card bl-card ov-hero">
+    <section className={`card bl-card ov-hero is-${tone}`} data-tour="billing-balance">
       <div className="ov-hero-top">
         <div>
-          <h2 className="bl-h">Credit balance</h2>
+          <h2 className="bl-h">{b.isAdmin ? "Credit balance" : "Team balance"}</h2>
           <div className="bl-big">
             <span className="bl-big-n">{total}</span>
-            <span className="bl-big-u">
-              {total === 1 ? "credit" : "credits"} ·{" "}
-              {full === 0 ? "not enough for a full review" : `enough for ${full} full review${full === 1 ? "" : "s"}`}
-              {showValue && ` · worth about ${approxValue(total).replace("~", "")}`}
-            </span>
+            <span className="bl-big-u">{onlyTrial ? `trial ${unit}` : unit}</span>
+            {tone === "low" && <CreditChip tone="low">Running low</CreditChip>}
+            {tone === "zero" && <CreditChip tone="zero">Out of credits</CreditChip>}
           </div>
+          <p className="bl-body tw-pretty ov-lead">
+            {tone === "zero" ? (
+              "New reviews can’t start. Reviews already running finish normally."
+            ) : (
+              <>
+                {full === 0 ? "Not enough for a full review." : `Enough for ${plural(full, "full review", "full reviews")}.`}
+                {showValue && ` About ${approxValue(total).replace("~", "")} at list price.`}
+                {tone === "low" && weekly !== null && w.runsOutOn !== null && (
+                  <>
+                    {" "}
+                    At your pace of about {plural(weekly, "credit", "credits")} a week, this runs out on <b>{dayLong(w.runsOutOn)}</b>.
+                  </>
+                )}
+                {onlyTrial && " Trial credits never expire, so there’s no clock on using them."}
+                {!b.isAdmin && ` Shared by everyone at ${b.org?.name ?? "your organization"}. ${b.adminName} manages billing.`}
+              </>
+            )}
+          </p>
         </div>
-        {b.isAdmin && s && (
+        {tone === "zero" && <Illustration name="01b-credits" size={120} />}
+        {b.isAdmin && s && !offerBeside && tone !== "zero" && (
           <div className="bl-row bl-row--tight">
             {s.autoReload ? (
               <CreditChip tone="free">
@@ -100,21 +159,23 @@ function BalanceHero({
         )}
       </div>
 
-      <div className="ov-runway">
-        {run.days === null ? (
+      <div className="ov-runway" data-tour="billing-runway">
+        {tone === "zero" ? (
+          <div className="ov-run-bar is-zero" role="img" aria-label="No credits left">
+            <i style={{ width: "2%" }} />
+          </div>
+        ) : days === null ? (
           <p className="ov-run-line">
             <span>No reviews run in the last 30 days, so there is nothing to estimate yet.</span>
           </p>
         ) : (
           <>
-            <div className={`ov-run-bar${low ? " is-low" : ""}`} role="img" aria-label={`Balance lasts ${runwayText(run.days)}`}>
+            <div className={`ov-run-bar${tone === "low" ? " is-low" : ""}`} role="img" aria-label={`Balance lasts ${runwayText(days)}`}>
               <i style={{ width: `${Math.max(2, Math.round(fill * 100))}%` }} />
             </div>
             <div className="ov-run-line">
-              <span>
-                At your last 30 days&rsquo; pace ({Math.round(run.pacePerDay * 10) / 10} credits a day), this lasts {runwayText(run.days)}.
-              </span>
-              <span className="ov-run-out">{run.days < 1 ? "Runs out today" : `Runs out around ${shortDate(run.runsOut!)}`}</span>
+              <span>At the last 30 days&rsquo; pace, this lasts {runwayText(days)}.</span>
+              <span className="ov-run-out">Runs out {dayShort(w.runsOutOn!)}</span>
             </div>
           </>
         )}
@@ -137,6 +198,8 @@ function Fact({ k, v, small, d }: { k: string; v: React.ReactNode; small?: React
   );
 }
 
+const NBSP = <>&nbsp;</>;
+
 function Facts({ b, mine }: { b: Billing; mine: boolean }) {
   const { all, anchor } = useUsage(b, false);
   const f = useMemo(
@@ -146,6 +209,37 @@ function Facts({ b, mine }: { b: Billing; mine: boolean }) {
   const orgUsed = useMemo(() => factsFor(all, b.ledger, anchor).used, [all, b.ledger, anchor]);
   const share = orgUsed ? Math.round((f.used / orgUsed) * 100) : 0;
   const avgUsd = Math.round(f.avg * CREDIT_USD);
+  const w = b.wallet;
+  const autoReload = b.settings?.autoReload ? "On" : "Off";
+
+  if (!mine && w.lowTone === "low") {
+    const weekly = w.runwayDays !== null && w.runwayDays > 0 ? Math.round(w.pacePerWeek) : null;
+    return (
+      <div className="ov-facts">
+        <Fact k="Used this month" v={w.usedThisMonth} d={NBSP} />
+        <Fact k="Weekly pace" v={weekly === null ? "–" : `~${weekly}`} small="credits" d={NBSP} />
+        <Fact k="Runs out" v={w.runsOutOn === null ? "–" : <span className="ov-warn">{dayShort(w.runsOutOn)}</span>} d={NBSP} />
+        <Fact k="Auto-reload" v={autoReload} d={NBSP} />
+      </div>
+    );
+  }
+  if (!mine && w.lowTone === "zero") {
+    const last = w.lastDebitAt ?? 0;
+    const sameDay = last > 0 && new Date(last).toDateString() === new Date(b.now).toDateString();
+    const waiting = b.reviews.filter((r) => r.status === "intake" && !r.sample).length;
+    return (
+      <div className="ov-facts">
+        <Fact k="Used this month" v={w.usedThisMonth} d={NBSP} />
+        <Fact
+          k="Ran out"
+          v={last === 0 ? "–" : <span className="ov-bad">{sameDay ? `Today, ${timeOf(last)}` : `${monthDay(last)}, ${timeOf(last)}`}</span>}
+          d={NBSP}
+        />
+        <Fact k="Waiting to start" v={waiting} small={waiting === 1 ? "report" : "reports"} d={NBSP} />
+        <Fact k="Auto-reload" v={autoReload} d={NBSP} />
+      </div>
+    );
+  }
   return (
     <div className="ov-facts">
       <Fact
@@ -159,10 +253,10 @@ function Facts({ b, mine }: { b: Billing; mine: boolean }) {
         k="Average per review"
         v={f.reviews ? (Math.round(f.avg * 10) / 10).toString() : "0"}
         small={b.isAdmin && f.reviews ? `credits · ~${formatUsd(avgUsd)}` : "credits"}
-        d={f.reviews && f.prevReviews ? <DeltaLine d={deltaOf(f.avg, f.prevAvg)} /> : <>&nbsp;</>}
+        d={f.reviews && f.prevReviews ? <DeltaLine d={deltaOf(f.avg, f.prevAvg)} /> : NBSP}
       />
       {mine ? (
-        <Fact k="Your share" v={`${share}%`} small="of the organization" d={orgUsed ? `${f.used} of ${orgUsed} credits` : <>&nbsp;</>} />
+        <Fact k="Your share" v={`${share}%`} small="of the organization" d={orgUsed ? `${f.used} of ${orgUsed} credits` : NBSP} />
       ) : (
         <Fact k="Spent, last 30 days" v={formatUsd(f.spent)} small="in top-ups" d={<DeltaLine d={deltaOf(f.spent, f.prevSpent)} />} />
       )}
@@ -170,28 +264,51 @@ function Facts({ b, mine }: { b: Billing; mine: boolean }) {
   );
 }
 
-/** Only when credits that expire within 30 days are still in the balance. */
-function ExpiryAlert({ b, onBuy }: { b: Billing; onBuy?: () => void }) {
-  const next = useMemo(() => nextExpiring(balanceGrants(b.ledger)), [b.ledger]);
-  if (!next || next.expiresAt === null || next.expiresAt - DEMO_TODAY > EXPIRY_ALERT_DAYS * DAY) return null;
-  const days = daysUntil(next.expiresAt);
+/** Reviewer facts (§5.8): what you used, what the team used, when it runs out, who to ask. */
+function ReviewerFacts({ b }: { b: Billing }) {
+  const w = b.wallet;
+  const mine = useMemo(() => {
+    const d = new Date(b.now);
+    const span = { from: new Date(d.getFullYear(), d.getMonth(), 1).getTime(), to: new Date(d.getFullYear(), d.getMonth() + 1, 1).getTime() };
+    return usageByPerson(b.ledger, span).find((r) => r.userId === b.me.id)?.credits ?? 0;
+  }, [b.ledger, b.me.id, b.now]);
+  return (
+    <div className="ov-facts">
+      <Fact k="You used this month" v={mine} small={mine === 1 ? "credit" : "credits"} d={NBSP} />
+      <Fact k="Team used this month" v={w.usedThisMonth} small={w.usedThisMonth === 1 ? "credit" : "credits"} d={NBSP} />
+      <Fact
+        k="Runs out"
+        v={w.runsOutOn === null ? "–" : <span className={w.lowTone === "ok" ? undefined : w.lowTone === "zero" ? "ov-bad" : "ov-warn"}>About {dayLong(w.runsOutOn)}</span>}
+        d={NBSP}
+      />
+      <Fact k="Admin" v={<span className="ov-fact-name">{b.adminName}</span>} d={NBSP} />
+    </div>
+  );
+}
+
+/** Only when credits that expire within 30 days are still in the balance. Spending them is the point, so the action is Start. */
+function ExpiryAlert({ b }: { b: Billing }) {
+  const next = useMemo(() => nextExpiring(b.wallet.grants), [b.wallet.grants]);
+  if (!next || next.expiresAt === null || next.expiresAt - b.now > EXPIRY_ALERT_DAYS * DAY) return null;
+  const days = daysUntil(next.expiresAt, b.now);
   const n = next.remaining;
+  const reviews = Math.ceil(n / FULL_COST);
+  const pack = next.entry.packId ? packById(next.entry.packId) : null;
   return (
     <Callout
       tone="warning"
       action={
-        onBuy ? (
-          <Button size="sm" variant="tonal" onClick={onBuy}>
-            Add credits
-          </Button>
-        ) : undefined
+        <Link href="/launchpad" className="ui-btn ui-btn--sm ui-btn--tonal">
+          Start a review
+        </Link>
       }
     >
       <strong>
-        {n} {next.source === "earned" ? "earned " : ""}credit
-        {n === 1 ? "" : "s"} expire{n === 1 ? "s" : ""} on {longDate(next.expiresAt)}
+        {plural(n, "credit", "credits")} {n === 1 ? "expires" : "expire"} in {plural(days, "day", "days")}, on {monthDay(next.expiresAt)}.
       </strong>{" "}
-      ({days} day{days === 1 ? "" : "s"} left). Credits that expire first are used first.
+      {pack ? `They’re from the ${pack.credits}-credit pack bought ${monthDayYear(next.entry.createdAt)}. ` : ""}We use credits that expire soonest
+      first, so {plural(reviews, "full review", "full reviews")}
+      {days <= 7 ? " this week" : ""} use{reviews === 1 ? "s" : ""} {n === 1 ? "it" : "them"} up.
     </Callout>
   );
 }
@@ -210,42 +327,47 @@ export function OverviewTab({
 }) {
   const { lines, anchor } = useUsage(b, false);
   const [period, setPeriod] = useState<UsagePeriod>("30d");
-  const router = useRouter();
-  const pending = useApprovalPending();
+  if (b.wallet.held) {
+    return (
+      <div className="us bl-stack">
+        <HeldHero b={b} />
+      </div>
+    );
+  }
   // Level 1: no credit has ever moved. One block instead of a zero balance, zero facts and an empty chart.
   if (b.ledger.length === 0) {
     return (
       <div className="us bl-stack">
-        <EmptyState
+        <BillingEmptyCard
           title="Your balance and usage show up here"
-          preview={
-            <>
-              <GhostStats count={3} />
-              <GhostBars height={90} />
-            </>
-          }
-          status={
-            pending ? (
-              <>
-                <b>{b.org?.name ?? "Your organization"} is waiting for approval.</b> Credits and reviews open once it is approved.
-              </>
+          ill="02b-wallet-top-up"
+          action={
+            b.isAdmin ? (
+              <Button iconLeft="add" onClick={b.openTopUp}>
+                Add credits
+              </Button>
             ) : undefined
-          }
-          actions={
-            <Button variant="outline" iconRight="forward" onClick={() => router.push("/reviews/review-sample")}>
-              Open the sample review
-            </Button>
           }
         >
           Once credits are added you will see the balance, how long it lasts, and what each review used.
-        </EmptyState>
+        </BillingEmptyCard>
       </div>
     );
   }
+  const offer = b.wallet.lowTone === "low" && !b.settings?.autoReload;
+  const hero = <BalanceHero b={b} showValue onSettings={onSettings} offerBeside={offer} />;
   return (
     <div className="us bl-stack">
-      <BalanceHero b={b} showValue onSettings={onSettings} />
-      <ExpiryAlert b={b} onBuy={b.openTopUp} />
+      {offer ? (
+        <div className="ov-split">
+          {hero}
+          <AutoReloadOffer b={b} onSettings={onSettings} />
+        </div>
+      ) : (
+        hero
+      )}
+      <ExpiryAlert b={b} />
+      <BonusNotice />
       <Facts b={b} mine={false} />
       <UsageCard
         compact
@@ -288,6 +410,140 @@ export function OverviewTab({
   );
 }
 
+const NOTE_MAX = 200;
+/** "just now", "2 h ago", "yesterday", else "Nov 9". Pure: `now` is passed in. */
+function agoText(at: number, now: number): string {
+  const mins = Math.floor((now - at) / 60_000);
+  if (mins < 2) return "just now";
+  if (mins < 60) return `${mins} min ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours} h ago`;
+  if (hours < 48) return "yesterday";
+  return monthDay(at);
+}
+
+/**
+ * Reviewer credit request (spec §5.9): the form, then the tracker. One live request per
+ * requester; while one is open the form is not offered. Resolved requests read back as
+ * "Credits added" (plus a toast the first time) or "<Admin> closed your request" with Ask again.
+ */
+function RequestAsk({ b }: { b: Billing }) {
+  const toast = useToast();
+  const requests = useCreditRequestStore((s) => s.requests);
+  const [now] = useState(() => Date.now());
+  const [note, setNote] = useState("");
+  const [again, setAgain] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const orgId = b.org?.id;
+  const last = useMemo(
+    () =>
+      requests
+        .filter((r) => r.requesterId === b.me.id && r.orgId === orgId)
+        .sort((x, y) => y.createdAt - x.createdAt)[0],
+    [requests, b.me.id, orgId],
+  );
+  const live = !!last && isLive(last);
+  const resolved = last && !live && last.status !== "cancelled" ? last : undefined;
+
+  // The "Credits added" toast fires once per fulfilled request, remembered in this browser (prefs).
+  useEffect(() => {
+    if (!last || last.status !== "fulfilled") return;
+    if (!usePrefsStore.getState().markRequestSeen(b.me.id, last.id, last.resolvedAt ?? 1)) return;
+    toast({ title: "Credits added", description: `${b.adminFirst} added credits to ${b.org?.name ?? "your organization"}.`, tone: "success" });
+  }, [last, toast, b.me.id, b.adminFirst, b.org?.name]);
+
+  const ask = async () => {
+    setBusy(true);
+    const made = await useCreditRequestStore.getState().request(note);
+    setBusy(false);
+    if (!made) return;
+    setNote("");
+    setAgain(false);
+    toast({ title: `We emailed ${b.adminName}`, description: "They can add credits from the credits menu.", tone: "success" });
+  };
+  const remind = async () => {
+    if (!last) return;
+    await useCreditRequestStore.getState().remind(last.id);
+    toast({ title: `We reminded ${b.adminFirst}`, tone: "success" });
+  };
+  const cancel = async () => {
+    if (!last) return;
+    await useCreditRequestStore.getState().cancel(last.id);
+  };
+
+  if (live && last) {
+    return (
+      <div className="bl-ask rq" role="status">
+        <p className="bl-body rq-title">
+          <Icon name="hourglass-high" size={16} /> You asked {b.adminName} {agoText(last.createdAt, now)}
+        </p>
+        {last.note && <p className="rq-quote">&ldquo;{last.note}&rdquo;</p>}
+        <p className="bl-note">
+          {last.status === "opened" ? `${b.adminFirst} has seen your request.` : `${b.adminFirst} has not opened it yet.`}
+          {last.remindedAt ? ` You reminded ${b.adminFirst} ${agoText(last.remindedAt, now)}.` : ""}
+        </p>
+        <div className="bl-row bl-row--tight bl-row--start rq-actions">
+          {!last.remindedAt && (
+            <Button variant="outline" size="sm" iconLeft="send" onClick={remind}>
+              Remind {b.adminFirst}
+            </Button>
+          )}
+          <Button variant="ghost" size="sm" onClick={cancel}>
+            Cancel request
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  const showForm = !resolved || again;
+  return (
+    <div className="bl-ask rq">
+      {resolved && resolved.status === "fulfilled" && (
+        <p className="bl-body rq-title rq-title--ok" role="status">
+          <Icon name="check-circle" size={16} /> Credits added
+          <span className="rq-when">{resolved.resolvedAt ? agoText(resolved.resolvedAt, now) : ""}</span>
+        </p>
+      )}
+      {resolved && resolved.status === "dismissed" && (
+        <p className="bl-body rq-title" role="status">
+          <Icon name="info" size={16} /> {b.adminFirst} closed your request
+          <span className="rq-when">{resolved.resolvedAt ? agoText(resolved.resolvedAt, now) : ""}</span>
+        </p>
+      )}
+      {resolved && !again && (
+        <div className="bl-row bl-row--tight bl-row--start">
+          <Button variant="outline" size="sm" iconLeft="send" onClick={() => setAgain(true)}>
+            {resolved.status === "dismissed" ? "Ask again" : "Ask for more"}
+          </Button>
+        </div>
+      )}
+      {showForm && (
+        <>
+          {!resolved && <p className="bl-body">Only your organization admin can buy credits. Ask {b.adminName}.</p>}
+          <label className="rq-label" htmlFor="rq-note">
+            Add a note <span className="bl-note">(optional)</span>
+          </label>
+          <Textarea
+            id="rq-note"
+            rows={2}
+            maxLength={NOTE_MAX}
+            value={note}
+            placeholder="What is due, and why you need more"
+            onChange={(e) => setNote(e.target.value)}
+          />
+          <div className="bl-row bl-row--tight bl-row--start rq-actions">
+            <Button iconLeft="send" onClick={ask} aria-busy={busy}>
+              Ask {b.adminFirst} for more credits
+            </Button>
+            <span className="bl-note">We&rsquo;ll send {b.adminFirst} an email with your balance.</span>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 /** Read-only for reviewers and approvers: the organization's balance and your own numbers. Credits only, no dollars. */
 export function ReviewerBilling({ b, onViewAll }: { b: Billing; onViewAll: () => void }) {
   const mine = useMemo(
@@ -297,17 +553,10 @@ export function ReviewerBilling({ b, onViewAll }: { b: Billing; onViewAll: () =>
   if (b.ledger.length === 0) {
     return (
       <div className="us bl-stack">
-        <EmptyState
-          title="Your organization has no credits yet"
-          preview={<GhostStats count={3} />}
-          actions={
-            <Button iconLeft="send" onClick={b.askAdmin}>
-              Ask your admin
-            </Button>
-          }
-        >
+        <BillingEmptyCard title="Your organization has no credits yet" ill="02b-wallet-top-up">
           Only your organization admin can add credits. Once they do, the balance and the reviews you run show up here.
-        </EmptyState>
+        </BillingEmptyCard>
+        <RequestAsk b={b} />
       </div>
     );
   }
@@ -316,20 +565,10 @@ export function ReviewerBilling({ b, onViewAll }: { b: Billing; onViewAll: () =>
       <BalanceHero
         b={b}
         showValue={false}
-        aside={
-          <div className="bl-ask">
-            <p className="bl-body">Only your organization admin can buy credits. Ask {b.adminName}.</p>
-            <div className="bl-row bl-row--tight bl-row--start">
-              <Button iconLeft="send" onClick={b.askAdmin}>
-                Ask your admin
-              </Button>
-              <span className="bl-note">We&rsquo;ll send {b.adminFirst} an email with your balance.</span>
-            </div>
-          </div>
-        }
+        aside={<RequestAsk b={b} />}
       />
       <ExpiryAlert b={b} />
-      <Facts b={b} mine />
+      <ReviewerFacts b={b} />
       <BalanceCard b={b} showValue={false} />
       <div className="bl-row bl-sechead">
         <h2 className="bl-section">Your recent activity</h2>

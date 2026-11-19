@@ -3,7 +3,9 @@ import type { WorkbookLayout } from "@/types";
 // The org-default Technical workbook layout (= Builder in org mode). New reviews
 // inherit it; reviewers can tweak per review. Light for v2 — the full 3-pane
 // builder is deferred; "Edit layout" deep-links into the existing Builder.
-const NOW = 1781827200000;
+import { SEED_NOW } from "./seed-clock";
+
+const NOW = SEED_NOW;
 
 export const seedWorkbookLayouts: WorkbookLayout[] = [
   {

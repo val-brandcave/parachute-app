@@ -305,7 +305,7 @@ export function RunWorkbook({
           {!signed && (
             <>
               <span className="run-ex-tools-div" aria-hidden="true" />
-              <span className="run-wb-viewmode">
+              <span className="run-wb-viewmode" data-tour="wb-viewmode">
                 <SegmentedControl
                   options={[
                     { value: "edit", label: "Edit" },
@@ -504,7 +504,7 @@ export function RunWorkbook({
               <Button variant="outline" size="sm" iconLeft="pdf" onClick={onReviewFindings}>
                 View source
               </Button>
-              <Button variant="primary" size="sm" iconRight="forward" onClick={onSign}>
+              <Button variant="primary" size="sm" iconRight="forward" onClick={onSign} data-tour="wb-sign">
                 Sign &amp; finalize
               </Button>
             </>

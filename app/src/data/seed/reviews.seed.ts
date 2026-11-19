@@ -2,7 +2,9 @@ import type { Review } from "@/types";
 
 // Reference "now" for the seed (~mid June 2026). The UI renders SLA dates
 // relative to the real current time, so these stay roughly sensible in a demo.
-const NOW = 1781827200000;
+import { SEED_NOW } from "./seed-clock";
+
+const NOW = SEED_NOW;
 const DAY = 86400000;
 
 // Org = the bank (single institution, shown in the org card — not a row column).

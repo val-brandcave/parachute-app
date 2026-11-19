@@ -1,0 +1,554 @@
+/* Checkout (T3.1, spec §5.6). Tokens only; light + dark via --md-*. */
+
+/* ---- Frame: DS TaskFlow presentation="page" fills the viewport ---- */
+.co-root {
+  height: 100dvh;
+  background: var(--md-bg);
+  color: var(--md-on-surface);
+}
+.co-flow {
+  background: var(--md-bg);
+}
+.co-top {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 40px;
+}
+.co-top-logo {
+  flex: none;
+  display: flex;
+  align-items: center;
+  padding-right: 14px;
+  border-right: 1px solid var(--md-outline-v);
+}
+.co-top-steps {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  justify-content: center;
+}
+.co-exit {
+  flex: none;
+}
+.co-main {
+  display: block;
+  padding: calc(var(--d-page-y) * 0.5) calc(var(--d-page-x) * 0.5);
+}
+
+/* ---- Step body ---- */
+.co-body {
+  min-width: 0;
+}
+.co-step {
+  display: grid;
+  gap: calc(var(--d-gap) * 1.5);
+  min-width: 0;
+}
+.co-head {
+  display: grid;
+  gap: 6px;
+}
+.co-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--md-on-surface);
+  outline: none;
+}
+.co-lede {
+  margin: 0;
+  font-size: 14px;
+  color: var(--md-on-surface-v);
+}
+.co-h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--md-on-surface);
+}
+.co-small {
+  font-size: 12px;
+}
+.co-ok {
+  color: var(--md-success);
+}
+.co-link {
+  border: 0;
+  padding: 0;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: var(--md-accent);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.co-link:focus-visible {
+  outline: 2px solid var(--md-accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+/* Quiet row action ("Change", "Turn on"): petrol, medium, underline on hover only. */
+.co-act {
+  border: 0;
+  padding: 2px 4px;
+  margin: -2px -4px;
+  border-radius: 4px;
+  background: none;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--md-accent);
+  cursor: pointer;
+  text-decoration: none;
+  text-underline-offset: 2px;
+}
+.co-act:hover {
+  text-decoration: underline;
+}
+.co-act:focus-visible {
+  outline: 2px solid var(--md-accent);
+  outline-offset: 2px;
+}
+.co-help {
+  margin: 6px 0 0;
+  font-size: 12px;
+}
+.co-help--sales {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--md-on-surface);
+}
+.co-field-err {
+  margin: 6px 0 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--md-error);
+}
+.co-card {
+  display: grid;
+  gap: var(--d-gap);
+  padding: var(--d-card-pad);
+  border: 1px solid var(--md-outline);
+  border-radius: var(--r);
+  background: var(--md-surface);
+}
+.co-card--flush {
+  padding: 0;
+  gap: 0;
+}
+.co-card-pad {
+  padding: var(--d-card-pad) var(--d-card-pad) 10px;
+}
+.co-card-hd {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.co-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 4px;
+}
+
+/* ---- Amount ---- */
+.co-packs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+.co-reassure {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+  color: var(--md-on-surface-v);
+}
+.co-reassure li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.co-reassure svg {
+  color: var(--md-success);
+}
+
+/* ---- Payment ---- */
+.co-opts {
+  display: grid;
+  gap: 8px;
+}
+.co-opt {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--md-outline);
+  border-radius: 10px;
+  cursor: pointer;
+  /* 0.15s mirrors lib/motion.ts dur.quick; off under reduced motion (below). */
+  transition: border-color 0.15s, background 0.15s;
+}
+.co-opt:hover {
+  border-color: var(--md-on-surface-v);
+}
+.co-opt.is-on {
+  border-color: var(--md-primary);
+  background: var(--md-selected);
+}
+.co-opt:focus-within {
+  outline: 2px solid var(--md-accent);
+  outline-offset: 2px;
+}
+.co-radio,
+.co-checkbox {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--md-primary);
+  cursor: pointer;
+}
+.co-card-mark {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid var(--md-outline);
+  background: var(--md-surface);
+  color: var(--md-on-surface-v);
+}
+.co-opt-body {
+  display: grid;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+.co-opt-t {
+  font-weight: 600;
+  color: var(--md-on-surface);
+}
+.co-opt-s {
+  font-size: 12.5px;
+}
+.co-grid2,
+.co-grid3 {
+  display: grid;
+  gap: 12px 16px;
+}
+.co-grid2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.co-grid3 {
+  grid-template-columns: 2fr 1fr 1fr;
+}
+.co-grid2 .ui-input,
+.co-grid3 .ui-input {
+  width: 100%;
+}
+.co-check-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+}
+.co-check-row .co-checkbox {
+  margin-top: 2px;
+}
+
+/* ---- Review ---- */
+.co-tbl-wrap {
+  overflow-x: auto;
+}
+.co-tbl {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+.co-tbl th,
+.co-tbl td {
+  padding: 10px var(--d-card-pad);
+  text-align: left;
+  vertical-align: top;
+  border-top: 1px solid var(--md-outline-v);
+}
+.co-tbl thead th {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--md-on-surface-t);
+  background: var(--md-surface-1);
+}
+.co-tbl .r {
+  text-align: right;
+  white-space: nowrap;
+}
+.co-tbl td:first-child {
+  display: grid;
+  gap: 2px;
+}
+.co-item {
+  font-weight: 600;
+}
+.co-tbl-muted td {
+  color: var(--md-on-surface-v);
+}
+.co-tbl tfoot th,
+.co-tbl tfoot td {
+  font-weight: 700;
+  border-top: 1px solid var(--md-outline);
+}
+.co-kv {
+  display: grid;
+  margin: 0;
+}
+.co-kv > div {
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: baseline;
+  padding: 10px 0;
+}
+.co-kv > div + div {
+  border-top: 1px solid var(--md-outline-v);
+}
+.co-kv dt {
+  font-size: 13px;
+  color: var(--md-on-surface-v);
+}
+.co-kv dd {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* ---- Paid ---- */
+.co-paid-chip {
+  justify-self: start;
+}
+.co-paid-art {
+  display: flex;
+  justify-content: flex-start;
+}
+.co-facts {
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+.co-facts > div {
+  display: grid;
+  gap: 2px;
+}
+.co-facts-k {
+  font-size: 12px;
+  font-weight: 600;
+}
+.co-facts-v {
+  font-weight: 600;
+}
+.co-next {
+  display: grid;
+  gap: 12px;
+}
+.co-next-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+.co-next-card {
+  align-content: start;
+  gap: 6px;
+}
+.co-next-btn {
+  justify-self: start;
+  margin-top: 6px;
+}
+
+/* ---- Blocked viewer ---- */
+.co-blocked {
+  justify-items: start;
+  padding-top: 24px;
+}
+.co-blocked-ic {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--md-surface-2);
+  color: var(--md-on-surface-v);
+}
+.co-blocked-acts {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* ---- Order summary (aside; icons only, no art) ---- */
+.co-sum {
+  display: grid;
+  gap: 14px;
+  padding: var(--d-card-pad);
+  border: 1px solid var(--md-outline);
+  border-radius: var(--r);
+  background: var(--md-surface);
+  box-shadow: var(--md-elev-1);
+}
+.co-sum-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+}
+.co-sum-rows {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+.co-sum-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13.5px;
+}
+.co-sum-row dt {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.co-sum-row dd {
+  margin: 0;
+  text-align: right;
+}
+.co-sum-sep {
+  margin-top: 4px;
+  padding-top: 12px;
+  border-top: 1px solid var(--md-outline-v);
+}
+.co-sum-total {
+  font-weight: 700;
+  font-size: 16px;
+}
+.co-sum-bal {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.co-sum-bal-after {
+  font-weight: 600;
+  color: var(--md-success);
+}
+.co-sum-pay {
+  display: grid;
+  gap: 8px;
+}
+.co-sum-terms {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  text-align: center;
+}
+.co-sum-terms .co-link {
+  font-weight: 500;
+}
+.co-sum-help {
+  margin: 0;
+  font-size: 12.5px;
+  text-align: center;
+}
+
+/* ---- Stepper: done steps go back (buttons), current / later ones are text ---- */
+.co-top button.hstep-btn:hover .hstep-label {
+  color: var(--md-accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.co-top span.hstep-btn {
+  cursor: default;
+}
+
+/* ---- Narrow: stack the body and the summary, one scroll ---- */
+@media (max-width: 900px) {
+  .co-packs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .co-flow > div {
+    overflow-y: auto;
+  }
+  .co-flow > div > div {
+    flex-direction: column;
+    min-height: auto;
+  }
+  .co-flow > div > div > div,
+  .co-flow aside {
+    overflow: visible;
+    flex: none;
+  }
+  .co-flow aside {
+    width: auto;
+  }
+}
+@media (max-width: 640px) {
+  .co-top {
+    gap: 8px;
+  }
+  .co-top-logo {
+    display: none;
+  }
+  .co-top-steps {
+    justify-content: flex-start;
+  }
+  .co-top .hstep-line {
+    width: 14px;
+    margin: 0 4px;
+  }
+  .co-top .hstep-item:not(.is-current) .hstep-label {
+    display: none;
+  }
+
+  .co-grid2,
+  .co-grid3 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .co-kv > div {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .co-kv dt {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .co-opt {
+    transition: none;
+  }
+}
+
+/* Order summary: the balance block is a second small table under the total. */
+.co-sum-balance {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: var(--r);
+  background: var(--md-surface-1);
+}
+.co-sum-balance .co-sum-bal-after {
+  font-weight: 650;
+  color: var(--md-success);
+}
+.co-sum-row--note {
+  justify-content: flex-end;
+  margin-top: -4px;
+  font-size: 12.5px;
+}

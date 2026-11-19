@@ -1,0 +1,84 @@
+/* CostBlock — "What does a review cost?" price list, shared by checkout Amount and
+   Billing → How credits work. Tokens only, both themes. */
+.cost-block {
+  display: grid;
+  gap: 12px;
+}
+/* Same size as the page's other section titles (.bl-section). */
+.cost-block-title {
+  margin: 0;
+  font-family: var(--font-display, inherit);
+  font-size: 18px;
+  line-height: 26px;
+  font-weight: 700;
+  color: var(--md-on-surface);
+}
+.cost-block-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--md-outline);
+  border-radius: var(--r);
+  background: var(--md-surface);
+}
+.cost-block-table {
+  width: 100%;
+  min-width: 560px;
+  border-collapse: collapse;
+  font-size: 14px;
+  table-layout: fixed;
+}
+.cost-block-corner {
+  width: 22%;
+}
+.cost-block-col {
+  padding: 14px 16px;
+  text-align: left;
+  font-family: var(--font-display, inherit);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--md-on-surface);
+  border-bottom: 1px solid var(--md-outline);
+}
+.cost-block-corner {
+  border-bottom: 1px solid var(--md-outline);
+}
+.cost-block-k {
+  padding: 14px 16px 14px 20px;
+  text-align: left;
+  vertical-align: top;
+  font-weight: 500;
+  color: var(--md-on-surface-v);
+}
+.cost-block-kn {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--md-on-surface-t);
+}
+.cost-block-v {
+  padding: 14px 16px;
+  vertical-align: top;
+  color: var(--md-on-surface);
+}
+.cost-block-table tbody tr + tr > * {
+  border-top: 1px solid var(--md-outline-v);
+}
+.cost-block-usd {
+  font-size: 16px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+.cost-block-desc {
+  font-size: 13.5px;
+  line-height: 20px;
+  color: var(--md-on-surface-v);
+}
+.cost-block-foot {
+  margin: 0;
+  font-size: 13px;
+}
+.cost-block-link {
+  color: var(--md-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}

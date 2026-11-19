@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { useOrgStore, useReviewsStore, useSessionStore } from "@/store";
-import { isOverdue, needsMyAction } from "@/lib/review-lifecycle";
+import { useOrgStore, useReviewsStore } from "@/store";
+import { isOverdue } from "@/lib/review-lifecycle";
 import type { Period, DateRange } from "@/components/molecules";
 
 const DAY = 86400000;
@@ -13,8 +13,9 @@ export function useDashboard() {
   // are derived from their own (non-sample) reviews.
   const billing = useOrgStore((s) => s.org?.billing);
   const own = billing === "trial" || billing === "payg";
-  const meId = useSessionStore((s) => s.userId);
   const [initial, setInitial] = useState(true);
+  /** The first read has landed: from here `isEmpty` is known (before the skeleton's minimum hold ends). */
+  const [fetched, setFetched] = useState(false);
   const [period, setPeriod] = useState<Period>("month");
   const [range, setRangeState] = useState<DateRange | null>(null);
 
@@ -28,7 +29,9 @@ export function useDashboard() {
     // Mock reads resolve synchronously, so hold the loading state for a short
     // minimum to emulate real data loading (and let the skeleton shimmer show).
     const minVisible = new Promise((r) => setTimeout(r, 700));
-    Promise.all([fetchReviews(), minVisible]).then(() => setInitial(false));
+    const load = fetchReviews();
+    void load.then(() => setFetched(true));
+    Promise.all([load, minVisible]).then(() => setInitial(false));
   }, [fetchReviews]);
 
   const [now] = useState(() => Date.now());
@@ -157,7 +160,9 @@ export function useDashboard() {
     const c = trend.completed;
     if (own) {
       return {
-        needsAction: reviews.filter((r) => meId && needsMyAction(r, meId)).length,
+        // The same set the Action needed list and Reviews > Needs action show (team-wide),
+        // so the tile and the list below it never disagree.
+        needsAction: reviews.filter((r) => r.status === "in_review" || r.status === "autorejected" || isOverdue(r, now)).length,
         running: reviews.filter((r) => r.status === "running").length,
         overdue: reviews.filter((r) => isOverdue(r, now)).length,
         intake: reviews.filter((r) => r.status === "intake" && r.source === "yc").length,
@@ -171,10 +176,11 @@ export function useDashboard() {
       intake: reviews.filter((r) => r.status === "intake" && r.source === "yc")
         .length,
     };
-  }, [trend.completed, reviews, own, meId, now]);
+  }, [trend.completed, reviews, own, now]);
 
   return {
     isLoading: initial,
+    isResolved: fetched,
     /** The org has no reviews of its own yet (the sample never counts). */
     isEmpty: reviews.length === 0,
     reviews,

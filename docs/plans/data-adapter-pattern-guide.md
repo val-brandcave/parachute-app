@@ -43,6 +43,15 @@ Mock Adapter (localStorage)  OR  API Adapter (Axios/fetch)
 
 **The rule:** each layer only imports from the layer directly below it. Pages never touch the adapter. Stores never skip the adapter to hit localStorage. The factory decides which adapter is active based on an environment variable.
 
+### Allowed exceptions (Parachute)
+
+- **Per-browser UI state** (theme, density, dismissed banners, tours/hints seen, toast-once flags) is not domain data: it lives in `store/prefs.store.ts`, which may use `localStorage` directly. Components and pages still never touch `localStorage` themselves.
+- **Single org-config documents** that are not collections go through named adapter methods (e.g. `getBankPolicy` / `setBankPolicy`), not raw storage in the store.
+- **`components/providers/SeedProvider.tsx`** — bootstrap infrastructure: calls `adapter.seed()` before any store loads and checks a remembered session's rows exist.
+- **`lib/demo.ts`** — PROTOTYPE ONLY scenario/persona reset plumbing that rewrites seeded rows beneath every store (callers re-load the stores after). Goes away with the prototype controls.
+
+These are enforced by `app/src/data/adapters/boundary.test.ts` (runs with `npx vitest run`): it fails if anything outside `src/store/**`, `src/data/**` and the two files above imports the adapter, or if anything under `src/components/**` or `src/app/**` uses `localStorage`. Adding an exception means adding it to that test's allowlist with a reason.
+
 ---
 
 ## 2. Prerequisites

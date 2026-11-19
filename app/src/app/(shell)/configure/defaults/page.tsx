@@ -13,6 +13,7 @@ import {
   Input,
   Button,
 } from "@/components/atoms";
+import { SettingVideoHint } from "@/components/organisms/SettingVideoHint";
 import { publishedVersion } from "@/lib/template-versions";
 import { useTemplatesStore } from "@/store";
 import type { WorkbookLayout } from "@/types";
@@ -132,13 +133,22 @@ export default function ReviewDefaultsPage() {
   const [addingRule, setAddingRule] = useState(false);
   const addRule = () => {
     const r = ruleDraft.trim();
-    if (r) setRules((rs) => [...rs, r]);
+    if (r) {
+      setRules((rs) => [...rs, r]);
+      setChanged(true);
+    }
     setRuleDraft("");
     setAddingRule(false);
   };
 
   // Auto-accept toggle + confidence threshold (org-wide automation).
-  const [autoAccept, setAutoAccept] = useState(true);
+  const [autoAccept, setAutoAcceptRaw] = useState(true);
+  // First change to any intake default shows the "Choose review defaults" video once (spec §5.12).
+  const [changed, setChanged] = useState(false);
+  const setAutoAccept = (v: boolean) => {
+    setAutoAcceptRaw(v);
+    setChanged(true);
+  };
   const [confidence, setConfidence] = useState(0.85);
 
   return (
@@ -174,7 +184,10 @@ export default function ReviewDefaultsPage() {
                     name="trash"
                     size={16}
                     aria-label={`Remove “${rule}”`}
-                    onClick={() => setRules((rs) => rs.filter((_, j) => j !== i))}
+                    onClick={() => {
+                      setRules((rs) => rs.filter((_, j) => j !== i));
+                      setChanged(true);
+                    }}
                   />
                 </div>
               ))}
@@ -229,6 +242,7 @@ export default function ReviewDefaultsPage() {
               <select
                 className="qfilter"
                 defaultValue="intake"
+                onChange={() => setChanged(true)}
                 style={{ width: "100%", height: 42 }}
               >
                 <option value="intake">On intake</option>
@@ -260,7 +274,10 @@ export default function ReviewDefaultsPage() {
                   value={confidence}
                   disabled={!autoAccept}
                   aria-label="Auto-accept confidence threshold"
-                  onChange={(e) => setConfidence(Number(e.target.value))}
+                  onChange={(e) => {
+                    setConfidence(Number(e.target.value));
+                    setChanged(true);
+                  }}
                 />
                 <span className="cfg-slider-val">{confidence.toFixed(2)}</span>
               </div>
@@ -270,6 +287,8 @@ export default function ReviewDefaultsPage() {
               </p>
             </div>
           </Section>
+
+          <SettingVideoHint hintId="review-defaults" videoId="review-defaults" show={changed} />
         </div>
       )}
 

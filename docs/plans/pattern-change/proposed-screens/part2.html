@@ -1,0 +1,1512 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Parachute screens, part 2</title>
+<link rel="stylesheet" href="app-chrome.css">
+<style>
+  /* ---------- board ---------- */
+  html { background: #eceef1; }
+  body { margin: 0; font-family: var(--font-ui); color: #1a1d21; -webkit-font-smoothing: antialiased; }
+  .board { padding: 40px 48px 80px; display: flex; flex-direction: column; gap: 64px; }
+  .board-hd { display: flex; flex-direction: column; gap: 10px; }
+  .board-hd h1 { font-family: var(--font-display); font-size: 34px; letter-spacing: -0.02em; margin: 0; color: #10344c; }
+  .board-hd p { margin: 0; color: #565c64; font-size: 15px; max-width: 80ch; text-wrap: pretty; }
+  .toc { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .toc a { font-size: 13px; font-weight: 600; color: #10344c; background: #fff; border: 1px solid #e2e4e8; border-radius: 16px; padding: 6px 12px; text-decoration: none; }
+  .sec { display: flex; flex-direction: column; gap: 14px; scroll-margin-top: 24px; }
+  .sec-h { display: flex; align-items: baseline; gap: 12px; }
+  .sec-h h2 { font-family: var(--font-display); font-size: 22px; letter-spacing: -0.01em; margin: 0; color: #1a1d21; }
+  .sec-h code { font-family: var(--font-ui); font-size: 13px; color: #868d96; }
+  .shot { width: 1280px; max-width: 100%; display: flex; flex-direction: column; gap: 12px; }
+  .shot + .shot { margin-top: 20px; }
+  .shot-lbl { font-size: 13px; font-weight: 600; color: #565c64; }
+  .cap { display: flex; gap: 12px; align-items: flex-start; font-size: 14px; color: #3d434a; line-height: 1.55; max-width: 96ch; }
+  .cap p { margin: 0; text-wrap: pretty; }
+  .src { flex: none; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 12px; background: #d6e3ee; color: #10344c; margin-top: 1px; }
+  .src.ours { background: #deebee; color: #14505e; }
+  .src.lem { background: #e4eef7; color: #2d6ca6; }
+  .src.eq { background: #fcf1d8; color: #8a5e0d; }
+
+  /* ---------- shared bits inside frames ---------- */
+  .frame { min-height: 860px; }
+  .col { display: flex; flex-direction: column; }
+  .row { display: flex; align-items: center; }
+  .gap4 { gap: 4px; } .gap6 { gap: 6px; } .gap8 { gap: 8px; } .gap10 { gap: 10px; } .gap12 { gap: 12px; } .gap16 { gap: 16px; } .gap20 { gap: 20px; } .gap24 { gap: 24px; }
+  .between { justify-content: space-between; }
+  .grow { flex: 1; min-width: 0; }
+  .h2 { font-size: 18px; font-weight: 700; }
+  .h3 { font-size: 15.5px; font-weight: 700; }
+  .lbl { font-size: 12.5px; font-weight: 600; color: var(--md-on-surface-t); }
+  .big { font-family: var(--font-display); font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; line-height: 1; }
+  .ok { color: var(--md-success); } .warn { color: var(--md-warn-ink); } .bad { color: var(--md-error); }
+
+  .note { display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; border-radius: 10px; background: var(--md-info-c); color: #1a1d21; }
+  .note > .i { margin-top: 1px; color: var(--md-info); }
+  .note.warn-n { background: var(--md-warn-c); } .note.warn-n > .i { color: var(--md-warn-ink); }
+  .note.bad-n { background: var(--md-error-c); } .note.bad-n > .i { color: var(--md-error); }
+  .note.ok-n { background: var(--md-success-c); } .note.ok-n > .i { color: var(--md-success); }
+  .note.tint { background: var(--md-accent-c); } .note.tint > .i { color: var(--md-accent-d); }
+  .note b { font-weight: 600; }
+  .note .acts { margin-left: auto; display: flex; gap: 8px; align-self: center; }
+
+  .tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; font-variant-numeric: tabular-nums; }
+  .tbl th { text-align: left; font-size: 12.5px; font-weight: 600; color: var(--md-on-surface-t); padding: 0 16px 10px; border-bottom: 1px solid var(--md-outline-v); }
+  .tbl td { padding: 13px 16px; border-bottom: 1px solid var(--md-outline-v); vertical-align: middle; }
+  .tbl tr:last-child td { border-bottom: 0; }
+  .tbl .r { text-align: right; }
+  .tbl td.first, .tbl th.first { padding-left: 24px; } .tbl td.last, .tbl th.last { padding-right: 24px; }
+  .who { display: flex; align-items: center; gap: 10px; font-weight: 600; }
+  .av { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; font-weight: 700; color: #fff; background: var(--md-accent); flex: none; }
+  .av.navy { background: var(--md-primary); }
+  .meter { height: 6px; border-radius: 3px; background: var(--md-surface-2); overflow: hidden; width: 120px; }
+  .meter > i { display: block; height: 100%; background: var(--md-primary); border-radius: 3px; }
+
+  .card-hd { display: flex; align-items: center; justify-content: space-between; padding: 18px 24px 14px; }
+  .card-hd .h3 { font-family: var(--font-display); }
+
+  /* runway */
+  .runway { display: flex; height: 12px; border-radius: 6px; overflow: hidden; background: var(--md-surface-2); gap: 2px; }
+  .runway > i { display: block; height: 100%; }
+  .rw-p { background: var(--md-primary); } .rw-e { background: var(--md-accent); } .rw-f { background: #8fb3c4; }
+  .rw-x { background: var(--md-warn); } .rw-low { background: var(--md-warn); } .rw-zero { background: var(--md-error); }
+  .legend { display: flex; flex-wrap: wrap; gap: 16px; font-size: 12.5px; color: var(--md-on-surface-v); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+
+  .bal-grid { display: grid; grid-template-columns: 1.55fr 1fr; gap: 16px; }
+  .hero { padding: 24px 28px; display: flex; flex-direction: column; gap: 18px; }
+  .facts { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--md-outline-v); }
+  .facts > div { padding: 14px 0 0; display: flex; flex-direction: column; gap: 2px; }
+  .facts b { font-size: 15px; font-variant-numeric: tabular-nums; }
+  .facts .lbl { font-weight: 500; }
+  .bd-row { display: grid; grid-template-columns: 14px 1fr auto; gap: 10px; align-items: center; padding: 12px 24px; border-top: 1px solid var(--md-outline-v); font-size: 13.5px; }
+  .bd-row .sw { width: 10px; height: 10px; border-radius: 3px; }
+  .bd-row .n { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .bd-row .s { font-size: 12.5px; color: var(--md-on-surface-t); }
+  .bd-row.hl { background: var(--md-warn-c); }
+
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .stack { display: flex; flex-direction: column; gap: 16px; }
+
+  /* dialogs */
+  .dlg-hd { padding: 22px 24px 0; display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+  .dlg-bd { padding: 16px 24px 20px; display: flex; flex-direction: column; gap: 16px; }
+  .dlg-ft { padding: 16px 24px; border-top: 1px solid var(--md-outline-v); display: flex; align-items: center; gap: 10px; }
+  .x { color: var(--md-on-surface-t); }
+  .opt { border: 1px solid var(--md-outline); border-radius: 12px; padding: 16px; display: flex; gap: 14px; align-items: center; background: #fff; }
+  .opt.sel { border: 2px solid var(--md-primary); padding: 15px; background: #fbfcfd; }
+  .radio { width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--md-on-surface-dis); flex: none; background: #fff; }
+  .radio.on { border: 6px solid var(--md-primary); }
+  .rt-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--md-outline-v); }
+  .costline { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 10px; background: var(--md-surface-1); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  /* checkout */
+  .co-top { height: 64px; display: flex; align-items: center; padding: 0 28px; background: var(--md-surface); border-bottom: 1px solid var(--md-outline); gap: 24px; }
+  .co-steps { display: flex; align-items: center; gap: 12px; margin: 0 auto; }
+  .co-step { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: 13.5px; color: var(--md-on-surface-t); }
+  .co-step .dot { width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid var(--md-outline); display: grid; place-items: center; font-size: 12px; background: #fff; }
+  .co-step.done { color: var(--md-on-surface-v); } .co-step.done .dot { background: var(--md-success); border-color: var(--md-success); color: #fff; }
+  .co-step.on { color: var(--md-on-surface); } .co-step.on .dot { background: var(--md-primary); border-color: var(--md-primary); color: #fff; }
+  .co-line { width: 48px; height: 1px; background: var(--md-outline); }
+  .co-body { display: grid; grid-template-columns: 1fr 372px; gap: 32px; padding: 32px 40px 40px; align-items: start; }
+  .co-main { display: flex; flex-direction: column; gap: 20px; }
+  .co-sec { padding: 22px 24px; display: flex; flex-direction: column; gap: 16px; }
+  .co-sec .h3 { font-family: var(--font-display); }
+  .sum-item { display: flex; gap: 14px; align-items: center; }
+  .sum-item .ill { width: 72px; flex: none; }
+  .co-sum { display: flex; flex-direction: column; gap: 6px; }
+  .ba { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; padding: 14px 16px; border-radius: 10px; background: var(--md-surface-1); }
+  .ba .k { font-size: 12px; color: var(--md-on-surface-t); font-weight: 600; }
+  .ba .v { font-weight: 700; font-size: 18px; font-variant-numeric: tabular-nums; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .grid3 { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 14px; }
+  .help { font-size: 12.5px; color: var(--md-on-surface-t); margin-top: 6px; }
+  .visa { width: 38px; height: 26px; border-radius: 5px; background: #1a1f71; color: #fff; font-weight: 800; font-style: italic; font-size: 11px; display: grid; place-items: center; letter-spacing: .02em; flex: none; }
+  .kv { display: grid; grid-template-columns: 140px 1fr auto; gap: 12px; align-items: center; padding: 13px 0; border-top: 1px solid var(--md-outline-v); font-size: 14px; }
+  .kv:first-of-type { border-top: 0; }
+  .kv .k { color: var(--md-on-surface-v); }
+
+  /* success */
+  .next { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .next .card { padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+  .next .ic { width: 40px; height: 40px; border-radius: 10px; background: var(--md-selected); color: var(--md-primary); display: grid; place-items: center; }
+
+  /* learning */
+  .vgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .vcard { display: flex; flex-direction: column; gap: 8px; }
+  .vthumb { position: relative; aspect-ratio: 16 / 9; border-radius: 10px; background: #e7eef4; border: 1px solid var(--md-outline); overflow: hidden; }
+  .vthumb .scr { position: absolute; left: 12%; right: 12%; top: 16%; bottom: 0; background: #fff; border-radius: 6px 6px 0 0; box-shadow: 0 0 0 1px #d4dde6; }
+  .vthumb .scr::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 22%; background: #f1f4f7; border-right: 1px solid #e2e7ec; }
+  .vthumb .scr::after { content: ""; position: absolute; left: 28%; right: 8%; top: 14%; height: 8px; border-radius: 4px; background: #d6e3ee; box-shadow: 0 16px 0 #edf0f3, 0 30px 0 #edf0f3; }
+  .vthumb .play { position: absolute; left: 50%; top: 52%; transform: translate(-50%, -50%); width: 40px; height: 40px; border-radius: 50%; background: var(--md-primary); color: #fff; display: grid; place-items: center; box-shadow: 0 4px 14px rgba(16,52,76,.3); }
+  .vthumb .play svg { width: 16px; height: 16px; fill: #fff; stroke: none; margin-left: 2px; }
+  .vthumb .dur { position: absolute; right: 8px; bottom: 8px; background: rgba(16,24,33,.78); color: #fff; font-size: 11.5px; font-weight: 600; padding: 2px 7px; border-radius: 5px; font-variant-numeric: tabular-nums; }
+  .vthumb .prog { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: rgba(16,24,33,.12); }
+  .vthumb .prog i { display: block; height: 100%; background: var(--md-accent); }
+  .vthumb.t2 { background: #e3ecee; } .vthumb.t3 { background: #ebe9f1; } .vthumb.t4 { background: #eef0e6; }
+  .vcard .t { font-weight: 600; font-size: 14px; line-height: 1.35; text-wrap: pretty; }
+  .vcard .m { font-size: 12.5px; color: var(--md-on-surface-t); }
+  .vcard .seen { color: var(--md-success); font-weight: 600; }
+  .lgroup { display: flex; flex-direction: column; gap: 14px; }
+  .lgroup-h { display: flex; align-items: baseline; gap: 10px; }
+  .lgroup-h h3 { font-size: 17px; }
+  .cont { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .cont .card { display: grid; grid-template-columns: 148px 1fr; gap: 14px; padding: 12px; align-items: center; }
+  .pdf-row { display: grid; grid-template-columns: 36px 1fr auto auto; gap: 14px; align-items: center; padding: 12px 20px; border-top: 1px solid var(--md-outline-v); }
+  .pdf-row:first-child { border-top: 0; }
+  .pdf-ic { width: 36px; height: 36px; border-radius: 8px; background: var(--md-error-c); color: var(--md-error); display: grid; place-items: center; }
+
+  /* prototype index */
+  .px { display: grid; grid-template-columns: 236px 1fr; min-height: 860px; }
+  .px-top { grid-column: 1 / -1; height: 64px; display: flex; align-items: center; gap: 16px; padding: 0 24px; background: var(--md-surface); border-bottom: 1px solid var(--md-outline); }
+  .px-rail { border-right: 1px solid var(--md-outline); background: var(--md-surface); padding: 16px 12px; display: flex; flex-direction: column; gap: 2px; }
+  .px-rail .g { display: flex; justify-content: space-between; align-items: center; height: 36px; padding: 0 12px; border-radius: 8px; font-weight: 500; color: var(--md-on-surface-v); font-size: 14px; }
+  .px-rail .g b { font-weight: 600; font-size: 12px; color: var(--md-on-surface-t); font-variant-numeric: tabular-nums; }
+  .px-rail .g.on { background: var(--md-selected); color: var(--md-on-selected); font-weight: 600; }
+  .px-rail .g.on b { color: var(--md-on-selected); }
+  .px-main { padding: 24px 28px 32px; display: flex; flex-direction: column; gap: 22px; }
+  .tog2 { display: inline-flex; padding: 3px; border-radius: 10px; background: var(--md-surface-2); }
+  .tog2 span { height: 32px; padding: 0 14px; display: inline-flex; align-items: center; border-radius: 8px; font-weight: 600; font-size: 13px; color: var(--md-on-surface-v); }
+  .tog2 span.on { background: #fff; color: var(--md-on-surface); box-shadow: var(--md-elev-1); }
+  .pgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .pcard { overflow: hidden; display: flex; flex-direction: column; }
+  .thumb { height: 128px; background: var(--md-bg); border-bottom: 1px solid var(--md-outline); position: relative; overflow: hidden; }
+  .thumb .w { position: absolute; left: 16px; right: 16px; top: 14px; bottom: -6px; background: #fff; border-radius: 6px; box-shadow: 0 0 0 1px #dfe3e8, 0 6px 16px rgba(16,24,33,.06); display: grid; grid-template-columns: 22% 1fr; overflow: hidden; }
+  .thumb.bare .w { grid-template-columns: 1fr; }
+  .thumb .w .s { background: #f6f7f8; border-right: 1px solid #edeef1; }
+  .thumb .w .s::before { content: ""; display: block; margin: 8px 6px; height: 7px; border-radius: 3px; background: #10344c; }
+  .thumb .w .c { padding: 9px 10px; display: flex; flex-direction: column; gap: 5px; }
+  .thumb .w .c i { display: block; height: 6px; border-radius: 3px; background: #e6e9ed; }
+  .thumb .w .c i.h { height: 9px; width: 45%; background: #c9d4de; }
+  .thumb .w .c i.n { background: #10344c; width: 28%; height: 8px; }
+  .thumb .w .c i.a { background: #f3d99a; }
+  .thumb .w .c i.r { background: #f3c3be; }
+  .thumb .w .c i.g { background: #bfe3cd; }
+  .thumb .w .c .bx { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; }
+  .thumb .w .c .bx i { height: 22px; border-radius: 4px; }
+  .thumb .w .c .sp { display: grid; grid-template-columns: 2fr 1fr; gap: 6px; }
+  .thumb .w .c .sp i { height: 44px; border-radius: 4px; }
+  .thumb.plan { background: repeating-linear-gradient(135deg, #f6f7f8 0 10px, #f0f2f4 10px 20px); }
+  .thumb.plan .w { box-shadow: 0 0 0 1px #dfe3e8; opacity: .75; }
+  .pbody { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .pbody .t { font-weight: 700; font-size: 14.5px; }
+  .route { font-size: 12.5px; color: var(--md-on-surface-v); background: var(--md-surface-1); border-radius: 6px; padding: 2px 7px; align-self: flex-start; }
+  .chips { display: flex; flex-wrap: wrap; gap: 5px; }
+  .chip { font-size: 11.5px; font-weight: 600; padding: 2px 8px; border-radius: 10px; border: 1px solid var(--md-outline); color: var(--md-on-surface-v); background: #fff; }
+  .chip.dash { border-style: dashed; color: var(--md-on-surface-t); }
+  .pmeta { display: flex; align-items: center; gap: 10px; font-size: 12.5px; color: var(--md-on-surface-t); }
+  .st-built { background: var(--md-success-c); color: var(--md-success); }
+  .st-plan { background: #fff; color: var(--md-on-surface-v); border: 1px dashed var(--md-on-surface-dis); }
+
+  /* banner (trial) */
+  .tbanner { display: flex; align-items: center; gap: 16px; padding: 14px 32px; background: var(--md-warn-c); border-bottom: 1px solid #efdcab; }
+  .tbanner .ill { width: 64px; flex: none; }
+  .tbanner.info-b { background: var(--md-accent-c); border-bottom-color: #c8dde2; }
+  .tbanner .t { font-weight: 700; font-size: 15px; }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .stat { padding: 18px 20px; display: flex; flex-direction: column; gap: 6px; }
+  .stat .v { font-family: var(--font-display); font-size: 28px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .smini { display: flex; flex-direction: column; }
+  .smini .s { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--md-outline-v); }
+  .smini .s:first-child { border-top: 0; }
+
+  /* popover notification */
+  .pop-req { padding: 14px 16px; background: var(--md-surface-1); border-radius: 10px; display: flex; flex-direction: column; gap: 10px; }
+
+  /* usage chart (PC-28). Series tokens: brand navy/petrol snapped to pass the dataviz
+     validator (navy #10344c fails the lightness band and chroma floor; petrol #2a6f7f fails chroma). */
+  :root { --viz-tech: #1d5592; --viz-admin: #0a9fae; }
+  .frame.dark { --viz-tech: #3a74c0; --viz-admin: #14a7b6; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+  .filter-btn { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 12px 0 14px; border-radius: 8px; border: 1px solid var(--md-outline); background: var(--md-surface); font-weight: 600; font-size: 13px; color: var(--md-on-surface); }
+  .filter-btn .k { color: var(--md-on-surface-v); font-weight: 500; }
+  .use-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+  .donut-wrap { display: grid; grid-template-columns: 180px 1fr; gap: 28px; align-items: center; padding: 4px 24px 24px; }
+  .donut { position: relative; width: 180px; height: 180px; }
+  .donut svg { width: 180px; height: 180px; display: block; }
+  .donut .slice { fill: none; stroke-width: 22; }
+  .donut .center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-align: center; }
+  .donut .center .big { font-size: 40px; color: var(--md-on-surface); }
+  .donut .center span:last-child { font-size: 13px; color: var(--md-on-surface-v); max-width: 11ch; text-wrap: pretty; line-height: 1.3; }
+  .use-legend { display: flex; flex-direction: column; }
+  .use-legend .lr { display: grid; grid-template-columns: 12px 1fr auto; gap: 12px; align-items: start; padding: 12px 0; border-top: 1px solid var(--md-outline-v); font-size: 13.5px; }
+  .use-legend .lr:first-child { border-top: 0; }
+  .use-legend .lr .sw { width: 12px; height: 12px; border-radius: 3px; margin-top: 3px; }
+  .use-legend .lr .s { font-size: 12.5px; color: var(--md-on-surface-v); text-wrap: pretty; }
+  .use-legend .lr .n { white-space: nowrap; font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; }
+  .use-legend .lr .n small { display: block; font-weight: 500; font-size: 12.5px; color: var(--md-on-surface-v); }
+  .use-legend .lr.tot { font-weight: 700; }
+  .rank { display: flex; flex-direction: column; padding: 0 24px 18px; }
+  .rank .rr { display: grid; grid-template-columns: 168px 1fr 72px; gap: 14px; align-items: center; padding: 10px 0; font-size: 13.5px; }
+  .rank .track { height: 12px; display: flex; align-items: center; }
+  .rank .bar { height: 12px; background: var(--md-primary); border-radius: 0 4px 4px 0; }
+  .rank .v { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .rank .v small { font-weight: 500; color: var(--md-on-surface-v); font-size: 12.5px; }
+  .variant-lbl { font-size: 12px; font-weight: 700; letter-spacing: .02em; color: var(--md-on-surface-v); text-transform: uppercase; }
+
+  /* new illustrations */
+  .ill-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; width: 1280px; max-width: 100%; }
+  .ill-card { background: #fff; border: 1px solid #e2e4e8; border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+  .ill-card .ill { width: 200px; color: #10344c; }
+  .ill-card b { font-size: 14px; }
+  .ill-card p { margin: 0; font-size: 13.5px; color: #565c64; text-wrap: pretty; }
+  .ill-card code { font-family: var(--font-ui); font-size: 12.5px; color: #868d96; }
+</style>
+</head>
+<body>
+<script src="app-icons.js"></script>
+<svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
+<symbol id="x-coins" viewBox="0 0 24 24"> <path d="M9 14c0 1.657 2.686 3 6 3s6 -1.343 6 -3s-2.686 -3 -6 -3s-6 1.343 -6 3" /> <path d="M9 14v4c0 1.656 2.686 3 6 3s6 -1.344 6 -3v-4" /> <path d="M3 6c0 1.072 1.144 2.062 3 2.598s4.144 .536 6 0c1.856 -.536 3 -1.526 3 -2.598c0 -1.072 -1.144 -2.062 -3 -2.598s-4.144 -.536 -6 0c-1.856 .536 -3 1.526 -3 2.598" /> <path d="M3 6v10c0 .888 .772 1.45 2 2" /> <path d="M3 11c0 .888 .772 1.45 2 2" /> </symbol>
+<symbol id="x-file-type-pdf" viewBox="0 0 24 24"> <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M5 12v-7a2 2 0 0 1 2 -2h7l5 5v4" /> <path d="M5 18h1.5a1.5 1.5 0 0 0 0 -3h-1.5v6" /> <path d="M17 18h2" /> <path d="M20 15h-3v6" /> <path d="M11 15v6h1a2 2 0 0 0 2 -2v-2a2 2 0 0 0 -2 -2h-1" /> </symbol>
+<symbol id="x-layout-grid" viewBox="0 0 24 24"> <path d="M4 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4" /> <path d="M14 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4" /> <path d="M4 15a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4" /> <path d="M14 15a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4" /> </symbol>
+<symbol id="x-route" viewBox="0 0 24 24"> <path d="M3 19a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /> <path d="M19 7a2 2 0 1 0 0 -4a2 2 0 0 0 0 4" /> <path d="M11 19h5.5a3.5 3.5 0 0 0 0 -7h-8a3.5 3.5 0 0 1 0 -7h4.5" /> </symbol>
+<symbol id="x-filter" viewBox="0 0 24 24"> <path d="M4 4h16v2.172a2 2 0 0 1 -.586 1.414l-4.414 4.414v7l-6 2v-8.5l-4.48 -4.928a2 2 0 0 1 -.52 -1.345v-2.227" /> </symbol>
+<symbol id="x-book" viewBox="0 0 24 24"> <path d="M3 19a9 9 0 0 1 9 0a9 9 0 0 1 9 0" /> <path d="M3 6a9 9 0 0 1 9 0a9 9 0 0 1 9 0" /> <path d="M3 6l0 13" /> <path d="M12 6l0 13" /> <path d="M21 6l0 13" /> </symbol>
+<symbol id="x-file-invoice" viewBox="0 0 24 24"> <path d="M14 3v4a1 1 0 0 0 1 1h4" /> <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /> <path d="M9 7l1 0" /> <path d="M9 13l6 0" /> <path d="M13 17l2 0" /> </symbol>
+<symbol id="x-message-circle" viewBox="0 0 24 24"> <path d="M3 20l1.3 -3.9c-2.324 -3.437 -1.426 -7.872 2.1 -10.374c3.526 -2.501 8.59 -2.296 11.845 .48c3.255 2.777 3.695 7.266 1.029 10.501c-2.666 3.235 -7.615 4.215 -11.574 2.293l-4.7 1" /> </symbol>
+<symbol id="x-player-play" viewBox="0 0 24 24"> <path d="M7 4v16l13 -8l-13 -8" /> </symbol>
+<symbol id="x-list-details" viewBox="0 0 24 24"> <path d="M13 5h8" /> <path d="M13 9h5" /> <path d="M13 15h8" /> <path d="M13 19h5" /> <path d="M3 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4" /> <path d="M3 15a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4" /> </symbol>
+<symbol id="x-arrow-right" viewBox="0 0 24 24"> <path d="M5 12l14 0" /> <path d="M13 18l6 -6" /> <path d="M13 6l6 6" /> </symbol>
+<symbol id="x-player-play-filled" viewBox="0 0 24 24"> <path d="M6 4v16a1 1 0 0 0 1.524 .852l13 -8a1 1 0 0 0 0 -1.704l-13 -8a1 1 0 0 0 -1.524 .852z" /> </symbol>
+</svg>
+
+
+<div class="board">
+  <header class="board-hd">
+    <h1>Proposed screens, part 2: checkout, billing states and learning</h1>
+    <p>Hi-fi mockups for the Parachute pattern change (Cody, 10 Nov). Every frame is the real app shell at 1280px, light theme, with Harbor Community Bank data. Part 1 (onboarding, Get started, credits popover, checkout step 1, tour, Trust Center) is in <a href="index.html">index.html</a>.</p>
+    <nav class="toc">
+      <a href="#checkout-payment">Checkout: payment</a>
+      <a href="#checkout-review">Checkout: review</a>
+      <a href="#checkout-success">Checkout: success</a>
+      <a href="#start-low-balance">Start with a low balance</a>
+      <a href="#billing-trial">Billing: trial</a>
+      <a href="#billing-low">Billing: low</a>
+      <a href="#billing-zero">Billing: zero</a>
+      <a href="#billing-invoiced">Billing: invoiced</a>
+      <a href="#billing-expiring">Billing: expiring</a>
+      <a href="#billing-usage">Billing: usage</a>
+      <a href="#learning-center">Learning Center</a>
+      <a href="#prototype-index">Prototype Index</a>
+      <a href="#trial-ending">Bonus window</a>
+      <a href="#reviewer-billing">Reviewer billing</a>
+      <a href="#admin-request">Admin request</a>
+      <a href="#new-illustrations">New illustrations</a>
+    </nav>
+  </header>
+
+<!-- =========================================================== 1. CHECKOUT PAYMENT -->
+<section class="sec" id="checkout-payment">
+  <div class="sec-h"><h2>Checkout, step 2: payment</h2><code>/checkout/credits?step=payment</code></div>
+  <div class="shot">
+  <div class="frame-scroll"><div class="frame bare">
+    <div class="main">
+      <div class="co-top">
+        <div class="sb-logo" style="padding:0"><svg class="emblem" viewBox="0 0 1033 800" aria-hidden="true"><path d="M183.616 701.001C183.616 701.001 178.511 372.403 401.702 295.845C401.702 295.845 143.312 145.229 29.5019 334.599C-88.044 530.186 183.616 701.001 183.616 701.001Z"/><path d="M887.396 800C887.396 800 1262.66 228.668 804.498 50.9707C404.447 -104.208 159.707 144.439 159.707 144.439C159.707 144.439 671.268 92.415 887.396 800Z"/></svg><span class="word">Parachute</span></div>
+        <div class="stepper">
+          <span class="s done"><span class="n"><svg class="i"><use href="#i-check"/></svg></span>Amount</span><span class="ln done"></span>
+          <span class="s on"><span class="n">2</span>Payment</span><span class="ln"></span>
+          <span class="s "><span class="n">3</span>Review</span>
+        </div>
+        <span class="btn btn-text btn-sm"><svg class="i s16"><use href="#i-x"/></svg>Exit checkout</span>
+      </div>
+      <div class="co-body">
+        <div class="co-main">
+          <div>
+            <h1 class="page-title">Payment</h1>
+            <p class="lede">Pay by card now, or add a PO number so your accounts team can match the receipt.</p>
+          </div>
+
+          <div class="card co-sec">
+            <div class="h3">Pay with</div>
+            <div class="opt sel">
+              <span class="radio on"></span>
+              <span class="visa">VISA</span>
+              <div class="grow col">
+                <b>Visa ending in 4242</b>
+                <span class="small muted">Expires 08/28 · Dana Reyes</span>
+              </div>
+              <span class="pill pill-navy">Saved card</span>
+            </div>
+            <div class="opt">
+              <span class="radio"></span>
+              <svg class="i s20 faint"><use href="#i-credit-card"/></svg>
+              <div class="grow col">
+                <b>Use a new card</b>
+                <span class="small muted">Visa, Mastercard, American Express or Discover</span>
+              </div>
+            </div>
+            <div class="grid3" style="padding-left:34px">
+              <div class="field"><label>Card number</label><div class="input"><span class="ph">1234 1234 1234 1234</span></div></div>
+              <div class="field"><label>Expiry</label><div class="input"><span class="ph">MM / YY</span></div></div>
+              <div class="field"><label>Security code</label><div class="input"><span class="ph">CVC</span></div></div>
+            </div>
+          </div>
+
+          <div class="card co-sec">
+            <div class="row between"><div class="h3">Billing contact</div><span class="small faint">Receipts go to this person</span></div>
+            <div class="grid2">
+              <div class="field"><label>Name</label><div class="input">Dana Reyes</div></div>
+              <div class="field"><label>Email</label><div class="input">dana.reyes@harborcb.com</div></div>
+            </div>
+            <div class="grid2">
+              <div class="field"><label>Also send receipts to (optional)</label><div class="input focus">ap@harborcb.com</div></div>
+              <div class="field"><label>PO number (optional)</label><div class="input"><span class="ph">For example PO-2026-1184</span></div><div class="help">Printed on the receipt and the monthly statement.</div></div>
+            </div>
+          </div>
+
+          <div class="card co-sec">
+            <div class="row gap12" style="align-items:flex-start">
+              <span class="cb" style="margin-top:2px"></span>
+              <div class="grow col gap4">
+                <b>Turn on auto-reload</b>
+                <p class="muted">Add 10 credits ($1,400) to this card when the balance drops below 2, so a review never stops at Start. Change or turn it off any time in Billing settings.</p>
+              </div>
+              <span class="pill">Optional</span>
+            </div>
+          </div>
+
+          <div class="row between">
+            <span class="btn btn-outline"><svg class="i s16"><use href="#i-arrow-left"/></svg>Back</span>
+            <span class="btn btn-filled btn-lg">Continue to review</span>
+          </div>
+        </div>
+        <aside class="card summary co-sum">
+          <h3>Order summary</h3>
+          <div class="sum-item"><div class="ill"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 90" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" class="pi" role="img"><title>Wallet top-up: a coin going into the wallet</title><style>.pi{stroke-width:var(--ill-stroke,2.25)}.pi .p{fill:var(--ill-paper,#FFFFFF)}.pi .a{fill:var(--ill-accent,#2A6F7F)}.pi .t{fill:var(--ill-tint,#DEEBEE)}.pi .s{fill:var(--ill-shadow,#C9D7E3);stroke:none}.pi .m{stroke:var(--ill-muted,#8FA3B3);stroke-width:1.75}.pi .ap{stroke:var(--ill-paper,#FFFFFF)}.pi .af{fill:var(--ill-paper,#FFFFFF);stroke:none}.pi .as{stroke:var(--ill-accent,#2A6F7F)}.pi .ink{fill:currentColor;stroke:none}.pi .ns{stroke:none}</style><rect class="t" x="55" y="21" width="27" height="19" rx="2.5" transform="rotate(9 68 30)"/>
+<circle class="p" cx="47" cy="33" r="11"/>
+<circle class="m" cx="47" cy="33" r="6"/>
+<rect class="s" x="32" y="40" width="60" height="38" rx="7"/>
+<rect class="p" x="29" y="37" width="60" height="38" rx="7"/>
+<path class="m" d="M35 44H62" stroke-dasharray="2 3.5"/>
+<path class="p" d="M89 49H74a7 7 0 0 0 0 14H89"/>
+<circle class="ink" cx="75" cy="56" r="2.2"/>
+<circle class="a" cx="96" cy="27" r="9.5"/>
+<path class="ap" d="M96 22.5v9M91.5 27h9"/></svg></div><div class="col"><b>10 credits</b><span class="small muted">Credit pack · 5 full reviews</span><a class="link small">Change amount</a></div></div>
+          <div class="hr" style="margin:4px 0"></div>
+          <div class="sum-row"><span class="k">10 credits at $140</span><b>$1,400.00</b></div>
+          <div class="sum-row"><span class="k">Saving vs. $150 a credit</span><b class="ok">$100.00</b></div>
+          <div class="sum-row"><span class="k">Sales tax</span><b>$0.00</b></div>
+          <div class="hr"></div>
+          <div class="sum-total"><span class="k">Due today</span><b>$1,400</b></div>
+          <div class="sum-after"><svg class="i s16"><use href="#i-wallet"/></svg>Balance after: 1 to 11 credits</div>
+          <div class="reassure" style="flex-direction:column;gap:8px;margin-top:4px">
+            <span><svg class="i s16"><use href="#i-circle-check"/></svg>Purchased credits last 12 months</span>
+            <span><svg class="i s16"><use href="#i-circle-check"/></svg>Shared across your organization</span>
+            <span><svg class="i s16"><use href="#i-circle-check"/></svg>Receipt emailed to you</span>
+          </div>
+          <span class="btn btn-filled btn-lg btn-block">Continue to review</span>
+          <p class="sum-help" style="margin-top:0">Prefer a monthly invoice? <a>Talk to us</a></p>
+        </aside>
+      </div>
+    </div>
+  </div></div>
+  <div class="cap"><span class="src">Apollo</span><p>Apollo's full-page checkout (17–19): one job per step and a sticky order summary that carries the pack picked in step 1, so the total is never a surprise. Saved card first, PO number and a second receipt address for a bank's accounts team, and auto-reload offered once as an opt-in, not a hidden toggle.</p></div>
+  </div>
+</section>
+
+<!-- =========================================================== 2. CHECKOUT REVIEW -->
+<section class="sec" id="checkout-review">
+  <div class="sec-h"><h2>Checkout, step 3: review</h2><code>/checkout/credits?step=review</code></div>
+  <div class="shot">
+  <div class="frame-scroll"><div class="frame bare">
+    <div class="main">
+      <div class="co-top">
+        <div class="sb-logo" style="padding:0"><svg class="emblem" viewBox="0 0 1033 800" aria-hidden="true"><path d="M183.616 701.001C183.616 701.001 178.511 372.403 401.702 295.845C401.702 295.845 143.312 145.229 29.5019 334.599C-88.044 530.186 183.616 701.001 183.616 701.001Z"/><path d="M887.396 800C887.396 800 1262.66 228.668 804.498 50.9707C404.447 -104.208 159.707 144.439 159.707 144.439C159.707 144.439 671.268 92.415 887.396 800Z"/></svg><span class="word">Parachute</span></div>
+        <div class="stepper">
+          <span class="s done"><span class="n"><svg class="i"><use href="#i-check"/></svg></span>Amount</span><span class="ln done"></span>
+          <span class="s done"><span class="n"><svg class="i"><use href="#i-check"/></svg></span>Payment</span><span class="ln done"></span>
+          <span class="s on"><span class="n">3</span>Review</span>
+        </div>
+        <span class="btn btn-text btn-sm"><svg class="i s16"><use href="#i-x"/></svg>Exit checkout</span>
+      </div>
+      <div class="co-body">
+        <div class="co-main">
+          <div>
+            <h1 class="page-title">Review and pay</h1>
+            <p class="lede">Check the order. Nothing is charged until you select Pay.</p>
+          </div>
+
+          <div class="card">
+            <div class="card-hd"><div class="h3">What you're buying</div></div>
+            <table class="tbl">
+              <tr><th class="first">Item</th><th class="r">Quantity</th><th class="r">Price per credit</th><th class="r last">Amount</th></tr>
+              <tr><td class="first"><div class="col"><b>Credit pack, 10 credits</b><span class="small faint">Valid 12 months, until Nov 11, 2027</span></div></td><td class="r">10</td><td class="r">$140 <span class="small faint">(was $150)</span></td><td class="r last"><b>$1,400.00</b></td></tr>
+              <tr><td class="first muted">Sales tax</td><td></td><td></td><td class="r last muted">$0.00</td></tr>
+              <tr><td class="first"><b>Total</b></td><td></td><td></td><td class="r last"><b>$1,400.00</b></td></tr>
+            </table>
+          </div>
+
+          <div class="card co-sec">
+            <div class="h3">Your balance</div>
+            <div class="ba">
+              <div class="col"><span class="k">Now</span><span class="v">1 credit</span><span class="small muted">Not enough for a full review</span></div>
+              <svg class="i s20 faint"><use href="#x-arrow-right"/></svg>
+              <div class="col"><span class="k">After you pay</span><span class="v ok">11 credits</span><span class="small muted">5 full reviews, with 1 credit left</span></div>
+            </div>
+          </div>
+
+          <div class="card co-sec" style="gap:0">
+            <div class="kv"><span class="k">Paying with</span><span class="row gap10"><span class="visa">VISA</span>Visa ending in 4242</span><a class="link small">Change</a></div>
+            <div class="kv"><span class="k">Receipt to</span><span>dana.reyes@harborcb.com, ap@harborcb.com</span><a class="link small">Change</a></div>
+            <div class="kv"><span class="k">PO number</span><span>PO-2026-1184</span><a class="link small">Change</a></div>
+            <div class="kv"><span class="k">Auto-reload</span><span class="muted">Off</span><a class="link small">Turn on</a></div>
+          </div>
+
+          <div class="row gap12" style="align-items:flex-start">
+            <span class="cb on" style="margin-top:1px"><svg class="i"><use href="#i-check"/></svg></span>
+            <p class="muted">I agree to the <a>credit terms</a>. Purchased credits last 12 months and are shared across Harbor Community Bank.</p>
+          </div>
+
+          <div class="row between">
+            <span class="btn btn-outline"><svg class="i s16"><use href="#i-arrow-left"/></svg>Back</span>
+            <span class="btn btn-filled btn-lg"><svg class="i s16"><use href="#i-lock"/></svg>Pay $1,400</span>
+          </div>
+        </div>
+        <aside class="card summary co-sum">
+          <h3>Order summary</h3>
+          <div class="sum-item"><div class="ill"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 90" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" class="pi" role="img"><title>Wallet top-up: a coin going into the wallet</title><style>.pi{stroke-width:var(--ill-stroke,2.25)}.pi .p{fill:var(--ill-paper,#FFFFFF)}.pi .a{fill:var(--ill-accent,#2A6F7F)}.pi .t{fill:var(--ill-tint,#DEEBEE)}.pi .s{fill:var(--ill-shadow,#C9D7E3);stroke:none}.pi .m{stroke:var(--ill-muted,#8FA3B3);stroke-width:1.75}.pi .ap{stroke:var(--ill-paper,#FFFFFF)}.pi .af{fill:var(--ill-paper,#FFFFFF);stroke:none}.pi .as{stroke:var(--ill-accent,#2A6F7F)}.pi .ink{fill:currentColor;stroke:none}.pi .ns{stroke:none}</style><rect class="t" x="55" y="21" width="27" height="19" rx="2.5" transform="rotate(9 68 30)"/>
+<circle class="p" cx="47" cy="33" r="11"/>
+<circle class="m" cx="47" cy="33" r="6"/>
+<rect class="s" x="32" y="40" width="60" height="38" rx="7"/>
+<rect class="p" x="29" y="37" width="60" height="38" rx="7"/>
+<path class="m" d="M35 44H62" stroke-dasharray="2 3.5"/>
+<path class="p" d="M89 49H74a7 7 0 0 0 0 14H89"/>
+<circle class="ink" cx="75" cy="56" r="2.2"/>
+<circle class="a" cx="96" cy="27" r="9.5"/>
+<path class="ap" d="M96 22.5v9M91.5 27h9"/></svg></div><div class="col"><b>10 credits</b><span class="small muted">Credit pack · 5 full reviews</span><a class="link small">Change amount</a></div></div>
+          <div class="hr" style="margin:4px 0"></div>
+          <div class="sum-row"><span class="k">10 credits at $140</span><b>$1,400.00</b></div>
+          <div class="sum-row"><span class="k">Saving vs. $150 a credit</span><b class="ok">$100.00</b></div>
+          <div class="sum-row"><span class="k">Sales tax</span><b>$0.00</b></div>
+          <div class="hr"></div>
+          <div class="sum-total"><span class="k">Due today</span><b>$1,400</b></div>
+          <div class="sum-after"><svg class="i s16"><use href="#i-wallet"/></svg>Balance after: 1 to 11 credits</div>
+          <div class="reassure" style="flex-direction:column;gap:8px;margin-top:4px">
+            <span><svg class="i s16"><use href="#i-circle-check"/></svg>Purchased credits last 12 months</span>
+            <span><svg class="i s16"><use href="#i-circle-check"/></svg>Shared across your organization</span>
+            <span><svg class="i s16"><use href="#i-circle-check"/></svg>Receipt emailed to you</span>
+          </div>
+          <span class="btn btn-filled btn-lg btn-block"><svg class="i s16"><use href="#i-lock"/></svg>Pay $1,400</span>
+          <p class="sum-help" style="margin-top:0">Prefer a monthly invoice? <a>Talk to us</a></p>
+        </aside>
+      </div>
+    </div>
+  </div></div>
+  <div class="cap"><span class="src">Apollo</span><span class="src lem">lemlist</span><p>Apollo's final Review step plus lemlist's "Total due today" summary (13). The before-and-after balance answers the real question, "what does this get me", in reviews rather than dollars. The Pay button names the amount, so the last click has no ambiguity.</p></div>
+  </div>
+</section>
+
+<!-- =========================================================== 3. CHECKOUT SUCCESS -->
+<section class="sec" id="checkout-success">
+  <div class="sec-h"><h2>Checkout: paid</h2><code>/checkout/credits?step=done</code></div>
+  <div class="shot">
+  <div class="frame-scroll"><div class="frame" data-shell data-nav="none" data-crumbs="Billing|Payment complete" data-credits="11 credits">
+      <div class="page" style="display:flex;flex-direction:column;gap:28px;padding-top:48px">
+        <div class="row gap24" style="align-items:center">
+          <div class="ill" style="width:180px"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 90" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" class="pi" role="img"><title>Payment received: a torn-edge receipt with a check seal</title><style>.pi{stroke-width:var(--ill-stroke,2.25)}.pi .p{fill:var(--ill-paper,#FFFFFF)}.pi .a{fill:var(--ill-accent,#2A6F7F)}.pi .t{fill:var(--ill-tint,#DEEBEE)}.pi .s{fill:var(--ill-shadow,#C9D7E3);stroke:none}.pi .m{stroke:var(--ill-muted,#8FA3B3);stroke-width:1.75}.pi .ap{stroke:var(--ill-paper,#FFFFFF)}.pi .af{fill:var(--ill-paper,#FFFFFF);stroke:none}.pi .as{stroke:var(--ill-accent,#2A6F7F)}.pi .ink{fill:currentColor;stroke:none}.pi .ns{stroke:none}</style><path class="s" d="M33 13H77V77L72 73L67 77L62 73L57 77L52 73L47 77L42 73L37 77L33 74Z"/>
+<path class="p" d="M30 10H74V74L69 70L64 74L59 70L54 74L49 70L44 74L39 70L34 74L30 71Z"/>
+<rect class="t ns" x="36" y="17" width="20" height="6" rx="1.5"/>
+<path class="m" d="M36 31H68M36 38H62M36 45H68"/>
+<path d="M36 56H68"/>
+<path class="m" d="M36 62H50"/>
+<circle class="s" cx="85" cy="56" r="14"/>
+<circle class="a" cx="82" cy="53" r="14"/>
+<path class="ap" d="M75.5 53.5L80 58L88.5 48.5" stroke-width="2.75"/>
+<path class="m" d="M98 20v5M95.5 22.5h5"/></svg></div>
+          <div class="col gap8">
+            <span class="pill pill-done" style="align-self:flex-start"><svg class="i s14"><use href="#i-circle-check"/></svg>Paid $1,400.00</span>
+            <h1 class="page-title" style="font-size:32px">10 credits added</h1>
+            <p class="lede" style="margin-top:0">Your balance is now <b>11 credits</b>, enough for 5 full reviews. We emailed receipt R-2026-0412 to dana.reyes@harborcb.com and ap@harborcb.com.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="bd-row" style="border-top:0;grid-template-columns:1fr auto auto auto;gap:32px;padding:16px 24px">
+            <div class="col"><span class="lbl">Balance</span><b class="num" style="font-size:16px">1 to 11 credits</b></div>
+            <div class="col"><span class="lbl">Valid until</span><b>Nov 11, 2027</b></div>
+            <div class="col"><span class="lbl">Paid with</span><b>Visa ending in 4242</b></div>
+            <div class="col"><span class="lbl">PO number</span><b>PO-2026-1184</b></div>
+          </div>
+        </div>
+
+        <div class="col gap12">
+          <div class="h2" style="font-family:var(--font-display)">What next</div>
+          <div class="next">
+            <div class="card">
+              <span class="ic"><svg class="i"><use href="#i-plus"/></svg></span>
+              <b>Start a review</b>
+              <p class="muted small">Upload a report and run Technical, Administrative or both.</p>
+              <span class="btn btn-filled btn-sm" style="align-self:flex-start;margin-top:4px">Start a review</span>
+            </div>
+            <div class="card">
+              <span class="ic"><svg class="i"><use href="#i-receipt"/></svg></span>
+              <b>View receipt</b>
+              <p class="muted small">Download the PDF for your records or forward it to accounts payable.</p>
+              <span class="btn btn-outline btn-sm" style="align-self:flex-start;margin-top:4px">View receipt</span>
+            </div>
+            <div class="card">
+              <span class="ic"><svg class="i"><use href="#i-refresh"/></svg></span>
+              <b>Set up auto-reload</b>
+              <p class="muted small">Add 10 credits automatically when you drop below 2.</p>
+              <span class="btn btn-outline btn-sm" style="align-self:flex-start;margin-top:4px">Set up auto-reload</span>
+            </div>
+          </div>
+        </div>
+      </div>
+  </div></div>
+  <div class="cap"><span class="src">ours</span><span class="src">Apollo</span><p>Ours, on Apollo's tone: the confirmation states the outcome in credits and reviews, not just "thank you". Three next actions cover the three things a buyer does next, and auto-reload is offered again only because the buyer skipped it at payment.</p></div>
+  </div>
+</section>
+
+<!-- =========================================================== 4. START LOW BALANCE -->
+<section class="sec" id="start-low-balance">
+  <div class="sec-h"><h2>Start a review with 1 credit</h2><code>Run takeover · Confirm · Not enough credits</code></div>
+  <div class="shot">
+  <div class="shot-lbl">Before the click: the cost is on the screen and Start stays live</div>
+  <div class="frame-scroll"><div class="frame" data-shell data-nav="reviews" data-crumbs="Reviews|Start a review" data-credits="1 credit" data-cstate="low">
+    <div class="page stack">
+      <div class="row between"><h1 class="page-title">Reviews</h1><span class="btn btn-filled"><svg class="i s16"><use href="#i-plus"/></svg>Start a review</span></div>
+      <div class="card">
+        <table class="tbl">
+          <tr><th class="first" style="padding-top:14px">Property</th><th style="padding-top:14px">Review</th><th style="padding-top:14px">Reviewer</th><th style="padding-top:14px">Status</th><th class="r last" style="padding-top:14px">Updated</th></tr>
+          <tr><td class="first"><b>412 Pine St, Portland</b></td><td class="muted">Technical, Administrative</td><td>Marcus Ortiz</td><td><span class="pill pill-done">Signed</span></td><td class="r last muted">Today</td></tr>
+          <tr><td class="first"><b>18 Wharf Rd, Bath</b></td><td class="muted">Technical</td><td>Dana Reyes</td><td><span class="pill pill-warn">3 findings</span></td><td class="r last muted">Yesterday</td></tr>
+          <tr><td class="first"><b>9 Harbor Ave, Rockland</b></td><td class="muted">Technical, Administrative</td><td>Marcus Ortiz</td><td><span class="pill pill-navy">In review</span></td><td class="r last muted">Nov 9</td></tr>
+          <tr><td class="first"><b>230 Mill Rd, Camden</b></td><td class="muted">Administrative</td><td>Dana Reyes</td><td><span class="pill pill-done">Signed</span></td><td class="r last muted">Nov 7</td></tr>
+          <tr><td class="first"><b>15 Ferry Ln, Belfast</b></td><td class="muted">Technical, Administrative</td><td>Marcus Ortiz</td><td><span class="pill pill-fail">Returned</span></td><td class="r last muted">Nov 5</td></tr>
+        </table>
+      </div>
+    </div>
+    <div class="scrim"></div>
+    <div class="dialog" style="left:50%;top:96px;transform:translateX(-50%);width:560px">
+      <div class="dlg-hd">
+        <div class="col gap4"><h2 class="h2">Start a review</h2><p class="muted">Check the report and pick what to run.</p></div>
+        <svg class="i x"><use href="#i-x"/></svg>
+      </div>
+      <div class="dlg-bd">
+        <div class="opt"><span class="pdf-ic"><svg class="i"><use href="#i-file-text"/></svg></span><div class="grow col"><b>77 Lakeview Plaza, Portland</b><span class="small muted">Appraisal report.pdf · 84 pages · uploaded just now</span></div><a class="link small">Replace</a></div>
+        <div class="col">
+          <span class="lbl" style="margin-bottom:4px">Review types</span>
+          <div class="rt-row"><span class="cb on"><svg class="i"><use href="#i-check"/></svg></span><div class="grow col"><b>Technical</b><span class="small muted">Valuation, comparables and adjustments against your policy</span></div><span class="pill">1 credit</span></div>
+          <div class="rt-row"><span class="cb on"><svg class="i"><use href="#i-check"/></svg></span><div class="grow col"><b>Administrative</b><span class="small muted">Completeness checklist, signatures and required forms</span></div><span class="pill">1 credit</span></div>
+        </div>
+      </div>
+      <div class="dlg-ft">
+        <div class="costline" style="background:var(--md-warn-c)"><svg class="i s16 warn"><use href="#x-coins"/></svg><span>Uses 2 credits · you have 1</span></div>
+        <span class="grow"></span>
+        <span class="btn btn-text">Cancel</span>
+        <span class="btn btn-filled">Start review</span>
+      </div>
+    </div>
+  </div></div>
+  </div>
+
+  <div class="shot">
+  <div class="shot-lbl">After the click: the dialog explains the shortfall and offers two ways through</div>
+  <div class="frame-scroll"><div class="frame" data-shell data-nav="reviews" data-crumbs="Reviews|Start a review" data-credits="1 credit" data-cstate="low">
+    <div class="page stack">
+      <div class="row between"><h1 class="page-title">Reviews</h1><span class="btn btn-filled"><svg class="i s16"><use href="#i-plus"/></svg>Start a review</span></div>
+      <div class="card">
+        <table class="tbl">
+          <tr><th class="first" style="padding-top:14px">Property</th><th style="padding-top:14px">Review</th><th style="padding-top:14px">Reviewer</th><th style="padding-top:14px">Status</th><th class="r last" style="padding-top:14px">Updated</th></tr>
+          <tr><td class="first"><b>412 Pine St, Portland</b></td><td class="muted">Technical, Administrative</td><td>Marcus Ortiz</td><td><span class="pill pill-done">Signed</span></td><td class="r last muted">Today</td></tr>
+          <tr><td class="first"><b>18 Wharf Rd, Bath</b></td><td class="muted">Technical</td><td>Dana Reyes</td><td><span class="pill pill-warn">3 findings</span></td><td class="r last muted">Yesterday</td></tr>
+          <tr><td class="first"><b>9 Harbor Ave, Rockland</b></td><td class="muted">Technical, Administrative</td><td>Marcus Ortiz</td><td><span class="pill pill-navy">In review</span></td><td class="r last muted">Nov 9</td></tr>
+          <tr><td class="first"><b>230 Mill Rd, Camden</b></td><td class="muted">Administrative</td><td>Dana Reyes</td><td><span class="pill pill-done">Signed</span></td><td class="r last muted">Nov 7</td></tr>
+          <tr><td class="first"><b>15 Ferry Ln, Belfast</b></td><td class="muted">Technical, Administrative</td><td>Marcus Ortiz</td><td><span class="pill pill-fail">Returned</span></td><td class="r last muted">Nov 5</td></tr>
+        </table>
+      </div>
+    </div>
+    <div class="scrim"></div>
+    <div class="dialog" style="left:50%;top:56px;transform:translateX(-50%);width:600px">
+      <div class="dlg-hd">
+        <div class="col gap4">
+          <h2 class="h2">You need 1 more credit</h2>
+          <p class="muted">Technical and Administrative together use 2 credits. Harbor Community Bank has 1.</p>
+        </div>
+        <svg class="i x"><use href="#i-x"/></svg>
+      </div>
+      <div class="dlg-bd">
+        <div class="opt sel" style="align-items:flex-start">
+          <span class="radio on" style="margin-top:2px"></span>
+          <div class="grow col gap4">
+            <b>Add 1 credit and run the full review</b>
+            <p class="small muted">$150, one credit at the single-credit rate. Checkout opens with 1 credit filled in and brings you back here when it's paid.</p>
+          </div>
+          <b class="num">$150</b>
+        </div>
+        <div class="opt" style="align-items:flex-start">
+          <span class="radio" style="margin-top:2px"></span>
+          <div class="grow col gap4">
+            <b>Run Technical only</b>
+            <p class="small muted">Uses your 1 credit now. You can add the Administrative review to this report later.</p>
+          </div>
+          <b class="num">1 credit</b>
+        </div>
+        <div class="note tint" style="padding:12px 14px">
+          <svg class="i s16"><use href="#i-refresh"/></svg>
+          <p class="small">Running low often? <a>Turn on auto-reload</a> to add 10 credits when you drop below 2.</p>
+        </div>
+      </div>
+      <div class="dlg-ft">
+        <span class="btn btn-text">Back</span>
+        <span class="grow"></span>
+        <span class="btn btn-outline">Run Technical only (1 credit)</span>
+        <span class="btn btn-filled">Add 1 credit</span>
+      </div>
+    </div>
+  </div></div>
+  <div class="cap"><span class="src">ours</span><span class="src">Apollo</span><p>Cody's rule, from Apollo's locked filters (23–24): never disable, click then explain. The cost sits next to Start before anyone commits, and the explanation offers two real ways through instead of a dead end. "Add 1 credit" pre-fills checkout, so the fix is one step, not a hunt for the billing page.</p></div>
+  </div>
+</section>
+
+<!-- =========================================================== 5. BILLING STATES -->
+<section class="sec" id="billing-trial">
+  <div class="sec-h"><h2>Billing overview: trial</h2><code>/configure/billing · Trial</code></div>
+  <div class="shot">
+  <div class="frame-scroll"><div class="frame" data-shell data-nav="none" data-crumbs="Configure|Billing" data-credits="6 credits" data-gs="2 of 8">
+    <div class="page-bar">
+      <span class="tab on">Overview</span><span class="tab">Usage</span><span class="tab">Invoices</span><span class="tab">Settings</span>
+      <span class="grow"></span>
+      <span class="small muted">Prefer a monthly invoice? <a>Talk to us</a></span>
+      <span class="hd-sep"></span>
+      <a class="link small">How credits work</a>
+    </div>
+    <div class="page stack">
+      <div class="bal-grid">
+        <div class="card hero">
+          <div class="row between" style="align-items:flex-start">
+            <div class="col gap8">
+              <span class="lbl">Balance</span>
+              <div class="row gap10" style="align-items:baseline"><span class="big" style="font-size:44px">6</span><span class="h3">trial credits</span></div>
+              <p class="muted">About 3 full reviews. Trial credits never expire, so there's no clock on using them.</p>
+            </div>
+            <span class="btn btn-outline">Add credits</span>
+          </div>
+          <div class="col gap8">
+            <div class="runway"><i class="rw-f" style="width:100%"></i></div>
+            <div class="legend"><span><i class="rw-f"></i>6 trial credits</span><span class="faint">never expire</span></div>
+          </div>
+          <div class="note tint">
+            <svg class="i"><use href="#i-gift"/></svg>
+            <p><b>Earn 2 more full reviews by finishing setup.</b> 12 days left to complete the tasks on Get started.</p>
+            <div class="acts"><span class="btn btn-outline btn-sm">Open Get started</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><div class="h3">When you need more</div></div>
+          <div class="col gap12" style="padding:0 24px 22px">
+            <p class="muted">1 credit is one review type on one report, about $150. A full review, Technical and Administrative, is 2 credits.</p>
+            <div class="col" style="border:1px solid var(--md-outline-v);border-radius:10px">
+              <div class="bd-row" style="border-top:0;grid-template-columns:1fr auto"><span>5 credits</span><b class="num">$750</b></div>
+              <div class="bd-row" style="grid-template-columns:1fr auto"><span>10 credits <span class="pill pill-earn" style="margin-left:6px">Save $100</span></span><b class="num">$1,400</b></div>
+              <div class="bd-row" style="grid-template-columns:1fr auto"><span>20 credits <span class="pill pill-earn" style="margin-left:6px">Save $400</span></span><b class="num">$2,600</b></div>
+            </div>
+            <p class="small muted">Purchased credits last 12 months. Prefer a monthly invoice? <a>Talk to us</a></p>
+          </div>
+        </div>
+      </div>
+      <div class="two">
+      <div class="card">
+        <div class="card-hd"><div class="h3">Usage by person</div><span class="small faint">This month</span></div>
+        <div class="bd-row" style="grid-template-columns:20px 1fr"><svg class="i s16 faint"><use href="#i-info"/></svg><span class="muted">Nothing used yet. Each person's usage shows here once they start a review.</span></div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><div class="h3">Activity</div><a class="link small">Receipts</a></div>
+        <div class="bd-row" style="grid-template-columns:1fr auto auto"><span>Trial credits added</span><span class="s">Nov 1</span><b class="num ok">+6</b></div>
+      </div>
+    </div>
+    </div>
+  </div></div>
+  <div class="cap"><span class="src">Apollo</span><span class="src">ours</span><p>Apollo's earn-credits headline (03) on our billing page: one unit everywhere (credits), translated into full reviews so nobody has to do the maths. Trial credits never expire, so the only clock shown is the bonus window. Pack prices sit beside the balance, visible but quiet.</p></div>
+  </div>
+</section>
+
+<section class="sec" id="billing-low">
+  <div class="sec-h"><h2>Billing overview: low balance, auto-reload off</h2><code>/configure/billing · Low</code></div>
+  <div class="shot">
+  <div class="frame-scroll"><div class="frame" data-shell data-nav="none" data-crumbs="Configure|Billing" data-credits="3 credits" data-cstate="low">
+    <div class="page-bar">
+      <span class="tab on">Overview</span><span class="tab">Usage</span><span class="tab">Invoices</span><span class="tab">Settings</span>
+      <span class="grow"></span>
+      <span class="small muted">Prefer a monthly invoice? <a>Talk to us</a></span>
+      <span class="hd-sep"></span>
+      <a class="link small">How credits work</a>
+    </div>
+    <div class="page stack">
+      <div class="bal-grid">
+        <div class="card hero">
+          <div class="row between" style="align-items:flex-start">
+            <div class="col gap8">
+              <span class="lbl">Balance</span>
+              <div class="row gap10" style="align-items:baseline"><span class="big warn" style="font-size:44px">3</span><span class="h3">credits</span><span class="pill pill-warn">Running low</span></div>
+              <p class="muted">Enough for 1 full review. At your pace of about 9 credits a week, <b class="warn">this runs out on Thursday</b>.</p>
+            </div>
+            <span class="btn btn-filled">Add credits</span>
+          </div>
+          <div class="col gap8">
+            <div class="runway"><i class="rw-low" style="width:13.6%"></i></div>
+            <div class="legend"><span><i class="rw-low"></i>3 left</span><span><i style="background:var(--md-surface-2)"></i>19 used since Oct 14</span><span class="faint">of 22 credits</span></div>
+          </div>
+          <div class="facts">
+            <div><span class="lbl">Used this month</span><b>11</b></div>
+            <div><span class="lbl">Weekly pace</span><b>~9</b></div>
+            <div><span class="lbl">Runs out</span><b class="warn">Thu, Nov 13</b></div>
+            <div><span class="lbl">Auto-reload</span><b class="muted">Off</b></div>
+          </div>
+        </div>
+        <div class="card col">
+          <div class="card-hd"><div class="h3">Never stop at Start</div></div>
+          <div class="col gap12" style="padding:0 24px 22px">
+            <p class="muted">Auto-reload adds credits to Visa ending in 4242 before you run out, so reviewers aren't blocked mid-week.</p>
+            <div class="opt sel">
+              <span class="cb on"><svg class="i"><use href="#i-check"/></svg></span>
+              <div class="grow col"><b>10 credits when below 2</b><span class="small muted">$1,400 each time · up to 3 times a month</span></div>
+            </div>
+            <div class="row gap8"><span class="btn btn-filled btn-sm">Turn on auto-reload</span><span class="btn btn-text btn-sm">Change amount</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="two">
+      <div class="card">
+        <div class="card-hd"><div class="h3">Balance breakdown</div><span class="small faint">Used oldest first</span></div>
+        <div class="bd-row"><i class="sw rw-f"></i><div class="col"><span>Trial credits</span><span class="s">Never expire</span></div><span class="n">2</span></div>
+        <div class="bd-row"><i class="sw rw-p"></i><div class="col"><span>10-credit pack, Oct 14, 2026</span><span class="s">Expires Oct 14, 2027</span></div><span class="n">1</span></div>
+        <div class="bd-row" style="grid-template-columns:14px 1fr auto"><span></span><b>Total</b><span class="n">3</span></div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><div class="h3">Usage by person</div><span class="small faint">November</span></div>
+        <table class="tbl">
+          <tr><th class="first">Person</th><th>Share</th><th class="r last">Credits</th></tr>
+          <tr><td class="first"><span class="who"><span class="av navy">MO</span>Marcus Ortiz</span></td><td><div class="meter"><i style="width:64%"></i></div></td><td class="r last"><b>7</b></td></tr>
+          <tr><td class="first"><span class="who"><span class="av">DR</span>Dana Reyes</span></td><td><div class="meter"><i style="width:36%"></i></div></td><td class="r last"><b>4</b></td></tr>
+        </table>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="h3">Receipts</div><a class="link small">See all</a></div>
+      <div class="bd-row" style="grid-template-columns:1fr auto auto auto;gap:24px"><span>10-credit pack <span class="s">· Visa ending in 4242</span></span><span class="s">Oct 14, 2026</span><b class="num">$1,400.00</b><a class="link small"><svg class="i s14"><use href="#i-download"/></svg>PDF</a></div>
+      <div class="bd-row" style="grid-template-columns:1fr auto auto auto;gap:24px"><span>5-credit pack <span class="s">· Visa ending in 4242</span></span><span class="s">Sep 22, 2026</span><b class="num">$750.00</b><a class="link small"><svg class="i s14"><use href="#i-download"/></svg>PDF</a></div>
+    </div>
+    </div>
+  </div></div>
+  <div class="cap"><span class="src">Apollo</span><span class="src">ours</span><p>Apollo's "Available n / total, renews…" (10) answers "am I running out?", Cody's number-one question. We go further with a runway in days at the team's own pace. Amber is reserved for this state, and the fix (auto-reload, pre-set to 10 when below 2) sits right beside the warning.</p></div>
+  </div>
+</section>
+
+<section class="sec" id="billing-zero">
+  <div class="sec-h"><h2>Billing overview: zero, after clicking Start</h2><code>/configure/billing · Zero</code></div>
+  <div class="shot">
+  <div class="frame-scroll"><div class="frame" data-shell data-nav="none" data-crumbs="Configure|Billing" data-credits="0 credits" data-cstate="zero">
+    <div class="page-bar">
+      <span class="tab on">Overview</span><span class="tab">Usage</span><span class="tab">Invoices</span><span class="tab">Settings</span>
+      <span class="grow"></span>
+      <span class="small muted">Prefer a monthly invoice? <a>Talk to us</a></span>
+      <span class="hd-sep"></span>
+      <a class="link small">How credits work</a>
+    </div>
+    <div class="page stack">
+      <div class="bal-grid">
+        <div class="card hero">
+          <div class="row between" style="align-items:flex-start">
+            <div class="col gap8">
+              <span class="lbl">Balance</span>
+              <div class="row gap10" style="align-items:baseline"><span class="big bad" style="font-size:44px">0</span><span class="h3">credits</span><span class="pill pill-fail">Out of credits</span></div>
+              <p class="muted">New reviews can't start. Reviews already running finish normally.</p>
+            </div>
+            <span class="btn btn-filled">Add credits</span>
+          </div>
+          <div class="runway"><i class="rw-zero" style="width:1.2%"></i></div>
+          <div class="facts">
+            <div><span class="lbl">Used this month</span><b>22</b></div>
+            <div><span class="lbl">Ran out</span><b class="bad">Today, 9:40 AM</b></div>
+            <div><span class="lbl">Waiting to start</span><b>2 reports</b></div>
+            <div><span class="lbl">Auto-reload</span><b class="muted">Off</b></div>
+          </div>
+        </div>
+        <div class="card"><div class="card-hd"><div class="h3">Recent activity</div></div>
+          <div class="bd-row" style="grid-template-columns:1fr auto"><span>Marcus Ortiz started 412 Pine St, full review</span><b class="num bad">-2</b></div>
+          <div class="bd-row" style="grid-template-columns:1fr auto"><span>Dana Reyes started 18 Wharf Rd, Technical</span><b class="num bad">-1</b></div>
+          <div class="bd-row" style="grid-template-columns:1fr auto"><span>Marcus Ortiz started 77 Lakeview Plaza, full review</span><b class="num bad">-2</b></div>
+        </div>
+      </div>
+    </div>
+    <div class="scrim"></div>
+    <div class="dialog" style="left:50%;top:120px;transform:translateX(-50%);width:560px">
+      <div class="dlg-hd">
+        <div class="row gap16" style="align-items:center">
+          <div class="ill" style="width:96px"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 90" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" class="pi" role="img"><title>Wallet top-up: a coin going into the wallet</title><style>.pi{stroke-width:var(--ill-stroke,2.25)}.pi .p{fill:var(--ill-paper,#FFFFFF)}.pi .a{fill:var(--ill-accent,#2A6F7F)}.pi .t{fill:var(--ill-tint,#DEEBEE)}.pi .s{fill:var(--ill-shadow,#C9D7E3);stroke:none}.pi .m{stroke:var(--ill-muted,#8FA3B3);stroke-width:1.75}.pi .ap{stroke:var(--ill-paper,#FFFFFF)}.pi .af{fill:var(--ill-paper,#FFFFFF);stroke:none}.pi .as{stroke:var(--ill-accent,#2A6F7F)}.pi .ink{fill:currentColor;stroke:none}.pi .ns{stroke:none}</style><rect class="t" x="55" y="21" width="27" height="19" rx="2.5" transform="rotate(9 68 30)"/>
+<circle class="p" cx="47" cy="33" r="11"/>
+<circle class="m" cx="47" cy="33" r="6"/>
+<rect class="s" x="32" y="40" width="60" height="38" rx="7"/>
+<rect class="p" x="29" y="37" width="60" height="38" rx="7"/>
+<path class="m" d="M35 44H62" stroke-dasharray="2 3.5"/>
+<path class="p" d="M89 49H74a7 7 0 0 0 0 14H89"/>
+<circle class="ink" cx="75" cy="56" r="2.2"/>
+<circle class="a" cx="96" cy="27" r="9.5"/>
+<path class="ap" d="M96 22.5v9M91.5 27h9"/></svg></div>
+          <div class="col gap4">
+            <h2 class="h2">You're out of credits</h2>
+            <p class="muted">This review uses 2 credits. Harbor Community Bank has 0.</p>
+          </div>
+        </div>
+        <svg class="i x"><use href="#i-x"/></svg>
+      </div>
+      <div class="dlg-bd">
+        <div class="opt sel">
+          <span class="radio on"></span>
+          <div class="grow col"><b>10 credits</b><span class="small muted">5 full reviews · $140 a credit</span></div>
+          <b class="num">$1,400</b>
+        </div>
+        <div class="opt">
+          <span class="radio"></span>
+          <div class="grow col"><b>2 credits</b><span class="small muted">Just this review · $150 a credit</span></div>
+          <b class="num">$300</b>
+        </div>
+        <p class="small muted">Your report stays uploaded. It starts as soon as the payment goes through.</p>
+      </div>
+      <div class="dlg-ft">
+        <a class="link small">How credits work</a>
+        <span class="grow"></span>
+        <span class="btn btn-text">Not now</span>
+        <span class="btn btn-filled">Continue to checkout</span>
+      </div>
+    </div>
+  </div></div>
+  <div class="cap"><span class="src">ours</span><span class="src">Apollo</span><p>Ours, applying Apollo's click-then-explain (24). Start was clicked, not greyed out: the dialog explains in one line and offers the two amounts that make sense here. Red is used only at zero. The uploaded report waits rather than being thrown away.</p></div>
+  </div>
+</section>
+
+<section class="sec" id="billing-invoiced">
+  <div class="sec-h"><h2>Billing overview: monthly invoice</h2><code>/configure/billing?tab=usage · Invoiced</code></div>
+  <div class="shot">
+  <div class="frame-scroll"><div class="frame" data-shell data-nav="none" data-crumbs="Configure|Billing" data-credits="38 credits used" data-bal="38 used">
+    <div class="page-bar">
+      <span class="tab on">Usage</span><span class="tab">Invoices</span><span class="tab">Settings</span>
+      <span class="grow"></span>
+      <span class="btn btn-outline btn-sm"><svg class="i s16"><use href="#i-download"/></svg>Export CSV</span>
+    </div>
+    <div class="page stack">
+      <div class="bal-grid">
+        <div class="card hero">
+          <div class="row between" style="align-items:flex-start">
+            <div class="col gap8">
+              <span class="lbl">November so far</span>
+              <div class="row gap10" style="align-items:baseline"><span class="big" style="font-size:44px">38</span><span class="h3">credits used</span></div>
+              <p class="muted">Harbor Community Bank moved to monthly invoicing in August, after a call with Realwired. Credits are counted as reviews start and billed at $140 each. There's no balance to top up. Next statement on <b>Dec 1</b>.</p>
+            </div>
+            <span class="pill pill-navy"><svg class="i s14"><use href="#i-file-text"/></svg>Monthly invoice</span>
+          </div>
+          <div class="facts">
+            <div><span class="lbl">Estimated so far</span><b>$5,320</b></div>
+            <div><span class="lbl">Last month</span><b>51 credits</b></div>
+            <div><span class="lbl">Reports reviewed</span><b>21</b></div>
+            <div><span class="lbl">Payment terms</span><b>Net 30</b></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><div class="h3">Invoices</div><a class="link small">See all</a></div>
+          <div class="bd-row" style="grid-template-columns:1fr auto auto"><span>October 2026 <span class="s">· 51 credits</span></span><span class="pill pill-warn">Due Nov 30</span><b class="num">$7,140</b></div>
+          <div class="bd-row" style="grid-template-columns:1fr auto auto"><span>September 2026 <span class="s">· 44 credits</span></span><span class="pill pill-done">Paid</span><b class="num">$6,160</b></div>
+          <div class="bd-row" style="grid-template-columns:1fr auto auto"><span>August 2026 <span class="s">· 47 credits</span></span><span class="pill pill-done">Paid</span><b class="num">$6,580</b></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><div class="h3">Usage by person</div><span class="small faint">Nov 1 to Nov 11</span></div>
+        <table class="tbl">
+          <tr><th class="first">Person</th><th>Role</th><th class="r">Reports</th><th class="r">Technical</th><th class="r">Administrative</th><th>Share</th><th class="r last">Credits</th></tr>
+          <tr><td class="first"><span class="who"><span class="av navy">MO</span>Marcus Ortiz</span></td><td class="muted">Reviewer</td><td class="r">12</td><td class="r">12</td><td class="r">10</td><td><div class="meter"><i style="width:58%"></i></div></td><td class="r last"><b>22</b></td></tr>
+          <tr><td class="first"><span class="who"><span class="av">DR</span>Dana Reyes</span></td><td class="muted">Admin</td><td class="r">6</td><td class="r">6</td><td class="r">4</td><td><div class="meter"><i style="width:26%"></i></div></td><td class="r last"><b>10</b></td></tr>
+          <tr><td class="first"><span class="who"><span class="av" style="background:#6b7f8f">JL</span>Jamie Lin</span></td><td class="muted">Reviewer</td><td class="r">3</td><td class="r">3</td><td class="r">3</td><td><div class="meter"><i style="width:16%"></i></div></td><td class="r last"><b>6</b></td></tr>
+        </table>
+      </div>
+    </div>
+  </div></div>
+  <div class="cap"><span class="src">ours</span><span class="src">Apollo</span><p>Ours, for enterprise banks billed by Realwired. There's no wallet, so there's no runway: the hero is "used so far" and the estimated bill. Usage by person comes from Apollo's team-member filter (10) and keeps our current invoices list.</p></div>
+  </div>
+</section>
+
+<section class="sec" id="billing-expiring">
+  <div class="sec-h"><h2>Billing overview: credits expiring</h2><code>/configure/billing · Credits expiring</code></div>
+  <div class="shot">
+  <div class="frame-scroll"><div class="frame" data-shell data-nav="none" data-crumbs="Configure|Billing" data-credits="14 credits">
+    <div class="page-bar">
+      <span class="tab on">Overview</span><span class="tab">Usage</span><span class="tab">Invoices</span><span class="tab">Settings</span>
+      <span class="grow"></span>
+      <span class="small muted">Prefer a monthly invoice? <a>Talk to us</a></span>
+      <span class="hd-sep"></span>
+      <a class="link small">How credits work</a>
+    </div>
+    <div class="page stack">
+      <div class="note warn-n">
+        <svg class="i"><use href="#i-hourglass"/></svg>
+        <p><b>3 credits expire in 6 days, on Nov 17.</b> They're from the 5-credit pack bought Nov 17, 2025. Purchased credits are used before trial credits, oldest first, so 2 reviews this week use them up.</p>
+        <div class="acts"><span class="btn btn-outline btn-sm">Start a review</span></div>
+      </div>
+      <div class="bal-grid">
+        <div class="card hero">
+          <div class="row between" style="align-items:flex-start">
+            <div class="col gap8">
+              <span class="lbl">Balance</span>
+              <div class="row gap10" style="align-items:baseline"><span class="big" style="font-size:44px">14</span><span class="h3">credits</span></div>
+              <p class="muted">Enough for 7 full reviews. At about 9 credits a week, this lasts until around Nov 22.</p>
+            </div>
+            <span class="btn btn-filled">Add credits</span>
+          </div>
+          <div class="col gap8">
+            <div class="runway"><i class="rw-x" style="width:13.6%"></i><i class="rw-p" style="width:40.9%"></i><i class="rw-f" style="width:9.1%"></i></div>
+            <div class="legend"><span><i class="rw-x"></i>3 expiring Nov 17</span><span><i class="rw-p"></i>9 purchased</span><span><i class="rw-f"></i>2 trial</span><span class="faint">of 22 credits</span></div>
+          </div>
+          <div class="facts">
+            <div><span class="lbl">Used this month</span><b>8</b></div>
+            <div><span class="lbl">Weekly pace</span><b>~9</b></div>
+            <div><span class="lbl">Next expiry</span><b class="warn">Nov 17</b></div>
+            <div><span class="lbl">Auto-reload</span><b class="ok">On · 10 below 2</b></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><div class="h3">Balance breakdown</div><span class="small faint">Used oldest first</span></div>
+          <div class="bd-row hl"><i class="sw rw-x"></i><div class="col"><span>5-credit pack, Nov 17, 2025</span><span class="s warn">Expires Nov 17, 2026 · in 6 days</span></div><span class="n">3</span></div>
+          <div class="bd-row"><i class="sw rw-p"></i><div class="col"><span>10-credit pack, Sep 4, 2026</span><span class="s">Expires Sep 4, 2027</span></div><span class="n">9</span></div>
+          <div class="bd-row"><i class="sw rw-f"></i><div class="col"><span>Trial and bonus credits</span><span class="s">Never expire</span></div><span class="n">2</span></div>
+          <div class="bd-row" style="grid-template-columns:14px 1fr auto"><span></span><b>Total</b><span class="n">14</span></div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+  <div class="cap"><span class="src">ours</span><span class="src">Apollo</span><p>Ours, keeping today's balance breakdown and ExpiryAlert. The expiring slice is coloured inside the runway, so the risk shows where the eye already goes. Apollo states renewal dates plainly (10); we state expiry plainly and turn it into an action: run 2 reviews this week.</p></div>
+  </div>
+</section>
+
+<section class="sec" id="billing-usage">
+  <div class="sec-h"><h2>Billing usage: spend this period</h2><code>/configure/billing?tab=usage · November 2026</code></div>
+  <div class="shot">
+  <div class="frame-scroll"><div class="frame" data-shell data-nav="none" data-crumbs="Configure|Billing" data-credits="10 credits">
+    <div class="page-bar">
+      <span class="tab">Overview</span><span class="tab on">Usage</span><span class="tab">Invoices</span><span class="tab">Settings</span>
+      <span class="grow"></span>
+      <span class="filter-btn"><svg class="i s16"><use href="#i-calendar-event"/></svg><span class="k">Period</span>November 2026<svg class="i s14"><use href="#i-chevron-down"/></svg></span>
+      <span class="btn btn-outline btn-sm"><svg class="i s16"><use href="#i-download"/></svg>Export CSV</span>
+    </div>
+    <div class="page stack">
+      <div class="use-grid">
+        <div class="card">
+          <div class="card-hd"><div class="h3">Credits used in November</div><span class="small muted">Nov 1 to Nov 11</span></div>
+          <div class="donut-wrap">
+            <div class="donut">
+              <svg viewBox="0 0 200 200" role="img" aria-label="12 credits used in November: Technical 8 credits (67%), Administrative 4 credits (33%).">
+                <g transform="rotate(-90 100 100)">
+                  <circle class="slice" cx="100" cy="100" r="80" pathLength="100" stroke="var(--viz-tech)" stroke-dasharray="65.87 34.13" stroke-dashoffset="-0.4"><title>Technical: 8 credits, 67%</title></circle>
+                  <circle class="slice" cx="100" cy="100" r="80" pathLength="100" stroke="var(--viz-admin)" stroke-dasharray="32.53 67.47" stroke-dashoffset="-67.07"><title>Administrative: 4 credits, 33%</title></circle>
+                </g>
+              </svg>
+              <div class="center" aria-hidden="true"><span class="big">12</span><span>credits used</span></div>
+            </div>
+            <div class="use-legend">
+              <div class="lr"><i class="sw" style="background:var(--viz-tech)"></i><div class="col gap4"><span><b>Technical</b></span><span class="s">67%</span></div><span class="n">8 credits<small>= 4 full reviews</small></span></div>
+              <div class="lr"><i class="sw" style="background:var(--viz-admin)"></i><div class="col gap4"><span><b>Administrative</b></span><span class="s">33%</span></div><span class="n">4 credits<small>= 2 full reviews</small></span></div>
+              <div class="lr tot"><span></span><span>Total</span><span class="n">12 credits<small>= 6 full reviews</small></span></div>
+              <p class="small muted" style="margin-top:8px;text-wrap:pretty">1 credit is one review type on one report. A full review, Technical and Administrative, is 2 credits.</p>
+            </div>
+            <table class="sr-only">
+              <caption>Credits used in November 2026, by review type</caption>
+              <tr><th scope="col">Review type</th><th scope="col">Credits</th><th scope="col">Share</th></tr>
+              <tr><td>Technical</td><td>8</td><td>67%</td></tr>
+              <tr><td>Administrative</td><td>4</td><td>33%</td></tr>
+              <tr><td>Total</td><td>12</td><td>100%</td></tr>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><div class="h3">By person</div><span class="small muted">Most credits first</span></div>
+          <div class="rank" role="list">
+            <div class="rr" role="listitem"><span class="who"><span class="av navy">MO</span>Marcus Ortiz</span><div class="track"><i class="bar" style="width:100%"></i></div><span class="v">4 <small>credits</small></span></div>
+            <div class="rr" role="listitem"><span class="who"><span class="av">DR</span>Dana Reyes</span><div class="track"><i class="bar" style="width:75%"></i></div><span class="v">3 <small>credits</small></span></div>
+            <div class="rr" role="listitem"><span class="who"><span class="av" style="background:var(--md-on-surface-v)">LC</span>L. Chen</span><div class="track"><i class="bar" style="width:50%"></i></div><span class="v">2 <small>credits</small></span></div>
+            <div class="rr" role="listitem"><span class="who"><span class="av navy">PS</span>Priya Shah</span><div class="track"><i class="bar" style="width:50%"></i></div><span class="v">2 <small>credits</small></span></div>
+            <div class="rr" role="listitem"><span class="who"><span class="av">TW</span>Tom Walsh</span><div class="track"><i class="bar" style="width:25%"></i></div><span class="v">1 <small>credit</small></span></div>
+          </div>
+          <div class="bd-row" style="grid-template-columns:1fr auto"><b>Total</b><span class="n">12 credits</span></div>
+        </div>
+      </div>
+      <div class="col gap8">
+        <span class="variant-lbl">Empty variant: nothing used this period</span>
+        <div class="use-grid">
+          <div class="card">
+            <div class="card-hd"><div class="h3">Credits used in December</div><span class="small muted">December 2026</span></div>
+            <div class="bd-row" style="grid-template-columns:20px 1fr"><svg class="i s16 muted"><use href="#i-info"/></svg><span class="muted">No credits used yet this period.</span></div>
+          </div>
+          <div class="card">
+            <div class="card-hd"><div class="h3">By person</div><span class="small muted">Most credits first</span></div>
+            <div class="bd-row" style="grid-template-columns:20px 1fr"><svg class="i s16 muted"><use href="#i-info"/></svg><span class="muted">No credits used yet this period.</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+  <div class="cap"><span class="src">Apollo</span><span class="src">ours</span><p>Apollo's credit-usage donut (10, 12) sits over a fixed 100-credit allowance that renews. Ours has no fixed total: the balance is prepaid, so a donut there would make up a denominator. A donut appears only where there is a real finite total, which is spend in a period: 12 credits used in November, split by review type. The balance stays a bar everywhere (popover, Overview runway, sidebar) because a bar answers "how long will this last" and shows what the balance is made of. People get a ranked bar list, because five or more slices can't be read and names need room. An empty period shows one line, with no empty ring.</p></div>
+  </div>
+</section>
+
+<!-- =========================================================== 6. LEARNING CENTER -->
+<section class="sec" id="learning-center">
+  <div class="sec-h"><h2>Learning Center</h2><code>/learn</code></div>
+  <div class="shot">
+  <div class="frame-scroll"><div class="frame" data-shell data-nav="learn" data-crumbs="Learning Center" data-credits="11 credits" style="min-height:1500px">
+    <div class="page stack" style="gap:28px">
+      <div class="row gap24">
+        <div class="grow col gap8">
+          <h1 class="page-title">Learning Center</h1>
+          <p class="lede" style="margin-top:0">Short videos and printable guides for every part of Parachute. Watch one when you get stuck, or send a guide to someone new on the team.</p>
+          <div class="row gap10" style="margin-top:8px">
+            <div class="input grow" style="max-width:none"><svg class="i s16 faint"><use href="#i-search"/></svg><span class="ph">Search videos and guides, for example "sign a workbook"</span></div>
+            <div class="tog2"><span class="on">All</span><span>Admin</span><span>Reviewer</span></div>
+          </div>
+        </div>
+        <div class="ill" style="width:190px"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 90" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" class="pi" role="img"><title>Learning Center: a video player and an open guide</title><style>.pi{stroke-width:var(--ill-stroke,2.25)}.pi .p{fill:var(--ill-paper,#FFFFFF)}.pi .a{fill:var(--ill-accent,#2A6F7F)}.pi .t{fill:var(--ill-tint,#DEEBEE)}.pi .s{fill:var(--ill-shadow,#C9D7E3);stroke:none}.pi .m{stroke:var(--ill-muted,#8FA3B3);stroke-width:1.75}.pi .ap{stroke:var(--ill-paper,#FFFFFF)}.pi .af{fill:var(--ill-paper,#FFFFFF);stroke:none}.pi .as{stroke:var(--ill-accent,#2A6F7F)}.pi .ink{fill:currentColor;stroke:none}.pi .ns{stroke:none}</style><rect class="s" x="51" y="13" width="52" height="36" rx="5"/>
+<rect class="p" x="48" y="10" width="52" height="36" rx="5"/>
+<path class="a" d="M69 20V36L82 28Z"/>
+<path class="m" d="M55 40.5H93"/>
+<path class="s" d="M49 55C41 50 31 49 21 51V79C31 77 41 78 49 83C57 78 67 77 77 79V51C67 49 57 50 49 55Z"/>
+<path class="p" d="M46 52C38 47 28 46 18 48V76C28 74 38 75 46 80Z"/>
+<path class="p" d="M46 52C54 47 64 46 74 48V76C64 74 54 75 46 80Z"/>
+<path class="m" d="M24 57C30 55.5 35 55.5 40 57.5M24 64C30 62.5 35 62.5 40 64.5M52 57.5C57 55.5 62 55.5 68 56.5M52 64.5C57 62.5 62 62.5 68 63.5"/></svg></div>
+      </div>
+
+      <div class="lgroup">
+        <div class="lgroup-h"><h3>Continue where you left off</h3></div>
+        <div class="cont">
+          <div class="card"><div class="vthumb t2"><div class="scr"></div><span class="play"><svg><use href="#x-player-play-filled"/></svg></span><div class="prog"><i style="width:62%"></i></div></div><div class="vcard"><span class="t">Reading the workbook</span><span class="m">4:02 of 6:30 watched</span></div></div>
+          <div class="card"><div class="vthumb t3"><div class="scr"></div><span class="play"><svg><use href="#x-player-play-filled"/></svg></span><div class="prog"><i style="width:25%"></i></div></div><div class="vcard"><span class="t">Writing a finding with a citation</span><span class="m">1:10 of 4:45 watched</span></div></div>
+          <div class="card"><div class="vthumb t4"><div class="scr"></div><span class="play"><svg><use href="#x-player-play-filled"/></svg></span><div class="prog"><i style="width:80%"></i></div></div><div class="vcard"><span class="t">Setting your bank's review policy</span><span class="m">3:20 of 4:10 watched</span></div></div>
+        </div>
+      </div>
+
+      <div class="lgroup"><div class="lgroup-h"><h3>Getting set up</h3><span class="small faint">4 videos · 14 min</span></div><div class="vgrid"><div class="vcard"><div class="vthumb"><div class="scr"></div><span class="play"><svg><use href="#x-player-play-filled"/></svg></span><span class="dur">2:40</span></div><span class="t">Create your organization</span><span class="m"><span class="seen"><svg class="i s13"><use href="#i-circle-check"/></svg> Watched</span> · 2:40</span></div><div class="vcard"><div class="vthumb t2"><div class="scr"></div><span class="play"><svg><use href="#x-player-play-filled"/></svg></span><span class="dur">1:55</span></div><span class="t">Invite your team</span><span class="m"><span class="seen"><svg class="i s13"><use href="#i-circle-check"/></svg> Watched</span> · 1:55</span></div><div class="vcard"><div class="vthumb t3"><div class="scr"></div><span class="play"><svg><use href="#x-player-play-filled"/></svg></span><span class="dur">3:30</span></div><span class="t">Upload your bank policy</span><span class="m">3:30</span></div><div class="vcard"><div class="vthumb t4"><div class="scr"></div><span class="play"><svg><use href="#x-player-play-filled"/></svg></span><span class="dur">5:10</span></div><span class="t">Choose review defaults</span><span class="m">5:10</span></div></div></div>
+      <div class="lgroup"><div class="lgroup-h"><h3>Running a review</h3><span class="small faint">4 videos · 19 min</span></div><div class="vgrid"><div class="vcard"><div class="vthumb"><div class="scr"></div><span class="play"><svg><use href="#x-player-play-filled"/></svg></span><span class="dur">3:15</span></div><span class="t">Start your first review</span><span class="m"><span class="seen"><svg class="i s13"><use href="#i-circle-check"/></svg> Watched</span> · 3:15</span></div><div class="vcard"><div class="vthumb t2"><div class="scr"></div><span class="play"><svg><use href="#x-player-play-filled"/></svg></span><span class="dur">4:20</span></div><span class="t">Technical vs Administrative</span><span class="m">4:20</span></div><div class="vcard"><div class="vthumb t3"><div class="scr"></div><span class="play"><svg><use href="#x-player-play-filled"/></svg></span><span class="dur">5:05</span></div><span class="t">Sending a report from YouConnect</span><span class="m">5:05</span></div><div class="vcard"><div class="vthumb t4"><div class="scr"></div><span class="play"><svg><use href="#x-player-play-filled"/></svg></span><span class="dur">2:10</span></div><span class="t">What credits a review uses</span><span class="m">2:10</span></div></div></div>
+      <div class="lgroup"><div class="lgroup-h"><h3>Working with findings</h3><span class="small faint">3 videos · 13 min</span></div><div class="vgrid"><div class="vcard"><div class="vthumb"><div class="scr"></div><span class="play"><svg><use href="#x-player-play-filled"/></svg></span><span class="dur">4:45</span></div><span class="t">Writing a finding with a citation</span><span class="m">4:45</span></div><div class="vcard"><div class="vthumb t2"><div class="scr"></div><span class="play"><svg><use href="#x-player-play-filled"/></svg></span><span class="dur">3:50</span></div><span class="t">Using the response library</span><span class="m">3:50</span></div><div class="vcard"><div class="vthumb t3"><div class="scr"></div><span class="play"><svg><use href="#x-player-play-filled"/></svg></span><span class="dur">4:30</span></div><span class="t">Returning a report to the appraiser</span><span class="m">4:30</span></div></div></div>
+      <div class="lgroup"><div class="lgroup-h"><h3>Your workbook</h3><span class="small faint">3 videos · 15 min</span></div><div class="vgrid"><div class="vcard"><div class="vthumb"><div class="scr"></div><span class="play"><svg><use href="#x-player-play-filled"/></svg></span><span class="dur">6:30</span></div><span class="t">Reading the workbook</span><span class="m">6:30</span></div><div class="vcard"><div class="vthumb t2"><div class="scr"></div><span class="play"><svg><use href="#x-player-play-filled"/></svg></span><span class="dur">4:15</span></div><span class="t">Editing blocks inline</span><span class="m">4:15</span></div><div class="vcard"><div class="vthumb t3"><div class="scr"></div><span class="play"><svg><use href="#x-player-play-filled"/></svg></span><span class="dur">4:05</span></div><span class="t">Signing and exporting</span><span class="m">4:05</span></div></div></div>
+      <div class="lgroup"><div class="lgroup-h"><h3>Admin</h3><span class="small faint">4 videos · 16 min</span></div><div class="vgrid"><div class="vcard"><div class="vthumb"><div class="scr"></div><span class="play"><svg><use href="#x-player-play-filled"/></svg></span><span class="dur">3:40</span></div><span class="t">Buying credits and auto-reload</span><span class="m">3:40</span></div><div class="vcard"><div class="vthumb t2"><div class="scr"></div><span class="play"><svg><use href="#x-player-play-filled"/></svg></span><span class="dur">2:55</span></div><span class="t">Reading usage by person</span><span class="m">2:55</span></div><div class="vcard"><div class="vthumb t3"><div class="scr"></div><span class="play"><svg><use href="#x-player-play-filled"/></svg></span><span class="dur">6:10</span></div><span class="t">Custom workbook layouts</span><span class="m">6:10</span></div><div class="vcard"><div class="vthumb t4"><div class="scr"></div><span class="play"><svg><use href="#x-player-play-filled"/></svg></span><span class="dur">3:05</span></div><span class="t">Sending the security pack to IT</span><span class="m">3:05</span></div></div></div>
+
+      <div class="lgroup">
+        <div class="lgroup-h"><h3>PDF guides</h3><span class="small faint">Print them or pass them on</span></div>
+        <div class="card">
+          <div class="pdf-row"><span class="pdf-ic"><svg class="i"><use href="#x-file-type-pdf"/></svg></span><div class="col"><b>Reviewer quick-start</b><span class="small faint">8 pages · updated Oct 2026</span></div><span class="pill">Reviewer</span><span class="btn btn-outline btn-sm"><svg class="i s16"><use href="#i-download"/></svg>Download</span></div>
+          <div class="pdf-row"><span class="pdf-ic"><svg class="i"><use href="#x-file-type-pdf"/></svg></span><div class="col"><b>Admin guide: setup, credits and billing</b><span class="small faint">14 pages · updated Nov 2026</span></div><span class="pill">Admin</span><span class="btn btn-outline btn-sm"><svg class="i s16"><use href="#i-download"/></svg>Download</span></div>
+          <div class="pdf-row"><span class="pdf-ic"><svg class="i"><use href="#x-file-type-pdf"/></svg></span><div class="col"><b>Review checklist reference</b><span class="small faint">4 pages · updated Sep 2026</span></div><span class="pill">Everyone</span><span class="btn btn-outline btn-sm"><svg class="i s16"><use href="#i-download"/></svg>Download</span></div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+  <div class="cap"><span class="src">Apollo</span><span class="src lem">lemlist</span><p>Apollo's "More resources" and Academy cards (05), and lemlist's "read the article" knowledge-base links (06), gathered on one always-available page. The client asked for a safety net. Videos are grouped by task rather than by feature, and "Continue where you left off" brings people back to the video they were partway through.</p></div>
+  </div>
+</section>
+
+<!-- =========================================================== 7. PROTOTYPE INDEX -->
+<section class="sec" id="prototype-index">
+  <div class="sec-h"><h2>Prototype Index</h2><code>/prototype</code></div>
+  <div class="shot">
+  <div class="frame-scroll"><div class="frame bare">
+    <div class="px">
+      <div class="px-top">
+        <div class="sb-logo" style="padding:0"><svg class="emblem" viewBox="0 0 1033 800" aria-hidden="true"><path d="M183.616 701.001C183.616 701.001 178.511 372.403 401.702 295.845C401.702 295.845 143.312 145.229 29.5019 334.599C-88.044 530.186 183.616 701.001 183.616 701.001Z"/><path d="M887.396 800C887.396 800 1262.66 228.668 804.498 50.9707C404.447 -104.208 159.707 144.439 159.707 144.439C159.707 144.439 671.268 92.415 887.396 800Z"/></svg><span class="word">Parachute</span></div>
+        <span class="hd-sep"></span>
+        <b style="font-family:var(--font-display);font-size:17px">Prototype Index</b>
+        <div class="input" style="width:400px;height:38px;margin-left:16px"><svg class="i s16 faint"><use href="#i-search"/></svg><span class="ph">Search pages, routes, states, tags</span></div>
+        <span class="small faint num">64 of 64 screens</span>
+        <span class="grow"></span>
+        <span class="btn btn-outline btn-sm"><svg class="i s16"><use href="#i-copy"/></svg>Copy scenario link</span>
+        <span class="btn btn-filled btn-sm">Open prototype<svg class="i s16"><use href="#i-chevron-down"/></svg></span>
+      </div>
+      <div class="px-rail">
+        <div class="g">All screens<b>64</b></div>
+        <div class="g">Auth<b>5</b></div>
+        <div class="g">Onboarding<b>4</b></div>
+        <div class="g">Get started<b>1</b></div>
+        <div class="g">Reviews<b>6</b></div>
+        <div class="g on">Billing &amp; credits<b>9</b></div>
+        <div class="g">Configure<b>9</b></div>
+        <div class="g">Trust &amp; Learning<b>3</b></div>
+        <div class="g">Emails<b>12</b></div>
+        <div class="g">Integrations<b>4</b></div>
+        <div class="g">Design system<b>2</b></div>
+        <div class="hr" style="margin:12px 0"></div>
+        <div class="col gap8" style="padding:0 12px">
+          <span class="lbl">Status</span>
+          <span class="row gap8 small"><span class="pill st-built">Built</span>41</span>
+          <span class="row gap8 small"><span class="pill st-plan">Planned</span>23</span>
+        </div>
+      </div>
+      <div class="px-main">
+        <div class="row between">
+          <div class="col gap4"><h1 class="page-title" style="font-size:22px">Billing &amp; credits</h1><span class="muted small">9 screens · 31 states · in 4 flows</span></div>
+          <div class="tog2"><span class="on">Screens</span><span>Flows</span></div>
+        </div>
+        <div class="pgrid">
+          <div class="card pcard"><div class="thumb"><div class="w"><div class="s"></div><div class="c"><i class="h"></i><div class="sp"><i></i><i></i></div><i></i><i></i></div></div></div>
+            <div class="pbody"><div class="row between gap8"><span class="t">Billing overview</span><span class="pill st-built">Built</span></div><span class="route">/configure/billing</span><div class="chips"><span class="chip">Never used</span><span class="chip">Trial</span><span class="chip">Low</span><span class="chip">Zero</span></div><div class="pmeta"><span class="row gap4"><svg class="i s14"><use href="#x-route"/></svg>In 3 flows</span><span>4 states</span></div></div></div>
+          <div class="card pcard"><div class="thumb plan"><div class="w"><div class="s"></div><div class="c"><i class="h"></i><i></i><div class="sp"><i></i><i class="a" style="height:44px"></i></div></div></div></div>
+            <div class="pbody"><div class="row between gap8"><span class="t">Credits popover</span><span class="pill st-plan">Planned</span></div><span class="route">top nav, global</span><div class="chips"><span class="chip dash">Healthy</span><span class="chip dash">Low</span><span class="chip dash">Zero</span><span class="chip dash">Request waiting</span></div><div class="pmeta"><span class="row gap4"><svg class="i s14"><use href="#x-route"/></svg>In 2 flows</span><span>4 states</span></div></div></div>
+          <div class="card pcard"><div class="thumb plan"><div class="w"><div class="s"></div><div class="c"><i class="h"></i><div class="bx"><i></i><i></i><i></i></div><i></i><i></i><i style="width:60%"></i></div></div></div>
+            <div class="pbody"><div class="row between gap8"><span class="t">How credits work</span><span class="pill st-plan">Planned</span></div><span class="route">/configure/billing/credits</span><div class="chips"><span class="chip dash">Default</span><span class="chip dash">Enterprise</span></div><div class="pmeta"><span class="row gap4"><svg class="i s14"><use href="#x-route"/></svg>In 1 flow</span><span>2 states</span></div></div></div>
+          <div class="card pcard"><div class="thumb bare plan"><div class="w"><div class="c"><i class="h"></i><div class="sp"><i></i><i style="background:#d6e3ee"></i></div><i class="n"></i></div></div></div>
+            <div class="pbody"><div class="row between gap8"><span class="t">Checkout: amount</span><span class="pill st-plan">Planned</span></div><span class="route">/checkout/credits</span><div class="chips"><span class="chip dash">Choose amount</span><span class="chip dash">Custom</span><span class="chip dash">Over max</span></div><div class="pmeta"><span class="row gap4"><svg class="i s14"><use href="#x-route"/></svg>In 2 flows</span><span>3 states</span></div></div></div>
+          <div class="card pcard"><div class="thumb bare plan"><div class="w"><div class="c"><i class="h"></i><div class="sp"><i></i><i style="background:#d6e3ee"></i></div><i class="n"></i></div></div></div>
+            <div class="pbody"><div class="row between gap8"><span class="t">Checkout: payment and review</span><span class="pill st-plan">Planned</span></div><span class="route">/checkout/credits?step=payment</span><div class="chips"><span class="chip dash">Payment</span><span class="chip dash">Review</span><span class="chip dash">Card declined</span><span class="chip dash">Pending</span></div><div class="pmeta"><span class="row gap4"><svg class="i s14"><use href="#x-route"/></svg>In 2 flows</span><span>4 states</span></div></div></div>
+          <div class="card pcard"><div class="thumb bare plan"><div class="w"><div class="c"><i class="g" style="width:30%;height:9px"></i><i class="h"></i><div class="bx"><i></i><i></i><i></i></div></div></div></div>
+            <div class="pbody"><div class="row between gap8"><span class="t">Checkout: paid</span><span class="pill st-plan">Planned</span></div><span class="route">/checkout/credits?step=done</span><div class="chips"><span class="chip dash">Paid</span></div><div class="pmeta"><span class="row gap4"><svg class="i s14"><use href="#x-route"/></svg>In 1 flow</span><span>1 states</span></div></div></div>
+          <div class="card pcard"><div class="thumb"><div class="w"><div class="s"></div><div class="c"><i class="h"></i><i></i><i></i><i></i><i></i><i></i><i style="width:70%"></i></div></div></div>
+            <div class="pbody"><div class="row between gap8"><span class="t">Usage</span><span class="pill st-built">Built</span></div><span class="route">/configure/billing?tab=usage</span><div class="chips"><span class="chip">No usage</span><span class="chip">This month</span><span class="chip">By person</span><span class="chip">By review type</span></div><div class="pmeta"><span class="row gap4"><svg class="i s14"><use href="#x-route"/></svg>In 2 flows</span><span>4 states</span></div></div></div>
+          <div class="card pcard"><div class="thumb"><div class="w"><div class="s"></div><div class="c"><i class="h"></i><i></i><i></i><i></i><i></i><i></i><i style="width:70%"></i></div></div></div>
+            <div class="pbody"><div class="row between gap8"><span class="t">Invoices</span><span class="pill st-built">Built</span></div><span class="route">/configure/billing?tab=invoices</span><div class="chips"><span class="chip">None</span><span class="chip">Receipts</span><span class="chip">Statements</span><span class="chip">Payment failed</span></div><div class="pmeta"><span class="row gap4"><svg class="i s14"><use href="#x-route"/></svg>In 1 flow</span><span>4 states</span></div></div></div>
+          <div class="card pcard"><div class="thumb"><div class="w"><div class="s"></div><div class="c"><i class="h"></i><div class="sp"><i></i><i></i></div><i></i><i></i></div></div></div>
+            <div class="pbody"><div class="row between gap8"><span class="t">Reviewer billing</span><span class="pill pill-navy">Variant</span></div><span class="route">/configure/billing (reviewer)</span><div class="chips"><span class="chip">Healthy</span><span class="chip">Low</span><span class="chip">Zero</span><span class="chip">Requested</span></div><div class="pmeta"><span class="row gap4"><svg class="i s14"><use href="#x-route"/></svg>In 1 flow</span><span>4 states</span></div></div></div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+  <div class="cap"><span class="src eq">Equisant</span><p>Kelsey's Equisant index, which Cody held up as the model: screens grouped by area, each with a route, a Built or Planned status and the flows it belongs to. State chips open the screen in that state, and planned work is dashed so the gap list is visible. The list is generated from the registry in state-system-draft §4, not kept by hand.</p></div>
+  </div>
+</section>
+
+<!-- =========================================================== 8. TRIAL ENDING -->
+<section class="sec" id="trial-ending">
+  <div class="sec-h"><h2>Bonus window ending, and closed</h2><code>/dashboard · Bonus window ending / Bonus window closed</code></div>
+  <div class="shot">
+  <div class="shot-lbl">2 days left in the bonus window</div>
+  <div class="frame-scroll"><div class="frame" data-shell data-nav="dashboard" data-crumbs="Dashboard" data-credits="4 credits" data-gs="5 of 8">
+    <div class="tbanner">
+      <div class="ill"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 90" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" class="pi" role="img"><title>Earn a free report: a report gift-wrapped in a box</title><style>.pi{stroke-width:var(--ill-stroke,2.25)}.pi .p{fill:var(--ill-paper,#FFFFFF)}.pi .a{fill:var(--ill-accent,#2A6F7F)}.pi .t{fill:var(--ill-tint,#DEEBEE)}.pi .s{fill:var(--ill-shadow,#C9D7E3);stroke:none}.pi .m{stroke:var(--ill-muted,#8FA3B3);stroke-width:1.75}.pi .ap{stroke:var(--ill-paper,#FFFFFF)}.pi .af{fill:var(--ill-paper,#FFFFFF);stroke:none}.pi .as{stroke:var(--ill-accent,#2A6F7F)}.pi .ink{fill:currentColor;stroke:none}.pi .ns{stroke:none}</style><g transform="rotate(-6 60 30)">
+  <path class="p" d="M44 8H69L76 15V50H44Z"/>
+  <path d="M69 8V15H76"/>
+  <path class="m" d="M50 20H66M50 26H70"/>
+</g>
+<rect class="s" x="35" y="51" width="56" height="30" rx="2"/>
+<rect class="p" x="32" y="48" width="56" height="30" rx="2"/>
+<rect class="s" x="31" y="43" width="64" height="10" rx="2"/>
+<rect class="p" x="28" y="40" width="64" height="10" rx="2"/>
+<rect class="a" x="57" y="40" width="6" height="38"/>
+<path class="a" d="M60 40c-4-8-13-9-12-3 .5 3 6 4 12 3Z"/>
+<path class="a" d="M60 40c4-8 13-9 12-3-.5 3-6 4-12 3Z"/>
+<path class="m" d="M100 24v5M97.5 26.5h5"/></svg></div>
+      <div class="grow col gap4">
+        <span class="t">2 days left to earn your bonus reviews</span>
+        <p class="muted">You've earned 1 of 2 bonus full reviews. Upload your bank policy before Nov 13 to earn the other one. Your trial credits stay either way.</p>
+      </div>
+      <span class="btn btn-filled">Upload bank policy</span>
+    </div>
+    <div class="page stack">
+      <div class="row between"><h1 class="page-title">Dashboard</h1><span class="btn btn-filled"><svg class="i s16"><use href="#i-plus"/></svg>Start a review</span></div>
+      <div class="stats">
+        <div class="card stat"><span class="lbl">In review</span><span class="v">3</span></div>
+        <div class="card stat"><span class="lbl">Ready to sign</span><span class="v">2</span></div>
+        <div class="card stat"><span class="lbl">Signed this month</span><span class="v">9</span></div>
+        <div class="card stat"><span class="lbl">Average turnaround</span><span class="v">1.6 days</span></div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><div class="h3">Recent reviews</div><a class="link small">All reviews</a></div>
+        <table class="tbl">
+          <tr><th class="first">Property</th><th>Review</th><th>Reviewer</th><th>Status</th><th class="r last">Updated</th></tr>
+          <tr><td class="first"><b>412 Pine St, Portland</b></td><td class="muted">Technical, Administrative</td><td>Marcus Ortiz</td><td><span class="pill pill-done">Signed</span></td><td class="r last muted">Today</td></tr>
+          <tr><td class="first"><b>18 Wharf Rd, Bath</b></td><td class="muted">Technical</td><td>Dana Reyes</td><td><span class="pill pill-warn">3 findings</span></td><td class="r last muted">Yesterday</td></tr>
+          <tr><td class="first"><b>9 Harbor Ave, Rockland</b></td><td class="muted">Technical, Administrative</td><td>Marcus Ortiz</td><td><span class="pill pill-navy">In review</span></td><td class="r last muted">Nov 9</td></tr>
+          <tr><td class="first"><b>230 Mill Rd, Camden</b></td><td class="muted">Administrative</td><td>Dana Reyes</td><td><span class="pill pill-done">Signed</span></td><td class="r last muted">Nov 7</td></tr>
+        </table>
+      </div>
+    </div>
+  </div></div>
+  </div>
+  <div class="shot">
+  <div class="shot-lbl">Bonus window closed</div>
+  <div class="frame-scroll"><div class="frame" data-shell data-nav="dashboard" data-crumbs="Dashboard" data-credits="4 credits" data-gs="5 of 8">
+    <div class="tbanner info-b">
+      <div class="ill"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 90" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" class="pi" role="img"><title>Credits: a coin stack beside an appraisal report</title><style>.pi{stroke-width:var(--ill-stroke,2.25)}.pi .p{fill:var(--ill-paper,#FFFFFF)}.pi .a{fill:var(--ill-accent,#2A6F7F)}.pi .t{fill:var(--ill-tint,#DEEBEE)}.pi .s{fill:var(--ill-shadow,#C9D7E3);stroke:none}.pi .m{stroke:var(--ill-muted,#8FA3B3);stroke-width:1.75}.pi .ap{stroke:var(--ill-paper,#FFFFFF)}.pi .af{fill:var(--ill-paper,#FFFFFF);stroke:none}.pi .as{stroke:var(--ill-accent,#2A6F7F)}.pi .ink{fill:currentColor;stroke:none}.pi .ns{stroke:none}</style><g transform="rotate(-7 43 42)">
+  <path class="s" d="M27 20H56L65 29V70H27Z"/>
+  <path class="p" d="M24 17H53L62 26V67H24Z"/>
+  <path d="M53 17V26H62"/>
+  <rect class="t ns" x="29" y="23" width="17" height="6" rx="1.5"/>
+  <path class="m" d="M29 37H55M29 43H55M29 49H46"/>
+</g>
+<path class="s" d="M64 49V67A17 6 0 0 0 98 67V49A17 6 0 0 0 64 49Z"/>
+<path class="p" d="M61 46V64A17 6 0 0 0 95 64V46"/>
+<path d="M61 52A17 6 0 0 0 95 52M61 58A17 6 0 0 0 95 58"/>
+<ellipse class="a" cx="78" cy="46" rx="17" ry="6"/>
+<ellipse class="ap" cx="78" cy="46" rx="9" ry="3" stroke-width="1.5"/>
+<path class="m" d="M101 22v6M98 25h6"/></svg></div>
+      <div class="grow col gap4">
+        <span class="t">The bonus window has closed</span>
+        <p class="muted">You earned 1 bonus full review. Your 4 credits are still yours and never expire. When you need more, packs start at 5 credits for $750.</p>
+      </div>
+      <span class="btn btn-text">Talk to us about invoicing</span>
+      <span class="btn btn-filled">Add credits</span>
+    </div>
+    <div class="page stack">
+      <div class="row between"><h1 class="page-title">Dashboard</h1><span class="btn btn-filled"><svg class="i s16"><use href="#i-plus"/></svg>Start a review</span></div>
+      <div class="stats">
+        <div class="card stat"><span class="lbl">In review</span><span class="v">3</span></div>
+        <div class="card stat"><span class="lbl">Ready to sign</span><span class="v">2</span></div>
+        <div class="card stat"><span class="lbl">Signed this month</span><span class="v">9</span></div>
+        <div class="card stat"><span class="lbl">Average turnaround</span><span class="v">1.6 days</span></div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><div class="h3">Recent reviews</div><a class="link small">All reviews</a></div>
+        <table class="tbl">
+          <tr><th class="first">Property</th><th>Review</th><th>Reviewer</th><th>Status</th><th class="r last">Updated</th></tr>
+          <tr><td class="first"><b>412 Pine St, Portland</b></td><td class="muted">Technical, Administrative</td><td>Marcus Ortiz</td><td><span class="pill pill-done">Signed</span></td><td class="r last muted">Today</td></tr>
+          <tr><td class="first"><b>18 Wharf Rd, Bath</b></td><td class="muted">Technical</td><td>Dana Reyes</td><td><span class="pill pill-warn">3 findings</span></td><td class="r last muted">Yesterday</td></tr>
+          <tr><td class="first"><b>9 Harbor Ave, Rockland</b></td><td class="muted">Technical, Administrative</td><td>Marcus Ortiz</td><td><span class="pill pill-navy">In review</span></td><td class="r last muted">Nov 9</td></tr>
+          <tr><td class="first"><b>230 Mill Rd, Camden</b></td><td class="muted">Administrative</td><td>Dana Reyes</td><td><span class="pill pill-done">Signed</span></td><td class="r last muted">Nov 7</td></tr>
+        </table>
+      </div>
+    </div>
+  </div></div>
+  <div class="cap"><span class="src">Apollo</span><span class="src">ours</span><p>Apollo's deadline headline ("complete these in your first 14 days…", 03) becomes a banner when time is short, with one specific task to finish. Only the bonus has a deadline: trial credits never expire. So the closed variant is calm. It says what you kept, then offers Add credits, with invoicing for banks that prefer it.</p></div>
+  </div>
+</section>
+
+<!-- =========================================================== 9. REVIEWER BILLING -->
+<section class="sec" id="reviewer-billing">
+  <div class="sec-h"><h2>Reviewer billing (Marcus)</h2><code>/configure/billing · role: reviewer</code></div>
+  <div class="shot">
+  <div class="shot-lbl">Before asking</div>
+  <div class="frame-scroll"><div class="frame" data-shell data-nav="none" data-crumbs="Billing" data-credits="2 credits" data-cstate="low" data-user="MO">
+    <div class="page-bar"><span class="tab on">Overview</span><span class="tab">My usage</span><span class="grow"></span><a class="link small">How credits work</a></div>
+    <div class="page stack">
+      <div class="bal-grid">
+        <div class="card hero">
+          <div class="col gap8">
+            <span class="lbl">Team balance</span>
+            <div class="row gap10" style="align-items:baseline"><span class="big warn" style="font-size:44px">2</span><span class="h3">credits</span><span class="pill pill-warn">Running low</span></div>
+            <p class="muted">Shared by everyone at Harbor Community Bank. Enough for 1 full review. Dana Reyes manages billing.</p>
+          </div>
+          <div class="runway"><i class="rw-low" style="width:9%"></i></div>
+          <div class="facts">
+            <div><span class="lbl">You used</span><b>7 this month</b></div>
+            <div><span class="lbl">Team used</span><b>11 this month</b></div>
+            <div><span class="lbl">Runs out</span><b class="warn">About Thursday</b></div>
+            <div><span class="lbl">Admin</span><b>Dana Reyes</b></div>
+          </div>
+        </div>
+        <div class="card hero" style="gap:14px">
+          <div class="ill" style="width:120px"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 90" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" class="pi" role="img"><title>Request sent: a note to the admin flying off as a paper plane</title><style>.pi{stroke-width:var(--ill-stroke,2.25)}.pi .p{fill:var(--ill-paper,#FFFFFF)}.pi .a{fill:var(--ill-accent,#2A6F7F)}.pi .t{fill:var(--ill-tint,#DEEBEE)}.pi .s{fill:var(--ill-shadow,#C9D7E3);stroke:none}.pi .m{stroke:var(--ill-muted,#8FA3B3);stroke-width:1.75}.pi .ap{stroke:var(--ill-paper,#FFFFFF)}.pi .af{fill:var(--ill-paper,#FFFFFF);stroke:none}.pi .as{stroke:var(--ill-accent,#2A6F7F)}.pi .ink{fill:currentColor;stroke:none}.pi .ns{stroke:none}</style><rect class="s" x="21" y="31" width="44" height="46" rx="4"/>
+<rect class="p" x="18" y="28" width="44" height="46" rx="4"/>
+<circle class="t" cx="30" cy="40" r="5"/>
+<path class="m" d="M39 38H54M39 43H50M25 53H55M25 60H55M25 67H44"/>
+<path class="s" d="M66 34L106 18L94 60L84 47Z"/>
+<path class="a" d="M63 31L103 15L91 57L81 44Z"/>
+<path class="ap" d="M81 44L103 15" stroke-width="1.75"/>
+<path d="M81 44L79 55L87 49"/>
+<path class="m" d="M58 22c-6-1-10 1-13 5" stroke-dasharray="2 3.5"/></svg></div>
+          <div class="col gap4"><div class="h3">Need more credits?</div><p class="muted">Only admins can buy credits. Dana Reyes gets your request by email and in Parachute, with a button to add credits.</p></div>
+          <div class="field"><label>Note for Dana (optional)</label><div class="input"><span class="ph">For example: 3 reports due Friday</span></div></div>
+          <span class="btn btn-filled" style="align-self:flex-start">Ask Dana for more credits</span>
+        </div>
+      </div>
+      <div class="card">
+      <div class="card-hd"><div class="h3">Your usage this month</div><span class="small faint">7 credits on 4 reports</span></div>
+      <table class="tbl">
+        <tr><th class="first">Report</th><th>Review types</th><th>Started</th><th class="r last">Credits</th></tr>
+        <tr><td class="first"><b>412 Pine St, Portland</b></td><td class="muted">Technical, Administrative</td><td class="muted">Nov 10</td><td class="r last"><b>2</b></td></tr>
+        <tr><td class="first"><b>9 Harbor Ave, Rockland</b></td><td class="muted">Technical, Administrative</td><td class="muted">Nov 8</td><td class="r last"><b>2</b></td></tr>
+        <tr><td class="first"><b>15 Ferry Ln, Belfast</b></td><td class="muted">Technical, Administrative</td><td class="muted">Nov 4</td><td class="r last"><b>2</b></td></tr>
+        <tr><td class="first"><b>3 Elm Ct, Augusta</b></td><td class="muted">Technical</td><td class="muted">Nov 3</td><td class="r last"><b>1</b></td></tr>
+      </table>
+    </div>
+    </div>
+  </div></div>
+  </div>
+  <div class="shot">
+  <div class="shot-lbl">Request sent</div>
+  <div class="frame-scroll"><div class="frame" data-shell data-nav="none" data-crumbs="Billing" data-credits="2 credits" data-cstate="low" data-user="MO">
+    <div class="page-bar"><span class="tab on">Overview</span><span class="tab">My usage</span><span class="grow"></span><a class="link small">How credits work</a></div>
+    <div class="page stack">
+      <div class="bal-grid">
+        <div class="card hero">
+          <div class="col gap8">
+            <span class="lbl">Team balance</span>
+            <div class="row gap10" style="align-items:baseline"><span class="big warn" style="font-size:44px">2</span><span class="h3">credits</span><span class="pill pill-warn">Running low</span></div>
+            <p class="muted">Shared by everyone at Harbor Community Bank. Enough for 1 full review. Dana Reyes manages billing.</p>
+          </div>
+          <div class="runway"><i class="rw-low" style="width:9%"></i></div>
+          <div class="facts">
+            <div><span class="lbl">You used</span><b>7 this month</b></div>
+            <div><span class="lbl">Team used</span><b>11 this month</b></div>
+            <div><span class="lbl">Runs out</span><b class="warn">About Thursday</b></div>
+            <div><span class="lbl">Admin</span><b>Dana Reyes</b></div>
+          </div>
+        </div>
+        <div class="card hero" style="gap:14px">
+          <div class="row between"><div class="h3">Need more credits?</div><span class="pill pill-done"><svg class="i s14"><use href="#i-circle-check"/></svg>Requested 2 h ago</span></div>
+          <div class="col" style="border:1px solid var(--md-outline-v);border-radius:10px">
+            <div class="bd-row" style="border-top:0;grid-template-columns:20px 1fr auto"><svg class="i s16 ok"><use href="#i-send"/></svg><span>You asked Dana Reyes for more credits</span><span class="s">9:12 AM</span></div>
+            <div class="bd-row" style="grid-template-columns:20px 1fr auto"><svg class="i s16 faint"><use href="#i-eye"/></svg><span>Dana opened the request</span><span class="s">9:40 AM</span></div>
+            <div class="bd-row" style="grid-template-columns:20px 1fr auto"><svg class="i s16 faint"><use href="#i-circle-dashed"/></svg><span class="muted">Credits added</span><span class="s">Waiting</span></div>
+          </div>
+          <p class="small muted">"3 reports due Friday, Lakeview Plaza needs both reviews." We'll tell you when credits land.</p>
+          <div class="row gap8"><span class="btn btn-outline btn-sm">Send a reminder</span><span class="btn btn-text btn-sm">Cancel request</span></div>
+        </div>
+      </div>
+      <div class="card">
+      <div class="card-hd"><div class="h3">Your usage this month</div><span class="small faint">7 credits on 4 reports</span></div>
+      <table class="tbl">
+        <tr><th class="first">Report</th><th>Review types</th><th>Started</th><th class="r last">Credits</th></tr>
+        <tr><td class="first"><b>412 Pine St, Portland</b></td><td class="muted">Technical, Administrative</td><td class="muted">Nov 10</td><td class="r last"><b>2</b></td></tr>
+        <tr><td class="first"><b>9 Harbor Ave, Rockland</b></td><td class="muted">Technical, Administrative</td><td class="muted">Nov 8</td><td class="r last"><b>2</b></td></tr>
+        <tr><td class="first"><b>15 Ferry Ln, Belfast</b></td><td class="muted">Technical, Administrative</td><td class="muted">Nov 4</td><td class="r last"><b>2</b></td></tr>
+        <tr><td class="first"><b>3 Elm Ct, Augusta</b></td><td class="muted">Technical</td><td class="muted">Nov 3</td><td class="r last"><b>1</b></td></tr>
+      </table>
+    </div>
+    </div>
+  </div></div>
+  <div class="cap"><span class="src">Apollo</span><span class="src">ours</span><p>Apollo's "request from admin" on locked features (24): reviewers can't buy, so the page gives them the one action they can take instead of a dead end. The request shows its progress (sent, opened, added) so Marcus isn't left wondering. His own usage sits next to the shared team balance.</p></div>
+  </div>
+</section>
+
+<!-- =========================================================== 10. ADMIN REQUEST -->
+<section class="sec" id="admin-request">
+  <div class="sec-h"><h2>Dana sees Marcus's request</h2><code>Credits popover · Request waiting</code></div>
+  <div class="shot">
+  <div class="frame-scroll"><div class="frame" data-shell data-nav="dashboard" data-crumbs="Dashboard" data-credits="2 credits" data-cstate="low open" data-bell="dot" data-gs="5 of 8">
+    <div class="page stack">
+      <div class="row between"><h1 class="page-title">Dashboard</h1><span class="btn btn-filled"><svg class="i s16"><use href="#i-plus"/></svg>Start a review</span></div>
+      <div class="stats">
+        <div class="card stat"><span class="lbl">In review</span><span class="v">3</span></div>
+        <div class="card stat"><span class="lbl">Ready to sign</span><span class="v">2</span></div>
+        <div class="card stat"><span class="lbl">Signed this month</span><span class="v">9</span></div>
+        <div class="card stat"><span class="lbl">Average turnaround</span><span class="v">1.6 days</span></div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><div class="h3">Recent reviews</div><a class="link small">All reviews</a></div>
+        <table class="tbl">
+          <tr><th class="first">Property</th><th>Review</th><th>Reviewer</th><th>Status</th><th class="r last">Updated</th></tr>
+          <tr><td class="first"><b>412 Pine St, Portland</b></td><td class="muted">Technical, Administrative</td><td>Marcus Ortiz</td><td><span class="pill pill-done">Signed</span></td><td class="r last muted">Today</td></tr>
+          <tr><td class="first"><b>18 Wharf Rd, Bath</b></td><td class="muted">Technical</td><td>Dana Reyes</td><td><span class="pill pill-warn">3 findings</span></td><td class="r last muted">Yesterday</td></tr>
+          <tr><td class="first"><b>9 Harbor Ave, Rockland</b></td><td class="muted">Technical, Administrative</td><td>Marcus Ortiz</td><td><span class="pill pill-navy">In review</span></td><td class="r last muted">Nov 9</td></tr>
+          <tr><td class="first"><b>230 Mill Rd, Camden</b></td><td class="muted">Administrative</td><td>Dana Reyes</td><td><span class="pill pill-done">Signed</span></td><td class="r last muted">Nov 7</td></tr>
+        </table>
+      </div>
+    </div>
+    <div class="popover" style="right:96px;top:56px;width:380px">
+      <div class="col gap12" style="padding:18px 18px 14px">
+        <div class="row between"><b style="font-family:var(--font-display);font-size:16px">Team credits</b><span class="pill pill-warn">Running low</span></div>
+        <div class="row gap8" style="align-items:baseline"><span class="big warn" style="font-size:30px">2</span><span class="muted">of 22 left · runs out Thursday</span></div>
+        <div class="runway" style="height:8px"><i class="rw-low" style="width:9%"></i></div>
+        <div class="pop-req">
+          <div class="row gap10" style="align-items:flex-start">
+            <span class="av navy">MO</span>
+            <div class="grow col gap4">
+              <p><b>Marcus Ortiz asked for more credits</b></p>
+              <p class="small muted">"3 reports due Friday, Lakeview Plaza needs both reviews." · 2 h ago</p>
+            </div>
+          </div>
+          <div class="row gap8" style="padding-left:38px">
+            <span class="btn btn-filled btn-sm">Add credits</span>
+            <span class="btn btn-text btn-sm">Dismiss</span>
+          </div>
+        </div>
+      </div>
+      <div class="hr"></div>
+      <div class="row between" style="padding:12px 18px">
+        <a class="link small">View usage</a>
+        <a class="link small">How credits work</a>
+      </div>
+    </div>
+  </div></div>
+  <div class="cap"><span class="src">Apollo</span><span class="src">ours</span><p>Apollo's top-nav credits popover (09) with the team request inside it, so Dana sees the balance and the ask together. Add credits opens checkout with the 10-credit pack selected. Dismiss tells Marcus his request was closed, rather than leaving it hanging.</p></div>
+  </div>
+</section>
+
+<!-- =========================================================== NEW ILLUSTRATIONS -->
+<section class="sec" id="new-illustrations">
+  <div class="sec-h"><h2>New illustrations</h2><code>illustrations/13–15</code></div>
+  <div class="ill-grid">
+    <div class="ill-card"><div class="ill"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 90" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" class="pi" role="img"><title>Payment received: a torn-edge receipt with a check seal</title><style>.pi{stroke-width:var(--ill-stroke,2.25)}.pi .p{fill:var(--ill-paper,#FFFFFF)}.pi .a{fill:var(--ill-accent,#2A6F7F)}.pi .t{fill:var(--ill-tint,#DEEBEE)}.pi .s{fill:var(--ill-shadow,#C9D7E3);stroke:none}.pi .m{stroke:var(--ill-muted,#8FA3B3);stroke-width:1.75}.pi .ap{stroke:var(--ill-paper,#FFFFFF)}.pi .af{fill:var(--ill-paper,#FFFFFF);stroke:none}.pi .as{stroke:var(--ill-accent,#2A6F7F)}.pi .ink{fill:currentColor;stroke:none}.pi .ns{stroke:none}</style><path class="s" d="M33 13H77V77L72 73L67 77L62 73L57 77L52 73L47 77L42 73L37 77L33 74Z"/>
+<path class="p" d="M30 10H74V74L69 70L64 74L59 70L54 74L49 70L44 74L39 70L34 74L30 71Z"/>
+<rect class="t ns" x="36" y="17" width="20" height="6" rx="1.5"/>
+<path class="m" d="M36 31H68M36 38H62M36 45H68"/>
+<path d="M36 56H68"/>
+<path class="m" d="M36 62H50"/>
+<circle class="s" cx="85" cy="56" r="14"/>
+<circle class="a" cx="82" cy="53" r="14"/>
+<path class="ap" d="M75.5 53.5L80 58L88.5 48.5" stroke-width="2.75"/>
+<path class="m" d="M98 20v5M95.5 22.5h5"/></svg></div><b>Payment received</b><code>13-payment-received.svg</code><p>A torn-edge receipt with a petrol check seal. Used on the checkout success page and the receipt email.</p></div>
+    <div class="ill-card"><div class="ill"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 90" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" class="pi" role="img"><title>Credits expiring: a calendar page with a coin about to slip off</title><style>.pi{stroke-width:var(--ill-stroke,2.25)}.pi .p{fill:var(--ill-paper,#FFFFFF)}.pi .a{fill:var(--ill-accent,#2A6F7F)}.pi .t{fill:var(--ill-tint,#DEEBEE)}.pi .s{fill:var(--ill-shadow,#C9D7E3);stroke:none}.pi .m{stroke:var(--ill-muted,#8FA3B3);stroke-width:1.75}.pi .ap{stroke:var(--ill-paper,#FFFFFF)}.pi .af{fill:var(--ill-paper,#FFFFFF);stroke:none}.pi .as{stroke:var(--ill-accent,#2A6F7F)}.pi .ink{fill:currentColor;stroke:none}.pi .ns{stroke:none}</style><rect class="s" x="23" y="19" width="54" height="56" rx="5"/>
+<rect class="p" x="20" y="16" width="54" height="56" rx="5"/>
+<path class="t ns" d="M21.5 30V21a3.5 3.5 0 0 1 3.5-3.5H69a3.5 3.5 0 0 1 3.5 3.5V30Z"/>
+<path d="M20 31H74"/>
+<path d="M32 11V21M62 11V21"/>
+<path class="m" d="M29 41h6M44 41h6M59 41h6M29 50h6M44 50h6M29 59h6"/>
+<rect class="t" x="57" y="55" width="10" height="8" rx="1.5"/>
+<ellipse class="s" cx="91" cy="68" rx="15" ry="5.5"/>
+<g transform="rotate(-18 88 55)">
+  <path class="p" d="M73 55V61A15 5.5 0 0 0 103 61V55"/>
+  <ellipse class="a" cx="88" cy="55" rx="15" ry="5.5"/>
+  <ellipse class="ap" cx="88" cy="55" rx="8" ry="2.75" stroke-width="1.5"/>
+</g>
+<path class="m" d="M101 33l4-4M104 40h5"/></svg></div><b>Credits expiring</b><code>14-credits-expiring.svg</code><p>A calendar page with a petrol coin sliding off its edge. For the expiring-credits email and an empty Expiring list.</p></div>
+    <div class="ill-card"><div class="ill"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 90" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" class="pi" role="img"><title>Request sent: a note to the admin flying off as a paper plane</title><style>.pi{stroke-width:var(--ill-stroke,2.25)}.pi .p{fill:var(--ill-paper,#FFFFFF)}.pi .a{fill:var(--ill-accent,#2A6F7F)}.pi .t{fill:var(--ill-tint,#DEEBEE)}.pi .s{fill:var(--ill-shadow,#C9D7E3);stroke:none}.pi .m{stroke:var(--ill-muted,#8FA3B3);stroke-width:1.75}.pi .ap{stroke:var(--ill-paper,#FFFFFF)}.pi .af{fill:var(--ill-paper,#FFFFFF);stroke:none}.pi .as{stroke:var(--ill-accent,#2A6F7F)}.pi .ink{fill:currentColor;stroke:none}.pi .ns{stroke:none}</style><rect class="s" x="21" y="31" width="44" height="46" rx="4"/>
+<rect class="p" x="18" y="28" width="44" height="46" rx="4"/>
+<circle class="t" cx="30" cy="40" r="5"/>
+<path class="m" d="M39 38H54M39 43H50M25 53H55M25 60H55M25 67H44"/>
+<path class="s" d="M66 34L106 18L94 60L84 47Z"/>
+<path class="a" d="M63 31L103 15L91 57L81 44Z"/>
+<path class="ap" d="M81 44L103 15" stroke-width="1.75"/>
+<path d="M81 44L79 55L87 49"/>
+<path class="m" d="M58 22c-6-1-10 1-13 5" stroke-dasharray="2 3.5"/></svg></div><b>Request sent</b><code>15-request-sent.svg</code><p>A note to the admin leaving as a petrol paper plane. Used on reviewer billing when asking for more credits.</p></div>
+  </div>
+  <p class="cap" style="display:block">Same "Drafted" rules as 01–12: a 2.25 outline in navy ink, white paper fills, one petrol object, and a hard navy-tint offset shadow (3px down and right).</p>
+</section>
+
+</div>
+
+<template id="emblem-src"><svg class="emblem" viewBox="0 0 1033 800" aria-hidden="true"><path d="M183.616 701.001C183.616 701.001 178.511 372.403 401.702 295.845C401.702 295.845 143.312 145.229 29.5019 334.599C-88.044 530.186 183.616 701.001 183.616 701.001Z"/><path d="M887.396 800C887.396 800 1262.66 228.668 804.498 50.9707C404.447 -104.208 159.707 144.439 159.707 144.439C159.707 144.439 671.268 92.415 887.396 800Z"/></svg></template>
+<script>
+(function () {
+  const I = (n, c) => `<svg class="i${c ? " " + c : ""}"><use href="#i-${n}"/></svg>`;
+  const EMBLEM = document.getElementById("emblem-src").innerHTML;
+  document.querySelectorAll(".frame[data-shell]").forEach((f) => {
+    const d = f.dataset;
+    const nav = d.nav || "none";
+    const gs = d.gs || "4 of 8";
+    const [a, b] = gs.split(" of ").map(Number);
+    const crumbs = (d.crumbs || "").split("|");
+    const crumbHtml = crumbs.map((c, i) => (i === crumbs.length - 1 ? `<b>${c}</b>` : `<span>${c}</span>${I("chevron-right", "s14")}`)).join("");
+    const user = d.user || "DR";
+    const sb = `<aside class="sb">
+      <div class="sb-logo">${EMBLEM}<span class="word">Parachute</span></div>
+      <div class="sb-action">${I("plus")}Start a review</div>
+      <div class="sb-sep"></div>
+      <nav class="sb-nav">
+        <div class="it${nav === "getstarted" ? " on" : ""}">${I("rocket")}<div class="sb-gs"><div class="row"><span>Get started</span><span class="ct">${a} of ${b}</span></div><div class="bar"><i style="width:${(a / b) * 100}%"></i></div></div></div>
+        <div class="it${nav === "dashboard" ? " on" : ""}">${I("dashboard")}Dashboard</div>
+        <div class="it${nav === "reviews" ? " on" : ""}">${I("reviews")}Reviews</div>
+      </nav>
+      <div class="sb-grow"></div>
+      <div class="sb-res">
+        <div class="it${nav === "trust" ? " on" : ""}">${I("shield-check", "s16")}Trust Center</div>
+        <div class="it${nav === "learn" ? " on" : ""}">${I("school", "s16")}Learning Center</div>
+      </div>
+      <div class="sb-foot"><div class="sb-balance ${(d.cstate || "").replace(/\b(open|pending)\b/g, "").trim()}">${I("wallet", "s16")}<span class="l">Balance</span><span class="v">${d.bal || (d.credits || "11").split(" ")[0]}</span></div><div class="org"><span class="tile">HC</span><div style="min-width:0"><div class="nm">Harbor Community Bank</div><div class="sub">${user === "MO" ? "Reviewer" : "Configure"}</div></div>${I("chevron-right", "s16")}</div></div>
+    </aside>`;
+    const hd = `<header class="hd">
+      <span class="tog">${I("sidebar")}</span>
+      <div class="crumbs">${crumbHtml}</div>
+      <div class="hd-end">
+        <span class="icon-btn">${I("search")}</span>
+        <span class="credits-pill ${d.cstate || ""}">${I("wallet", "s16")}${d.credits || "11 credits"}${I("chevron-down", "s14")}</span>
+        <span class="icon-btn${d.bell ? " dot" : ""}">${I("bell")}</span>
+        <span class="hd-sep"></span>
+        <span class="avatar"><span class="a${user === "MO" ? " navy" : ""}">${user}</span>${I("chevron-down", "s16")}</span>
+      </div>
+    </header>`;
+    const body = f.innerHTML;
+    f.innerHTML = sb + `<div class="main">${hd}${body}</div>`;
+  });
+})();
+</script>
+<script src="board-rail.js"></script>
+</body>
+</html>

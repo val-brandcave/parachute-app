@@ -1,7 +1,7 @@
-import { CREDIT_USD, REVIEW_TYPE_COST, formatUsd, usd } from "@/lib/pricing";
+import { CREDIT_USD, INVOICED_CREDIT_USD, formatUsd, usd } from "@/lib/pricing";
 import { nextExpiring, type BalanceGrant } from "@/lib/wallet-breakdown";
-import { remainingFromLedger } from "@/store/wallet.store";
-import type { CreditLedgerEntry, CreditSource, Review, ReviewType } from "@/types";
+import { spendOrderSentence as spendOrder } from "@/lib/wallet-view";
+import type { CreditLedgerEntry, CreditSource, Review, ReviewType, WalletSettings } from "@/types";
 
 /** The demo's "today" (6 Nov 2026). Prototype-only: keeps the statements and invoice copy on one month. */
 export const DEMO_TODAY = new Date(2026, 10, 6, 12, 0).getTime();
@@ -26,30 +26,13 @@ export function sourceLabel(s: CreditSource): string {
   return s === "trial" ? "Trial" : s === "earned" ? "Earned" : "Purchased";
 }
 
-/* ---------------- Card metadata the settings row does not carry ---------------- */
+/* ---------------- Card on file ---------------- */
 
-const CARD_EXP_KEY = (orgId: string) => `parachute:billing:card-exp:${orgId}`;
-
-/** Expiry of the card on file. The settings row stores only the last four digits. */
-export function cardExpFor(orgId: string | null | undefined, last4?: string): string | null {
-  if (typeof window !== "undefined" && orgId) {
-    try {
-      const v = window.localStorage.getItem(CARD_EXP_KEY(orgId));
-      if (v) return v;
-    } catch {
-      /* private mode: fall through */
-    }
-  }
-  return last4 === "4242" ? "08/28" : null;
-}
-
-export function rememberCardExp(orgId: string | null | undefined, exp: string) {
-  if (!orgId || typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(CARD_EXP_KEY(orgId), exp);
-  } catch {
-    /* ignore */
-  }
+/** Expiry of the card on file ("MM/YY"), from the wallet settings row. Falls back to
+ *  the seeded test card's expiry for rows saved before the field existed. */
+export function cardExpFor(settings: Pick<WalletSettings, "cardExpiry"> | null | undefined, last4?: string): string | null {
+  if (!last4) return null;
+  return settings?.cardExpiry ?? (last4 === "4242" ? "08/28" : null);
 }
 
 /* ---------------- Activity ---------------- */
@@ -162,24 +145,33 @@ export function buildActivity(
     });
 }
 
-/** Invoiced orgs have no ledger: one row per review run, billed at list value. */
-export function invoicedActivity(reviews: readonly Review[], userName: UserName): ActivityRow[] {
-  const list = invoicedReviews(reviews);
-  return list
-    .map((r): ActivityRow => {
-      const credits = r.reviewTypes.reduce((n, t) => n + (REVIEW_TYPE_COST[t] ?? 0), 0);
+/**
+ * Invoiced orgs have no ledger: one row per review run, billed at the invoiced list value.
+ * Built from `invoicedSpendEntries` (lib/wallet-view.ts) so the table, the header pill and the
+ * usage cards share one cost and one date re-basing (RF3). Pass the entries already scoped
+ * (e.g. to the viewer's own runs).
+ */
+export function invoicedActivity(
+  entries: readonly CreditLedgerEntry[],
+  reviews: readonly Review[],
+  userName: UserName,
+): ActivityRow[] {
+  return entries
+    .filter((e) => e.kind === "debit")
+    .map((e): ActivityRow => {
+      const review = e.reviewId ? reviews.find((r) => r.id === e.reviewId) : undefined;
       return {
-        id: r.id,
-        at: rebasedDate(r, list),
-        title: r.propertyAddress,
-        sub: r.propertyType,
-        loan: r.loanNo,
-        types: typesLabel(r.reviewTypes),
-        credits: -credits,
-        amountUsd: credits * CREDIT_USD,
+        id: review?.id ?? e.id,
+        at: e.createdAt,
+        title: review?.propertyAddress ?? e.note ?? "Review",
+        sub: review?.propertyType,
+        loan: e.loanNo,
+        types: typesLabel(e.reviewTypes),
+        credits: e.credits,
+        amountUsd: -e.credits * INVOICED_CREDIT_USD,
         from: [],
-        by: shortName(userName(r.assigneeId)),
-        byId: r.assigneeId,
+        by: shortName(userName(e.actorId)),
+        byId: e.actorId,
         kind: "debit",
       };
     })
@@ -239,9 +231,9 @@ export function downloadText(filename: string, text: string, mime = "text/csv") 
 
 const fmtLong = (ts: number) => new Date(ts).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 
-/** Whole days from the demo's today to `ts` (never negative). */
-export function daysUntil(ts: number): number {
-  return Math.max(0, Math.ceil((ts - DEMO_TODAY) / 86_400_000));
+/** Whole days from `now` (default: the demo's today) to `ts` (never negative). */
+export function daysUntil(ts: number, now: number = DEMO_TODAY): number {
+  return Math.max(0, Math.ceil((ts - now) / 86_400_000));
 }
 
 /** "No expiry", or a long date. */
@@ -249,21 +241,12 @@ export function expiryLabel(g: BalanceGrant): string {
   return g.expiresAt === null ? "No expiry" : fmtLong(g.expiresAt);
 }
 
-/** One sentence: what is used first, and the next expiry (or that nothing expires soon). */
-export function spendOrderSentence(grants: readonly BalanceGrant[]): string {
+/** The PC-16 spend order (lib/wallet-view), then the next expiry (or that nothing expires soon). */
+export function spendOrderNote(grants: readonly BalanceGrant[]): string {
   const next = nextExpiring(grants);
-  const firsts = ["trial", "earned"].filter((s) => grants.some((g) => g.source === s && g.remaining > 0));
-  const lead =
-    firsts.length === 2 ? "Trial and earned credits are used first." : firsts.length === 1 ? `${firsts[0] === "trial" ? "Trial" : "Earned"} credits are used first.` : "Oldest credits are used first.";
-  if (!next) return `${lead} Nothing expires soon.`;
+  if (!next) return `${spendOrder()} Nothing expires soon.`;
   const n = next.remaining;
-  const what = next.source === "earned" ? `earned credit${n === 1 ? "" : "s"}` : `purchased credit${n === 1 ? "" : "s"}`;
-  return `${lead} Next expiry: ${n} ${what} on ${fmtLong(next.expiresAt!)}.`;
-}
-
-export function remainingOf(ledger: readonly CreditLedgerEntry[]) {
-  const r = remainingFromLedger(ledger);
-  return { ...r, total: r.trial + r.earned + r.purchased };
+  return `${spendOrder()} Next expiry: ${n} purchased credit${n === 1 ? "" : "s"} on ${fmtLong(next.expiresAt!)}.`;
 }
 
 /* ---------------- Statement ---------------- */
@@ -361,7 +344,7 @@ export function walletStatement(
 }
 
 /** Statement for an invoiced org: derived from its reviews, billed at list value. */
-export function invoicedStatement(reviews: readonly Review[], userName: UserName, key: string): Statement {
+export function invoicedStatement(reviews: readonly Review[], userName: UserName, key: string, anchor: number = DEMO_TODAY): Statement {
   const { start, end } = monthBounds(key);
   const groups: StatementGroup[] = [];
   let creditsUsed = 0;
@@ -370,7 +353,7 @@ export function invoicedStatement(reviews: readonly Review[], userName: UserName
   const all = invoicedReviews(reviews);
   for (const r of all) {
     // Only reviews run in this statement's month (seed dates are re-based onto the demo "today").
-    const at = rebasedDate(r, all);
+    const at = rebasedDate(r, all, anchor);
     if (at < start || at >= end) continue;
     const g: StatementGroup = { key: r.id, loan: r.loanNo, address: r.propertyAddress, kind: r.propertyType, lines: [] };
     for (const t of r.reviewTypes) {
@@ -396,10 +379,10 @@ export function invoicedReviews(reviews: readonly Review[]): Review[] {
   return reviews.filter((r) => !r.sample).sort((a, b) => b.orderedAt - a.orderedAt);
 }
 
-/** Seeded reviews sit in June; re-base them so the newest lands on the demo "today". */
-export function rebasedDate(r: Review, all: readonly Review[]): number {
+/** Seeded reviews sit months back; re-base them so the newest lands on `anchor` (same rule as `invoicedSpendEntries`). */
+export function rebasedDate(r: Review, all: readonly Review[], anchor: number = DEMO_TODAY): number {
   const newest = Math.max(...all.map((x) => x.orderedAt));
-  return DEMO_TODAY - (newest - r.orderedAt);
+  return anchor - (newest - r.orderedAt);
 }
 
 export function statementCsv(s: Statement): string {

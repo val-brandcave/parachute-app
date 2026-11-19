@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
+import type { BankPolicyDoc } from "@/types";
 import type { DataAdapter } from "./types";
 
 /**
@@ -47,6 +48,14 @@ export const apiAdapter: DataAdapter = {
     throw new Error(NOT_IMPL);
   },
   async remove(_collection: string, _id: string): Promise<void> {
+    throw new Error(NOT_IMPL);
+  },
+  async getBankPolicy(): Promise<BankPolicyDoc | null | undefined> {
+    // return fetch(`${BASE}/api/org/bank-policy`).then(r => r.json());
+    throw new Error(NOT_IMPL);
+  },
+  async setBankPolicy(_doc: BankPolicyDoc | null): Promise<void> {
+    // PUT (doc) or DELETE (null) `${BASE}/api/org/bank-policy`
     throw new Error(NOT_IMPL);
   },
   async seed(): Promise<void> {

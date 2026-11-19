@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 90" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" class="pi" role="img"><title>First report upload: a report rising out of an intake tray</title><style>.pi{stroke-width:var(--ill-stroke,2.25)}.pi .p{fill:var(--ill-paper,#FFFFFF)}.pi .a{fill:var(--ill-accent,#2A6F7F)}.pi .t{fill:var(--ill-tint,#DEEBEE)}.pi .s{fill:var(--ill-shadow,#C9D7E3);stroke:none}.pi .m{stroke:var(--ill-muted,#8FA3B3);stroke-width:1.75}.pi .ap{stroke:var(--ill-paper,#FFFFFF)}.pi .af{fill:var(--ill-paper,#FFFFFF);stroke:none}.pi .as{stroke:var(--ill-accent,#2A6F7F)}.pi .ink{fill:currentColor;stroke:none}.pi .ns{stroke:none}</style><path class="m" d="M30 33v9M23 40v4"/>
+<g transform="rotate(-5 60 40)">
+  <path class="s" d="M45 17H71L79 25V67H45Z"/>
+  <path class="p" d="M42 14H68L76 22V64H42Z"/>
+  <path d="M68 14V22H76"/>
+  <path class="m" d="M48 31H70M48 37H70M48 43H62"/>
+</g>
+<path class="s" d="M21 63H47L51 69H75L79 63H105V77a6 6 0 0 1-6 6H27a6 6 0 0 1-6-6Z"/>
+<path class="p" d="M18 60H44L48 66H72L76 60H102V74a6 6 0 0 1-6 6H24a6 6 0 0 1-6-6Z"/>
+<circle class="a" cx="88" cy="25" r="10"/>
+<path class="ap" d="M88 30V20M83.5 24.5L88 20l4.5 4.5"/></svg>

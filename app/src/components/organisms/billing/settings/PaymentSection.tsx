@@ -11,13 +11,13 @@ import { SettingsRow, SettingsSection } from "./SettingsParts";
 export function PaymentSection({ b }: { b: Billing }) {
   const s = b.settings;
   const last4 = s?.paymentMethod === "card" ? s.cardLast4 : undefined;
-  const exp = cardExpFor(b.org?.id, last4);
+  const exp = cardExpFor(s, last4);
   const [adding, setAdding] = useState(false);
   return (
     <SettingsSection title="Payment method" desc={`Charged when ${b.org?.name ?? "your organization"} adds credits.`}>
       <SettingsRow label="Card on file" desc="Used for top-ups and auto-reload.">
         {adding ? (
-          <AddCardForm b={b} onDone={() => setAdding(false)} />
+          <AddCardForm onDone={() => setAdding(false)} />
         ) : (
           <div className="bs-card-line">
             {last4 ? (

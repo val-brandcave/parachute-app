@@ -6,9 +6,13 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Icon, type IconName } from "@/components/atoms";
 import { cn } from "@/lib/utils";
 import { useStartGate } from "@/components/organisms/home/useStartGate";
+import { useLockProbe } from "@/components/organisms/home/useLockProbe";
 import { useSetupGuideVisible } from "@/lib/landing";
-import { useReviewsStore } from "@/store";
+import { useOrgStore, useReviewsStore, useWalletStore } from "@/store";
+import { useCurrentUser } from "@/lib/current-user";
 import { reviewHref } from "./ReviewTable";
+import { DEMO_ENABLED } from "@/lib/demo";
+import { PRESETS } from "@/lib/prototype-registry";
 
 type Cmd = {
   id: string;
@@ -17,7 +21,8 @@ type Cmd = {
   sub?: string;
   icon: IconName;
   run: () => void;
-  /** Shown instead of `sub` and blocks `run` (e.g. awaiting approval). */
+  /** Shown instead of `sub`, with `aria-disabled` and an hourglass (awaiting approval). `run` still
+   *  fires and explains (opens the approval dialog); the row is never inert (spec §5.5). */
   disabledReason?: string;
 };
 
@@ -43,6 +48,7 @@ export function CommandPalette({
   open: boolean;
   onClose: () => void;
 }) {
+  useLockProbe();
   return (
     <AnimatePresence>
       {open && (
@@ -67,6 +73,10 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
   const { reviews, fetchReviews } = useReviewsStore();
   const gate = useStartGate();
   const setupVisible = useSetupGuideVisible();
+  const me = useCurrentUser();
+  const invoiced = useOrgStore((s) => s.org?.billing === "invoiced");
+  // Only org admins buy, and only wallet (trial / pay-as-you-go) orgs have credits to buy.
+  const canBuy = me.role === "org_admin" && !invoiced;
   const [q, setQ] = useState("");
   const [active, setActive] = useState(0);
   const listRef = useRef<HTMLDivElement>(null);
@@ -76,6 +86,10 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
     if (!reviews.length) fetchReviews();
   }, [reviews.length, fetchReviews]);
 
+  // Where focus returns after the approval dialog: whatever had focus before the palette opened.
+  const [opener] = useState<HTMLElement | null>(() =>
+    typeof document === "undefined" ? null : (document.activeElement as HTMLElement | null),
+  );
   const go = (fn: () => void) => {
     fn();
     onClose();
@@ -110,8 +124,9 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
       group: "Go to",
       label: n.label,
       icon: n.icon,
-      disabledReason: gate.locked && n.href === "/launchpad" ? gate.reason : undefined,
-      run: () => go(() => router.push(n.href)),
+      disabledReason: gate.locked && n.href === "/launchpad" ? gate.reasonText : undefined,
+      run: () =>
+        go(() => (gate.locked && n.href === "/launchpad" ? gate.explain(opener) : router.push(n.href))),
     }));
 
     const actionItems: Cmd[] = [
@@ -120,14 +135,55 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
         group: "Actions",
         label: "Start a review",
         icon: "add" as IconName,
-        disabledReason: gate.locked ? gate.reason : undefined,
-        run: () => go(() => router.push("/launchpad")),
+        disabledReason: gate.locked ? gate.reasonText : undefined,
+        run: () => go(() => (gate.locked ? gate.explain(opener) : router.push("/launchpad"))),
+      },
+      ...(canBuy
+        ? [
+            {
+              id: "a-add-credits",
+              group: "Actions",
+              label: "Add credits",
+              icon: "wallet" as IconName,
+              // CheckoutLauncher turns the intent into /checkout/credits?pack=…&return=<here>.
+              run: () => go(() => useWalletStore.getState().openTopUp()),
+            },
+          ]
+        : []),
+      {
+        id: "a-how-credits",
+        group: "Actions",
+        label: "How credits work",
+        icon: "help" as IconName,
+        run: () => go(() => router.push("/configure/billing?tab=credits")),
       },
     ].filter((a) => !ql || a.label.toLowerCase().includes(ql));
 
-    return [...reviewItems, ...navItems, ...actionItems];
+    // Prototype group (spec §6): the Index and every preset, via the deep-link route.
+    const protoItems: Cmd[] = DEMO_ENABLED
+      ? [
+          {
+            id: "p-index",
+            group: "Prototype",
+            label: "Prototype Index",
+            sub: "Every screen, state and flow",
+            icon: "switch-horizontal" as IconName,
+            run: () => go(() => router.push("/prototype")),
+          },
+          ...PRESETS.filter((p) => p.status !== "planned").map((p) => ({
+            id: "p-" + p.id,
+            group: "Prototype",
+            label: p.label,
+            sub: p.description,
+            icon: "switch-horizontal" as IconName,
+            run: () => go(() => router.push(`/prototype/go?preset=${encodeURIComponent(p.id)}`)),
+          })),
+        ].filter((c) => !ql || `${c.label} ${c.sub ?? ""} prototype`.toLowerCase().includes(ql))
+      : [];
+
+    return [...reviewItems, ...navItems, ...actionItems, ...protoItems];
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q, reviews, gate.locked, gate.reason, setupVisible]);
+  }, [q, reviews, gate.locked, gate.reasonText, gate.explain, opener, setupVisible, canBuy]);
 
   // Keep the active row scrolled into view (DOM sync, no setState).
   useEffect(() => {
@@ -154,7 +210,7 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
       setActive((a) => (a - 1 + items.length) % items.length);
     } else if (e.key === "Enter") {
       e.preventDefault();
-      if (!items[active]?.disabledReason) items[active]?.run();
+      items[active]?.run();
     } else if (e.key === "Escape") {
       onClose();
     }
@@ -203,8 +259,9 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
                   key={cmd.id}
                   className={cn("cmdk-item", idx === active && "active", cmd.disabledReason && "is-disabled")}
                   aria-disabled={cmd.disabledReason ? true : undefined}
+                  aria-describedby={cmd.disabledReason ? `cmdk-reason-${cmd.id.replace(/\W/g, "-")}` : undefined}
                   onMouseMove={() => setActive(idx)}
-                  onClick={cmd.disabledReason ? undefined : cmd.run}
+                  onClick={cmd.run}
                 >
                   <span className="cmdk-ic">
                     <Icon name={cmd.icon} size={16} />
@@ -212,10 +269,16 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
                   <span className="cmdk-main">
                     <div className="cmdk-label">{cmd.label}</div>
                     {(cmd.disabledReason ?? cmd.sub) && (
-                      <div className="cmdk-sub">{cmd.disabledReason ?? cmd.sub}</div>
+                      <div className="cmdk-sub" id={cmd.disabledReason ? `cmdk-reason-${cmd.id.replace(/\W/g, "-")}` : undefined}>{cmd.disabledReason ?? cmd.sub}</div>
                     )}
                   </span>
-                  <Icon name="chevron-right" size={16} className="cmdk-go" />
+                  {cmd.disabledReason ? (
+                    <span className="locked-glyph" aria-hidden="true">
+                      <Icon name="hourglass-high" size={14} />
+                    </span>
+                  ) : (
+                    <Icon name="chevron-right" size={16} className="cmdk-go" />
+                  )}
                 </div>
               ))}
             </div>

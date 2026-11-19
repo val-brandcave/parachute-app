@@ -1,0 +1,193 @@
+/* Paid (spec §5.6): compact, centred success state. Tokens only; light + dark via --md-*.
+   Selectors are scoped under `.co-step.co-paid` so they win over the older paid rules in
+   checkout.css without editing that file. */
+
+.co-step.co-paid {
+  width: 100%;
+  max-width: 560px;
+  margin-inline: auto;
+  padding-block: calc(var(--d-page-y) * 0.5) var(--d-page-y);
+  gap: calc(var(--d-gap) * 1.25);
+  justify-items: stretch;
+  text-align: center;
+}
+
+/* ---- Head: scene, title, one confirmation line ---- */
+.co-paid .co-paid-head {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+}
+.co-paid .co-paid-art {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+.co-paid .co-paid-title {
+  font-size: 26px;
+  line-height: 1.2;
+}
+.co-paid .co-paid-line {
+  margin: 0;
+  max-width: 46ch;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--md-on-surface-v);
+  overflow-wrap: anywhere;
+}
+.co-paid .co-paid-amt {
+  font-weight: 600;
+  color: var(--md-success);
+}
+
+/* ---- Summary card: compact key/value rows ---- */
+.co-paid .co-paid-sum {
+  display: grid;
+  gap: 0;
+  padding: 4px var(--d-card-pad);
+  border: 1px solid var(--md-outline);
+  border-radius: var(--r);
+  background: var(--md-surface);
+  box-shadow: var(--md-elev-1);
+  text-align: start;
+}
+.co-paid .co-paid-rows {
+  margin: 0;
+  display: grid;
+}
+.co-paid .co-paid-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 0;
+  min-width: 0;
+}
+.co-paid .co-paid-row + .co-paid-row {
+  border-top: 1px solid var(--md-outline-v);
+}
+.co-paid .co-paid-row dt {
+  flex: none;
+  font-size: 13px;
+  color: var(--md-on-surface-v);
+}
+.co-paid .co-paid-row dd {
+  margin: 0;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--md-on-surface);
+  text-align: end;
+  overflow-wrap: anywhere;
+}
+.co-paid .co-paid-row--bal {
+  padding-block: 12px;
+}
+.co-paid .co-paid-row--bal dd {
+  display: grid;
+  justify-items: end;
+  gap: 4px;
+}
+.co-paid .co-paid-bal {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.co-paid .co-paid-pill {
+  font-weight: 600;
+}
+.co-paid .co-paid-arrow {
+  color: var(--md-on-surface-t);
+  font-weight: 400;
+}
+.co-paid .co-paid-sub {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--md-on-surface-t);
+}
+.co-paid .co-paid-hist {
+  margin: 0;
+  padding: 10px 0 12px;
+  border-top: 1px solid var(--md-outline-v);
+  font-size: 12.5px;
+  color: var(--md-on-surface-v);
+}
+
+/* ---- Next: centred button row + quiet auto-reload note ---- */
+.co-paid .co-paid-next {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  padding-top: 4px;
+}
+.co-paid .co-paid-btns {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+.co-paid .co-paid-note {
+  margin: 0;
+  max-width: 44ch;
+  font-size: 13px;
+  color: var(--md-on-surface-t);
+}
+.co-paid .co-paid-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: var(--md-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+.co-paid .co-paid-link:hover {
+  color: var(--md-accent-d);
+}
+.co-paid .co-paid-link:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-accent);
+}
+
+/* ---- Narrow: stack balance under its label, full-width buttons ---- */
+@media (max-width: 520px) {
+  .co-paid .co-paid-row--bal {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .co-paid .co-paid-row--bal dd {
+    justify-items: start;
+  }
+  .co-paid .co-paid-btns {
+    flex-direction: column;
+    align-self: stretch;
+    width: 100%;
+  }
+}
+
+/* Value emphasis in the summary table; the auto-reload offer stays on one line. */
+.co-paid .co-paid-strong {
+  font-weight: 650;
+  color: var(--md-on-surface);
+}
+.co-paid .co-paid-note {
+  white-space: nowrap;
+}
+@media (max-width: 520px) {
+  .co-paid .co-paid-note {
+    white-space: normal;
+  }
+}
+
+/* A value with a note under it (New balance → ≈ full reviews). */
+.co-paid .co-paid-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}

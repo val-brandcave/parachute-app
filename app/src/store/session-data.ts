@@ -3,6 +3,7 @@ import { useOrgStore } from "./org.store";
 import { useReviewsStore } from "./reviews.store";
 import { useUsersStore } from "./users.store";
 import { useWalletStore } from "./wallet.store";
+import { useCreditRequestStore } from "./credit-request.store";
 
 /** (Re)load everything scoped to the session's current org. Called at boot and
  *  whenever the identity changes (persona switch, org reset). */
@@ -13,6 +14,7 @@ export async function loadSessionData(): Promise<void> {
     useWalletStore.getState().fetchWallet(),
     useOnboardingStore.getState().fetchProgress(),
     useReviewsStore.getState().fetchReviews(),
+    useCreditRequestStore.getState().fetchRequests(),
   ]);
   useOrgStore
     .getState()

@@ -1,0 +1,526 @@
+/* Billing states (T3.2): band links, hero tones, AutoReloadOffer, BonusNotice, How credits work, Usage donut. Tokens only. */
+
+/* ---- band ---- */
+.bl-textlink {
+  display: inline-flex;
+  align-items: center;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--md-accent-d);
+  text-decoration: none;
+}
+.bl-textlink:hover {
+  text-decoration: underline;
+}
+.bl-textlink:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-accent);
+  border-radius: 4px;
+}
+.bl-band-note {
+  font-size: 13px;
+  color: var(--md-on-surface-v);
+}
+.bl-band-link {
+  white-space: nowrap;
+}
+.bl-band-spacer {
+  flex: 1;
+}
+@media (max-width: 900px) {
+  .bl-band-note {
+    display: none;
+  }
+}
+
+/* ---- hero tones: amber only when low, red only at zero ---- */
+.ov-hero.is-low .bl-big-n {
+  color: var(--md-warn-solid);
+}
+.ov-hero.is-zero .bl-big-n {
+  color: var(--md-error);
+}
+.ov-run-bar.is-zero i {
+  background: var(--md-error);
+}
+.ov-lead {
+  margin-top: 8px;
+  max-width: 62ch;
+}
+.ov-warn {
+  color: var(--md-warn-solid);
+}
+.ov-bad {
+  color: var(--md-error);
+}
+.ov-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: stretch;
+}
+@media (max-width: 1100px) {
+  .ov-split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.ov-held .gs-track {
+  margin: 0;
+}
+
+/* ---- AutoReloadOffer ---- */
+.bl-offer {
+  gap: 12px;
+}
+.bl-offer-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.bl-offer-opt {
+  display: grid;
+  gap: 2px;
+  padding: 12px 14px;
+  border: 1px solid var(--md-outline);
+  border-radius: var(--r);
+  background: var(--md-selected);
+  color: var(--md-on-selected);
+}
+.bl-offer-opt .bl-sub {
+  color: inherit;
+  opacity: 0.8;
+}
+
+/* ---- BonusNotice ---- */
+.bl-bonus {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  padding: 16px 20px;
+}
+.bl-bonus-ic {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: var(--md-selected);
+  color: var(--md-on-selected);
+  flex: none;
+}
+.bl-bonus-main {
+  flex: 1 1 280px;
+  min-width: 0;
+}
+.bl-bonus-main .bl-body {
+  margin-top: 2px;
+}
+.bl-bonus-act {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* ---- How credits work ---- */
+.hcw .hcw-hero {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px 32px;
+  padding: 28px;
+}
+.hcw-hero-text {
+  flex: 1 1 320px;
+  min-width: 0;
+}
+.hcw-title {
+  margin: 0;
+  font-family: var(--font-display, inherit);
+  font-size: 28px;
+  line-height: 34px;
+  font-weight: 700;
+  color: var(--md-on-surface);
+}
+.hcw-lead {
+  margin: 10px 0 0;
+  max-width: 52ch;
+  font-size: 15px;
+  line-height: 24px;
+  color: var(--md-on-surface-v);
+}
+.hcw .hcw-scene {
+  max-width: 100%;
+  height: auto;
+  flex: 0 1 420px;
+}
+.hcw-two {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+@media (max-width: 900px) {
+  .hcw-two {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.hcw-h {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+/* FAQ: the DS Accordion draws only a border, so on the canvas it read grey.
+   `.card` gives it the sibling cards' surface + elevation; the border drops
+   so it matches them. Hover rows are clipped to the card's corners by
+   rounding the end triggers (not overflow:hidden, which would clip the
+   focus ring). */
+.hcw .hcw-faq {
+  border: 0;
+}
+.hcw-faq > :first-child button {
+  border-top-left-radius: var(--r);
+  border-top-right-radius: var(--r);
+}
+.hcw-faq > :last-child[data-state="closed"] button {
+  border-bottom-left-radius: var(--r);
+  border-bottom-right-radius: var(--r);
+}
+.hcw .bl-sales {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.bl-sales-main {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+  min-width: 0;
+}
+
+/* ---- Usage: filter row, donut, by person ---- */
+.ud-filter {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+.ud-filter-l {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--md-on-surface-v);
+}
+.ud-filter .ud-period {
+  width: 220px;
+  max-width: 100%;
+}
+.ud-filter-sp {
+  flex: 1;
+}
+.ud-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  align-items: start;
+}
+.ud-grid--one {
+  grid-template-columns: minmax(0, 1fr);
+}
+@media (max-width: 1100px) {
+  .ud-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.ud-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin-bottom: 16px;
+}
+.ud-body {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px 28px;
+}
+.ud-chart {
+  position: relative;
+  width: 180px;
+  height: 180px;
+  flex: none;
+}
+.ud-chart svg {
+  display: block;
+}
+.ud-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.ud-n {
+  font-family: var(--font-display, inherit);
+  font-size: 36px;
+  line-height: 40px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--md-on-surface);
+}
+.ud-u {
+  font-size: 12.5px;
+  color: var(--md-on-surface-v);
+}
+.ud-legend {
+  flex: 1 1 220px;
+  min-width: 0;
+  display: grid;
+  gap: 10px;
+}
+.ud-lr {
+  display: grid;
+  grid-template-columns: 12px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--md-on-surface);
+}
+.ud-lr--tot {
+  padding-top: 10px;
+  border-top: 1px solid var(--md-outline-v);
+}
+.ud-sw {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+.ud-name {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.ud-share {
+  font-size: 13px;
+  color: var(--md-on-surface-v);
+  font-variant-numeric: tabular-nums;
+}
+.ud-val {
+  display: grid;
+  justify-items: end;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.ud-val small {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--md-on-surface-v);
+}
+.ud-foot {
+  margin-top: 4px;
+}
+.ubp-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+.ubp-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 1.2fr) minmax(0, 2fr) auto;
+  align-items: center;
+  gap: 12px;
+}
+.ubp-who {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.ubp-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  color: var(--md-on-surface);
+}
+.ubp-track {
+  height: 12px;
+  display: block;
+}
+.ubp-track i {
+  display: block;
+  height: 100%;
+  background: var(--md-primary);
+  border-radius: 0 4px 4px 0;
+}
+/* Dark: --md-primary (#1b4f73) is ~2.0:1 on the dark surface, under the 3:1 a bar needs, so dark uses the info blue. */
+:root[data-theme="dark"] .ubp-track i {
+  background: var(--md-info);
+}
+.ubp-v {
+  min-width: 72px;
+  text-align: right;
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--md-on-surface);
+}
+.ubp-v small {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--md-on-surface-v);
+}
+.ubp-total {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--md-outline-v);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 600px) {
+  .ubp-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .ubp-track {
+    grid-column: 1 / -1;
+    order: 3;
+  }
+}
+.ov-fact-name {
+  font-size: 20px;
+  line-height: 34px;
+}
+
+/* ---- reviewer credit request: form and tracker (spec §5.9, T4.4) ---- */
+.rq {
+  gap: 8px;
+}
+.rq .bl-body.rq-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 0;
+  font-weight: 600;
+}
+.rq-title--ok {
+  color: var(--md-success);
+}
+.rq-when {
+  margin-left: 4px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--md-on-surface-v);
+}
+.rq-quote {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--md-surface-1);
+  color: var(--md-on-surface-v);
+  font-size: 13px;
+  line-height: 20px;
+  text-wrap: pretty;
+}
+.rq-label {
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--md-on-surface);
+}
+.rq-actions {
+  margin-top: 4px;
+}
+
+/* How credits work: rule cards with their illustration on the right. */
+.bl-card.hcw-rule {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--d-gap);
+}
+.hcw-rule-tx {
+  flex: 1;
+  min-width: 0;
+}
+.hcw-rule-ill {
+  flex: none;
+}
+@media (max-width: 600px) {
+  .hcw-rule-ill {
+    display: none;
+  }
+}
+
+/* BillingEmptyCard: tab-level empty state — text + action left, spot illustration right. */
+.bl-card.bec {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--d-gap) 32px;
+  padding: 28px;
+}
+.bec-tx {
+  flex: 1;
+  min-width: 0;
+}
+.bec-status {
+  margin: 0 0 8px;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--md-on-surface-v);
+}
+.bec-h {
+  margin: 0;
+  font-size: 18px;
+  line-height: 26px;
+}
+.bec-body {
+  margin-top: 6px;
+  max-width: 60ch;
+  color: var(--md-on-surface-v);
+}
+.bec-acts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+  margin-top: 18px;
+}
+.bec-link {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--md-accent);
+  text-decoration: none;
+}
+.bec-link:hover {
+  text-decoration: underline;
+}
+.bec-link:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-accent);
+  border-radius: 4px;
+}
+.bec-ill {
+  flex: none;
+}
+@media (max-width: 600px) {
+  .bec-ill {
+    display: none;
+  }
+}

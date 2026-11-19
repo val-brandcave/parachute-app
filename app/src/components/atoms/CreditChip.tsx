@@ -12,8 +12,14 @@ import { cn } from "@/lib/utils";
  * money   neutral        a dollar amount ("~$300", "$1,400")
  * free    green          free / earned ("Free", "+1 credit")
  * low     amber          low balance, or something waiting ("Low", "Pending")
+ * zero    red            nothing left to spend ("0 credits")
+ * held    neutral        credits reserved, not spendable yet ("Credits after your call", "On hold")
+ * invoiced neutral       usage billed on a statement ("38 credits used")
+ *
+ * DS-candidate: CreditChip tones zero / held / invoiced — the pattern-change wallet
+ * states (spec §5.3); the DS Chip has no credit-state tints.
  */
-export type CreditChipTone = "credit" | "trial" | "money" | "free" | "low";
+export type CreditChipTone = "credit" | "trial" | "money" | "free" | "low" | "zero" | "held" | "invoiced";
 
 export function CreditChip({
   tone,

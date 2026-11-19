@@ -4,7 +4,12 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useDashboard } from "./hooks/useDashboard";
 import "./dashboard.css";
 import { PageHeader } from "@/components/templates/PageHeader";
-import { PeriodPicker, PERIOD_LABEL, periodLabel, type Period } from "@/components/molecules";
+import {
+  PeriodPicker,
+  PERIOD_LABEL,
+  periodLabel,
+  type Period,
+} from "@/components/molecules";
 import { useCurrentUser } from "@/lib/current-user";
 import { useOrgStage, useSetupSummary } from "@/store";
 import { ValueStrip, useShowValueStrip } from "@/components/organisms/value";
@@ -16,7 +21,7 @@ import {
   TrendChart,
   DashboardSkeleton,
 } from "@/components/organisms";
-import { DashboardFirstRun } from "@/components/organisms/dashboard-widgets";
+import { FirstRunHero } from "@/components/organisms/FirstRunHero";
 
 const PERIOD_PHRASE: Record<Period, string> = {
   week: "this week",
@@ -41,6 +46,7 @@ export default function DashboardPage() {
   const returning = stage !== "new" || steps.some((s) => s.done);
   const {
     isLoading,
+    isResolved,
     isEmpty,
     reviews,
     period,
@@ -72,10 +78,10 @@ export default function DashboardPage() {
       tip: "Appraisals being processed by Parachute's pipeline right now — a live count, not affected by the period picker.",
     },
     {
-      label: "Needs my action",
+      label: "Needs action",
       value: kpis.needsAction,
       icon: "flag",
-      tip: "Reviews that needed your decision or sign-off within the selected period.",
+      tip: "Reviews waiting on a decision or sign-off from your team, and anything past its due date.",
     },
     {
       label: "Overdue",
@@ -100,6 +106,39 @@ export default function DashboardPage() {
       tip: "Reviews you completed in the selected period. Avg turnaround ~24 min · ≈9.5 hrs saved vs. manual review.",
     },
   ];
+
+  // Level 1 (no reviews of the org's own yet): just the hero, no header strip, no skeleton.
+  // Until the first read lands we don't know which page is coming, so render nothing.
+  if (!isResolved) return null;
+  if (isEmpty) {
+    return (
+      <div className="pagebody">
+        <FirstRunHero
+          title="Your dashboard fills in after your first review"
+          tiles={[
+            {
+              title: "What needs you",
+              text: "Reviews waiting on your decision or sign-off, and anything past its due date.",
+              ill: "07b-finding-citation",
+            },
+            {
+              title: "Volume and turnaround",
+              text: "How many reviews your team finishes and how fast, by week, month or quarter.",
+              ill: "05b-empty-reviews",
+            },
+            {
+              title: "New from YouConnect",
+              text: "Appraisals delivered from YouConnect, ready to start in one click.",
+              ill: "06b-first-upload",
+            },
+          ]}
+        >
+          Review volume, turnaround and what needs your attention show up here
+          once Parachute has checked an appraisal for you.
+        </FirstRunHero>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -134,32 +173,30 @@ export default function DashboardPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.28 }}
             >
-              {isEmpty ? (
-                <DashboardFirstRun />
-              ) : (
-                <>
-                  <StatBar stats={stats} />
+              <>
+                <StatBar stats={stats} />
 
-                  {showValue && <ValueStrip reviews={reviews} />}
+                {showValue && <ValueStrip reviews={reviews} />}
 
-                  <div style={{ marginTop: "var(--d-gap)" }}>
-                    <TrendChart
-                      {...trend}
-                      periodLabel={periodLabel(period, range)}
-                      emptyText={`No reviews completed ${PERIOD_PHRASE[period]}.`}
-                      widen={WIDEN[period] && {
+                <div style={{ marginTop: "var(--d-gap)" }}>
+                  <TrendChart
+                    {...trend}
+                    periodLabel={periodLabel(period, range)}
+                    emptyText={`No reviews completed ${PERIOD_PHRASE[period]}.`}
+                    widen={
+                      WIDEN[period] && {
                         label: `Show ${PERIOD_LABEL[WIDEN[period]!].toLowerCase()}`,
                         onClick: () => setPeriod(WIDEN[period]!),
-                      }}
-                    />
-                  </div>
+                      }
+                    }
+                  />
+                </div>
 
-                  <div className="dash-grid">
-                    <ActionNeeded reviews={actionNeeded} />
-                    <NewFromYouConnect reviews={newFromYc} />
-                  </div>
-                </>
-              )}
+                <div className="dash-grid">
+                  <ActionNeeded reviews={actionNeeded} />
+                  <NewFromYouConnect reviews={newFromYc} />
+                </div>
+              </>
             </motion.div>
           )}
         </AnimatePresence>

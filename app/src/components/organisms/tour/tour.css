@@ -1,0 +1,129 @@
+/* ==========================================================================
+   Tours (spec §5.13, PC-14 / PC-31 / PC-38) — T5.1
+   Chip (header slot + .run-head), "Tour, n of N" status, the tour card and the
+   Joyride spotlight. Z: overlay 126 / card 128 (`--z-tour-overlay` / `--z-tour`).
+   ========================================================================== */
+
+/* ---- Chip ---------------------------------------------------------------- */
+.tour-slot {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 12px;
+  min-width: 0;
+}
+.tour-slot:empty {
+  display: none;
+}
+.tour-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  white-space: nowrap;
+}
+.tour-chip .tour-chip-btn svg {
+  color: var(--md-accent);
+}
+.tour-chip .tour-chip-x {
+  width: 28px;
+  height: 28px;
+  color: var(--md-on-surface-v);
+}
+.tour-status {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--md-accent-d);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* ---- Joyride layers ----------------------------------------------------- */
+/* PC-31 tiers from the tokens (Joyride's inline numbers match; the tokens win). */
+.react-joyride__overlay {
+  z-index: var(--z-tour-overlay) !important;
+}
+.react-joyride__floater {
+  z-index: var(--z-tour) !important;
+}
+/* The SVG `fill` attribute can't read a CSS var; the property can. Only the dim paths:
+   the cover (1st) and the cutout's fade-in cover (2nd, else it flashes black). The
+   optional 3rd path is the spotlight outline and stays unfilled. */
+.react-joyride__spotlight path:nth-child(-n + 2) {
+  fill: var(--tour-dim);
+}
+
+/* ---- Card --------------------------------------------------------------- */
+.tour-tip {
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 18px 18px 14px;
+  background: var(--md-surface);
+  color: var(--md-on-surface);
+  border: 1px solid var(--md-outline);
+  border-radius: var(--r);
+  box-shadow: var(--md-elev-3);
+  text-align: left;
+}
+.tour-tip:focus {
+  outline: none;
+}
+.tour-tip:focus-visible {
+  box-shadow: var(--md-elev-3), var(--ring-accent);
+}
+.tour-tip-x {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+}
+.tour-tip-art {
+  display: flex;
+  justify-content: center;
+  margin: 2px 0 12px;
+}
+.tour-tip-art .ill {
+  max-width: 100%;
+  height: auto;
+}
+.tour-tip-count {
+  margin: 0 0 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--md-accent-d);
+  font-variant-numeric: tabular-nums;
+}
+.tour-tip-title {
+  margin: 0 32px 6px 0;
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--md-on-surface);
+}
+.tour-tip-body {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--md-on-surface-v);
+}
+.tour-tip-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+.tour-tip-dots {
+  display: inline-flex;
+  gap: 5px;
+  margin-right: auto;
+}
+.tour-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--md-outline);
+}
+.tour-dot.is-on {
+  background: var(--md-primary);
+}

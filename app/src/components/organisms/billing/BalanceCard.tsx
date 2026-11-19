@@ -1,12 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Button, CreditChip, type CreditChipTone } from "@/components/atoms";
 import { EmptyLine } from "@/components/molecules";
-import { stepDef } from "@/lib/setup-steps";
+import { sectionDef, stepDef } from "@/lib/setup-steps";
 import { formatUsd, packById } from "@/lib/pricing";
-import { balanceGrants, type BalanceGrant } from "@/lib/wallet-breakdown";
-import { DEMO_TODAY, daysUntil, expiryLabel, spendOrderSentence } from "./billing-data";
+import type { BalanceGrant } from "@/lib/wallet-breakdown";
+import { daysUntil, expiryLabel, spendOrderNote } from "./billing-data";
+import type { OrgKind } from "@/types";
 import type { Billing } from "./useBilling";
 
 const EXPIRY_WARN_DAYS = 14;
@@ -21,6 +22,7 @@ function describe(
   g: BalanceGrant,
   userName: Billing["userName"],
   showValue: boolean,
+  kind: OrgKind,
 ): { tone: CreditChipTone; label: string; sub: string } {
   const e = g.entry;
   const when = shortDate(e.createdAt);
@@ -31,11 +33,16 @@ function describe(
       sub: `Granted ${when} · ${g.granted} credits`,
     };
   if (g.source === "earned") {
-    const step = e.setupStepId ? stepDef(e.setupStepId)?.doneLabel : undefined;
+    // v4 earned rows carry the section that paid them; older rows carry a step.
+    const what = e.setupSectionId
+      ? sectionDef(e.setupSectionId)?.title(kind)
+      : e.setupStepId
+        ? stepDef(e.setupStepId)?.doneLabel
+        : undefined;
     return {
       tone: "free",
       label: "Earned",
-      sub: `${step ?? "Setup reward"} · ${when}`,
+      sub: `${what ?? "Setup reward"} · ${when}`,
     };
   }
   if (e.kind === "purchase") {
@@ -58,7 +65,8 @@ function describe(
  *  in the order credits are used. `showValue` is off for non-admins (no dollars). */
 export function BalanceCard({ b, showValue = true }: { b: Billing; showValue?: boolean }) {
   const [showUsed, setShowUsed] = useState(false);
-  const grants = useMemo(() => balanceGrants(b.ledger), [b.ledger]);
+  const grants = b.wallet.grants;
+  const kind: OrgKind = b.org?.profile?.kind ?? "bank";
   const total = b.remaining.total;
   const live = grants.filter((g) => g.remaining > 0).sort((a, c) => (a.useOrder ?? 0) - (c.useOrder ?? 0));
   const used = grants.filter((g) => g.remaining === 0);
@@ -69,7 +77,7 @@ export function BalanceCard({ b, showValue = true }: { b: Billing; showValue?: b
     <section className="card bl-card bl-balance">
       <div className="bl-balance-head">
         <h2 className="bl-h">What&rsquo;s in your balance</h2>
-        <p className="bl-order-note">{spendOrderSentence(grants)}</p>
+        <p className="bl-order-note">{spendOrderNote(grants)}</p>
       </div>
 
       {rows.length === 0 ? (
@@ -96,9 +104,9 @@ export function BalanceCard({ b, showValue = true }: { b: Billing; showValue?: b
             <span role="columnheader">Expires</span>
           </div>
           {rows.map((g) => {
-            const d = describe(g, b.userName, showValue);
-            const days = g.expiresAt !== null && g.remaining > 0 ? daysUntil(g.expiresAt) : null;
-            const soon = days !== null && g.expiresAt! - DEMO_TODAY <= EXPIRY_WARN_DAYS * 86_400_000;
+            const d = describe(g, b.userName, showValue, kind);
+            const days = g.expiresAt !== null && g.remaining > 0 ? daysUntil(g.expiresAt, b.now) : null;
+            const soon = days !== null && g.expiresAt! - b.now <= EXPIRY_WARN_DAYS * 86_400_000;
             return (
               <div key={g.id} className={`bl-bd-cols bl-trow${g.remaining === 0 ? " is-used" : ""}`} role="row">
                 <span role="cell">
