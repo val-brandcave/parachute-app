@@ -5,7 +5,9 @@ import type { ChecklistTemplate, ChecklistTemplateItem } from "@/types";
 // time. 22 items / 3 groups; items 5 and 9 need attention (warn) — one is
 // double-barrelled, one is ambiguous — mirroring the client mock's health
 // stats (20 mapped · 2 need attention).
-const NOW = 1781827200000;
+import { SEED_NOW } from "./seed-clock";
+
+const NOW = SEED_NOW;
 
 const items: ChecklistTemplateItem[] = [
   /* ---- Report & Compliance ---- */

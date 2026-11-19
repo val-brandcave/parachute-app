@@ -68,7 +68,7 @@ export function ValueStrip({ reviews }: { reviews: readonly Review[] }) {
               ~{hours(v.hoursSaved)} <small>hours</small>
             </div>
             <div className="vl-sub">
-              {v.reviews} {v.reviews === 1 ? "review" : "reviews"} · method on hover
+              {v.reviews} {v.reviews === 1 ? "review" : "reviews"} processed · method on hover
             </div>
           </div>
         </Tooltip>

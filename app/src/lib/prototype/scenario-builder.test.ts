@@ -60,6 +60,22 @@ describe("buildLedger", () => {
     expect(sum(buildLedger(sc({ wallet }), NOW, ORG))).toBe(balance);
   });
 
+  it("finished setup inside the window pays both section rewards (All done shows Earned)", () => {
+    const earned = (s: Partial<Scenario>) => buildLedger(sc(s), NOW, ORG).filter((r) => r.kind === "earned");
+    expect(earned({ setup: "done" }).map((r) => r.setupSectionId).sort()).toEqual(["first_review", "own_rules"]);
+    expect(earned({ setup: "almost" }).map((r) => r.setupSectionId)).toEqual(["own_rules"]);
+    expect(earned({ setup: "mid" })).toEqual([]);
+    expect(earned({ setup: "done", bonus: "closed" })).toEqual([]);
+  });
+
+  it.each([
+    ["low", 3],
+    ["short", 1],
+    ["zero", 0],
+  ] as const)("balance story holds with setup done: %s stays %i", (wallet, balance) => {
+    expect(sum(buildLedger(sc({ wallet, setup: "done" }), NOW, ORG))).toBe(balance);
+  });
+
   it("low = 2 trial + 1 purchased", () => {
     const rows = buildLedger(sc({ wallet: "low" }), NOW, ORG);
     const trialSpent = rows.filter((r) => r.kind === "debit" && r.paidFrom?.includes("trial")).reduce((s, r) => s - r.credits, 0);
