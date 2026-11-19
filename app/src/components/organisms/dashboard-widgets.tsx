@@ -36,7 +36,7 @@ export function ActionNeeded({ reviews }: { reviews: Review[] }) {
       </div>
       <div className="widget-body">
         {reviews.length === 0 ? (
-          <EmptyLine icon="check-circle">Nothing is waiting on your decision right now.</EmptyLine>
+          <EmptyLine icon="check-circle">Nothing is waiting on a decision right now.</EmptyLine>
         ) : (
           reviews.map((r) => {
             const due = relativeDue(r.slaDueAt);

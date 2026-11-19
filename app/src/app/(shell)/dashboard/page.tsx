@@ -78,10 +78,10 @@ export default function DashboardPage() {
       tip: "Appraisals being processed by Parachute's pipeline right now — a live count, not affected by the period picker.",
     },
     {
-      label: "Needs my action",
+      label: "Needs action",
       value: kpis.needsAction,
       icon: "flag",
-      tip: "Reviews that needed your decision or sign-off within the selected period.",
+      tip: "Reviews waiting on a decision or sign-off from your team, and anything past its due date.",
     },
     {
       label: "Overdue",
