@@ -30,10 +30,7 @@ function Receipts({ b }: { b: B }) {
   const shown = all ? rows : rows.slice(0, 8);
   return (
     <section className="bs-block">
-      <div className="bs-blockhead">
-        <h2 className="bl-section">Receipts</h2>
-        <p className="bl-sub">One for every purchase, including auto-reload.</p>
-      </div>
+      <h2 className="bl-section">Receipts</h2>
       {rows.length === 0 ? (
         <div className="card">
           <EmptyLine>No purchases yet. A receipt appears here after each top-up.</EmptyLine>
@@ -109,10 +106,7 @@ function Statements({ b }: { b: B }) {
   if (rows.length === 0) return null;
   return (
     <section className="bs-block">
-      <div className="bs-blockhead">
-        <h2 className="bl-section">Monthly statements</h2>
-        <p className="bl-sub">Every review and credit movement for the month.</p>
-      </div>
+      <h2 className="bl-section">Monthly statements</h2>
       <div className="card bl-table" role="table" aria-label="Monthly statements">
         <div className="bl-cols bs-cols bs-cols--stmt bl-thead" role="row">
           <span>Period</span>

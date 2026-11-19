@@ -255,7 +255,10 @@ export function CreditsPopover({
             <div className="cp-req-who">
               <Avatar initials={who?.initials ?? "?"} size={32} tone="navy" />
               <div>
-                <b>{who?.name ?? "A reviewer"} asked for more credits</b>
+                <b>
+                  {who?.name ?? "A reviewer"} asked for{" "}
+                  {r.credits ? `${r.credits} ${r.credits === 1 ? "credit" : "credits"}` : "more credits"}
+                </b>
                 {r.note && <span className="cp-req-note">&ldquo;{r.note}&rdquo;</span>}
                 <span className="cp-faint">{requestAge(r.createdAt, now)}</span>
               </div>
@@ -266,7 +269,7 @@ export function CreditsPopover({
                 size="sm"
                 onClick={() => {
                   onClose();
-                  useWalletStore.getState().openTopUp({ request: r.id });
+                  useWalletStore.getState().openTopUp({ request: r.id, needed: r.credits });
                 }}
               >
                 Add credits
