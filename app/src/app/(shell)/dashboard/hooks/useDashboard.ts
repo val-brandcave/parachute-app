@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useOrgStore, useReviewsStore } from "@/store";
 import { isOverdue } from "@/lib/review-lifecycle";
 import type { Period, DateRange } from "@/components/molecules";
+import { deriveInsights } from "@/components/organisms/dashboard/insights-model";
 
 const DAY = 86400000;
 
@@ -132,14 +133,17 @@ export function useDashboard() {
     });
 
     if (own) {
-      // Real counts: completed reviews per bucket. No turnaround / on-time data yet.
+      // Real counts: completed reviews per bucket. The engine reports no timings yet, so
+      // turnaround / on-time are mock values (same curve as the demo orgs) once the org has
+      // finished anything; an org with nothing completed shows bars only.
       const done = reviews.filter((r) => r.status === "completed");
+      const hasTimings = done.length > 0;
       points.forEach((pt, i) => {
         const hi = endMs - (count - 1 - i) * stepMs;
         const lo = hi - stepMs;
         pt.v = done.filter((r) => r.orderedAt > lo && r.orderedAt <= hi).length;
-        pt.t = 0;
-        pt.onTime = 0;
+        pt.t = hasTimings ? tr(i) : 0;
+        pt.onTime = hasTimings ? on(i) : 0;
       });
     }
 
@@ -178,6 +182,24 @@ export function useDashboard() {
     };
   }, [trend.completed, reviews, own, now]);
 
+  // Dashboard v2 insights (needs-you, value band, categories, firms, agreement, risk).
+  // Findings are only loaded per review (workspace store) and only the seeded demo
+  // review carries any, so the dashboard passes none: own-org figures fall back to
+  // Review.openFindings / worstSeverity, and demo orgs use the deterministic synthesis.
+  const insights = useMemo(
+    () =>
+      deriveInsights({
+        reviews,
+        own,
+        period,
+        range,
+        now,
+        completed: trend.completed,
+        prevCompleted: trend.prev.completed,
+      }),
+    [reviews, own, period, range, now, trend.completed, trend.prev.completed],
+  );
+
   return {
     isLoading: initial,
     isResolved: fetched,
@@ -193,5 +215,6 @@ export function useDashboard() {
     actionNeeded,
     newFromYc,
     trend,
+    insights,
   };
 }

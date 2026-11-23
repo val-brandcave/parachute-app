@@ -1,0 +1,428 @@
+/* Dashboard v2 — insights + portfolio risk cards (IssuesByCategory, FirmScorecard,
+   ReviewerAgreement, PortfolioRisk). Tokens only; prefix dv2i-. The card shell is
+   the shared `.widget`; this file adds the header, bars, rows and tiles.
+
+   Chart colours: one navy family, three steps derived from --md-primary with
+   color-mix (strong / mid / soft), so they track the theme. The only non-navy
+   mark is --md-warn, used where the meaning IS a warning (elevated risk, the
+   worst firm). */
+
+.dv2i-card {
+  --dv2i-strong: var(--md-primary);
+  --dv2i-mid: color-mix(in srgb, var(--md-primary) 55%, var(--md-surface));
+  --dv2i-soft: color-mix(in srgb, var(--md-primary) 14%, var(--md-surface-3));
+  --dv2i-track: var(--md-surface-1);
+  min-width: 0;
+}
+:root[data-theme="dark"] .dv2i-card {
+  /* Dark: a clear lightness ramp — strong = bright navy-tinted ink, mid = mid
+     navy, soft = a dark NEUTRAL grey (so Low never reads as Moderate), each well
+     above the track. */
+  --dv2i-strong: color-mix(in srgb, var(--md-primary) 35%, var(--md-on-surface));
+  --dv2i-mid: color-mix(in srgb, var(--md-primary) 55%, var(--md-on-surface-v));
+  --dv2i-soft: color-mix(in srgb, var(--md-on-surface-dis) 70%, var(--md-surface));
+  --dv2i-track: var(--md-surface-2);
+}
+
+/* ---- grid helper: Issues · Firms · Agreement ---- */
+.dv2i-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr) minmax(0, 0.9fr);
+  gap: var(--d-gap);
+  align-items: stretch;
+}
+@media (max-width: 1100px) {
+  .dv2i-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ---- header: the shared .widget-head; only the right slot is ours ---- */
+.dv2i-head-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+}
+
+.dv2i-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px 18px;
+}
+.dv2i-body--flush {
+  padding: 4px 0 14px;
+}
+
+.dv2i-num {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--md-on-surface);
+}
+.dv2i-r {
+  text-align: right;
+  justify-self: end;
+}
+.dv2i-c {
+  text-align: center;
+  justify-self: center;
+}
+.dv2i-foot {
+  font-size: 12px;
+  color: var(--md-on-surface-t);
+  padding: 0 18px;
+  margin-top: 4px;
+}
+.dv2i-foot--tight {
+  padding: 0;
+  margin-top: 0;
+}
+.dv2i-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ---- tones + legend ---- */
+.dv2i-tone--strong {
+  background: var(--dv2i-strong);
+}
+.dv2i-tone--mid {
+  background: var(--dv2i-mid);
+}
+.dv2i-tone--soft {
+  background: var(--dv2i-soft);
+}
+.dv2i-tone--warn {
+  background: var(--md-warn);
+}
+.dv2i-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex: none;
+}
+.dv2i-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  font-size: 12px;
+  color: var(--md-on-surface-v);
+}
+.dv2i-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ---- stacked bar ---- */
+.dv2i-track {
+  display: block;
+  width: 100%;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--dv2i-track);
+  overflow: hidden;
+}
+.dv2i-track--sm {
+  height: 6px;
+}
+.dv2i-track--lg {
+  height: 14px;
+}
+.dv2i-fill {
+  display: flex;
+  height: 100%;
+  border-radius: 999px;
+  overflow: hidden;
+}
+.dv2i-seg {
+  display: block;
+  height: 100%;
+}
+/* hairline gap between segments, drawn in the card surface */
+.dv2i-seg + .dv2i-seg {
+  box-shadow: inset 2px 0 0 var(--md-surface);
+}
+
+/* ---- Issues by category ---- */
+.dv2i-cats {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.dv2i-cat {
+  display: grid;
+  grid-template-columns: minmax(0, 8.5rem) minmax(0, 1fr) 2.5rem;
+  align-items: center;
+  gap: 12px;
+  padding: 7px 8px;
+  margin: 0 -8px;
+  border-radius: 8px;
+  font-size: 13px;
+}
+.ui-tip-wrap:hover > .dv2i-cat,
+.ui-tip-wrap:focus-visible > .dv2i-cat {
+  background: var(--md-surface-1);
+}
+.ui-tip-wrap:focus-visible:has(> .dv2i-cat) {
+  outline: none;
+}
+.ui-tip-wrap:focus-visible > .dv2i-cat {
+  box-shadow: var(--ring-accent);
+}
+.dv2i-cat-name {
+  color: var(--md-on-surface);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dv2i-cat .dv2i-num {
+  text-align: right;
+}
+
+/* ---- Firm scorecard ---- */
+.dv2i-firms {
+  display: flex;
+  flex-direction: column;
+}
+.dv2i-firm {
+  position: relative;
+  display: grid;
+  /* Firm takes the slack; the numeric columns are compact and fixed so every
+     row (its own grid) lines up: Reports · Per report (value + 40px bar) ·
+     Returned · Trend glyph. */
+  grid-template-columns: minmax(0, 1fr) 3rem 4.9rem 3.25rem 1.5rem;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--md-outline-v);
+  font-size: 13px;
+}
+.dv2i-firm:last-child {
+  border-bottom: none;
+}
+.dv2i-firm:not(.dv2i-firm--head):hover,
+.dv2i-firm:has(.dv2i-firm-link:focus-visible) {
+  background: var(--md-surface-1);
+}
+.dv2i-firm--head {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--md-on-surface-t);
+}
+.dv2i-firm-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.dv2i-firm-link {
+  color: var(--md-on-surface);
+  font-weight: 600;
+  text-decoration: none;
+  min-width: 0;
+  display: block;
+  border-radius: 4px;
+}
+/* stretched link: the whole row is the click target, one tab stop */
+.dv2i-firm-link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+.dv2i-firm-link:focus-visible {
+  outline: none;
+}
+.dv2i-firm:has(.dv2i-firm-link:focus-visible) {
+  box-shadow: inset var(--ring-accent);
+}
+.dv2i-firm-name {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dv2i-firm-sub {
+  font-size: 12px;
+  color: var(--md-on-surface-v);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 1px;
+}
+.dv2i-ipr {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.dv2i-ipr-val {
+  min-width: 1.75rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--md-on-surface);
+}
+.dv2i-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--md-warn);
+  flex: none;
+}
+.dv2i-mini {
+  display: block;
+  flex: none;
+  width: 40px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--dv2i-track);
+  overflow: hidden;
+}
+.dv2i-mini-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--dv2i-strong);
+}
+.dv2i-ipr--worst .dv2i-mini-fill {
+  background: var(--md-warn);
+}
+/* trend glyph sits above the stretched link so its tooltip is reachable */
+.dv2i-trend-cell {
+  position: relative;
+  z-index: 1;
+}
+.dv2i-trend {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+}
+.dv2i-trend--worse {
+  color: var(--md-error);
+}
+.dv2i-trend--better {
+  color: var(--md-success);
+}
+.dv2i-trend--same {
+  color: var(--md-on-surface-t);
+}
+
+/* ---- Reviewer agreement ---- */
+.dv2i-agree {
+  gap: 12px;
+}
+.dv2i-big {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.dv2i-big-val {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--md-on-surface);
+}
+.dv2i-big-label {
+  font-size: 13px;
+  color: var(--md-on-surface-v);
+}
+.dv2i-agree-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--md-on-surface-v);
+}
+.dv2i-agree-rows li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.dv2i-agree-note {
+  font-size: 13px;
+  color: var(--md-on-surface-v);
+  padding-top: 10px;
+  border-top: 1px solid var(--md-outline-v);
+}
+.dv2i-agree-note b {
+  color: var(--md-on-surface);
+  font-weight: 600;
+}
+
+/* ---- Portfolio risk ---- */
+.dv2i-card--wide {
+  grid-column: 1 / -1;
+}
+.dv2i-risk-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+}
+.dv2i-risk-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--md-outline-v);
+  border-radius: 10px;
+  background: var(--md-surface);
+  min-width: 0;
+}
+.dv2i-risk-type {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--md-on-surface);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dv2i-risk-cap {
+  font-size: 12px;
+  color: var(--md-on-surface-v);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Empty one-liner: align with card content padding (16px / 18px). */
+.dv2i-card .el {
+  padding: 16px 18px;
+}
+
+/* Risk bar: a small hit area around the bar, focus ring on the tooltip wrapper. */
+.dv2i-risk-bar {
+  display: block;
+  padding: 4px 0;
+  border-radius: 6px;
+}
+.ui-tip-wrap:focus-visible:has(> .dv2i-risk-bar),
+.ui-tip-wrap:focus-visible:has(> .dv2i-colhint) {
+  outline: none;
+}
+.ui-tip-wrap:focus-visible > .dv2i-risk-bar,
+.ui-tip-wrap:focus-visible > .dv2i-colhint {
+  box-shadow: var(--ring-accent);
+}
+.dv2i-colhint {
+  border-radius: 4px;
+  cursor: help;
+}

@@ -420,8 +420,15 @@ export const SCREENS: ScreenDef[] = [
     states: [
       key(st("empty", "Empty", { data: "empty" }, "No reviews yet.")),
       key(st("populated", "Populated", { data: "populated" }, "A typical week.")),
-      key(st("busy", "Busy", { data: "busy" }, "A full pipeline.")),
+      key(st("busy", "Busy", { data: "busy", wallet: "invoiced" }, "An established bank, a full month.")),
       key(st("low-credits", "Low credits", { wallet: "low", data: "populated" }, "Dashboard with a low wallet.")),
+      // Role lens (dashboard v2, 21 Nov 2026): same page, sections reorder per role.
+      // Role lens + Busy show an ESTABLISHED (invoiced) bank with a full month of mock data
+      // (Val, 21 Nov); Populated stays the trial org's own small data the flows land on.
+      // The extra `wallet` key also makes each one out-score Low credits / Populated in `activeState`.
+      grouped("Role lens", st("as-reviewer", "As reviewer", { role: "reviewer", data: "populated", wallet: "invoiced" }, "Their work first, then value, then insights.")),
+      grouped("Role lens", st("as-approver", "As chief appraiser", { role: "approver", data: "busy", wallet: "invoiced" }, "Insights, firms and portfolio risk right after the work.")),
+      grouped("Role lens", st("as-admin", "As admin", { role: "org_admin", data: "populated", wallet: "invoiced" }, "Value band (with spend) leads, then the work.")),
       // The request shows in the admin's header credits popover: pin the admin.
       grouped("Credits", st("request", "Request waiting", { ...ADMIN, request: "open" }, "A reviewer asked for credits; the admin sees it in the credits pill.")),
     ],
