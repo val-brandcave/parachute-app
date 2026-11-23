@@ -11,16 +11,11 @@ import {
   type Period,
 } from "@/components/molecules";
 import { useCurrentUser } from "@/lib/current-user";
-import { useOrgStage, useSetupSummary } from "@/store";
-import { ValueStrip, useShowValueStrip } from "@/components/organisms/value";
-import {
-  StatBar,
-  type Stat,
-  ActionNeeded,
-  NewFromYouConnect,
-  TrendChart,
-  DashboardSkeleton,
-} from "@/components/organisms";
+import { useOrgStage, useOrgStore, useSetupSummary, useWalletStore } from "@/store";
+import { deriveValue } from "@/components/organisms/value/value-model";
+import { TrendChart, DashboardSkeleton } from "@/components/organisms";
+import { useMemo, useState } from "react";
+import { DashboardSections } from "./DashboardSections";
 import { FirstRunHero } from "@/components/organisms/FirstRunHero";
 
 const PERIOD_PHRASE: Record<Period, string> = {
@@ -53,59 +48,20 @@ export default function DashboardPage() {
     setPeriod,
     range,
     setRange,
-    kpis,
-    completed,
-    actionNeeded,
-    newFromYc,
     trend,
+    insights,
   } = useDashboard();
 
-  const showValue = useShowValueStrip(reviews);
-
-  const stats: Stat[] = [
-    // Lifecycle order: intake → processing → review → SLA → done.
-    {
-      label: "Intake",
-      value: kpis.intake,
-      icon: "connect",
-      tip: "New appraisals delivered from YouConnect, waiting to be ordered — a current backlog, not affected by the period picker.",
-    },
-    {
-      label: "Pipeline running",
-      value: kpis.running,
-      icon: "parachute",
-      live: true,
-      tip: "Appraisals being processed by Parachute's pipeline right now — a live count, not affected by the period picker.",
-    },
-    {
-      label: "Needs action",
-      value: kpis.needsAction,
-      icon: "flag",
-      tip: "Reviews waiting on a decision or sign-off from your team, and anything past its due date.",
-    },
-    {
-      label: "Overdue",
-      value: kpis.overdue,
-      icon: "warn",
-      alert: kpis.overdue > 0,
-      tip: "Reviews that went past their SLA due date within the selected period.",
-    },
-    {
-      label: "Completed",
-      value: (
-        <>
-          {completed}{" "}
-          <small>
-            {period === "custom"
-              ? "in range"
-              : PERIOD_LABEL[period].toLowerCase()}
-          </small>
-        </>
-      ),
-      icon: "check-all",
-      tip: "Reviews you completed in the selected period. Avg turnaround ~24 min · ≈9.5 hrs saved vs. manual review.",
-    },
-  ];
+  const ledger = useWalletStore((s) => s.ledger);
+  const billing = useOrgStore((s) => s.org?.billing);
+  const [now] = useState(() => Date.now());
+  const isAdmin = me.role === "org_admin";
+  // Spend belongs to the admin lens only (Billing owns the detail).
+  const spend = useMemo(() => {
+    if (!isAdmin) return null;
+    const v = deriveValue(reviews, ledger, billing === "invoiced", now);
+    return { usd: v.spendUsd, credits: v.spendCredits };
+  }, [isAdmin, reviews, ledger, billing, now]);
 
   // Level 1 (no reviews of the org's own yet): just the hero, no header strip, no skeleton.
   // Until the first read lands we don't know which page is coming, so render nothing.
@@ -118,23 +74,23 @@ export default function DashboardPage() {
           tiles={[
             {
               title: "What needs you",
-              text: "Reviews waiting on your decision or sign-off, and anything past its due date.",
+              text: "Reviews waiting on your decision, anything overdue, and new appraisals from YouConnect.",
               ill: "07b-finding-citation",
             },
             {
-              title: "Volume and turnaround",
-              text: "How many reviews your team finishes and how fast, by week, month or quarter.",
+              title: "What Parachute did",
+              text: "Reviews completed, hours saved, calculations the engine corrected and issues it caught.",
               ill: "05b-empty-reviews",
             },
             {
-              title: "New from YouConnect",
-              text: "Appraisals delivered from YouConnect, ready to start in one click.",
+              title: "What your appraisals tell you",
+              text: "Where issues show up, how each appraisal firm's reports hold up, and portfolio risk.",
               ill: "06b-first-upload",
             },
           ]}
         >
-          Review volume, turnaround and what needs your attention show up here
-          once Parachute has checked an appraisal for you.
+          What needs you, the value Parachute adds and what your appraisals
+          are telling you show up here once Parachute has checked an appraisal.
         </FirstRunHero>
       </div>
     );
@@ -173,12 +129,12 @@ export default function DashboardPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.28 }}
             >
-              <>
-                <StatBar stats={stats} />
-
-                {showValue && <ValueStrip reviews={reviews} />}
-
-                <div style={{ marginTop: "var(--d-gap)" }}>
+              <DashboardSections
+                role={me.role}
+                insights={insights}
+                periodText={periodLabel(period, range)}
+                spend={spend}
+                trend={
                   <TrendChart
                     {...trend}
                     periodLabel={periodLabel(period, range)}
@@ -190,13 +146,8 @@ export default function DashboardPage() {
                       }
                     }
                   />
-                </div>
-
-                <div className="dash-grid">
-                  <ActionNeeded reviews={actionNeeded} />
-                  <NewFromYouConnect reviews={newFromYc} />
-                </div>
-              </>
+                }
+              />
             </motion.div>
           )}
         </AnimatePresence>

@@ -134,12 +134,17 @@ export function useReviewQueue() {
   // the Intake / Needs action tab). Read client-side to avoid a Suspense
   // boundary; the loading skeleton covers the brief set, so there's no flash.
   useEffect(() => {
-    const t = new URLSearchParams(window.location.search).get("tab");
+    const params = new URLSearchParams(window.location.search);
+    const t = params.get("tab");
     // One-time sync from the URL deep-link after mount — running it in the effect
     // (not a lazy initializer) keeps the SSR render = "all", so there's no
     // hydration mismatch on the tab bar.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (t && (URL_TABS as string[]).includes(t)) setTab(t as QueueTab);
+    // `?firm=` deep-link (dashboard "Appraisal firms" rows): preselect the
+    // Appraisal firm facet. It shows as a normal removable filter chip.
+    const firm = params.get("firm")?.trim();
+    if (firm) setFilters((f) => ({ ...f, firms: [firm] }));
   }, []);
 
   const [now] = useState(() => Date.now());
