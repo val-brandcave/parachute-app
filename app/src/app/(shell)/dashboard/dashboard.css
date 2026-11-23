@@ -18,3 +18,10 @@
   font-size: 13px;
   color: var(--md-on-surface-t);
 }
+
+/* Dashboard v2 (21 Nov 2026): sections stack with the density gap; order comes from the role lens. */
+.db-sections {
+  display: flex;
+  flex-direction: column;
+  gap: var(--d-gap);
+}
